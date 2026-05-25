@@ -12,6 +12,10 @@ Use these when the user asks for:
 - QA or regression evidence: [qa.md](qa.md)
 - staging and committing: [commit.md](commit.md)
 - saving knowledge at the end of work: [save-session.md](save-session.md)
+- handoff to another agent or human: [handoff.md](handoff.md)
+- context snapshot before switching or compaction: [snapshot.md](snapshot.md)
+- bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)
+- code or workflow review: [review.md](review.md)
 - switching between Claude and Codex: [switching-claude-codex.md](switching-claude-codex.md)
 - checking workspace parity: [quick-check.md](quick-check.md)
 - reviewing current active tasks: [active-tasks.md](active-tasks.md)
@@ -34,6 +38,32 @@ Use these when the user asks for:
 | Codex | `$commit` | [commit.md](commit.md) |
 | Claude Code | `/save-session` | [save-session.md](save-session.md) |
 | Codex | `$save-session` or "save session" | [save-session.md](save-session.md) |
+| Claude Code | `/handoff` | [handoff.md](handoff.md) |
+| Codex | `$handoff` | [handoff.md](handoff.md) |
+| Claude Code | `/snapshot` | [snapshot.md](snapshot.md) |
+| Codex | `$snapshot` | [snapshot.md](snapshot.md) |
+| Claude Code | `/diagnose` | [diagnose.md](diagnose.md) |
+| Codex | `$diagnose` | [diagnose.md](diagnose.md) |
+| Claude Code | `/review` | [review.md](review.md) |
+| Codex | `$review` | [review.md](review.md) |
+
+## Codex Hook Layer
+
+The umbrella repo also contains a project-local Codex hook config:
+
+```text
+.codex/config.toml
+```
+
+It registers Bash `PreToolUse` and `PostToolUse` hooks that:
+
+- block `--no-verify`, destructive resets, unsafe branch names, protected path
+  removals, and `.env` reads
+- run `scripts/agent-checks/pre-commit-guard.sh` before `git commit`
+- log failed Bash commands to `~/.codex-friction.log`
+
+Codex may ask the user to review/trust these project hooks through `/hooks`
+after the config changes. That is expected for local hook safety.
 
 ## Project Families
 

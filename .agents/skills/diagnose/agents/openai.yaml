@@ -1,0 +1,7 @@
+interface:
+  display_name: "Diagnose"
+  short_description: "Find root cause before fixing"
+  default_prompt: "Use $diagnose to analyze this Sifututor issue before changing code."
+
+policy:
+  allow_implicit_invocation: true

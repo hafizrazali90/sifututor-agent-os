@@ -25,6 +25,11 @@ scripts/*
 !.agents/skills/
 !.agents/skills/**
 
+# Track repo-local Codex hook configuration.
+!.codex/
+.codex/*
+!.codex/config.toml
+
 # Always ignore local/system files even if future patterns change.
 .DS_Store
 .claude/

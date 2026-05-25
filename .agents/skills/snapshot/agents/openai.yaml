@@ -1,0 +1,7 @@
+interface:
+  display_name: "Snapshot"
+  short_description: "Freeze current Sifututor context"
+  default_prompt: "Use $snapshot to preserve the current Sifututor context before switching."
+
+policy:
+  allow_implicit_invocation: true

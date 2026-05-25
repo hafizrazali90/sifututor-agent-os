@@ -1,0 +1,7 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Prepare a clear agent handoff"
+  default_prompt: "Use $handoff to prepare this Sifututor work for the next agent."
+
+policy:
+  allow_implicit_invocation: true
