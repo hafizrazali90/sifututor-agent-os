@@ -2,43 +2,54 @@
 
 Last updated: 2026-05-26
 
-The umbrella directory `/Users/hafizrazali/Projects/Sifututor` is not itself a
-Git repository. Commit workflow changes per sub-project repository. Shared
-workspace files under `docs/agent-playbooks/` and `scripts/agent-checks/` are
-currently filesystem-level workspace assets unless a parent repository is
-created later.
+The umbrella directory is now the private GitHub repo
+`hafizrazali90/sifututor-ai-workspace`. It tracks shared workspace files only:
+root `AGENTS.md`, `README.md`, `docs/agent-playbooks/`,
+`scripts/agent-checks/`, and `.gitignore`.
+
+Commit project-owned workflow changes per sub-project repository. Do not mix
+product work and workflow parity work in the same commit.
 
 ## Recommended Commit Groups
 
 Commit per project, not as one mixed change:
 
 1. `sifu-tutor`
-   - Anti-drift `CLAUDE.md` cleanup.
+   - Stage: `CLAUDE.md`
    - Existing active bugfix files are separate task work; do not mix unless the
      user asks to commit that task.
+   - Do not stage product/test files from the active bugfix.
 
 2. `ripple-suite`
-   - `AGENTS.md` Koda/rule hardening.
-   - `CLAUDE.md` anti-drift cleanup.
-   - Existing ripple hook/skill changes should be reviewed as their own group.
+   - Stage: `AGENTS.md`, `CLAUDE.md`
+   - Consider a separate workflow-tools commit for hook/skill changes only
+     after reviewing the existing uncommitted hook/skill edits.
+   - Do not stage `.claude/.current-session-id`, compact states, handoffs,
+     `.understand-anything/`, `graphify-out/`, or unrelated scripts.
 
 3. `sifututor_tutor`
-   - `AGENTS.md` source-of-truth and Koda rule update.
-   - `CLAUDE.md` anti-drift cleanup.
+   - Stage: `AGENTS.md`, `CLAUDE.md`, `CODEX-WORKFLOW.md` if the branch-pattern
+     fix is still unstaged.
    - Active feature files should stay separate from workflow parity commits.
+   - Do not stage auth first-run product files, Maestro flows, images,
+     `.taskmaster/`, or session scratch files in the parity commit.
 
 4. `sifututor_parent`
-   - New `AGENTS.md`, `.claude/tasks/`, and anti-drift `CLAUDE.md` cleanup.
+   - Stage: `AGENTS.md`, `CLAUDE.md`, `.claude/tasks/`, `.claude/hooks/`,
+     `.claude/settings.json` if present and intended.
+   - Review `GOALS.md` and `e2e/` before staging; they may be separate work.
 
 5. `lls`
-   - Standard task workflow migration: `AGENTS.md`, `CLAUDE.md`, hooks,
-     settings, task files, and workflow skills.
+   - Stage: `AGENTS.md`, `CLAUDE.md`, `.claude/hooks/`,
+     `.claude/settings.json`, `.claude/tasks/`, and the five `lls-*` workflow
+     skills.
+   - Review `.claude/memory/` and `GOALS.md` before staging.
 
 6. `lls-frontend`
-   - New full frontend workflow parity: `AGENTS.md`, `CLAUDE.md`, hooks,
-     settings, tasks, and workflow skills.
-   - Existing `package-lock.json` change appears unrelated; review before
-     staging.
+   - Stage: `AGENTS.md`, `CLAUDE.md`, `.claude/hooks/`,
+     `.claude/settings.json`, `.claude/tasks/`, `.claude/skills/`.
+   - Do not stage `package-lock.json` unless a dependency change was intended.
+   - Review `GOALS.md` before staging.
 
 7. `lls-mobile`
    - New `AGENTS.md`, `CLAUDE.md`, `GOALS.md`, `.claude/`, and `.gitignore`
@@ -46,8 +57,7 @@ Commit per project, not as one mixed change:
 
 8. `creative-hub`
    - New `.claude/` baseline and `GOALS.md` update.
-   - `AGENTS.md` already exists in the working tree but may be untracked from a
-     prior wave; include it if this repo owns the file.
+   - `AGENTS.md` is already tracked/clean at last audit.
 
 9. `team-inbox`
    - New `AGENTS.md`, `CLAUDE.md`, `GOALS.md`, and `.claude/` baseline.
