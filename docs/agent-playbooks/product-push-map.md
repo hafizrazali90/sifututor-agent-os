@@ -17,14 +17,14 @@ The umbrella workflow repo is separate:
 | Project | Remote | Current branch | Local state |
 | --- | --- | --- | --- |
 | `sifu-tutor` | `https://github.com/Sifututor/sifu-tutor.git` | `sifu-staging` | pushed; still has local uncommitted QA/product files |
-| `ripple-suite` | `https://github.com/Sifututor/ripple-suite.git` | `main` | pushed after rebase over remote workflow-template commit; still has local generated/session artifacts |
-| `sifututor_tutor` | `https://github.com/Sifututor/sifututor_tutor.git` | `feat/tut-auth-firstrun-rebuild` | pushed and upstream set |
+| `ripple-suite` | `https://github.com/Sifututor/ripple-suite.git` | `main` | pushed after rebase over remote workflow-template commit; local session artifacts ignored |
+| `sifututor_tutor` | `https://github.com/Sifututor/sifututor_tutor.git` | `feat/tut-auth-firstrun-rebuild` | pushed and upstream set; local agent artifacts ignored |
 | `sifututor_parent` | `https://github.com/Sifututor/sifututor_parent.git` | `chore/phase4-staging-config` | pushed and upstream set |
-| `lls` | `https://github.com/Sifututor/lls.git` | `main` | pushed |
+| `lls` | `https://github.com/Sifututor/lls.git` | `main` | pushed; local memory artifacts ignored |
 | `lls-frontend` | `https://github.com/Sifututor/lls-frontend.git` | `main` | pushed; local `package-lock.json` remains modified |
 | `lls-mobile` | `https://github.com/Sifututor/lls-mobile.git` | `main` | pushed after rebase over remote workflow-template commit |
 | `creative-hub` | `https://github.com/Sifututor/creative-hub.git` | `main` | pushed after rebase over remote work |
-| `team-inbox` | `https://github.com/Sifututor/team-inbox.git` | `main` | not pushed; local main is ahead 1 and behind remote 344 |
+| `team-inbox` | `https://github.com/Sifututor/team-inbox.git` | `main` | local main now matches origin/main; stale workflow commit preserved on `backup/team-inbox-stale-parity-20260526` |
 | `finch-inbox` | `https://github.com/Sifututor/finch-inbox.git` | `main` | pushed after rebase over remote webhook fix |
 
 ## Commands Used / Still Relevant
@@ -69,6 +69,6 @@ git -C <project> log --oneline origin/<branch>..HEAD
 - `sifututor_parent` has untracked `e2e/` product QA work.
 - `lls` has untracked `.claude/memory/` with operational references.
 - `lls-frontend` has an unrelated modified `package-lock.json`.
-- `team-inbox` is stale relative to remote `main`; decide whether to archive the
-  local clone, reset it to remote, or create a fresh parity commit on top of the
-  current remote.
+- `team-inbox` stale local parity commit is archived on backup branch
+  `backup/team-inbox-stale-parity-20260526`; do not push that branch unless
+  intentionally reviewing/recovering the old baseline.
