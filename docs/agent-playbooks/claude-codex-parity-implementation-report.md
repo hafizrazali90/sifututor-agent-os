@@ -10,6 +10,128 @@ left alone, and how future agents should continue from here.
 The shorter runbooks in this folder are for day-to-day execution. This document
 is the human-readable history and architecture explanation.
 
+## Table Of Contents
+
+- [Executive Summary](#executive-summary)
+- [Current Operating Checklist](#current-operating-checklist)
+- [Read This Based On Your Role](#read-this-based-on-your-role)
+- [Key Files](#key-files)
+- [1. The Original Idea](#1-the-original-idea)
+- [2. What Claude Had Before We Started](#2-what-claude-had-before-we-started)
+- [3. What Would Break With `AGENTS.md` Only](#3-what-would-break-with-agentsmd-only)
+- [4. The Architecture Decision](#4-the-architecture-decision)
+- [5. What We Built](#5-what-we-built)
+- [6. Implementation Waves](#6-implementation-waves)
+- [7. What Was Pushed](#7-what-was-pushed)
+- [8. Team Inbox Decision](#8-team-inbox-decision)
+- [9. Current Status](#9-current-status)
+- [10. What Improved](#10-what-improved)
+- [11. What Is Still Not Perfect](#11-what-is-still-not-perfect)
+- [12. How To Switch Between Claude And Codex Now](#12-how-to-switch-between-claude-and-codex-now)
+- [13. What Future Agents Should Read First](#13-what-future-agents-should-read-first)
+- [14. Recommended Next Improvements](#14-recommended-next-improvements)
+- [15. Glossary](#15-glossary)
+- [16. The Human Summary](#16-the-human-summary)
+
+## Executive Summary
+
+Before this work, Claude Code had a mature hidden operating system in the
+Sifututor workspace. It loaded global rules, parent workspace rules,
+sub-project `CLAUDE.md` files, hook behavior, skills, active task files, and
+Koda memories. Codex did not automatically get the same context.
+
+The migration made that system explicit. The shared contract now lives in
+`AGENTS.md` files, the reusable workflow lives in `docs/agent-playbooks/`, and
+portable guardrails live in `scripts/agent-checks/`. Claude can still use its
+skills and hooks, but Codex now has a readable path to the same behavior.
+
+The end result is not perfect mechanical equivalence, because Claude and Codex
+do not expose the same lifecycle hooks or skill system. It is practical parity:
+both agents can read the same project rules, find the same active task state,
+use the same Koda memory, run the same guard scripts, and follow the same
+definition of done.
+
+## Current Operating Checklist
+
+Use this whenever starting meaningful work in the Sifututor workspace:
+
+1. Start from `/Users/hafizrazali/Projects/Sifututor`.
+2. Read the root `AGENTS.md`.
+3. Read the target project's `AGENTS.md`.
+4. Read the target project's `CLAUDE.md` for deep context.
+5. Search Koda memory for the task unless the change is trivial.
+6. Read `.claude/tasks/active.json` when present.
+7. Use the relevant playbook in `docs/agent-playbooks/`.
+8. Before committing, run:
+
+```bash
+../scripts/agent-checks/pre-commit-guard.sh
+```
+
+From the umbrella root:
+
+```bash
+scripts/agent-checks/pre-commit-guard.sh
+```
+
+9. Store durable Koda lessons or corrections before reporting complete.
+10. Never push, deploy, open a PR, or bypass verification without explicit
+    current-session approval from Hafiz.
+
+## Read This Based On Your Role
+
+### Hafiz
+
+Read this report for the overall story. For the day-to-day state, use:
+
+- `docs/agent-playbooks/parity-status.md`
+- `docs/agent-playbooks/active-tasks.md`
+- `docs/agent-playbooks/commit-plan.md`
+- `docs/agent-playbooks/product-push-map.md`
+
+The important thing to remember: the parity system is now versioned, pushed, and
+usable. Remaining dirty files are mostly active product work, not missing parity
+plumbing.
+
+### Claude
+
+Read `AGENTS.md` first even if you also load `CLAUDE.md`. The purpose is to
+avoid drifting away from Codex. Then use your normal skills and hooks, but write
+state into files and Koda so Codex can resume.
+
+### Codex
+
+Do not assume Claude's hidden context exists. Read the nearest `AGENTS.md`, then
+project `CLAUDE.md`, then task state, then Koda. Use the playbooks when you
+would otherwise guess what a Claude skill would have done.
+
+### Future Developer
+
+Use this document to understand the architecture. Use the project `AGENTS.md`
+files and playbooks to understand how to work safely. Do not delete `.claude/`
+just because Codex can read `AGENTS.md`; `.claude/` is still Claude's
+orchestration layer.
+
+## Key Files
+
+| File | Purpose |
+| --- | --- |
+| `AGENTS.md` | Root shared operating contract for Claude, Codex, and future agents. |
+| `<project>/AGENTS.md` | Project-specific shared rules. |
+| `<project>/CLAUDE.md` | Deep project context and Claude-oriented reference. |
+| `docs/agent-playbooks/README.md` | Index of all shared playbooks. |
+| `docs/agent-playbooks/parity-status.md` | Current baseline status across projects. |
+| `docs/agent-playbooks/switching-claude-codex.md` | How to hand work between Claude and Codex. |
+| `docs/agent-playbooks/task-router.md` | Shared task routing behavior. |
+| `docs/agent-playbooks/verify.md` | Gate 2A verification behavior. |
+| `docs/agent-playbooks/qa.md` | QA and regression behavior. |
+| `docs/agent-playbooks/commit.md` | Commit preparation behavior. |
+| `docs/agent-playbooks/save-session.md` | Koda and handoff behavior. |
+| `docs/agent-playbooks/active-tasks.md` | Current active task overview. |
+| `docs/agent-playbooks/commit-plan.md` | What was pushed and what remains dirty. |
+| `docs/agent-playbooks/product-push-map.md` | Product repo remotes, branches, and push state. |
+| `scripts/agent-checks/pre-commit-guard.sh` | Portable guard for branch, sensitive path, and task-state checks. |
+
 ## 1. The Original Idea
 
 The starting point was simple but important: Hafiz already had a strong Claude
@@ -653,7 +775,64 @@ These are optional future hardening tasks:
 6. Continue reducing duplicated shared rules from `CLAUDE.md` files whenever new
    drift appears.
 
-## 15. The Human Summary
+## 15. Glossary
+
+### `AGENTS.md`
+
+The shared instruction file for AI coding agents. In this workspace it owns the
+rules that both Claude and Codex must follow: safety, branch names, commit
+format, Koda obligations, and workflow entry points.
+
+### `CLAUDE.md`
+
+The deeper project reference file. It can contain architecture, module details,
+deployment notes, and Claude-specific context. It should not duplicate shared
+rules already owned by `AGENTS.md`.
+
+### `.claude/`
+
+Claude's orchestration folder. It contains hooks, settings, skills, task state,
+and sometimes memory or session files. Codex can read useful parts of it, but it
+does not execute Claude's Skill tool directly.
+
+### Active Task State
+
+The file-based workflow pointer in `.claude/tasks/active.json`. It points to the
+current task JSON file and tells agents what route and next step are active.
+
+### Koda
+
+The shared long-term memory system. It stores durable facts, lessons,
+corrections, decisions, and preferences across Claude and Codex sessions.
+
+### MCP
+
+Model Context Protocol. MCP servers connect agents to tools like Koda memory,
+Neon, Chrome DevTools, Figma, and Wasabi.
+
+### Playbooks
+
+Markdown procedures in `docs/agent-playbooks/`. They translate important Claude
+skills into a form Codex and future agents can read and follow.
+
+### Guard Scripts
+
+Portable shell scripts in `scripts/agent-checks/`. They are the fallback
+enforcement layer when Claude and Codex hooks do not behave identically.
+
+### Anti-Drift
+
+The rule that shared behavior should have one owner. If both `AGENTS.md` and
+`CLAUDE.md` restate the same rule, they will eventually disagree. Shared rules
+belong in `AGENTS.md`; `CLAUDE.md` should point to them.
+
+### Practical Parity
+
+The realistic goal. Claude and Codex cannot be mechanically identical because
+their extension runtimes differ, but both can operate from the same contract,
+state, memory, and verification process.
+
+## 16. The Human Summary
 
 Before this work, Claude was operating with a rich hidden system and Codex would
 have entered the workspace almost blind by comparison.
