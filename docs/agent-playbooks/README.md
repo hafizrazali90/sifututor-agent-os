@@ -38,6 +38,8 @@ Use these when the user asks for:
    - state-file projects: read `.claude/tasks/active.json`
    - if any active project is missing task state, treat it as workflow drift to fix
 5. Use the specific playbook for the workflow action.
+6. At the end of meaningful work, run the manual Codex equivalent of
+   `/save-session` by following [save-session.md](save-session.md).
 
 ## Improvements Over The Old Split
 

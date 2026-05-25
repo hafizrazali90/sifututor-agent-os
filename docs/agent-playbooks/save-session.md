@@ -3,11 +3,28 @@
 Use this when wrapping up, handing off, compacting context, or when the user asks
 to save the session.
 
+Codex note: Claude may have a `/save-session` command. Codex does not currently
+have the same Claude slash-command lifecycle, so Codex must follow this playbook
+manually before ending meaningful work.
+
 ## Goal
 
 Make knowledge portable between Claude and Codex. The session is not really
 saved until non-obvious lessons and corrections are in Koda or explicitly
 reported as not saved.
+
+## When To Run
+
+Run this at the end of every non-trivial session, especially when:
+
+- work was committed or pushed
+- workflow or project rules changed
+- the user corrected the agent
+- a bug root cause or fix pattern was discovered
+- a task is being handed from Claude to Codex or Codex to Claude
+- context is about to compact or the agent is about to stop
+
+Skip only for trivial read-only answers where no durable knowledge changed.
 
 ## Koda Schema
 
@@ -86,3 +103,23 @@ Key learnings:
 Next:
 - <next step or "none">
 ```
+
+## Codex End-Of-Session Checklist
+
+Before Codex gives the final "done" answer for meaningful work:
+
+1. Search Koda for duplicate memories when a durable lesson exists.
+2. Store or update Koda memories for corrections, decisions, and non-obvious
+   lessons.
+3. Read `.claude/tasks/active.json` when present and report the active task
+   state.
+4. Run the shared guard when code or workflow files changed:
+
+```bash
+../scripts/agent-checks/pre-commit-guard.sh
+```
+
+5. Report what changed, why, tests/guards run, files or commits touched, and
+   what remains.
+6. If Koda is unavailable, say that explicitly and write the durable lesson into
+   a repo doc or handoff note instead.
