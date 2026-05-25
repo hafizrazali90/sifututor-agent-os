@@ -1,0 +1,40 @@
+# Ignore everything by default. This umbrella repo tracks only the shared
+# Claude/Codex workflow layer, not product repositories or local machine state.
+*
+
+# Track root workflow files.
+!.gitignore
+!README.md
+!AGENTS.md
+
+# Track shared playbooks.
+!docs/
+docs/*
+!docs/agent-playbooks/
+!docs/agent-playbooks/**
+
+# Track shared guard scripts.
+!scripts/
+scripts/*
+!scripts/agent-checks/
+!scripts/agent-checks/**
+
+# Always ignore local/system files even if future patterns change.
+.DS_Store
+.claude/
+.mcp.json
+.pytest_cache/
+live/
+.workflow-rollout/
+
+# Product repos stay independent nested Git repositories.
+creative-hub/
+finch-inbox/
+lls/
+lls-frontend/
+lls-mobile/
+ripple-suite/
+sifu-tutor/
+sifututor_parent/
+sifututor_tutor/
+team-inbox/

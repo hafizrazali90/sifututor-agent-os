@@ -1,0 +1,47 @@
+# Claude/Codex Parity Status
+
+Last updated: 2026-05-26
+
+## Completed Baseline
+
+All active workspace projects now have the shared Claude/Codex baseline:
+
+| Project | AGENTS.md | `.claude/tasks/active.json` | Hooks | Notes |
+| --- | --- | --- | --- | --- |
+| `sifu-tutor` | yes | yes | yes | Active bugfix `bugfix-20260524-4023`, next step `fix` |
+| `ripple-suite` | yes | yes | yes | No active task |
+| `sifututor_tutor` | yes | yes | yes | Active feature `tut-auth-firstrun-rebuild`, next step `generate_tests` |
+| `sifututor_parent` | yes | yes | yes | No active task |
+| `lls` | yes | yes | yes | Migrated from Superpowers-only to standard task state |
+| `lls-frontend` | yes | yes | yes | Has dedicated frontend workflow skills |
+| `lls-mobile` | yes | yes | yes | Shared playbooks only; Flutter-specific skills not created yet |
+| `creative-hub` | yes | yes | yes | Shared playbooks only |
+| `team-inbox` | yes | yes | yes | Confirm active product direction before substantial work |
+| `finch-inbox` | yes | yes | existing + tasks | Keeps Finch workflow, adds shared active task pointer |
+
+## Source Of Truth
+
+- `AGENTS.md` owns shared rules for both Claude and Codex: commands, critical
+  safety rules, branch/commit rules, Koda obligations, and workflow playbooks.
+- `CLAUDE.md` owns deep technical context and Claude-specific project reference.
+- `.claude/CLAUDE.md`, `.claude/skills/`, and hooks remain Claude orchestration.
+- `docs/agent-playbooks/` is the Codex-readable equivalent of the core Claude
+  skills: task routing, verify, QA, commit, and save-session.
+
+## Verified
+
+- Shared guard passed in all ten projects.
+- Hook Python files compiled successfully.
+- `settings.json` and `active.json` files parsed successfully with `jq`.
+- Stale claims such as "no `.claude` config yet" and "read CLAUDE.md first"
+  were removed or updated.
+
+## Remaining Optional Hardening
+
+- Create project-specific workflow skills for `lls-mobile`, `creative-hub`, and
+  `team-inbox` only after their development cadence justifies it.
+- Re-test native Codex hook behavior inside the VS Code extension when Codex
+  exposes a stable hook execution path. Until then, use
+  `scripts/agent-checks/pre-commit-guard.sh` as the portable guard.
+- Finish or park active tasks in `sifu-tutor` and `sifututor_tutor` before
+  starting unrelated work in those projects.
