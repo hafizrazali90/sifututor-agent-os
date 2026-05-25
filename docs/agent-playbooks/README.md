@@ -16,7 +16,8 @@ Use these when the user asks for:
 - checking workspace parity: [quick-check.md](quick-check.md)
 - reviewing current active tasks: [active-tasks.md](active-tasks.md)
 - checking finished parity baseline: [parity-status.md](parity-status.md)
-- planning commits across sub-project repos: [commit-plan.md](commit-plan.md)
+- reviewing local parity commits and dirty-file caveats: [commit-plan.md](commit-plan.md)
+- checking exact product repo push targets: [product-push-map.md](product-push-map.md)
 
 ## Project Families
 
