@@ -19,6 +19,12 @@ scripts/*
 !scripts/agent-checks/
 !scripts/agent-checks/**
 
+# Track repo-local Codex skills that wrap shared playbooks.
+!.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+
 # Always ignore local/system files even if future patterns change.
 .DS_Store
 .claude/

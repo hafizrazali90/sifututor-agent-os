@@ -1,0 +1,7 @@
+interface:
+  display_name: "Task Router"
+  short_description: "Route Sifututor work before implementation"
+  default_prompt: "Use $task-router to classify this Sifututor task and find the next step."
+
+policy:
+  allow_implicit_invocation: true

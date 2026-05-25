@@ -1,0 +1,7 @@
+interface:
+  display_name: "Verify"
+  short_description: "Run Gate 2A evidence for Sifututor work"
+  default_prompt: "Use $verify to run the right Gate 2A checks for this Sifututor task."
+
+policy:
+  allow_implicit_invocation: true

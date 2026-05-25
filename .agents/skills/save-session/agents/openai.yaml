@@ -1,0 +1,7 @@
+interface:
+  display_name: "Save Session"
+  short_description: "Preserve Sifututor session state and lessons"
+  default_prompt: "Use $save-session to save this Sifututor session and prepare a clear handoff."
+
+policy:
+  allow_implicit_invocation: true

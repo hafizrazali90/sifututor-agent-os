@@ -1,0 +1,7 @@
+interface:
+  display_name: "QA"
+  short_description: "Collect QA and regression evidence"
+  default_prompt: "Use $qa to run the right QA tier for this Sifututor task."
+
+policy:
+  allow_implicit_invocation: true

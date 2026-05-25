@@ -1,0 +1,7 @@
+interface:
+  display_name: "Commit"
+  short_description: "Prepare guarded Sifututor commits"
+  default_prompt: "Use $commit to prepare a guarded Sifututor commit with the right format."
+
+policy:
+  allow_implicit_invocation: true

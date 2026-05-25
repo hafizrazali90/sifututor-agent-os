@@ -20,6 +20,21 @@ Use these when the user asks for:
 - reviewing local parity commits and dirty-file caveats: [commit-plan.md](commit-plan.md)
 - checking exact product repo push targets: [product-push-map.md](product-push-map.md)
 
+## Agent Command Aliases
+
+| Agent | User command | Shared source of truth |
+| --- | --- | --- |
+| Claude Code | `/task-router` or project router skill | [task-router.md](task-router.md) |
+| Codex | `$task-router` | [task-router.md](task-router.md) |
+| Claude Code | `/verify` | [verify.md](verify.md) |
+| Codex | `$verify` | [verify.md](verify.md) |
+| Claude Code | `/qa` | [qa.md](qa.md) |
+| Codex | `$qa` | [qa.md](qa.md) |
+| Claude Code | `/commit` | [commit.md](commit.md) |
+| Codex | `$commit` | [commit.md](commit.md) |
+| Claude Code | `/save-session` | [save-session.md](save-session.md) |
+| Codex | `$save-session` or "save session" | [save-session.md](save-session.md) |
+
 ## Project Families
 
 | Family | Projects | Workflow state |
@@ -38,8 +53,9 @@ Use these when the user asks for:
    - state-file projects: read `.claude/tasks/active.json`
    - if any active project is missing task state, treat it as workflow drift to fix
 5. Use the specific playbook for the workflow action.
-6. At the end of meaningful work, run the manual Codex equivalent of
-   `/save-session` by following [save-session.md](save-session.md).
+6. At the end of meaningful work, use Claude `/save-session`, Codex
+   `$save-session`, or the natural-language request "save session"; all three
+   follow [save-session.md](save-session.md).
 
 ## Improvements Over The Old Split
 

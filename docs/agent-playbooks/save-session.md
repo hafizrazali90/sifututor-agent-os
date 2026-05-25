@@ -6,9 +6,9 @@ to save the session.
 In normal words: saving the session means the next Claude, Codex, or human can
 continue without guessing what happened.
 
-Claude may have a `/save-session` command. Codex does not currently have the
-same Claude slash-command lifecycle, so Codex must follow this playbook manually
-before ending meaningful work.
+Claude may use `/save-session`. Codex should use the repo-local `$save-session`
+skill when available. Both entry points must follow this playbook before ending
+meaningful work.
 
 ## The Simple Rule
 
@@ -126,9 +126,9 @@ Updated docs.
 Good:
 
 ```text
-Codex sessions in the Sifututor workspace must manually follow
-docs/agent-playbooks/save-session.md because Codex does not run Claude's
-/save-session command.
+Codex sessions in the Sifututor workspace should use the repo-local
+$save-session skill, which follows docs/agent-playbooks/save-session.md as the
+same source of truth as Claude's /save-session habit.
 ```
 
 ## Dedup First
