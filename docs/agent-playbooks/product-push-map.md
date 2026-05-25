@@ -3,8 +3,8 @@
 Last updated: 2026-05-26
 
 The product repositories below are nested Git repos. Their remotes point to the
-`Sifututor` GitHub organization. Do not push them without explicit approval in
-the current session.
+`Sifututor` GitHub organization. Hafiz approved the workflow/parity push on
+2026-05-26.
 
 The umbrella workflow repo is separate:
 
@@ -12,24 +12,26 @@ The umbrella workflow repo is separate:
 - Remote: `https://github.com/hafizrazali90/sifututor-ai-workspace.git`
 - Purpose: shared AI workflow docs/scripts only
 
-## Current Product Push Targets
+## Current Product Push State
 
 | Project | Remote | Current branch | Local state |
 | --- | --- | --- | --- |
-| `sifu-tutor` | `https://github.com/Sifututor/sifu-tutor.git` | `sifu-staging` | ahead of `origin/sifu-staging` by 2 commits |
-| `ripple-suite` | `https://github.com/Sifututor/ripple-suite.git` | `main` | ahead of `origin/main` by 6 commits |
-| `sifututor_tutor` | `https://github.com/Sifututor/sifututor_tutor.git` | `feat/tut-auth-firstrun-rebuild` | local branch, no upstream shown |
-| `sifututor_parent` | `https://github.com/Sifututor/sifututor_parent.git` | `chore/phase4-staging-config` | local branch, no upstream shown |
-| `lls` | `https://github.com/Sifututor/lls.git` | `main` | ahead of `origin/main` by 1 commit |
-| `lls-frontend` | `https://github.com/Sifututor/lls-frontend.git` | `main` | ahead of `origin/main` by 1 commit |
-| `lls-mobile` | `https://github.com/Sifututor/lls-mobile.git` | `main` | ahead of `origin/main` by 1 commit |
-| `creative-hub` | `https://github.com/Sifututor/creative-hub.git` | `main` | ahead of `origin/main` by 1 commit |
-| `team-inbox` | `https://github.com/Sifututor/team-inbox.git` | `main` | ahead of `origin/main` by 1 commit |
-| `finch-inbox` | `https://github.com/Sifututor/finch-inbox.git` | `main` | ahead of `origin/main` by 1 commit |
+| `sifu-tutor` | `https://github.com/Sifututor/sifu-tutor.git` | `sifu-staging` | pushed; still has local uncommitted QA/product files |
+| `ripple-suite` | `https://github.com/Sifututor/ripple-suite.git` | `main` | pushed after rebase over remote workflow-template commit; still has local generated/session artifacts |
+| `sifututor_tutor` | `https://github.com/Sifututor/sifututor_tutor.git` | `feat/tut-auth-firstrun-rebuild` | pushed and upstream set |
+| `sifututor_parent` | `https://github.com/Sifututor/sifututor_parent.git` | `chore/phase4-staging-config` | pushed and upstream set |
+| `lls` | `https://github.com/Sifututor/lls.git` | `main` | pushed |
+| `lls-frontend` | `https://github.com/Sifututor/lls-frontend.git` | `main` | pushed; local `package-lock.json` remains modified |
+| `lls-mobile` | `https://github.com/Sifututor/lls-mobile.git` | `main` | pushed after rebase over remote workflow-template commit |
+| `creative-hub` | `https://github.com/Sifututor/creative-hub.git` | `main` | pushed after rebase over remote work |
+| `team-inbox` | `https://github.com/Sifututor/team-inbox.git` | `main` | not pushed; local main is ahead 1 and behind remote 344 |
+| `finch-inbox` | `https://github.com/Sifututor/finch-inbox.git` | `main` | pushed after rebase over remote webhook fix |
 
-## Approval-Safe Push Commands
+## Commands Used / Still Relevant
 
-Use these only after Hafiz explicitly approves product repo pushes.
+The approved push has already been performed for all projects except
+`team-inbox`. Do not run the `team-inbox` push below without a fresh decision,
+because the remote has diverged heavily.
 
 ```bash
 git -C sifu-tutor push origin sifu-staging
@@ -67,3 +69,6 @@ git -C <project> log --oneline origin/<branch>..HEAD
 - `sifututor_parent` has untracked `e2e/` product QA work.
 - `lls` has untracked `.claude/memory/` with operational references.
 - `lls-frontend` has an unrelated modified `package-lock.json`.
+- `team-inbox` is stale relative to remote `main`; decide whether to archive the
+  local clone, reset it to remote, or create a fresh parity commit on top of the
+  current remote.

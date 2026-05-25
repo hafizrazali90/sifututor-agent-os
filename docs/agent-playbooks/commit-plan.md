@@ -7,8 +7,9 @@ The umbrella directory is the private GitHub repo
 root `AGENTS.md`, `README.md`, `docs/agent-playbooks/`,
 `scripts/agent-checks/`, and `.gitignore`.
 
-Product repositories are nested independent Git repos. Workflow parity commits
-were made locally in those repos, but product repos were not pushed.
+Product repositories are nested independent Git repos. Hafiz approved product
+repo pushes on 2026-05-26. Most workflow parity commits are now pushed to the
+`Sifututor` GitHub organization.
 
 ## Umbrella Repo
 
@@ -16,23 +17,33 @@ Pushed to `hafizrazali90/sifututor-ai-workspace`:
 
 - `0574378 chore(workspace): initialize ai workflow repo`
 - `f6d95f3 docs(workspace): update project commit plan`
+- `9a9ca31 docs(workspace): refresh parity commit ledger`
+- `3a6eba7 docs(workspace): add product push map`
 
-## Local Product Workflow Commits
+## Pushed Product Workflow Commits
 
-These commits are local and need explicit approval before pushing.
+These commits were pushed after explicit approval. Some hashes changed during
+safe rebases over newer remote workflow-template commits.
 
-| Project | Branch | Local workflow commit(s) |
+| Project | Branch | Pushed commit(s) |
 | --- | --- | --- |
-| `sifu-tutor` | `sifu-staging` | `dee189a98` point Claude rules to Agents; `32c730c9a` fix Sifu session and commit skills |
-| `ripple-suite` | `main` | `ae4fd56` align shared agent rules; `504e26f` strengthen Ripple workflow automation |
+| `sifu-tutor` | `sifu-staging` | `dee189a98` point Claude rules to Agents; `32c730c9a` fix Sifu session and commit skills; note: existing product fix `d90d14ce4` was also on the branch head and pushed with `sifu-staging` |
+| `ripple-suite` | `main` | `e243f13` align shared agent rules; `87cae49` strengthen Ripple workflow automation |
 | `sifututor_tutor` | `feat/tut-auth-firstrun-rebuild` | `b4de3a2` align tutor agent docs; `20af12c` align hooks/tracking; `05434c1` add review and release skills |
 | `sifututor_parent` | `chore/phase4-staging-config` | `1df2d04` add parent app agent workflow |
 | `lls` | `main` | `f4641f8` add standard agent task state |
 | `lls-frontend` | `main` | `12892ab6` add frontend agent workflow |
-| `lls-mobile` | `main` | `ff89d35` add mobile agent baseline |
-| `creative-hub` | `main` | `76034a6` add creative hub agent baseline |
-| `team-inbox` | `main` | `1be3af5` add team inbox agent baseline |
-| `finch-inbox` | `main` | `8498194` add shared agent task pointer |
+| `lls-mobile` | `main` | `e959382` add mobile agent baseline |
+| `creative-hub` | `main` | `d7b9e32` add creative hub agent baseline |
+| `finch-inbox` | `main` | `efeb002` add shared agent task pointer |
+
+## Not Pushed
+
+`team-inbox` was not pushed. Its local `main` is ahead by 1 local workflow commit
+but behind remote `main` by 344 commits. The remote has evolved into the newer
+Finch-style codebase and already contains a GitHub-workflow `AGENTS.md`. Pushing
+the stale local Team Inbox baseline onto that remote would be risky and likely
+wrong. Keep this as an explicit follow-up decision rather than forcing it.
 
 ## Intentionally Left Uncommitted
 
