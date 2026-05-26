@@ -29,6 +29,7 @@ Active projects:
 | `lls-mobile` | Learnest mobile app |
 | `creative-hub` | Creative Hub |
 | `team-inbox` | WhatsApp/team inbox |
+| `finch-inbox` | Finch omnichannel inbox |
 
 `live/` contains production snapshots. Never modify anything under `live/`.
 Use it only as read-only reference.

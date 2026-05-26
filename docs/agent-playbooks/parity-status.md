@@ -27,12 +27,30 @@ All active workspace projects now have the shared Claude/Codex baseline:
 - `.claude/CLAUDE.md`, `.claude/skills/`, and hooks remain Claude orchestration.
 - `docs/agent-playbooks/` is the Codex-readable equivalent of the core Claude
   skills: task routing, verify, QA, commit, and save-session.
+- `.agents/skills/` contains Codex wrappers for the shared playbooks.
+- `.codex/config.toml` contains Codex project hooks for Bash guardrails,
+  startup context, prompt reminders, pre-compaction reminders, and stop-time
+  save-session reminders.
+
+## Local Claude Parent Config
+
+The parent machine-local Claude config has also been audited:
+
+- `.claude/settings.json` includes all ten workspace projects in
+  `additionalDirectories`, including `finch-inbox`.
+- Parent `CLAUDE.md` includes `finch-inbox` in the project table and Koda tag
+  list.
+
+These files are intentionally local workflow configuration in this workspace,
+not part of the pushed umbrella GitHub repo.
 
 ## Verified
 
 - Shared guard passed in all ten projects.
 - Hook Python files compiled successfully.
-- `settings.json` and `active.json` files parsed successfully with `jq`.
+- Codex repo-local skills are visible in `codex debug prompt-input`.
+- Codex lifecycle and Bash hook scripts passed direct sample-payload tests.
+- `settings.json` and `active.json` files parsed successfully.
 - Stale claims such as "no `.claude` config yet" and "read CLAUDE.md first"
   were removed or updated.
 
@@ -40,8 +58,8 @@ All active workspace projects now have the shared Claude/Codex baseline:
 
 - Create project-specific workflow skills for `lls-mobile`, `creative-hub`, and
   `team-inbox` only after their development cadence justifies it.
-- Re-test native Codex hook behavior inside the VS Code extension when Codex
-  exposes a stable hook execution path. Until then, use
-  `scripts/agent-checks/pre-commit-guard.sh` as the portable guard.
+- Trust/review Codex project hooks through `/hooks` when Codex prompts for it.
+  Continue using `scripts/agent-checks/pre-commit-guard.sh` as the portable
+  manual guard.
 - Finish or park active tasks in `sifu-tutor` and `sifututor_tutor` before
   starting unrelated work in those projects.
