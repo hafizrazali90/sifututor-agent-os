@@ -55,7 +55,18 @@ The umbrella repo also contains a project-local Codex hook config:
 .codex/config.toml
 ```
 
-It registers Bash `PreToolUse` and `PostToolUse` hooks that:
+It registers these hooks:
+
+| Hook | Purpose |
+| --- | --- |
+| `SessionStart` | Adds startup context: detected project, active task summary, and available workflow skills |
+| `UserPromptSubmit` | Adds a Koda/task-state reminder for non-trivial prompts |
+| `PreToolUse` | Checks Bash guardrails before risky commands |
+| `PostToolUse` | Logs failed Bash commands |
+| `PreCompact` | Reminds Codex to snapshot/save before relying on compacted context |
+| `Stop` | Reminds Codex to run `$save-session` after meaningful work |
+
+The Bash guard hooks:
 
 - block `--no-verify`, destructive resets, unsafe branch names, protected path
   removals, and `.env` reads

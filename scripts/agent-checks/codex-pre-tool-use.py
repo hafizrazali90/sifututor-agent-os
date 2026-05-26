@@ -9,6 +9,8 @@ import re
 import subprocess
 import sys
 
+WORKSPACE = "/Users/hafizrazali/Projects/Sifututor"
+
 
 def deny(reason: str) -> None:
     print(
@@ -57,9 +59,11 @@ def run_guard() -> tuple[bool, str]:
         check=False,
     ).stdout.strip()
     if not root:
-        return True, "not inside a git repo"
+        root = WORKSPACE
 
     guard = os.path.join(root, "scripts", "agent-checks", "pre-commit-guard.sh")
+    if not os.path.exists(guard):
+        guard = os.path.join(WORKSPACE, "scripts", "agent-checks", "pre-commit-guard.sh")
     if not os.path.exists(guard):
         return True, "no shared guard in this repo"
 
