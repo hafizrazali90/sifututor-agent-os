@@ -66,6 +66,35 @@ It registers these hooks:
 | `PreCompact` | Reminds Codex to snapshot/save before relying on compacted context |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
 
+## Codex Automatic Workflow Dispatch
+
+`UserPromptSubmit` now acts as a lightweight workflow dispatcher. It does not
+blindly run commands; it injects the required Codex skill into the model context
+before Codex answers.
+
+| User intent | Required Codex skill |
+| --- | --- |
+| new work, continue work, proceed, implement | `$task-router` |
+| bug, broken behavior, failing test, root cause | `$diagnose` |
+| verify, run checks, prove it works, Gate 2A | `$verify` |
+| QA, smoke, regression, visual/manual check | `$qa` |
+| review, audit, pre-commit risk check | `$review` |
+| commit, stage, prepare commit | `$commit` |
+| save session, wrap up, finish session | `$save-session` |
+| handoff to Claude/Codex/human | `$handoff` |
+| snapshot, pause, compact/context save | `$snapshot` |
+| push, deploy, merge, PR | `$review` first, then explicit approval |
+
+The complete implementation path for normal coding work is:
+
+```text
+$task-router -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
+```
+
+Commit, push, merge, deploy, and PR actions still require explicit
+current-session approval. The automation chooses the workflow, not the business
+decision.
+
 The Bash guard hooks:
 
 - block `--no-verify`, destructive resets, unsafe branch names, protected path
