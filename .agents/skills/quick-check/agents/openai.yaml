@@ -1,0 +1,7 @@
+interface:
+  display_name: "Quick Check"
+  short_description: "Check Sifututor workflow health"
+  default_prompt: "Use $quick-check to confirm Sifututor workflow parity is healthy."
+
+policy:
+  allow_implicit_invocation: true

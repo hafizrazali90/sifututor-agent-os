@@ -1,0 +1,20 @@
+{
+  "name": "sifututor-local",
+  "interface": {
+    "displayName": "Sifututor Local"
+  },
+  "plugins": [
+    {
+      "name": "sifututor-workflow",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sifututor-workflow"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

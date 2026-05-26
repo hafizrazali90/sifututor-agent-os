@@ -24,6 +24,14 @@ scripts/*
 .agents/*
 !.agents/skills/
 !.agents/skills/**
+!.agents/plugins/
+!.agents/plugins/**
+
+# Track private local Codex plugin scaffolds.
+!plugins/
+plugins/*
+!plugins/sifututor-workflow/
+!plugins/sifututor-workflow/**
 
 # Track repo-local Codex hook configuration.
 !.codex/

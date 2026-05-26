@@ -16,6 +16,7 @@ Use these when the user asks for:
 - context snapshot before switching or compaction: [snapshot.md](snapshot.md)
 - bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)
 - code or workflow review: [review.md](review.md)
+- quick workflow health check: [quick-check.md](quick-check.md)
 - switching between Claude and Codex: [switching-claude-codex.md](switching-claude-codex.md)
 - checking workspace parity: [quick-check.md](quick-check.md)
 - reviewing current active tasks: [active-tasks.md](active-tasks.md)
@@ -46,6 +47,8 @@ Use these when the user asks for:
 | Codex | `$diagnose` | [diagnose.md](diagnose.md) |
 | Claude Code | `/review` | [review.md](review.md) |
 | Codex | `$review` | [review.md](review.md) |
+| Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
+| Codex | `$quick-check` | [quick-check.md](quick-check.md) |
 
 ## Codex Hook Layer
 
@@ -79,6 +82,7 @@ before Codex answers.
 | verify, run checks, prove it works, Gate 2A | `$verify` |
 | QA, smoke, regression, visual/manual check | `$qa` |
 | review, audit, pre-commit risk check | `$review` |
+| quick check, health check, workflow doctor | `$quick-check` |
 | commit, stage, prepare commit | `$commit` |
 | save session, wrap up, finish session | `$save-session` |
 | handoff to Claude/Codex/human | `$handoff` |
@@ -88,7 +92,7 @@ before Codex answers.
 The complete implementation path for normal coding work is:
 
 ```text
-$task-router -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
+$quick-check -> $task-router -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
 ```
 
 Commit, push, merge, deploy, and PR actions still require explicit

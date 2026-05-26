@@ -2,15 +2,13 @@
 
 Shared guardrail scripts for Claude, Codex, and any other coding agent.
 
-These scripts exist because Claude hooks and Codex hooks do not currently have
-identical, verified behavior on this machine. Run them explicitly before commit
-or any risky change.
+These scripts are the portable safety layer underneath Claude hooks, Codex
+hooks, and manual workflows. Run them explicitly before commit or any risky
+change.
 
-As of `codex-cli 0.130.0`, MCP parity is verified, but `PreToolUse` hook tests
-in `codex exec` did not fire with either inline TOML or `hooks.json` test
-configuration, including after a VS Code restart on 2026-05-26. Treat native
-Codex hooks as unverified until tested in the VS Code extension or interactive
-CLI.
+Codex hook scripts have been direct-tested with sample hook payloads in this
+workspace. Codex may still require `/hooks` trust review before project-local
+hooks run in a new UI/CLI session.
 
 ## Checks
 
@@ -26,3 +24,12 @@ Runs:
 
 These checks are intentionally conservative. A failing check means stop and ask
 the user or run the project-specific Claude workflow step.
+
+## Doctor
+
+```bash
+scripts/agent-checks/workflow-doctor.sh
+```
+
+Checks all ten projects, Codex skills, hook scripts, active task JSON, and
+Claude parent `additionalDirectories`.

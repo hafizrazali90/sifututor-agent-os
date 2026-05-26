@@ -1,0 +1,33 @@
+{
+  "name": "sifututor-workflow",
+  "version": "0.1.0",
+  "description": "Sifututor Claude/Codex workflow parity helpers.",
+  "author": {
+    "name": "Sifututor",
+    "email": "hafizrazali90@users.noreply.github.com",
+    "url": "https://github.com/hafizrazali90/sifututor-ai-workspace"
+  },
+  "homepage": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+  "repository": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+  "license": "Private",
+  "keywords": ["sifututor", "workflow", "codex", "claude"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Sifututor Workflow",
+    "shortDescription": "Claude/Codex workflow parity for Sifututor",
+    "longDescription": "Provides a portable package entry point for Sifututor workflow skills, hooks, guards, and session-saving conventions.",
+    "developerName": "Sifututor",
+    "category": "Productivity",
+    "capabilities": ["Workflow", "Review", "Guardrails"],
+    "websiteURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+    "privacyPolicyURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+    "termsOfServiceURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+    "defaultPrompt": [
+      "Run $quick-check before starting Sifututor work.",
+      "Use the Sifututor workflow dispatcher for this task.",
+      "Save this Sifututor session."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

@@ -1,54 +1,48 @@
-# Workspace Parity Quick Check
+# Quick Check Playbook
 
-Use this before trusting a Claude/Codex switch, before a commit wave, or after
-editing workflow files.
+Use this at the start of a Codex or Claude session when you want to confirm the
+workflow layer is healthy before real work starts.
 
-## Baseline Matrix
+## What It Checks
 
-```bash
-for d in sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub team-inbox finch-inbox; do
-  printf '%s ' "$d"
-  test -f "$d/AGENTS.md" && printf 'AGENTS=yes ' || printf 'AGENTS=no '
-  test -f "$d/.claude/tasks/active.json" && printf 'tasks=yes ' || printf 'tasks=no '
-  test -d "$d/.claude/hooks" && printf 'hooks=yes\n' || printf 'hooks=no\n'
-done
-```
+- root git status
+- active project/task state
+- shared guard scripts
+- Codex skill visibility
+- Codex hook config presence
+- Claude parent `additionalDirectories`
+- all-project workflow baseline
 
-Expected result: every project prints `AGENTS=yes tasks=yes hooks=yes`.
+## Command
 
-## Guard All Projects
-
-```bash
-for d in sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub team-inbox finch-inbox; do
-  printf '\n== %s ==\n' "$d"
-  (cd "$d" && ../scripts/agent-checks/pre-commit-guard.sh)
-done
-```
-
-Expected result:
-
-- Branch name is valid.
-- Sensitive paths are not staged.
-- Active task file is found or correctly absent.
-- Any active task reports its next step.
-
-## Validate Workflow Files
+From the umbrella root:
 
 ```bash
-find . -path '*/.claude/tasks/active.json' -o -path '*/.claude/settings.json' |
-  sort |
-  xargs jq . >/dev/null
+scripts/agent-checks/workflow-doctor.sh
 ```
 
-```bash
-find . -path '*/.claude/hooks/*.py' -print0 |
-  xargs -0 python3 -m py_compile
+## Output Shape
+
+```text
+QUICK CHECK - PASS | FAIL | PARTIAL
+
+Doctor:
+- <workflow-doctor result>
+
+Active work:
+- <project/task summary>
+
+Codex:
+- <skills/hooks/trust status>
+
+Claude:
+- <additionalDirectories/session config status>
+
+Next:
+- <safe next action>
 ```
 
-## Stale Text Scan
+## If It Fails
 
-```bash
-rg -n 'Workflow conventions are not yet codified|falls through to the global generic|Source of truth read order: `CLAUDE.md|Workflow skills are NOT yet codified|no `\\.claude/` config yet' -S .
-```
-
-Expected result: no matches.
+Do not start implementation until you understand the failure. Fix missing
+workflow files, invalid JSON, broken hook scripts, or guard failures first.
