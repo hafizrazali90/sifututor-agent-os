@@ -104,6 +104,18 @@ For non-trivial tasks:
 
 Do not store secrets, credentials, raw tokens, or ephemeral state.
 
+## Plane Mission Board
+
+Plane is Hafiz's human mission board. For non-trivial work, agents should check
+or maintain the relevant Plane card so Hafiz can see the goal, sub-goals,
+current step, next action, owner, blockers, and evidence without reading the
+chat transcript.
+
+Follow `docs/agent-playbooks/plane.md` before creating or updating Plane items.
+Agents may auto-update factual progress, but must ask Hafiz before changing
+scope, priority, owner, roadmap direction, production state, or creating major
+new work.
+
 ## Project-Specific Rules
 
 Before editing code in a sub-project, read that project's `AGENTS.md` if it
@@ -140,6 +152,7 @@ For Claude-to-Codex workflow parity, use the shared playbooks in
 | Start or route a task | `docs/agent-playbooks/task-router.md` |
 | Run Gate 2A / verify | `docs/agent-playbooks/verify.md` |
 | Run QA or regression checks | `docs/agent-playbooks/qa.md` |
+| Maintain Plane mission board | `docs/agent-playbooks/plane.md` |
 | Prepare a commit | `docs/agent-playbooks/commit.md` |
 | Save/handoff session knowledge | `docs/agent-playbooks/save-session.md` |
 

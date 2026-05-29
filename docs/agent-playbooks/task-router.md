@@ -9,6 +9,8 @@ classify, resume, or create work.
 2. Read the project `AGENTS.md`; if absent, read project `CLAUDE.md`.
 3. Search Koda memory for the task topic when available.
 4. Check workflow state before editing.
+5. Check the relevant Plane mission-board item for non-trivial work. If no card
+   exists for meaningful work, ask Hafiz before creating a major new one.
 
 ## State-File Projects
 
@@ -17,8 +19,9 @@ Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
 
 1. Read `.claude/tasks/active.json`.
 2. If `activeTask` is set, read the referenced `taskFile`.
-3. Resume the active task unless the user explicitly starts a new task.
-4. Report the current route and next unblocked step before editing.
+3. Compare the active task to the relevant Plane card when one exists.
+4. Resume the active task unless the user explicitly starts a new task.
+5. Report the current route and next unblocked step before editing.
 
 Common route shapes:
 

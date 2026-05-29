@@ -17,10 +17,11 @@ Do not end a meaningful session with only "done." End it with:
 1. what changed
 2. what was learned
 3. what was saved to Koda
-4. what task is still active
-5. what remains next
+4. what Plane says the current goal, status, and next action are
+5. what task is still active
+6. what remains next
 
-If those five things are clear, the session is saved well.
+If those six things are clear, the session is saved well.
 
 ## Choose A Save Level
 
@@ -157,6 +158,17 @@ Mention paired `lls-frontend` work when API contracts changed. Treat old
 Superpowers specs as reference only unless Hafiz explicitly asks to preserve
 them as planning artifacts.
 
+## Plane Mission Board
+
+For non-trivial work, update or report the relevant Plane card before ending the
+session. Plane should show the goal, sub-goals, current step, next action,
+owner, blockers, and evidence links so Hafiz can resume without reading the
+chat transcript.
+
+Auto-update factual progress. Ask Hafiz before changing scope, priority, owner,
+roadmap direction, production state, or creating major new work. Follow
+`docs/agent-playbooks/plane.md`.
+
 ## If Koda Fails
 
 Do not pretend the session is fully saved.
@@ -199,6 +211,7 @@ SESSION SAVED - <project or workspace>
 
 Koda: <stored/updated/skipped/failed> <memory ids if available>
 Active task: <id + route + next step | none>
+Plane: <card id/status/next action | none/skipped>
 Guards: <passed/failed/not run>
 Commits/pushes: <summary or none>
 
@@ -219,6 +232,7 @@ For Quick Save, a shorter version is fine:
 ```text
 SESSION SAVED - <project>
 Koda: skipped, no durable lesson
+Plane: <card id/status/next action | none/skipped>
 Next: <next step or none>
 ```
 
@@ -232,7 +246,8 @@ Before Codex gives the final answer for meaningful work:
    lessons.
 4. Read `.claude/tasks/active.json` when present and report the active task
    state.
-5. Run the shared guard when code or workflow files changed.
-6. Report what changed, why, tests/guards run, files or commits touched, and
+5. Update or report the relevant Plane card for non-trivial work.
+6. Run the shared guard when code or workflow files changed.
+7. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-7. If Koda is unavailable, say so and use the fallback path.
+8. If Koda is unavailable, say so and use the fallback path.

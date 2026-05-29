@@ -17,6 +17,7 @@ Use these when the user asks for:
 - bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)
 - code or workflow review: [review.md](review.md)
 - quick workflow health check: [quick-check.md](quick-check.md)
+- Plane mission-board updates: [plane.md](plane.md)
 - switching between Claude and Codex: [switching-claude-codex.md](switching-claude-codex.md)
 - checking workspace parity: [quick-check.md](quick-check.md)
 - reviewing current active tasks: [active-tasks.md](active-tasks.md)
@@ -49,6 +50,7 @@ Use these when the user asks for:
 | Codex | `$review` | [review.md](review.md) |
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
+| Claude/Codex | Plane create/update/review | [plane.md](plane.md) |
 
 ## Codex Hook Layer
 
@@ -126,8 +128,9 @@ after the config changes. That is expected for local hook safety.
 4. Check workflow state:
    - state-file projects: read `.claude/tasks/active.json`
    - if any active project is missing task state, treat it as workflow drift to fix
-5. Use the specific playbook for the workflow action.
-6. At the end of meaningful work, use Claude `/save-session`, Codex
+5. Check or maintain the relevant Plane mission-board item for non-trivial work.
+6. Use the specific playbook for the workflow action.
+7. At the end of meaningful work, use Claude `/save-session`, Codex
    `$save-session`, or the natural-language request "save session"; all three
    follow [save-session.md](save-session.md).
 
