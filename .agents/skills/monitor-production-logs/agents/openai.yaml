@@ -1,0 +1,7 @@
+interface:
+  display_name: "Monitor Production Logs"
+  short_description: "Check Sifututor production logs and monitoring"
+  default_prompt: "Use $monitor-production-logs to check production logs, Sentry, BetterStack, and post-deploy regressions."
+
+policy:
+  allow_implicit_invocation: true

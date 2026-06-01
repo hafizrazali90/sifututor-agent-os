@@ -19,6 +19,18 @@ quality evidence.
 - `sifu-tutor`: use Pest for backend behavior, Playwright smoke for UI or
   browser-visible bugfixes, and manual QA references in `docs/` when the module
   has a checklist. Financial modules need human review before commit.
+- Agents must not hand off checks that they can safely run themselves. Before
+  asking Hafiz, staff, or another human to verify, exhaust the available
+  non-destructive evidence channels in this order: automated tests, Playwright
+  browser smoke, API/curl smoke, server-side read-only inspection, and screenshot
+  capture. Human QA is for judgment, sign-off, credentials/data that are truly
+  unavailable, or destructive/business decisions; it is not a substitute for
+  agent-run evidence.
+- After any staging or production deploy, smoke-test the actual changed
+  user-facing functionality, not only generic route availability. Route-only
+  checks are acceptable only when a safe login, test account, or representative
+  data is unavailable; report that limitation clearly and state the strongest
+  functional evidence gathered instead.
 - `ripple-suite`: use Playwright smoke and the route tier from
   `CODEX-WORKFLOW.md`; protect SIMS read-only behavior and Neon writes.
 - `sifututor_tutor` and `sifututor_parent`: use Jest/unit tests for logic,
@@ -39,6 +51,14 @@ For bugfix and hotfix tasks, state:
 If no automated regression test is feasible, say why and provide the strongest
 manual or browser evidence available. Do not pretend manual evidence is the same
 as an automated regression.
+
+## Handoff Bar
+
+Do not write "please manually check" or equivalent as the next step until you
+have tried the checks an agent can run in the current environment. If you cannot
+run Playwright, API, CLI, or server-side evidence, state the exact blocker
+(`missing credential`, `no representative data`, `destructive action required`,
+or `tooling unavailable`) and what evidence you gathered instead.
 
 ## QA Report
 

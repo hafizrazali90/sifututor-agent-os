@@ -22,12 +22,31 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecyc
 
 | Hook | Purpose |
 | --- | --- |
-| `SessionStart` | Adds startup project/task context |
+| `SessionStart` | Adds startup project/task context and verifies Koda read/write health |
 | `UserPromptSubmit` | Dispatches the right Codex workflow skill and injects Koda context when safe |
 | `PreToolUse` | Blocks unsafe Bash patterns and runs the shared guard before commit |
 | `PostToolUse` | Logs failed Bash commands to `~/.codex-friction.log` |
 | `PreCompact` | Reminds Codex to snapshot or save |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
+
+## Koda Startup Gate
+
+`SessionStart` must verify Koda before normal work:
+
+- `KODA_API_KEY` is present, without printing the value
+- Codex `memory` MCP points to `http://178.105.120.34:3848/mcp`
+- `bearer_token_env_var` is `KODA_API_KEY`
+- Koda MCP initializes and returns a session id
+- required tools exist: `memory_search`, `memory_store`, `memory_context`, `session_start`
+- read check passes via `memory_search`
+- write check passes by storing or updating a small `koda-health` sentinel memory
+
+If Koda fails, Codex must fix Koda before non-trivial Sifututor work. Check it
+manually with:
+
+```bash
+python3 scripts/agent-checks/codex-lifecycle-hook.py --check-koda
+```
 
 ## What Not To Trust
 

@@ -41,6 +41,11 @@ plugins/*
 # Always ignore local/system files even if future patterns change.
 .DS_Store
 .claude/
+!.claude/
+.claude/*
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/monitor-production-logs.md
 .mcp.json
 .pytest_cache/
 live/

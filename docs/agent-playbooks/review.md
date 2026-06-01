@@ -14,7 +14,10 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 3. Check project rules in `AGENTS.md` and relevant `CLAUDE.md`.
 4. Look for broken contracts, missing tests, unsafe paths, and unverified
    critical behavior.
-5. Report findings by severity with file and line references where possible.
+5. Treat "human should check this" as a finding unless Playwright, API, CLI, or
+   server-side evidence is genuinely unavailable or unsafe. The review should
+   push the agent to gather its own non-destructive evidence first.
+6. Report findings by severity with file and line references where possible.
 
 ## Output Shape
 

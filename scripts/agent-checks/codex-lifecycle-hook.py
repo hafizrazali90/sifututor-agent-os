@@ -12,8 +12,11 @@ import urllib.request
 
 
 WORKSPACE = Path("/Users/hafizrazali/Projects/Sifututor")
+CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "http://178.105.120.34:3848/mcp"
 KODA_TIMEOUT = 2
+KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
+KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
 PROJECTS = {
     "sifu-tutor",
     "ripple-suite",
@@ -174,16 +177,37 @@ def parse_koda_memories(body: str, content_type: str) -> list[dict]:
         return []
 
 
-def koda_context(prompt: str, project: str) -> str:
-    api_key = os.environ.get("KODA_API_KEY", "")
-    if not api_key or len(prompt.strip()) < 10:
-        return ""
+def koda_error(body: str, content_type: str) -> str:
+    try:
+        response = json.loads(unwrap_sse(body, content_type))
+        error = response.get("error", {})
+        if isinstance(error, dict):
+            message = error.get("message")
+            return str(message) if message else ""
+    except Exception:
+        pass
+    return ""
 
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
-        "Authorization": f"Bearer {api_key}",
-    }
+
+def koda_headers() -> tuple[dict, str]:
+    api_key = os.environ.get("KODA_API_KEY", "")
+    if not api_key:
+        return {}, "KODA_API_KEY missing"
+
+    return (
+        {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": f"Bearer {api_key}",
+        },
+        "",
+    )
+
+
+def koda_initialize(client_name: str = "codex-lifecycle-hook") -> tuple[dict, str]:
+    headers, header_error = koda_headers()
+    if header_error:
+        return {}, header_error
 
     init_body, _init_type, session_id = post_koda(
         {
@@ -192,16 +216,207 @@ def koda_context(prompt: str, project: str) -> str:
             "params": {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {},
-                "clientInfo": {"name": "codex-lifecycle-hook", "version": "1.0"},
+                "clientInfo": {"name": client_name, "version": "1.0"},
             },
             "id": 1,
         },
         headers,
     )
     if not init_body or not session_id:
-        return ""
+        return {}, "Koda MCP initialize failed or did not return a session id"
 
     post_koda({"jsonrpc": "2.0", "method": "notifications/initialized"}, headers, session_id)
+    return {"headers": headers, "session_id": session_id}, ""
+
+
+def koda_tool_call(session: dict, name: str, arguments: dict | None = None, request_id: int = 2) -> tuple[dict, str]:
+    body, content_type, _sid = post_koda(
+        {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {"name": name, "arguments": arguments or {}},
+            "id": request_id,
+        },
+        session["headers"],
+        session["session_id"],
+    )
+    if not body:
+        return {}, f"Koda tool call failed: {name}"
+
+    try:
+        response = json.loads(unwrap_sse(body, content_type))
+    except Exception as exc:  # noqa: BLE001 - hooks report a simple failure.
+        return {}, f"Koda tool call returned malformed response for {name}: {exc}"
+
+    if response.get("error"):
+        message = koda_error(body, content_type) or "unknown MCP error"
+        return {}, f"Koda tool call error for {name}: {message}"
+
+    return response, ""
+
+
+def parse_tool_content(response: dict) -> object:
+    content = response.get("result", {}).get("content", [])
+    text = ""
+    for item in content:
+        if isinstance(item, dict) and item.get("type") == "text":
+            text = item.get("text") or ""
+            break
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except Exception:
+        return text
+
+
+def codex_memory_config_status() -> tuple[bool, str]:
+    if not CODEX_CONFIG.exists():
+        return False, f"Codex config not found at {CODEX_CONFIG}"
+
+    try:
+        content = CODEX_CONFIG.read_text(encoding="utf-8")
+    except Exception as exc:  # noqa: BLE001
+        return False, f"Could not read Codex config: {exc}"
+
+    memory_block = re.search(r"(?ms)^\[mcp_servers\.memory\]\s*(.*?)(?=^\[|\Z)", content)
+    if not memory_block:
+        return False, "Codex config has no [mcp_servers.memory] block"
+
+    block = memory_block.group(1)
+    url_match = re.search(r'(?m)^\s*url\s*=\s*"([^"]+)"', block)
+    token_match = re.search(r'(?m)^\s*bearer_token_env_var\s*=\s*"([^"]+)"', block)
+    url = url_match.group(1) if url_match else ""
+    token_env = token_match.group(1) if token_match else ""
+
+    if url != KODA_URL:
+        return False, f"Codex memory MCP URL is {url or 'missing'}, expected {KODA_URL}"
+    if token_env != "KODA_API_KEY":
+        return False, f"Codex memory MCP bearer_token_env_var is {token_env or 'missing'}, expected KODA_API_KEY"
+
+    return True, "Codex memory MCP config is direct HTTP with KODA_API_KEY"
+
+
+def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
+    details: list[str] = []
+
+    config_ok, config_message = codex_memory_config_status()
+    if not config_ok:
+        return False, [config_message]
+    details.append(config_message)
+
+    session, init_error = koda_initialize("codex-koda-health-check")
+    if init_error:
+        return False, details + [init_error]
+    details.append("Koda MCP initialize returned a session id")
+
+    body, content_type, _sid = post_koda(
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+        session["headers"],
+        session["session_id"],
+    )
+    if not body:
+        return False, details + ["Koda tools/list failed"]
+    try:
+        tools_response = json.loads(unwrap_sse(body, content_type))
+        tool_names = {
+            tool.get("name")
+            for tool in tools_response.get("result", {}).get("tools", [])
+            if isinstance(tool, dict)
+        }
+    except Exception as exc:  # noqa: BLE001
+        return False, details + [f"Koda tools/list returned malformed response: {exc}"]
+
+    missing_tools = sorted(KODA_REQUIRED_TOOLS - tool_names)
+    if missing_tools:
+        return False, details + [f"Koda missing required tools: {', '.join(missing_tools)}"]
+    details.append("Koda required tools are available")
+
+    search_response, search_error = koda_tool_call(
+        session,
+        "memory_search",
+        {
+            "query": "Codex Koda startup health check",
+            "tags": KODA_HEALTH_TAGS,
+            "limit": 5,
+        },
+        request_id=3,
+    )
+    if search_error:
+        return False, details + [search_error]
+    search_payload = parse_tool_content(search_response)
+    if not isinstance(search_payload, list):
+        return False, details + ["Koda memory_search did not return a memory list"]
+    details.append("Koda memory_search read check passed")
+
+    if not write:
+        return True, details
+
+    health_memory = None
+    for memory in search_payload:
+        if not isinstance(memory, dict):
+            continue
+        tags = set(memory.get("tags") or [])
+        content = memory.get("content") or ""
+        if {"sifututor", "codex", "koda-health"}.issubset(tags) or "Codex Koda startup health check" in content:
+            health_memory = memory
+            break
+
+    if health_memory and health_memory.get("id") and "memory_update" in tool_names:
+        write_response, write_error = koda_tool_call(
+            session,
+            "memory_update",
+            {
+                "id": health_memory["id"],
+                "content": "Codex Koda startup health check: direct HTTP MCP read/write verified for Sifututor sessions.",
+                "why": "Keeps a deduplicated sentinel proving Codex can write to Koda during session startup health checks.",
+                "tags": KODA_HEALTH_TAGS,
+                "source": "auto-captured",
+            },
+            request_id=4,
+        )
+        write_action = f"updated {health_memory['id']}"
+    else:
+        write_response, write_error = koda_tool_call(
+            session,
+            "memory_store",
+            {
+                "content": "Codex Koda startup health check: direct HTTP MCP read/write verified for Sifututor sessions.",
+                "category": "fact",
+                "why": "Sentinel memory proving Codex can write to Koda during startup health checks.",
+                "tags": KODA_HEALTH_TAGS,
+                "source": "auto-captured",
+                "project": "Sifututor",
+            },
+            request_id=4,
+        )
+        write_action = "stored health sentinel"
+
+    if write_error:
+        return False, details + [write_error]
+    write_payload = parse_tool_content(write_response)
+    if write_payload is None:
+        return False, details + ["Koda write check returned no content"]
+    details.append(f"Koda write check passed ({write_action})")
+
+    return True, details
+
+
+def koda_repair_text() -> str:
+    return (
+        "Repair command: `codex mcp remove memory; "
+        "codex mcp add memory --url http://178.105.120.34:3848/mcp "
+        "--bearer-token-env-var KODA_API_KEY`, then start a fresh Codex session."
+    )
+
+
+def koda_context(prompt: str, project: str) -> str:
+    if len(prompt.strip()) < 10:
+        return ""
+
+    session, init_error = koda_initialize("codex-lifecycle-hook")
+    if init_error:
+        return ""
 
     prompt_project = detect_project_from_prompt(prompt)
     tag_project = prompt_project or (project if project != "Sifututor" else "")
@@ -222,8 +437,8 @@ def koda_context(prompt: str, project: str) -> str:
                 "params": {"name": "memory_search", "arguments": arguments},
                 "id": idx,
             },
-            headers,
-            session_id,
+            session["headers"],
+            session["session_id"],
         )
         for memory in parse_koda_memories(body, content_type):
             if not isinstance(memory, dict):
@@ -413,6 +628,16 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
 
 
 def main() -> int:
+    if "--check-koda" in sys.argv:
+        ok, details = koda_health_check(write=True)
+        status = "PASS" if ok else "FAIL"
+        print(f"KODA {status}")
+        for detail in details:
+            print(f"- {detail}")
+        if not ok:
+            print(f"- {koda_repair_text()}")
+        return 0 if ok else 1
+
     payload = read_payload()
     event = payload.get("hook_event_name") or payload.get("hookEventName") or ""
     cwd = payload.get("cwd") or os.getcwd()
@@ -421,6 +646,19 @@ def main() -> int:
 
     if event == "SessionStart":
         source = payload.get("source") or "startup"
+        koda_ok, koda_details = koda_health_check(write=True)
+        if koda_ok:
+            koda_lines = [
+                "Koda: healthy, read/write verified.",
+                *[f"  - {detail}" for detail in koda_details],
+            ]
+        else:
+            koda_lines = [
+                "Koda: FAILED.",
+                *[f"  - {detail}" for detail in koda_details],
+                f"  - {koda_repair_text()}",
+                "  - Fix Koda before doing non-trivial Sifututor work. Do not rely on memory fallback for corrections, saves, or task-start context.",
+            ]
         emit_context(
             "SessionStart",
             "\n".join(
@@ -428,6 +666,8 @@ def main() -> int:
                     f"Sifututor Codex session started via {source}.",
                     f"Project detected: {project}.",
                     active_summary,
+                    *koda_lines,
+                    "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
                     "Available skills: $task-router, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $diagnose, $review.",
                     "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session.",
@@ -444,7 +684,12 @@ def main() -> int:
         action_text = "\n".join(f"- {action}" for action in actions)
         memory_skills = {"$task-router", "$diagnose", "$verify", "$qa", "$review", "$commit"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""
-        memory_section = memory_text or "Relevant Koda memories: none injected or Koda unavailable; search manually if the task depends on prior decisions."
+        memory_section = memory_text or "\n".join(
+            [
+                "Relevant Koda memories: none injected.",
+                "Koda startup health should have caught this. Before non-trivial work, run `python3 scripts/agent-checks/codex-lifecycle-hook.py --check-koda` from the umbrella root and repair Koda if it fails.",
+            ]
+        )
         emit_context(
             "UserPromptSubmit",
             "\n".join(
@@ -457,6 +702,7 @@ def main() -> int:
                     "Required actions:",
                     action_text,
                     memory_section,
+                    "Communication default: start with a plain-language explanation and practical meaning, then provide technical file/test/workflow detail.",
                     "Do not bypass the selected skill. Read its SKILL.md and the linked docs/agent-playbooks/ file before acting.",
                     "Critical lanes require Phase A diagnosis before implementation: auth, payments, invoices, commissions, migrations, deployment, and mobile API contracts.",
                 ]

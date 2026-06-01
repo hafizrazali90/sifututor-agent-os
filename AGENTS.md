@@ -36,7 +36,12 @@ Use it only as read-only reference.
 
 ## Universal Safety Rules
 
-- Never commit `.env*`, credentials, API keys, tokens, or production secrets.
+- Never read or modify repository `.env*` files, production secrets, or files under
+  `live/`.
+- Agents may read explicitly approved, scoped credential files outside repositories
+  when needed for the task, such as read-only agent access files under
+  `~/.config/sifututor/`. Do not reveal, commit, copy into the repo, or log
+  secret values.
 - Never push, merge, deploy, or open a PR without explicit instruction in the current session.
 - Never bypass hooks or verification with `--no-verify` or equivalent flags.
 - Never make broad cleanup or adjacent refactors unless explicitly requested.
@@ -70,8 +75,20 @@ Use it only as read-only reference.
   playbook requires an exact audit trail.
 - If work is incomplete, explain the practical reason and next move in normal
   words.
+- Keep formal labels inside commits, QA notes, save-session reports, and agent
+  handoffs when they are useful for traceability.
 
 ## Branches And Commits
+
+## GitHub Issue Automation
+
+For coding work, confirm whether the user provided a GitHub issue number. If no
+issue number is provided, create a GitHub issue automatically before coding
+instead of asking for permission. Use the best available context for the title,
+body, labels, and project fields; prefer conservative defaults when priority,
+severity, or environment is not explicit. Ask Hafiz only if issue creation fails,
+requires credentials that are unavailable, or the task is too ambiguous to title
+safely.
 
 Allowed branch pattern:
 
@@ -180,6 +197,7 @@ For Claude-to-Codex workflow parity, use the shared playbooks in
 | Start or route a task | `docs/agent-playbooks/task-router.md` |
 | Run Gate 2A / verify | `docs/agent-playbooks/verify.md` |
 | Run QA or regression checks | `docs/agent-playbooks/qa.md` |
+| Monitor production logs | `docs/agent-playbooks/monitor-production-logs.md` |
 | Maintain Plane mission board | `docs/agent-playbooks/plane.md` |
 | Prepare a commit | `docs/agent-playbooks/commit.md` |
 | Save/handoff session knowledge | `docs/agent-playbooks/save-session.md` |

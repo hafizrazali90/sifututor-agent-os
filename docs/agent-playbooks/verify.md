@@ -10,6 +10,10 @@ works before QA or commit.
 - If baseline failures exist before your change, report them separately from
   failures caused by your change.
 - A failing verify blocks commit unless the user explicitly changes the scope.
+- Do not delegate verification that the agent can safely perform. For UI-visible
+  changes, use Playwright or an equivalent browser smoke before asking for human
+  QA. For deployed changes, prove the changed behavior against the deployed
+  environment when safe credentials and representative data are available.
 
 ## Project Command Matrix
 
@@ -52,3 +56,5 @@ Stop and report before continuing when:
 - command failure is unrelated but blocks trust in the result
 - critical lane verification would require destructive data changes
 - financial or mobile API behavior changed and no reviewer has approved it
+- the only remaining check needs human judgment/sign-off; include the agent-run
+  evidence already completed and the exact reason the rest cannot be automated

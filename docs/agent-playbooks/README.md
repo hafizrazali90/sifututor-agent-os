@@ -64,12 +64,21 @@ It registers these hooks:
 
 | Hook | Purpose |
 | --- | --- |
-| `SessionStart` | Adds startup context: detected project, active task summary, and available workflow skills |
+| `SessionStart` | Adds startup context and verifies Koda read/write health before non-trivial work |
 | `UserPromptSubmit` | Adds a Koda/task-state reminder for non-trivial prompts |
 | `PreToolUse` | Checks Bash guardrails before risky commands |
 | `PostToolUse` | Logs failed Bash commands |
 | `PreCompact` | Reminds Codex to snapshot/save before relying on compacted context |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
+
+`SessionStart` is a Koda startup gate. It checks direct HTTP MCP config,
+initialization, required memory tools, `memory_search`, and a small write
+sentinel. If it reports `Koda: FAILED`, Codex must repair Koda before doing
+non-trivial work:
+
+```bash
+python3 scripts/agent-checks/codex-lifecycle-hook.py --check-koda
+```
 
 ## Codex Automatic Workflow Dispatch
 
