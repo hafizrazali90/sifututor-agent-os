@@ -97,6 +97,54 @@ The complete implementation path for normal coding work is:
 $quick-check -> $task-router -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
 ```
 
+## Plain-Language Reporting
+
+Every workflow report should teach the practical meaning before the technical
+details. Start with what Hafiz needs to understand in everyday terms, especially
+for bugs, API behavior, deployment risk, or test failures. Then add the exact
+files, commands, evidence, and workflow labels needed for traceability.
+
+Good default order:
+
+1. What this means in plain language.
+2. Why it happened or why the change matters.
+3. What changed or what should change.
+4. How it was checked.
+5. Any remaining decision or risk.
+
+## Mandatory Next-Step Close-Out
+
+Do not end meaningful work by only saying it is done. Hafiz should not need to
+ask "what next?", "are we done?", or "can we close the session?" after every
+step.
+
+After each implementation, diagnosis, verification, QA, review, commit prep, or
+session save, include this short plain-language close-out:
+
+```text
+Status:
+<done / partly done / blocked>
+
+Meaning:
+<what this changes for the app, customer, team, or workflow>
+
+Checked:
+<tests, commands, review evidence, or why it was not checked>
+
+Recommended next:
+<the single next action the agent recommends>
+
+Decision needed:
+<yes/no; if yes, the exact decision Hafiz needs to make>
+```
+
+Before closing a session, also answer:
+
+- Are all planned steps complete?
+- Did tests, guards, or reviews pass?
+- Is anything still unverified?
+- Should the next move be continue, QA, commit, save-session, or close?
+
 Commit, push, merge, deploy, and PR actions still require explicit
 current-session approval. The automation chooses the workflow, not the business
 decision.

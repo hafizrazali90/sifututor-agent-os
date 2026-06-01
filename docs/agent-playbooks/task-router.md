@@ -22,6 +22,8 @@ Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
 3. Compare the active task to the relevant Plane card when one exists.
 4. Resume the active task unless the user explicitly starts a new task.
 5. Report the current route and next unblocked step before editing.
+6. At the end of each completed step, state the recommended next unblocked
+   action so Hafiz does not have to ask what should happen next.
 
 Common route shapes:
 

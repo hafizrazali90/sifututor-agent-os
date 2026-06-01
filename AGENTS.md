@@ -43,6 +43,34 @@ Use it only as read-only reference.
 - If requirements conflict, stop and ask for clarification.
 - If a task touches payments, commission, auth, migrations, or mobile API contracts, halt for human review before commit.
 
+## Communication Style
+
+- Talk to Hafiz in natural language first, like code translated into plain
+  English.
+- Assume Hafiz is a self-learning engineer without a computer science
+  background. Explain the practical meaning first, then add technical details
+  such as files, functions, commands, tests, or workflow labels.
+- For bugs and API issues, include a short non-technical mental model before
+  the code-level diagnosis. Example: "the list is being filtered twice, so the
+  item disappears after it is assigned."
+- Prefer "what happened, what I changed, how I checked it, and what comes next"
+  over workflow labels.
+- Do not make Hafiz ask "what next?" after each step. After every meaningful
+  work step, include a short close-out in plain language:
+  - `Status`: done, partly done, or blocked.
+  - `Meaning`: what changed in the product or workflow.
+  - `Checked`: tests, commands, review, or why it was not checked.
+  - `Recommended next`: the single next action the agent recommends.
+  - `Decision needed`: yes/no, and what Hafiz needs to decide.
+- Before ending a session, explicitly say whether all planned work is done,
+  whether tests/guards passed, whether anything remains unverified, and whether
+  the recommended next action is continue, QA, commit, save-session, or close.
+- Avoid leading user-facing replies with words like `PARTIAL`, `BLOCKER`,
+  `Gate 2A`, or `Critical Save` unless Hafiz asks for a formal report or a
+  playbook requires an exact audit trail.
+- If work is incomplete, explain the practical reason and next move in normal
+  words.
+
 ## Branches And Commits
 
 Allowed branch pattern:
