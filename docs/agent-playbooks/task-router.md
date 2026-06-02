@@ -9,7 +9,16 @@ classify, resume, or create work.
 2. Read the project `AGENTS.md`; if absent, read project `CLAUDE.md`.
 3. Search Koda memory for the task topic when available.
 4. Check workflow state before editing.
-5. Check the relevant Plane mission-board item for non-trivial work. If no card
+5. If the project has `TESTING.md` and the task may change user-facing
+   behavior, read it and identify the affected feature row before
+   implementation. Use [test-coverage.md](test-coverage.md).
+6. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+   staff-reported operational issues, check Microsoft Teams Planner
+   `Development & Support > Task Management Board` as intake/context before
+   deciding scope. Treat Planner as staff-reported issue context, not the
+   engineering source of truth. Do not modify Planner unless Hafiz explicitly
+   asks in the current session.
+7. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
 
 ## State-File Projects
@@ -35,6 +44,24 @@ Common route shapes:
 | `small-change` | Copy, label, config, minor UI | describe -> fix -> verify -> qa -> commit |
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
+
+## Staff Issue Intake
+
+Use Microsoft Teams Planner `Development & Support > Task Management Board`
+when the task starts from or may relate to internal staff reports about:
+
+- SIMS production behavior in `sifu-tutor`
+- tutor app behavior in `sifututor_tutor`
+- parent app behavior in `sifututor_parent`
+- support tickets, TREQ/TUT references, app reports, operational bugs, or staff
+  complaints about what is happening in SIMS or either app
+
+Planner cards provide the human-reported symptom and support context. Convert
+confirmed engineering work into the normal Sifututor workflow: create or link a
+GitHub issue for coding work, maintain Plane for Hafiz-visible mission status,
+read/update project active task state where applicable, and run the normal
+verify/QA/review path. Keep Planner read-only unless Hafiz explicitly asks for a
+Planner update.
 
 If there is no active task file, do not invent one unless the user asks to start
 a routed task. For simple tasks, state that no active task exists and proceed

@@ -10,6 +10,7 @@ Use these when the user asks for:
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)
 - QA or regression evidence: [qa.md](qa.md)
+- test coverage manifest enforcement: [test-coverage.md](test-coverage.md)
 - staging and committing: [commit.md](commit.md)
 - saving knowledge at the end of work: [save-session.md](save-session.md)
 - handoff to another agent or human: [handoff.md](handoff.md)
@@ -36,6 +37,7 @@ Use these when the user asks for:
 | Codex | `$verify` | [verify.md](verify.md) |
 | Claude Code | `/qa` | [qa.md](qa.md) |
 | Codex | `$qa` | [qa.md](qa.md) |
+| Claude/Codex | TESTING.md coverage check | [test-coverage.md](test-coverage.md) |
 | Claude Code | `/commit` | [commit.md](commit.md) |
 | Codex | `$commit` | [commit.md](commit.md) |
 | Claude Code | `/save-session` | [save-session.md](save-session.md) |
@@ -103,7 +105,7 @@ before Codex answers.
 The complete implementation path for normal coding work is:
 
 ```text
-$quick-check -> $task-router -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
+$quick-check -> $task-router -> TESTING.md check -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
 ```
 
 ## Plain-Language Reporting
@@ -185,9 +187,12 @@ after the config changes. That is expected for local hook safety.
 4. Check workflow state:
    - state-file projects: read `.claude/tasks/active.json`
    - if any active project is missing task state, treat it as workflow drift to fix
-5. Check or maintain the relevant Plane mission-board item for non-trivial work.
-6. Use the specific playbook for the workflow action.
-7. At the end of meaningful work, use Claude `/save-session`, Codex
+5. If the project has `TESTING.md`, read it and apply
+   [test-coverage.md](test-coverage.md) before implementation, verify, QA,
+   review, and commit.
+6. Check or maintain the relevant Plane mission-board item for non-trivial work.
+7. Use the specific playbook for the workflow action.
+8. At the end of meaningful work, use Claude `/save-session`, Codex
    `$save-session`, or the natural-language request "save session"; all three
    follow [save-session.md](save-session.md).
 

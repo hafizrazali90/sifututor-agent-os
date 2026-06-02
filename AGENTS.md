@@ -135,6 +135,44 @@ Quality gates:
 - Gate 3: stop on ambiguity.
 - Gate 4: adversarial pre-push review, never skipped.
 
+## Test Coverage Manifest
+
+Projects may include `TESTING.md` as the feature coverage manifest. When it is
+present, every agent must read it before changing user-facing behavior, identify
+the affected feature row, and keep the row accurate as tests are added or
+changed.
+
+Coverage rules:
+
+- A covered feature must name a real test file that asserts the behavior.
+- A partial feature must say exactly what is still missing.
+- A missing feature must not be treated as safe to ship until a real test is
+  added or Hafiz explicitly accepts the risk for documentation/investigation
+  work only.
+- A user-facing feature must also name human-journey evidence: automated E2E,
+  browser/mobile smoke, screenshot-backed agent QA, or a manual QA checklist
+  with the exact steps and result.
+- If no row matches the changed feature, update `TESTING.md` as part of the
+  work.
+
+Backend, API, or unit tests prove the engine. They do not by themselves prove
+that a staff member, parent, tutor, student, or admin can complete the workflow
+in the real UI. Agents must run non-destructive human-like checks they can run
+themselves before asking Hafiz or staff for manual QA.
+
+Use `docs/agent-playbooks/test-coverage.md` for the full shared workflow. When
+available, run:
+
+```bash
+python3 ../scripts/agent-checks/test-coverage-manifest-check.py --project .
+```
+
+From the umbrella root:
+
+```bash
+python3 scripts/agent-checks/test-coverage-manifest-check.py --project <project>
+```
+
 ## Koda Memory
 
 Koda is the shared memory layer across Claude and Codex.
@@ -160,6 +198,22 @@ Follow `docs/agent-playbooks/plane.md` before creating or updating Plane items.
 Agents may auto-update factual progress, but must ask Hafiz before changing
 scope, priority, owner, roadmap direction, production state, or creating major
 new work.
+
+## Microsoft Teams Planner Intake
+
+The Microsoft Teams Planner board `Development & Support > Task Management
+Board` is the internal staff issue tracker for SIMS (`sifu-tutor`) and both
+mobile apps (`sifututor_tutor`, `sifututor_parent`). Use it as staff-reported
+issue intake and operational context when work involves SIMS production
+behavior, tutor app issues, parent app issues, support tickets, TREQ/TUT
+reports, or staff-reported bugs.
+
+Planner is not the engineering source of truth. After reading a relevant
+Planner card, route confirmed engineering work through the normal workflow:
+GitHub issue for coding work, Plane for Hafiz-visible mission status, active
+task state where the project uses it, and the usual verify/QA/review gates.
+Do not change Planner card state, assignment, priority, or content unless Hafiz
+explicitly asks in the current session.
 
 ## Project-Specific Rules
 

@@ -7,6 +7,9 @@ works before QA or commit.
 
 - Run verification in the project directory, not the umbrella root.
 - Use fresh command output from the current session.
+- If the project has `TESTING.md`, identify the affected feature row and run
+  the manifest check from [test-coverage.md](test-coverage.md) when the shared
+  script is available.
 - If baseline failures exist before your change, report them separately from
   failures caused by your change.
 - A failing verify blocks commit unless the user explicitly changes the scope.
@@ -41,6 +44,7 @@ Commands:
 
 Gate 2A:
 - implementation works: yes/no/partial
+- TESTING.md row checked: yes/no/not applicable
 - baseline failures: none | listed
 - task-caused failures: none | listed
 

@@ -16,6 +16,13 @@ quality evidence.
 
 ## Project Notes
 
+- For projects with `TESTING.md`, QA must state the affected feature row,
+  whether the row is covered/partial/missing, and whether the named test really
+  protects the workflow being changed. Use [test-coverage.md](test-coverage.md).
+- User-facing behavior needs human-journey evidence. Prefer automated E2E
+  first, then agent-run browser/mobile/API smoke with screenshots or response
+  evidence, then manual QA checklist/sign-off only when automation is not safe
+  or feasible.
 - `sifu-tutor`: use Pest for backend behavior, Playwright smoke for UI or
   browser-visible bugfixes, and manual QA references in `docs/` when the module
   has a checklist. Financial modules need human review before commit.
@@ -72,8 +79,15 @@ Automated evidence:
 Manual/browser evidence:
 - <flow checked or not applicable>
 
+Human journey:
+- <automated E2E | agent-run smoke | manual QA checklist | not applicable>
+- <why this is enough, or why stronger evidence was not feasible>
+
 Regression coverage:
 - <covered | not feasible, reason>
+
+TESTING.md:
+- <feature row checked, status, named test file, or not applicable>
 
 Blockers:
 - none | <list>
