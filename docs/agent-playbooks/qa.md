@@ -23,6 +23,10 @@ quality evidence.
   first, then agent-run browser/mobile/API smoke with screenshots or response
   evidence, then manual QA checklist/sign-off only when automation is not safe
   or feasible.
+- When an agent creates a meaningful browser/Playwright smoke for a feature or
+  bugfix, convert that check into a permanent E2E regression test with stable
+  seed or fixture data whenever feasible. If it cannot be made permanent in the
+  same task, report the exact reason and the fixture/test follow-up needed.
 - `sifu-tutor`: use Pest for backend behavior, Playwright smoke for UI or
   browser-visible bugfixes, and manual QA references in `docs/` when the module
   has a checklist. Financial modules need human review before commit.
@@ -85,6 +89,9 @@ Human journey:
 
 Regression coverage:
 - <covered | not feasible, reason>
+
+Permanent E2E:
+- <added/updated file path | not added, reason and follow-up fixture/test>
 
 TESTING.md:
 - <feature row checked, status, named test file, or not applicable>
