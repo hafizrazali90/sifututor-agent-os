@@ -1,8 +1,24 @@
-# AGENTS.md - Sifututor Umbrella Workspace
+# AGENTS.md - Sifututor Agent OS
 
-This file is the shared operating contract for AI coding agents in the
-Sifututor umbrella workspace. Claude Code also reads `CLAUDE.md`; Codex reads
-this file first. Project-specific rules live in each sub-project `AGENTS.md`.
+This file is the shared operating contract for the **Sifututor Agent OS**:
+the operating layer that helps Hafiz, Claude, Codex, Koda, GitHub, Plane,
+Planner, and project tools plan, build, verify, remember, and ship work without
+losing context.
+
+Claude Code also reads `CLAUDE.md`; Codex reads this file first.
+Project-specific rules live in each sub-project `AGENTS.md`.
+
+Use these names consistently:
+
+- **Agent OS**: the whole collaboration system.
+- **Workflow**: one route inside the Agent OS, such as bugfix, feature,
+  product design, QA, commit, or save-session.
+- **Playbook**: the written steps for a workflow.
+- **Router**: the part that decides which workflow applies.
+- **Guardrails**: rules and scripts that prevent expensive mistakes.
+- **Working Agreement**: how Hafiz, Codex, Claude, and reviewers collaborate.
+
+See `docs/agent-playbooks/agent-os.md` for the short operating model.
 
 ## Workspace
 

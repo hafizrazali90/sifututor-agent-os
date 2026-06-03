@@ -1,0 +1,2 @@
+name: product-design
+default_prompt: "Use $product-design to turn this Sifututor idea into the right PRD, UX spec, backend contract, and build prompts before implementation."

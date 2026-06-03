@@ -1,0 +1,49 @@
+{
+  "workspace": "Sifututor",
+  "mode": "internal",
+  "purpose": "Example capability manifest for the internal Sifututor Agent OS. Do not store secrets here.",
+  "tools": {
+    "filesystem": "workspace_write",
+    "git": "local_write",
+    "github": "unknown",
+    "koda": "read_write_if_health_check_passes",
+    "plane": "unknown",
+    "planner": "unknown",
+    "google_drive": "unknown",
+    "production_logs": "unknown",
+    "deploy": "none"
+  },
+  "risk_gates": {
+    "discussion": "no_code_edits_unless_user_asks_to_proceed",
+    "commit": "explicit_file_list_approval",
+    "push": "explicit_current_session_approval",
+    "pull_request": "explicit_current_session_approval",
+    "merge": "explicit_current_session_approval",
+    "deploy": "explicit_current_session_approval",
+    "critical_lane": "diagnosis_first_then_approval"
+  },
+  "never_allowed": [
+    "read_or_modify_env_files",
+    "modify_live_directory",
+    "bypass_hooks_or_tests_with_no_verify",
+    "reveal_secret_values",
+    "commit_credentials_or_tokens",
+    "push_merge_deploy_or_open_pr_without_explicit_current_session_approval"
+  ],
+  "critical_lanes": [
+    "auth",
+    "payments",
+    "invoices",
+    "commissions",
+    "migrations",
+    "deployment",
+    "mobile_api_contracts"
+  ],
+  "context_authority": {
+    "verified": "Checked against current source, evidence, command output, runtime data, or official source.",
+    "trusted": "Approved docs, task state, or memory that has not been rechecked yet.",
+    "reported": "User, staff, support, Planner, customer report, or screenshot.",
+    "historical": "Old Koda memory, handoff, snapshot, commit note, or prior chat summary.",
+    "unverified": "Assumption or unclear source."
+  }
+}

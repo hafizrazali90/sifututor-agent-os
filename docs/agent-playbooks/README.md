@@ -7,6 +7,14 @@ an agent needs the same workflow but cannot invoke Claude skills directly.
 
 Use these when the user asks for:
 
+- Sifututor Agent OS overview: [agent-os.md](agent-os.md)
+- fresh Agent OS session startup: [agent-os-quick-start.md](agent-os-quick-start.md)
+- internal Agent OS build plan: [agent-os-internal-build-plan.md](agent-os-internal-build-plan.md)
+- Agent OS context accuracy: [context-authority.md](context-authority.md)
+- Agent OS Koda memory discipline: [agent-os-memory.md](agent-os-memory.md)
+- Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
+- Agent OS research notes: [agent-os-research.md](agent-os-research.md)
+- Agent OS capability manifest example: [capabilities.example.json](capabilities.example.json)
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)
 - QA or regression evidence: [qa.md](qa.md)
@@ -17,6 +25,7 @@ Use these when the user asks for:
 - context snapshot before switching or compaction: [snapshot.md](snapshot.md)
 - bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)
 - code or workflow review: [review.md](review.md)
+- product design, PRDs, UX specs, and build prompts: [product-design.md](product-design.md)
 - multiple fixes in one chat or release inventory: [session-release-ledger.md](session-release-ledger.md)
 - quick workflow health check: [quick-check.md](quick-check.md)
 - Plane mission-board updates: [plane.md](plane.md)
@@ -51,6 +60,8 @@ Use these when the user asks for:
 | Codex | `$diagnose` | [diagnose.md](diagnose.md) |
 | Claude Code | `/review` | [review.md](review.md) |
 | Codex | `$review` | [review.md](review.md) |
+| Claude Code | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | [product-design.md](product-design.md) |
+| Codex | `$product-design` | [product-design.md](product-design.md) |
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
 | Claude/Codex | Plane create/update/review | [plane.md](plane.md) |
@@ -102,6 +113,7 @@ before Codex answers.
 | handoff to Claude/Codex/human | `$handoff` |
 | snapshot, pause, compact/context save | `$snapshot` |
 | push, deploy, merge, PR | `$review` first, then explicit approval |
+| brainstorm, PRD, UX spec, build prompts, major redesign | `$product-design` |
 
 The complete implementation path for normal coding work is:
 

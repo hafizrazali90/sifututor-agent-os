@@ -481,9 +481,88 @@ def nontrivial_prompt(prompt: str) -> bool:
         "handoff",
         "snapshot",
         "push",
+        "prd",
+        "ux",
+        "redesign",
+        "brainstorm",
+        "build prompts",
     )
     lower = prompt.lower()
     return any(trigger in lower for trigger in triggers)
+
+
+def discussion_prompt(normalized: str) -> bool:
+    """Return True for think-with-me prompts that should not force a workflow."""
+
+    diagnostic_patterns = (
+        r"\bdiagnose\b",
+        r"\bdebug\b",
+        r"\broot cause\b",
+        r"\bfailing\b",
+        r"\bfailure\b",
+        r"\bbroken\b",
+        r"\bbug\b",
+        r"\berror\b",
+        r"\bcrash\b",
+        r"\bnot working\b",
+    )
+    if any(re.search(pattern, normalized) for pattern in diagnostic_patterns):
+        return False
+
+    action_patterns = (
+        r"\bcommit (this|these|it|the|all)\b",
+        r"\bprepare (a )?commit\b",
+        r"\bstage (this|these|it|the|all|changes)\b",
+        r"\bpush (this|these|it|to|main)\b",
+        r"\bdeploy (this|these|it|to)\b",
+        r"\bmerge (this|these|it|to|into)\b",
+        r"\b(open|create) (a )?(pr|pull request)\b",
+        r"\bimplement\b",
+        r"\bfix\b",
+        r"\bapply\b",
+        r"\bmake (the|this|these|it)\b",
+        r"\bupdate (the|this|these|it)\b",
+        r"\bproceed (with|to)\b",
+    )
+    if any(re.search(pattern, normalized) for pattern in action_patterns):
+        return False
+
+    discussion_patterns = (
+        r"\bdiscuss\b",
+        r"\blet'?s discuss\b",
+        r"\blets discuss\b",
+        r"\blearn\b",
+        r"\bteach\b",
+        r"\bexplain\b",
+        r"\banaly[sz]e\b",
+        r"\bresearch\b",
+        r"\bretrospective\b",
+        r"\bpostmortem\b",
+        r"\bwhat (mistake|mistakes|went wrong|should|can|could|is|are|do you think)\b",
+        r"\bhow (should|can|could|do we|do i|to)\b",
+        r"\bwhy\b",
+        r"\boptions?\b",
+        r"\brecommendation\b",
+        r"\barchitecture\b",
+        r"\bdesign (the|a|our|full|from|agent|agentic|sifututor)\b",
+    )
+    return any(re.search(pattern, normalized) for pattern in discussion_patterns)
+
+
+def commit_prompt(normalized: str) -> bool:
+    """Return True only for commit preparation/execution intent."""
+
+    commit_patterns = (
+        r"\bcommit (this|these|it|the|all|changes|files|docs|work)\b",
+        r"\bprepare (a )?commit\b",
+        r"\bcreate (a )?commit\b",
+        r"\bmake (a )?commit\b",
+        r"\bstage (this|these|it|the|all|changes|files)\b",
+        r"\bstaging changes\b",
+        r"\bready to commit\b",
+        r"\bcommit readiness\b",
+    )
+    return any(re.search(pattern, normalized) for pattern in commit_patterns)
 
 
 def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
@@ -493,7 +572,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
     normalized = re.sub(r"\s+", " ", lower).strip()
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|diagnose|review|quick-check)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|diagnose|review|quick-check|product-design)\b",
         normalized,
     )
     if direct_skill:
@@ -505,6 +584,42 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Read the skill body, then the linked shared playbook before acting.",
             ],
             "User explicitly invoked a Codex workflow skill.",
+        )
+
+    if discussion_prompt(normalized):
+        return (
+            "",
+            [],
+            "Prompt is asking for discussion, learning, research, analysis, or retrospective; no workflow skill required.",
+        )
+
+    product_design_patterns = (
+        "prd",
+        "lite prd",
+        "product requirements",
+        "product design",
+        "ux spec",
+        "ux specification",
+        "build prompts",
+        "user stories",
+        "clarify requirements",
+        "requirements clarification",
+        "brainstorm",
+        "redesign properly",
+        "redesign it properly",
+        "major redesign",
+        "new module",
+        "workflow redesign",
+    )
+    if any(pattern in normalized for pattern in product_design_patterns):
+        return (
+            "$product-design",
+            [
+                "Use $product-design before implementation.",
+                "Follow the PRD -> clarifier if needed -> UX spec -> backend contract if needed -> build prompts path.",
+                "Reduce noise: ask only questions that change requirements, risk, UX, RBAC, data contracts, or acceptance tests.",
+            ],
+            "Prompt is asking for product design, PRD/UX/build prompts, or major workflow redesign.",
         )
 
     if any(word in normalized for word in ("quick check", "quick-check", "health check", "workflow doctor", "doctor", "wired correctly")):
@@ -587,7 +702,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for QA or regression evidence.",
         )
 
-    if any(word in normalized for word in ("commit", "stage", "staging changes")):
+    if commit_prompt(normalized):
         return (
             "$commit",
             [
@@ -672,8 +787,8 @@ def main() -> int:
                     *koda_lines,
                     "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
-                    "Available skills: $task-router, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $diagnose, $review.",
-                    "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session.",
+                    "Available skills: $task-router, $product-design, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $diagnose, $review.",
+                    "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
                 ]
             ),
         )
@@ -685,7 +800,7 @@ def main() -> int:
         if not skill:
             return 0
         action_text = "\n".join(f"- {action}" for action in actions)
-        memory_skills = {"$task-router", "$diagnose", "$verify", "$qa", "$review", "$commit"}
+        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$review", "$commit"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""
         memory_section = memory_text or "\n".join(
             [

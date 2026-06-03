@@ -1,11 +1,27 @@
-# Sifututor AI Workspace
+# Sifututor Agent OS
 
-This repository tracks the shared Claude/Codex operating layer for the
-Sifututor workspace.
+This repository tracks the **Sifututor Agent OS**: the shared operating layer
+for Hafiz, Claude, Codex, Koda, GitHub, Plane, Planner, and project-specific
+tools to plan, build, verify, remember, and ship work without losing context.
 
 It does not own product code. Each product remains an independent nested Git
 repository, for example `sifu-tutor/`, `ripple-suite/`, `lls/`, and the mobile
 apps.
+
+## Naming
+
+Use **Sifututor Agent OS** for the whole collaboration system.
+
+- **Agent OS** - the shared operating layer across humans, agents, memory,
+  task state, quality gates, and project tools.
+- **Workflow** - one route inside the Agent OS, such as bugfix, feature,
+  product design, QA, commit, or save-session.
+- **Playbook** - the written steps for a workflow.
+- **Router** - the part that decides which workflow applies.
+- **Guardrails** - rules and scripts that prevent expensive mistakes.
+- **Working Agreement** - how Hafiz, Codex, Claude, and reviewers collaborate.
+
+See `docs/agent-playbooks/agent-os.md` for the short operating model.
 
 ## What This Repo Owns
 
@@ -50,5 +66,5 @@ Then run the guard from the project you are about to commit:
 
 ## Repository Boundary
 
-The umbrella repo protects the shared AI workflow. Product changes should be
+The umbrella repo protects the shared Agent OS. Product changes should be
 committed inside their own project repositories.

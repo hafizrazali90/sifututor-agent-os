@@ -12,13 +12,17 @@ classify, resume, or create work.
 5. If the project has `TESTING.md` and the task may change user-facing
    behavior, read it and identify the affected feature row before
    implementation. Use [test-coverage.md](test-coverage.md).
-6. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+6. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
+   prompts, or describing a new cross-module workflow, route to
+   [product-design.md](product-design.md) before implementation. Use it only
+   when the design risk is real; small fixes stay on the normal route.
+7. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
    staff-reported operational issues, check Microsoft Teams Planner
    `Development & Support > Task Management Board` as intake/context before
    deciding scope. Treat Planner as staff-reported issue context, not the
    engineering source of truth. Do not modify Planner unless Hafiz explicitly
    asks in the current session.
-7. Check the relevant Plane mission-board item for non-trivial work. If no card
+8. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
 
 ## State-File Projects
@@ -62,6 +66,7 @@ Common route shapes:
 | `small-change` | Copy, label, config, minor UI | describe -> fix -> e2e_regression_if_user_facing -> verify -> qa -> commit |
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
+| `product-design` | PRD, UX spec, build prompts, major workflow design | design_brief -> prd -> clarifier_if_needed -> ux_spec -> backend_contract_if_needed -> build_prompts -> implementation_handoff |
 
 ## E2E Regression Step
 
