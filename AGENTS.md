@@ -137,6 +137,27 @@ Quality gates:
 - Gate 3: stop on ambiguity.
 - Gate 4: adversarial pre-push review, never skipped.
 
+## Multiple-Fix Session Ledger
+
+When one chat/session contains more than one bug, fix, branch, PR, or deploy
+candidate, maintain a Session Release Ledger. This prevents "fixed in code"
+from being mistaken for "merged to main" or "live in production".
+
+Use `docs/agent-playbooks/session-release-ledger.md` and keep one line per
+issue with: issue, branch, commit, PR, tests, E2E, main status, live status, and
+next action.
+
+Required moments:
+
+- Start or update the ledger when a second issue enters the same session.
+- Before switching to another bug, state whether the current fix is local only,
+  pushed, PR open, merged, deployed, or smoke passed.
+- Before commit, PR, merge, push, or deploy, inventory every session fix and
+  say which ones are in `origin/main`, which are PR-only, which are local-only,
+  which are already live, and which are not live.
+- Never summarize multiple fixes as "done" without naming their target state:
+  done locally, PR open, merged to main, deployed, or live smoke passed.
+
 ## Permanent E2E Regression Rule
 
 Every user-facing feature, bugfix, or hotfix must either add/update a permanent

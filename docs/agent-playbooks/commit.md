@@ -33,8 +33,11 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    - For user-facing feature, bugfix, hotfix, or small-change work, confirm the
      permanent E2E regression decision is complete: added, updated, or not
      feasible with a named blocker and follow-up test/fixture.
-4. Review `git status --short`, `git diff`, and `git diff --staged`.
-5. Ask the user to approve the exact staged file list unless already approved.
+4. If the session contains multiple fixes, update the Session Release Ledger
+   and confirm no intended fix is stranded on another branch or local-only
+   commit.
+5. Review `git status --short`, `git diff`, and `git diff --staged`.
+6. Ask the user to approve the exact staged file list unless already approved.
 
 ## Message Format
 

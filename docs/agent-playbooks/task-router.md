@@ -34,6 +34,24 @@ Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
 6. At the end of each completed step, state the recommended next unblocked
    action so Hafiz does not have to ask what should happen next.
 
+## Multiple-Fix Sessions
+
+If a chat/session contains more than one bug, fix, branch, PR, or deploy
+candidate, start or update the Session Release Ledger before continuing. Use
+[session-release-ledger.md](session-release-ledger.md).
+
+This is mandatory when:
+
+- A second staff-reported issue enters the same chat.
+- The session switches from one bug to another before the first is live.
+- A fix is rebuilt on a cleaner branch after first being committed elsewhere.
+- Hafiz asks whether all fixes from the session are live.
+- Hafiz asks to commit, merge, push, PR, release, or deploy after multiple
+  fixes were discussed.
+
+Before switching tasks, say whether each current fix is `local only`, `pushed`,
+`PR open`, `merged`, `deployed`, or `smoke passed`.
+
 Common route shapes:
 
 | Route | Use for | Core path |

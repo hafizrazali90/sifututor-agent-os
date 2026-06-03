@@ -592,6 +592,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "$commit",
             [
                 "Use $commit and run the shared pre-commit guard.",
+                "For multi-fix sessions, update docs/agent-playbooks/session-release-ledger.md style status before staging.",
                 "Do not commit without explicit current-session approval of the exact file list.",
                 "Do not push unless explicitly asked in the current session.",
             ],
@@ -603,6 +604,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "$review",
             [
                 "Use $review first as a pre-push/pre-release risk check.",
+                "For multi-fix sessions, inventory every session fix: in main, PR-only, local-only, live, and not-live.",
                 "Confirm explicit approval before push, deploy, merge, or PR actions.",
                 "Run $verify and $qa first if evidence is missing.",
             ],
@@ -616,6 +618,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Use $task-router before implementation.",
                 "Read nearest AGENTS.md and relevant CLAUDE.md.",
                 "Search Koda memory and read active task state when present.",
+                "If this chat contains multiple fixes, maintain a Session Release Ledger so no commit is stranded off main/live.",
             ],
             "Prompt appears to be non-trivial work.",
         )

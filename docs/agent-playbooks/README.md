@@ -17,6 +17,7 @@ Use these when the user asks for:
 - context snapshot before switching or compaction: [snapshot.md](snapshot.md)
 - bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)
 - code or workflow review: [review.md](review.md)
+- multiple fixes in one chat or release inventory: [session-release-ledger.md](session-release-ledger.md)
 - quick workflow health check: [quick-check.md](quick-check.md)
 - Plane mission-board updates: [plane.md](plane.md)
 - switching between Claude and Codex: [switching-claude-codex.md](switching-claude-codex.md)
@@ -106,6 +107,13 @@ The complete implementation path for normal coding work is:
 
 ```text
 $quick-check -> $task-router -> TESTING.md check -> implementation -> $verify -> $qa -> $review -> $commit -> $save-session
+```
+
+When more than one issue/fix is handled in the same chat, insert the Session
+Release Ledger into the path:
+
+```text
+$task-router -> session release ledger -> per-fix verify/qa/review -> commit/PR -> pre-deploy inventory -> deploy/smoke
 ```
 
 ## Plain-Language Reporting
