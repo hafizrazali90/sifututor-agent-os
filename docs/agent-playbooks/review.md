@@ -17,7 +17,11 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 5. Treat "human should check this" as a finding unless Playwright, API, CLI, or
    server-side evidence is genuinely unavailable or unsafe. The review should
    push the agent to gather its own non-destructive evidence first.
-6. Report findings by severity with file and line references where possible.
+6. For user-facing feature, bugfix, hotfix, or small-change work, treat a
+   missing permanent E2E regression decision as a review finding. If the change
+   affects browser/mobile behavior and no E2E was added or updated, require a
+   specific blocker and follow-up fixture/test.
+7. Report findings by severity with file and line references where possible.
 
 ## Output Shape
 
@@ -32,6 +36,9 @@ Open questions:
 
 Test gaps:
 - <gap or none>
+
+Permanent E2E:
+- <added/updated file path | missing finding | not feasible with reason>
 
 Summary:
 - <brief context>

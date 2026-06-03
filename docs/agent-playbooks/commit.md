@@ -30,6 +30,9 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    - state-file projects: `.claude/tasks/active.json` and referenced task file
 3. Confirm required `verify`, `qa`, `regression_test`, `review`, or
    `defect_analysis` steps are complete for the route.
+   - For user-facing feature, bugfix, hotfix, or small-change work, confirm the
+     permanent E2E regression decision is complete: added, updated, or not
+     feasible with a named blocker and follow-up test/fixture.
 4. Review `git status --short`, `git diff`, and `git diff --staged`.
 5. Ask the user to approve the exact staged file list unless already approved.
 

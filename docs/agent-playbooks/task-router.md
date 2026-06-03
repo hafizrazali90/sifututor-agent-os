@@ -38,12 +38,29 @@ Common route shapes:
 
 | Route | Use for | Core path |
 | --- | --- | --- |
-| `feature` | New user-facing behavior | plan -> build -> generate_tests -> qa_full -> verify -> review -> commit |
-| `bugfix` | Non-emergency defect | describe -> fix -> regression_test -> defect_analysis -> verify -> qa -> review -> commit |
-| `hotfix` | Production or staging breakage | describe -> fix -> regression_test -> verify -> qa -> review -> commit |
-| `small-change` | Copy, label, config, minor UI | describe -> fix -> verify -> qa -> commit |
+| `feature` | New user-facing behavior | plan -> build -> generate_tests -> e2e_regression -> qa_full -> verify -> review -> commit |
+| `bugfix` | Non-emergency defect | describe -> fix -> regression_test -> e2e_regression -> defect_analysis -> verify -> qa -> review -> commit |
+| `hotfix` | Production or staging breakage | describe -> fix -> regression_test -> e2e_regression -> verify -> qa -> review -> commit |
+| `small-change` | Copy, label, config, minor UI | describe -> fix -> e2e_regression_if_user_facing -> verify -> qa -> commit |
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
+
+## E2E Regression Step
+
+For `feature`, `bugfix`, `hotfix`, and user-facing `small-change` routes, the
+agent must make an explicit permanent E2E decision before reporting the work as
+ready:
+
+- `added`: name the `tests/e2e/...` file, stable fixture/seed used, and focused
+  Playwright command that passed.
+- `updated`: name the existing spec and command that passed.
+- `not feasible`: give the exact blocker (`missing credential`, `no safe
+  representative data`, `destructive workflow`, `tooling unavailable`, or
+  `not user-facing`) and the follow-up fixture/test needed.
+
+If the change fixes a browser-visible staff/parent/tutor/admin issue, default
+to adding or updating Playwright E2E. Unit, Pest, feature, or API tests do not
+satisfy the E2E regression step by themselves.
 
 ## Staff Issue Intake
 

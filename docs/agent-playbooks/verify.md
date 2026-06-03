@@ -17,6 +17,9 @@ works before QA or commit.
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
   environment when safe credentials and representative data are available.
+- For user-facing feature, bugfix, hotfix, or small-change work, verify is not
+  complete until the permanent E2E regression decision is recorded: added,
+  updated, or not feasible with a concrete blocker and follow-up.
 
 ## Project Command Matrix
 
@@ -45,6 +48,7 @@ Commands:
 Gate 2A:
 - implementation works: yes/no/partial
 - TESTING.md row checked: yes/no/not applicable
+- permanent E2E regression: added/updated/not feasible/not user-facing
 - baseline failures: none | listed
 - task-caused failures: none | listed
 

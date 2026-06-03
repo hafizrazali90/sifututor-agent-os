@@ -130,10 +130,39 @@ Do not write all tests first and then all implementation in one horizontal batch
 Quality gates:
 
 - Gate 1: plan review before build.
-- Gate 2A: verify the task works with tests, type checks, lint/build as applicable.
-- Gate 2B: guard against regressions, scope creep, security issues, and N+1/performance issues.
+- Gate 2A: verify the task works with tests, type checks, lint/build as applicable,
+  including the permanent E2E regression decision for user-facing behavior.
+- Gate 2B: guard against regressions, scope creep, security issues, N+1/performance
+  issues, and missing human-journey coverage.
 - Gate 3: stop on ambiguity.
 - Gate 4: adversarial pre-push review, never skipped.
+
+## Permanent E2E Regression Rule
+
+Every user-facing feature, bugfix, or hotfix must either add/update a permanent
+E2E regression test or explicitly document why that is not feasible in the same
+task.
+
+This applies especially to staff-reported SIMS bugs and browser-visible issues:
+if the bug is "clicking a button does nothing", "a modal does not open", "a row
+does not appear", "a status/filter/action is wrong", or any workflow a staff
+member, parent, tutor, student, or admin performs in the UI, backend/unit tests
+are not enough. The agent must prove the real journey with Playwright or an
+equivalent browser/mobile E2E path.
+
+Required behavior:
+
+- First look for the existing feature/module/function spec under `tests/e2e/`
+  and extend it instead of creating scattered one-off tests.
+- Add or update stable seed/fixture data when the E2E needs representative data.
+- Run the focused E2E command for the new/changed test and report the exact
+  command and result.
+- If a permanent E2E is genuinely not feasible, state the blocker using one of
+  these reasons: `missing credential`, `no safe representative data`,
+  `destructive workflow`, `tooling unavailable`, or `not user-facing`; then name
+  the follow-up fixture/test needed.
+- One-off browser smoke is useful evidence, but it must not replace permanent
+  E2E regression coverage when the workflow can be automated safely.
 
 ## Test Coverage Manifest
 
