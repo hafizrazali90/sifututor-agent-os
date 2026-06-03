@@ -5,10 +5,10 @@
   "author": {
     "name": "Sifututor",
     "email": "hafizrazali90@users.noreply.github.com",
-    "url": "https://github.com/hafizrazali90/sifututor-ai-workspace"
+    "url": "https://github.com/hafizrazali90/sifututor-agent-os"
   },
-  "homepage": "https://github.com/hafizrazali90/sifututor-ai-workspace",
-  "repository": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+  "homepage": "https://github.com/hafizrazali90/sifututor-agent-os",
+  "repository": "https://github.com/hafizrazali90/sifututor-agent-os",
   "license": "Private",
   "keywords": ["sifututor", "workflow", "codex", "claude"],
   "skills": "./skills/",
@@ -20,9 +20,9 @@
     "developerName": "Sifututor",
     "category": "Productivity",
     "capabilities": ["Workflow", "Review", "Guardrails"],
-    "websiteURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
-    "privacyPolicyURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
-    "termsOfServiceURL": "https://github.com/hafizrazali90/sifututor-ai-workspace",
+    "websiteURL": "https://github.com/hafizrazali90/sifututor-agent-os",
+    "privacyPolicyURL": "https://github.com/hafizrazali90/sifututor-agent-os",
+    "termsOfServiceURL": "https://github.com/hafizrazali90/sifututor-agent-os",
     "defaultPrompt": [
       "Run $quick-check before starting Sifututor work.",
       "Use the Sifututor workflow dispatcher for this task.",

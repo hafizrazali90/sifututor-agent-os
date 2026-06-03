@@ -446,7 +446,7 @@ This reduces the chance that Claude and Codex drift apart over time.
 We created a private GitHub repo:
 
 ```text
-hafizrazali90/sifututor-ai-workspace
+hafizrazali90/sifututor-agent-os
 ```
 
 This repo tracks only the shared workspace layer:
@@ -519,7 +519,7 @@ do not constantly pollute `git status`.
 Pushed to:
 
 ```text
-https://github.com/hafizrazali90/sifututor-ai-workspace
+https://github.com/hafizrazali90/sifututor-agent-os
 ```
 
 Key commits:

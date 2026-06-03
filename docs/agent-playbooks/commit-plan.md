@@ -3,7 +3,7 @@
 Last updated: 2026-05-26
 
 The umbrella directory is the private GitHub repo
-`hafizrazali90/sifututor-ai-workspace`. It tracks shared workspace files only:
+`hafizrazali90/sifututor-agent-os`. It tracks shared workspace files only:
 root `AGENTS.md`, `README.md`, `docs/agent-playbooks/`,
 `scripts/agent-checks/`, and `.gitignore`.
 
@@ -13,7 +13,7 @@ repo pushes on 2026-05-26. Most workflow parity commits are now pushed to the
 
 ## Umbrella Repo
 
-Pushed to `hafizrazali90/sifututor-ai-workspace`:
+Pushed to `hafizrazali90/sifututor-agent-os`:
 
 - `0574378 chore(workspace): initialize ai workflow repo`
 - `f6d95f3 docs(workspace): update project commit plan`

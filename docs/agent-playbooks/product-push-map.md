@@ -9,7 +9,7 @@ The product repositories below are nested Git repos. Their remotes point to the
 The umbrella workflow repo is separate:
 
 - `/Users/hafizrazali/Projects/Sifututor`
-- Remote: `https://github.com/hafizrazali90/sifututor-ai-workspace.git`
+- Remote: `https://github.com/hafizrazali90/sifututor-agent-os.git`
 - Purpose: shared AI workflow docs/scripts only
 
 ## Current Product Push State
