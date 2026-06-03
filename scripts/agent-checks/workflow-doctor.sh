@@ -62,6 +62,14 @@ check_file "codex config" "$ROOT/.codex/config.toml"
 check_file "parity status" "$ROOT/docs/agent-playbooks/parity-status.md"
 
 echo
+echo "Agent OS health"
+if "$ROOT/scripts/agent-checks/agent-os-health.sh" >/dev/null 2>&1; then
+  pass "agent os health" "passed"
+else
+  fail "agent os health" "failed"
+fi
+
+echo
 echo "Projects"
 for project in "${PROJECTS[@]}"; do
   dir="$ROOT/$project"

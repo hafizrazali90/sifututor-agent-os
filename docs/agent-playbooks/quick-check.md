@@ -5,6 +5,7 @@ workflow layer is healthy before real work starts.
 
 ## What It Checks
 
+- Agent OS capability, Koda direct health, and approval gates
 - root git status
 - active project/task state
 - shared guard scripts
@@ -29,6 +30,9 @@ QUICK CHECK - PASS | FAIL | PARTIAL
 Doctor:
 - <workflow-doctor result>
 
+Agent OS:
+- <agent-os-health result>
+
 Active work:
 - <project/task summary>
 
@@ -46,3 +50,7 @@ Next:
 
 Do not start implementation until you understand the failure. Fix missing
 workflow files, invalid JSON, broken hook scripts, or guard failures first.
+
+If only the all-project sweep fails but `agent-os-health.sh` passes, the
+umbrella Agent OS may still be usable for docs/workflow discussion. Do not start
+product implementation until the relevant project failure is understood.
