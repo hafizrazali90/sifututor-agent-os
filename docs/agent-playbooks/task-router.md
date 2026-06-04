@@ -30,6 +30,9 @@ classify, resume, or create work.
 Use [agent-os-routing-model.md](agent-os-routing-model.md) for Agent OS prompt
 classification rules.
 
+Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
+right intensity: Light, Medium, Full, or Critical.
+
 Important routing principles:
 
 - Do not route by keyword alone.
@@ -83,6 +86,18 @@ Common route shapes:
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
 | `product-design` | PRD, UX spec, build prompts, major workflow design | design_brief -> prd -> clarifier_if_needed -> ux_spec -> backend_contract_if_needed -> build_prompts -> implementation_handoff |
+
+## Lane Intensity
+
+| Intensity | Use For | Practical Behavior |
+| --- | --- | --- |
+| Light | discussion, learning, architecture thinking | Explain, recommend, avoid edit/verify/commit ceremony. |
+| Medium | docs, Agent OS, tooling, small safe work | Update scoped files, run non-destructive checks, stop before commit/push approval. |
+| Full | product code, user-facing work, behavior changes | Implement with verify, QA, review, E2E/release decisions when relevant. |
+| Critical | auth, payment, invoice, commission, migration, deploy, mobile API contract | Read-only diagnosis first, then implementation approval. |
+
+Do not force every prompt through the full product path. Escalate only when
+risk, behavior change, or critical domains require it.
 
 ## E2E Regression Step
 

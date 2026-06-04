@@ -95,7 +95,7 @@ Use this as the master tracker while reviewing the architecture.
 | 5 | Context Authority | `context-authority.md`, Koda memories, task-state docs | `context-authority.md`, evals | Draft accepted | source and confidence examples |
 | 6 | Memory System | `agent-os-memory.md`, `save-session.md`, Koda behavior | `agent-os-memory.md`, `agent-os-memory-architecture.md`, `save-session.md`, evals | Draft accepted | memory reliability and v2 architecture plan |
 | 7 | Tool Capability Model | `capabilities.example.json`, `agent-os-health.sh`, installer | `agent-os-capability-model.md`, `capabilities.example.json`, `agent-os-health.sh`, evals | Draft accepted | capability matrix |
-| 8 | Workflows And Lanes | all core playbooks and skills | specific playbooks | Not started | lane simplification decisions |
+| 8 | Workflows And Lanes | all core playbooks and skills | `agent-os-workflow-lanes.md`, `task-router.md`, evals | Draft accepted | lane intensity model |
 | 9 | Verification And Evidence | `verify.md`, `qa.md`, `test-coverage.md` | verify/QA docs, evals | Not started | evidence matrix |
 | 10 | GitHub/Plane/Planner/Task State | `task-router.md`, `plane.md`, session ledger, active-task docs | state model doc, task router | Not started | state source map |
 | 11 | Staff Rollout Readiness | install docs, staff quick start, research note | installer, templates, staff docs | Parked | rollout plan after internal review |
@@ -121,6 +121,7 @@ Use this to avoid scattering changes across the wrong files.
 | Save-session and Koda | `save-session.md`, `agent-os-memory.md` | Koda memories, fallback notes |
 | Memory architecture and performance | `agent-os-memory-architecture.md` | `agent-os-memory.md`, `save-session.md`, evals, future audit script |
 | Tool and capability model | `agent-os-capability-model.md` | `capabilities.example.json`, `agent-os-health.sh`, quick-check, evals |
+| Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Context accuracy | `context-authority.md` | task router, evals |
 | Capability/connected tools | `capabilities.example.json`, `agent-os-health.sh` | installer, quick-check |
 | Staff install | `agent-os-installation.md`, install manifest | staff quick start, installer |
@@ -145,6 +146,7 @@ created.
 | 2026-06-04 | Context Authority review accepts the ladder model: forbidden boundaries, Hafiz decisions, current verified evidence, approved docs, task systems, memory/history, then agent assumptions. | This prevents agents from treating reported symptoms, old memory, prior chat, or assumptions as current truth. | Update context evals and apply the ladder before high-risk or user-facing work. |
 | 2026-06-04 | Memory System review accepts Memory Architecture v2: docs store the system, Koda stores lessons, chat stores the moment, and git stores proof. | Hafiz asked whether the whole memory structure should be upgraded to improve performance, not only patched with fallbacks. | Use v2 taxonomy for new memories, add lifecycle/risk tags, and plan a read-only memory audit before migration. |
 | 2026-06-04 | Tool and Capability Model review accepts the Capability Manifest model. | Capability depends on connected tools, credentials, filesystem access, approval gates, and forbidden boundaries, not role labels like Codex, Claude, or staff. | Report capability as available, fallback, unknown, not_connected, blocked, or forbidden. |
+| 2026-06-05 | Workflows and Lanes review accepts the Lane Intensity Model: Light, Medium, Full, and Critical. | This matches current agent best practice: route by task type, use guardrails by risk, avoid approval fatigue, and keep critical domains strict. | Use `agent-os-workflow-lanes.md` as the source and refine individual lane playbooks through real use. |
 
 ### Core Operating Layer
 
@@ -568,9 +570,9 @@ A review area is not done until all of these are true:
 
 ## Immediate Next Review
 
-Continue with section 8: **Workflows And Lanes**.
+Continue with section 9: **Verification, QA, And Evidence**.
 
 Reason: we have drafted the personal working model, intent routing, approval
 gates, communication style, context authority, memory system, and capability
-model. The next friction point is whether the workflow routes are too heavy,
-too loose, or missing important lanes.
+model, and workflow lanes. The next friction point is deciding how much proof
+is enough for each type of work.

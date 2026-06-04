@@ -14,6 +14,7 @@ Use these when the user asks for:
 - Agent OS Koda memory discipline: [agent-os-memory.md](agent-os-memory.md)
 - Agent OS memory architecture v2: [agent-os-memory-architecture.md](agent-os-memory-architecture.md)
 - Agent OS tool and capability model: [agent-os-capability-model.md](agent-os-capability-model.md)
+- Agent OS workflow lanes: [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
 - Agent OS research notes: [agent-os-research.md](agent-os-research.md)
 - Agent OS current state and review roadmap: [agent-os-review-roadmap.md](agent-os-review-roadmap.md)

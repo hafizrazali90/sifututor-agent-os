@@ -120,6 +120,9 @@ Use [agent-os-capability-model.md](agent-os-capability-model.md) to decide what
 an agent can actually do based on connected tools, fallback paths, approval
 gates, and forbidden boundaries.
 
+Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
+right workflow intensity: Light, Medium, Full, or Critical.
+
 Use [agent-os-installation.md](agent-os-installation.md) and
 [agent-os-install-manifest.json](agent-os-install-manifest.json) when checking
 or applying the Agent OS baseline to another project.
