@@ -157,6 +157,26 @@ Quality gates:
 - Gate 3: stop on ambiguity.
 - Gate 4: adversarial pre-push review, never skipped.
 
+## Agent-As-Tester Evidence
+
+Hafiz is technical and self-taught in IT, but the agent is the bridge into
+coding and should also be the first tester. Agents must use available safe
+tools to validate what a capable human tester would validate before asking
+Hafiz to check it.
+
+For user-facing behavior, do not treat code tests alone as complete proof.
+Gather human-journey evidence where feasible: browser/mobile E2E, agent-run
+smoke, screenshots, API/curl evidence, server-side read-only checks, or a
+manual QA checklist with exact steps.
+
+Ask Hafiz to verify only what the agent cannot safely or honestly verify:
+business judgment, subjective UX/product acceptance, unavailable credentials or
+representative data, destructive workflows, production-sensitive action, final
+risk acceptance, priority, or scope.
+
+Use `docs/agent-playbooks/agent-os-evidence-model.md` for the full evidence
+model.
+
 ## Multiple-Fix Session Ledger
 
 When one chat/session contains more than one bug, fix, branch, PR, or deploy

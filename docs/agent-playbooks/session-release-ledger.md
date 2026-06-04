@@ -4,6 +4,10 @@ Use this when one chat/session contains more than one bug, fix, PR, or deploy
 candidate. Its job is to prevent "fixed in code" from being confused with
 "merged to main" or "live in production".
 
+Use [agent-os-state-model.md](agent-os-state-model.md) for the shared status
+language across local work, commits, PRs, merges, deploys, and live smoke
+evidence.
+
 ## Trigger
 
 Start a Session Release Ledger as soon as any of these is true:

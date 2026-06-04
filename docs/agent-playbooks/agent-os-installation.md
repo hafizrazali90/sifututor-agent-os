@@ -3,6 +3,10 @@
 Use this when applying the Sifututor Agent OS baseline to a product repo or when
 checking whether a staff machine/project is ready.
 
+Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) before
+deciding whether the target should receive the internal kit, staff-safe kit,
+builder kit, or advanced operations access.
+
 The installer is deliberately boring:
 
 - dry-run by default

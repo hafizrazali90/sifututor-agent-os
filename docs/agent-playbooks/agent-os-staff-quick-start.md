@@ -8,6 +8,10 @@ The goal is not to give every staff member every tool. The goal is to give each
 person a safe starting setup that helps them report, investigate, document,
 verify, or build work without touching production or secrets.
 
+Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) to decide
+which readiness level a staff member should receive. Most staff start with the
+staff-safe kit, not builder or production access.
+
 ## First Rule
 
 Start with the smallest safe capability.

@@ -4,6 +4,10 @@ Use this whenever an agent starts implementation work, verifies a change, runs
 QA, prepares a commit, or reviews a PR in a Sifututor project that has
 `TESTING.md`.
 
+Use [agent-os-evidence-model.md](agent-os-evidence-model.md) with this playbook.
+`TESTING.md` maps what should be protected; the evidence model defines how an
+agent proves the protection behaves like the real user journey.
+
 ## Practical Rule
 
 `TESTING.md` is the project coverage map. Before changing user-facing behavior,

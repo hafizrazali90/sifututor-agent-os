@@ -12,8 +12,8 @@ We started with the right question: how should Hafiz and agents work together
 without causing frustration or adding too much ceremony?
 
 During the first build pass, we also created useful rollout pieces such as an
-installer and staff quick start. Those are valuable, but they are not the core
-yet.
+installer and staff quick start. Those are valuable, but the core remains the
+internal Hafiz-Agent operating model.
 
 The core is still the Hafiz-Agent operating model:
 
@@ -42,7 +42,7 @@ supposed to do, where it lives, and what still needs review.
 | Tool capability model | Say what the current agent can actually access | `agent-os-health.sh`, capability example | Capability is conservative and not deeply modeled | capability matrix, connected-tool report, risk by tool |
 | Verification and evidence | Prove work is correct at the right strength | `verify.md`, `qa.md`, E2E rules, doctor scripts | Evidence level can be hard to choose quickly | evidence matrix by work type |
 | Task/state model | Show where current work, decisions, and status live | GitHub, Plane, Planner, active task files, ledger | State is powerful but scattered | state source-of-truth map |
-| Distribution/staff | Let staff use the OS safely later | installer, install guide, staff quick start | Built before internal architecture was reviewed | park until layers above are stable |
+| Distribution/staff | Let staff use the OS safely later | installer, install guide, staff quick start, readiness ladder | Needs pilot templates and real staff trial later | keep internal-first; expand through readiness levels |
 | Evaluation | Test whether Agent OS behavior is improving | `agent-os-evals.md` | Mostly Markdown cases; not yet run as a suite | eval checklist, scripted smoke cases |
 | Architecture documentation | Keep the map of what exists and what changes | this roadmap | New; needs review with Hafiz | decision log, touch map, review register |
 
@@ -89,16 +89,16 @@ Use this as the master tracker while reviewing the architecture.
 | # | Review Area | Source Files To Read | Likely Files To Update | Status | Output |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Hafiz-Agent Working Model | `AGENTS.md`, `agent-os.md`, this roadmap, Koda corrections | `working-with-hafiz.md`, `AGENTS.md`, `agent-os-evals.md` | Draft accepted | personal operating model |
-| 2 | Intent Routing | `task-router.md`, `agent-os-evals.md`, `codex-lifecycle-hook.py` | `agent-os-routing-model.md`, `task-router.md`, `agent-os-evals.md`, hook script later | Drafted | routing matrix and prompt examples |
+| 2 | Intent Routing | `task-router.md`, `agent-os-evals.md`, `codex-lifecycle-hook.py` | `agent-os-routing-model.md`, `task-router.md`, `agent-os-evals.md`, hook script later | Draft accepted | routing matrix and prompt examples |
 | 3 | Approval Gates | `AGENTS.md`, `commit.md`, `review.md`, `agent-os-quick-start.md` | `agent-os-approval-gates.md`, `working-with-hafiz.md`, `agent-os-evals.md` | Draft accepted for Agent OS/docs | approval matrix |
 | 4 | Communication And Close-Out | `AGENTS.md`, `README.md`, playbook reports | `agent-os-communication.md`, `working-with-hafiz.md`, `AGENTS.md`, playbooks | Draft accepted | answer/update examples |
 | 5 | Context Authority | `context-authority.md`, Koda memories, task-state docs | `context-authority.md`, evals | Draft accepted | source and confidence examples |
 | 6 | Memory System | `agent-os-memory.md`, `save-session.md`, Koda behavior | `agent-os-memory.md`, `agent-os-memory-architecture.md`, `save-session.md`, evals | Draft accepted | memory reliability and v2 architecture plan |
 | 7 | Tool Capability Model | `capabilities.example.json`, `agent-os-health.sh`, installer | `agent-os-capability-model.md`, `capabilities.example.json`, `agent-os-health.sh`, evals | Draft accepted | capability matrix |
 | 8 | Workflows And Lanes | all core playbooks and skills | `agent-os-workflow-lanes.md`, `task-router.md`, evals | Draft accepted | lane intensity model |
-| 9 | Verification And Evidence | `verify.md`, `qa.md`, `test-coverage.md` | verify/QA docs, evals | Not started | evidence matrix |
-| 10 | GitHub/Plane/Planner/Task State | `task-router.md`, `plane.md`, session ledger, active-task docs | state model doc, task router | Not started | state source map |
-| 11 | Staff Rollout Readiness | install docs, staff quick start, research note | installer, templates, staff docs | Parked | rollout plan after internal review |
+| 9 | Verification And Evidence | `verify.md`, `qa.md`, `test-coverage.md`, past QA docs | `agent-os-evidence-model.md`, verify/QA/test-coverage/review docs, evals | Draft accepted | agent-as-tester evidence model |
+| 10 | GitHub/Plane/Planner/Task State | `task-router.md`, `plane.md`, session ledger, active-task docs | `agent-os-state-model.md`, task/router/Plane/save-session/ledger docs, evals | Draft accepted | state source map |
+| 11 | Staff Rollout Readiness | install docs, staff quick start, research note | `agent-os-rollout-readiness.md`, installer manifest, staff docs, evals | Draft accepted | readiness ladder |
 
 ## Touch Map
 
@@ -122,6 +122,9 @@ Use this to avoid scattering changes across the wrong files.
 | Memory architecture and performance | `agent-os-memory-architecture.md` | `agent-os-memory.md`, `save-session.md`, evals, future audit script |
 | Tool and capability model | `agent-os-capability-model.md` | `capabilities.example.json`, `agent-os-health.sh`, quick-check, evals |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
+| Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
+| Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |
+| Staff rollout readiness | `agent-os-rollout-readiness.md` | `agent-os-installation.md`, `agent-os-staff-quick-start.md`, install manifest, health check, evals |
 | Context accuracy | `context-authority.md` | task router, evals |
 | Capability/connected tools | `capabilities.example.json`, `agent-os-health.sh` | installer, quick-check |
 | Staff install | `agent-os-installation.md`, install manifest | staff quick start, installer |
@@ -147,6 +150,9 @@ created.
 | 2026-06-04 | Memory System review accepts Memory Architecture v2: docs store the system, Koda stores lessons, chat stores the moment, and git stores proof. | Hafiz asked whether the whole memory structure should be upgraded to improve performance, not only patched with fallbacks. | Use v2 taxonomy for new memories, add lifecycle/risk tags, and plan a read-only memory audit before migration. |
 | 2026-06-04 | Tool and Capability Model review accepts the Capability Manifest model. | Capability depends on connected tools, credentials, filesystem access, approval gates, and forbidden boundaries, not role labels like Codex, Claude, or staff. | Report capability as available, fallback, unknown, not_connected, blocked, or forbidden. |
 | 2026-06-05 | Workflows and Lanes review accepts the Lane Intensity Model: Light, Medium, Full, and Critical. | This matches current agent best practice: route by task type, use guardrails by risk, avoid approval fatigue, and keep critical domains strict. | Use `agent-os-workflow-lanes.md` as the source and refine individual lane playbooks through real use. |
+| 2026-06-05 | Verification and Evidence review accepts the Agent-As-Tester Evidence Model. | Hafiz wants agents to be the bridge between him and coding, including tester work the agent can safely perform. Testing should validate the same observable workflow a human tester would validate, while Hafiz verifies business judgment, unavailable access, destructive actions, and final risk acceptance. | Use `agent-os-evidence-model.md` as the source and make verify/QA/review enforce human-journey evidence. |
+| 2026-06-05 | GitHub/Plane/Planner/Task State review accepts the State Model. | Hafiz needs agents to stop using vague "done" language when work may only be local, pushed, PR-open, merged, deployed, or live-smoke-passed. Each tool should own a specific kind of truth. | Use `agent-os-state-model.md` as the source for state language and source-of-truth ownership. |
+| 2026-06-05 | Staff Rollout Readiness review accepts the readiness ladder: internal Agent OS, project baseline, staff-safe kit, approved builder kit, advanced operations. | Staff rollout should not mean giving every person every tool. The safe path is internal-first, then staff reporting/QA/docs, then code builder access only for trusted users, and advanced operations only by explicit approval. | Use `agent-os-rollout-readiness.md` before installing or expanding staff capabilities. |
 
 ### Core Operating Layer
 
@@ -245,11 +251,13 @@ Already present:
 
 Current decision:
 
-- do not keep expanding staff rollout until the Hafiz-Agent operating model is
-  reviewed and stable.
+- staff rollout follows the readiness ladder in
+  [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md)
+- keep expanding internal reliability first
+- start staff later with the staff-safe kit, not full tool access
 
-Practical meaning: we have early distribution assets, but they are parked until
-we finish the internal review.
+Practical meaning: we have early distribution assets and a rollout model, but
+real staff rollout should wait for a pilot plan and templates.
 
 ## Review Order
 
@@ -464,7 +472,9 @@ Output:
 
 Question: when is the Agent OS good enough to distribute?
 
-Review only after sections 1-10 are stable.
+This has a draft decision now. Use
+[agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) as the source
+before expanding staff access.
 
 Review:
 

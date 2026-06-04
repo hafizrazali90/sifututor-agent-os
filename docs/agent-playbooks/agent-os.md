@@ -74,6 +74,25 @@ The Agent OS should make the work safer and faster without making Hafiz feel
 trapped inside process. Strict where mistakes are expensive. Lightweight when
 we are thinking, learning, or making small safe changes.
 
+## Architecture Index
+
+Read these as the core internal kit:
+
+| Layer | Source |
+| --- | --- |
+| How Hafiz and agents work together | [working-with-hafiz.md](working-with-hafiz.md) |
+| Prompt routing | [agent-os-routing-model.md](agent-os-routing-model.md) |
+| Approval boundaries | [agent-os-approval-gates.md](agent-os-approval-gates.md) |
+| Plain-language communication | [agent-os-communication.md](agent-os-communication.md) |
+| Context accuracy | [context-authority.md](context-authority.md) |
+| Memory | [agent-os-memory.md](agent-os-memory.md), [agent-os-memory-architecture.md](agent-os-memory-architecture.md) |
+| Tools and capability | [agent-os-capability-model.md](agent-os-capability-model.md) |
+| Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
+| Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
+| Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
+| Rollout readiness | [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) |
+| Behavior checks | [agent-os-evals.md](agent-os-evals.md) |
+
 ## Research
 
 Use [agent-os-research.md](agent-os-research.md) as the living research note for
@@ -122,6 +141,15 @@ gates, and forbidden boundaries.
 
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right workflow intensity: Light, Medium, Full, or Critical.
+
+Use [agent-os-evidence-model.md](agent-os-evidence-model.md) to decide what the
+agent should verify itself and what should be left for Hafiz's judgment.
+
+Use [agent-os-state-model.md](agent-os-state-model.md) to decide where task
+status, evidence, approvals, and release state should live.
+
+Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) before
+expanding the Agent OS from Hafiz/internal use to staff or project installs.
 
 Use [agent-os-installation.md](agent-os-installation.md) and
 [agent-os-install-manifest.json](agent-os-install-manifest.json) when checking

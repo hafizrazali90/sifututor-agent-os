@@ -3,6 +3,11 @@
 Use this for Gate 2A, `/verify`, or any request to prove the implementation
 works before QA or commit.
 
+Use [agent-os-evidence-model.md](agent-os-evidence-model.md) as the source of
+truth for the agent-as-tester rule: the agent should gather the same practical
+evidence a capable human tester would gather before asking Hafiz to verify what
+only he can judge.
+
 ## Rules
 
 - Run verification in the project directory, not the umbrella root.
@@ -17,6 +22,10 @@ works before QA or commit.
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
   environment when safe credentials and representative data are available.
+- Verification should prove both the machine part and the human journey when a
+  real user depends on the behavior. Unit/API tests prove the engine; browser,
+  mobile, API smoke, screenshots, or read-only state checks prove the workflow
+  behaves like a user would experience it.
 - For user-facing feature, bugfix, hotfix, or small-change work, verify is not
   complete until the permanent E2E regression decision is recorded: added,
   updated, or not feasible with a concrete blocker and follow-up.

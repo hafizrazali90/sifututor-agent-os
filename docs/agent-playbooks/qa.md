@@ -3,6 +3,10 @@
 Use this for `/qa`, smoke tests, regression tests, visual QA, and route-level
 quality evidence.
 
+Use [agent-os-evidence-model.md](agent-os-evidence-model.md) as the source of
+truth for human-journey evidence and for deciding what the agent should test
+itself before asking Hafiz or staff for manual verification.
+
 ## Pick The QA Tier
 
 | Route | QA expectation |
@@ -23,6 +27,9 @@ quality evidence.
   first, then agent-run browser/mobile/API smoke with screenshots or response
   evidence, then manual QA checklist/sign-off only when automation is not safe
   or feasible.
+- QA should validate what a real person would validate: setup, action, expected
+  result, how to verify, and what failure looks like. The agent should translate
+  technical checks into this human-test shape when reporting back to Hafiz.
 - When an agent creates a meaningful browser/Playwright smoke for a feature or
   bugfix, convert that check into a permanent E2E regression test with stable
   seed or fixture data whenever feasible. If it cannot be made permanent in the

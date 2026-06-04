@@ -7,6 +7,9 @@ Use this for code review, pre-commit review, or adversarial quality checks.
 Lead with findings. Prioritize correctness, regressions, security, missing
 tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 
+Use [agent-os-evidence-model.md](agent-os-evidence-model.md) when judging
+whether the agent gathered enough proof before handing work to Hafiz or staff.
+
 ## Steps
 
 1. Identify the intended scope.

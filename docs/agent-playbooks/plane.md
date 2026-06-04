@@ -15,6 +15,10 @@ Plane is Hafiz's human mission board. It should answer, in plain language:
 Plane is not the evidence store and not a replacement for repo docs, Koda, or
 GitHub issues.
 
+Use [agent-os-state-model.md](agent-os-state-model.md) for the broader source
+of truth split between Plane, GitHub, Planner, active task files, git, QA
+evidence, and Koda.
+
 ## Source Split
 
 | Source | Role |

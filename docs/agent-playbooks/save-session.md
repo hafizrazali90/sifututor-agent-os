@@ -6,6 +6,10 @@ to save the session.
 In normal words: saving the session means the next Claude, Codex, or human can
 continue without guessing what happened.
 
+Use [agent-os-state-model.md](agent-os-state-model.md) to report the exact
+state of the work, such as done locally, committed locally, pushed, PR open,
+merged, deployed, live smoke passed, or waiting for Hafiz.
+
 Claude may use `/save-session`. Codex should use the repo-local `$save-session`
 skill when available. Both entry points must follow this playbook before ending
 meaningful work.

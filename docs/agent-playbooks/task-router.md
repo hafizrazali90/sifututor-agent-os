@@ -33,6 +33,10 @@ classification rules.
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right intensity: Light, Medium, Full, or Critical.
 
+Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
+current task, issue, mission status, evidence, and release state should be
+recorded.
+
 Important routing principles:
 
 - Do not route by keyword alone.
