@@ -93,6 +93,33 @@ Before storing:
 4. If Koda is unavailable, include the durable lesson in the final response and
    note the fallback.
 
+Koda CLI commands:
+
+```bash
+scripts/agent-checks/koda health
+scripts/agent-checks/koda search '{"query":"<topic>","tags":["sifututor"],"limit":5}'
+scripts/agent-checks/koda store '{"category":"lesson","content":"<memory>","project":"sifututor","source":"auto-captured","tags":["sifututor","agent-os"],"why":"<why future sessions need this>"}'
+scripts/agent-checks/koda update '{"id":"mem_XXXX","content":"<safe corrected memory>","source":"correction","tags":["sifututor","agent-os"],"why":"<why this memory was corrected>"}'
+```
+
+Use the Koda CLI as the Codex-first memory path in this workspace. It uses the
+same MCP HTTP endpoint and `KODA_API_KEY`, but avoids the chat-level
+`mcp__memory` wrapper when that wrapper is unreliable. Do not print or paste
+secret values.
+
+Agent defaults:
+
+| Agent | Koda path |
+| --- | --- |
+| Codex in this workspace | CLI-first |
+| Claude Code | MCP-first if stable; CLI fallback if available and needed |
+| Staff or general chat LLM | no Koda write access by default; use docs/local notes unless approved |
+| Automation/scripts | CLI-first |
+
+If a memory is found to contain a secret, raw token, credential, or private
+payload, update or remove it immediately through the safe path. Do not quote the
+secret in chat, docs, commits, or follow-up memories.
+
 ## Memory Shape
 
 Good memory:
@@ -157,8 +184,38 @@ Memory type: episodic lesson / correction / decision / preference
 Fallback: <none | doc path | final response>
 ```
 
+If the direct fallback was used, say so plainly:
+
+```text
+Koda: stored through CLI because the chat memory tool timed out.
+```
+
 ## Relationship To Save Session
 
 This playbook narrows the Koda rules for Agent OS work.
 
 For full session wrap-up, still follow [save-session.md](save-session.md).
+
+## Memory Architecture v2
+
+Use [agent-os-memory-architecture.md](agent-os-memory-architecture.md) as the
+source of truth for the upgraded memory structure.
+
+The short model is:
+
+```text
+Docs store the system.
+Koda stores the lesson.
+Chat stores the moment.
+Git stores the proof.
+```
+
+New Agent OS memories should prefer sharper tags:
+
+- project tag, such as `sifututor`
+- domain tag, such as `agent-os`, `payment`, `qa`, `router`, or `koda`
+- lifecycle tag, such as `lifecycle-active`, `lifecycle-superseded`,
+  `lifecycle-stale`, or `lifecycle-archived`
+- risk tag, such as `risk-critical`, `risk-normal`, or `risk-low`
+
+Do not bulk migrate old memories without a read-only audit report first.

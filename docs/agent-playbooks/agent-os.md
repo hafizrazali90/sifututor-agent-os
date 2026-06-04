@@ -80,6 +80,23 @@ Use [agent-os-research.md](agent-os-research.md) as the living research note for
 external references, source-backed design lessons, and the distributable staff
 starter-kit direction.
 
+Use [agent-os-review-roadmap.md](agent-os-review-roadmap.md) to document what
+exists today and review the internal Hafiz-Agent operating model one layer at a
+time before expanding staff rollout.
+
+Use [working-with-hafiz.md](working-with-hafiz.md) as the draft personal
+operating model for how agents should interpret Hafiz's instructions, approval,
+discussion, and close-out expectations.
+
+Use [agent-os-routing-model.md](agent-os-routing-model.md) as the prompt
+classification model before changing router hooks or playbooks.
+
+Use [agent-os-approval-gates.md](agent-os-approval-gates.md) as the approval
+model for relaxed work packets, exact bundles, and strict boundaries.
+
+Use [agent-os-communication.md](agent-os-communication.md) as the communication
+model for natural-language explanation, close-out, and workflow labels.
+
 Use [agent-os-internal-build-plan.md](agent-os-internal-build-plan.md) for the
 current internal MVP plan.
 
@@ -94,6 +111,14 @@ guards, and approval gates behave correctly.
 
 Use [agent-os-memory.md](agent-os-memory.md) when deciding whether an Agent OS
 lesson belongs in Koda.
+
+Use [agent-os-memory-architecture.md](agent-os-memory-architecture.md) for the
+Memory System v2 plan: taxonomy, lifecycle tags, retrieval order, cleanup, and
+active memory pack direction.
+
+Use [agent-os-capability-model.md](agent-os-capability-model.md) to decide what
+an agent can actually do based on connected tools, fallback paths, approval
+gates, and forbidden boundaries.
 
 Use [agent-os-installation.md](agent-os-installation.md) and
 [agent-os-install-manifest.json](agent-os-install-manifest.json) when checking

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+from typing import Any
 import urllib.request
 
 
@@ -253,6 +254,53 @@ def koda_tool_call(session: dict, name: str, arguments: dict | None = None, requ
         return {}, f"Koda tool call error for {name}: {message}"
 
     return response, ""
+
+
+def print_koda_tool_result(response: dict) -> None:
+    """Print the text payload from a Koda MCP tool response without secrets."""
+
+    content = response.get("result", {}).get("content", [])
+    printed = False
+    for item in content:
+        if isinstance(item, dict) and item.get("type") == "text":
+            print(item.get("text") or "")
+            printed = True
+    if not printed:
+        print(json.dumps(response.get("result", {}), indent=2))
+
+
+def read_json_arg_or_stdin(flag: str) -> tuple[dict[str, Any], str]:
+    if flag in sys.argv:
+        index = sys.argv.index(flag)
+        if index + 1 >= len(sys.argv):
+            return {}, f"{flag} requires a JSON object argument or '-' for stdin"
+        value = sys.argv[index + 1]
+        raw = sys.stdin.read() if value == "-" else value
+    else:
+        raw = sys.stdin.read()
+
+    try:
+        data = json.loads(raw)
+    except Exception as exc:  # noqa: BLE001 - CLI should report simple errors.
+        return {}, f"Invalid JSON for {flag}: {exc}"
+    if not isinstance(data, dict):
+        return {}, f"{flag} requires a JSON object"
+    return data, ""
+
+
+def koda_direct_cli(tool_name: str, arguments: dict[str, Any]) -> int:
+    session, init_error = koda_initialize("codex-koda-direct-cli")
+    if init_error:
+        print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
+        return 1
+
+    response, tool_error = koda_tool_call(session, tool_name, arguments, request_id=2)
+    if tool_error:
+        print(f"KODA DIRECT FAIL: {tool_error}", file=sys.stderr)
+        return 1
+
+    print_koda_tool_result(response)
+    return 0
 
 
 def parse_tool_content(response: dict) -> object:
@@ -755,6 +803,27 @@ def main() -> int:
         if not ok:
             print(f"- {koda_repair_text()}")
         return 0 if ok else 1
+
+    if "--koda-search-json" in sys.argv:
+        arguments, error = read_json_arg_or_stdin("--koda-search-json")
+        if error:
+            print(f"KODA DIRECT FAIL: {error}", file=sys.stderr)
+            return 1
+        return koda_direct_cli("memory_search", arguments)
+
+    if "--koda-store-json" in sys.argv:
+        arguments, error = read_json_arg_or_stdin("--koda-store-json")
+        if error:
+            print(f"KODA DIRECT FAIL: {error}", file=sys.stderr)
+            return 1
+        return koda_direct_cli("memory_store", arguments)
+
+    if "--koda-update-json" in sys.argv:
+        arguments, error = read_json_arg_or_stdin("--koda-update-json")
+        if error:
+            print(f"KODA DIRECT FAIL: {error}", file=sys.stderr)
+            return 1
+        return koda_direct_cli("memory_update", arguments)
 
     payload = read_payload()
     event = payload.get("hook_event_name") or payload.get("hookEventName") or ""

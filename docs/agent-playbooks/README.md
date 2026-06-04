@@ -12,8 +12,15 @@ Use these when the user asks for:
 - internal Agent OS build plan: [agent-os-internal-build-plan.md](agent-os-internal-build-plan.md)
 - Agent OS context accuracy: [context-authority.md](context-authority.md)
 - Agent OS Koda memory discipline: [agent-os-memory.md](agent-os-memory.md)
+- Agent OS memory architecture v2: [agent-os-memory-architecture.md](agent-os-memory-architecture.md)
+- Agent OS tool and capability model: [agent-os-capability-model.md](agent-os-capability-model.md)
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
 - Agent OS research notes: [agent-os-research.md](agent-os-research.md)
+- Agent OS current state and review roadmap: [agent-os-review-roadmap.md](agent-os-review-roadmap.md)
+- Agent OS routing model: [agent-os-routing-model.md](agent-os-routing-model.md)
+- Agent OS approval gates: [agent-os-approval-gates.md](agent-os-approval-gates.md)
+- Agent OS communication and close-out: [agent-os-communication.md](agent-os-communication.md)
+- working with Hafiz: [working-with-hafiz.md](working-with-hafiz.md)
 - Agent OS installation: [agent-os-installation.md](agent-os-installation.md)
 - Agent OS staff quick start: [agent-os-staff-quick-start.md](agent-os-staff-quick-start.md)
 - Agent OS capability manifest example: [capabilities.example.json](capabilities.example.json)
@@ -132,10 +139,18 @@ $task-router -> session release ledger -> per-fix verify/qa/review -> commit/PR 
 
 ## Plain-Language Reporting
 
+Use [agent-os-communication.md](agent-os-communication.md) as the source of
+truth for day-to-day user-facing explanation style.
+
 Every workflow report should teach the practical meaning before the technical
 details. Start with what Hafiz needs to understand in everyday terms, especially
 for bugs, API behavior, deployment risk, or test failures. Then add the exact
 files, commands, evidence, and workflow labels needed for traceability.
+
+Avoid workflow labels as filler. If labels such as `Gate 2A`, `PARTIAL`,
+`BLOCKER`, or `Critical Save` are useful for audit trail, handoff, QA, commit
+records, or teaching terminology, use the label and immediately translate it
+into normal language.
 
 Good default order:
 

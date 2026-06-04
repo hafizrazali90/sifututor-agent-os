@@ -58,6 +58,12 @@ For a workspace health check:
 cat docs/agent-playbooks/quick-check.md
 ```
 
+For the current Agent OS state and review plan:
+
+```bash
+cat docs/agent-playbooks/agent-os-review-roadmap.md
+```
+
 For an Agent OS install/readiness check:
 
 ```bash

@@ -2,16 +2,26 @@
   "workspace": "Sifututor",
   "mode": "internal",
   "purpose": "Example capability manifest for the internal Sifututor Agent OS. Do not store secrets here.",
+  "capability_states": {
+    "available": "Tool is connected and verified in this session.",
+    "fallback": "Primary tool path is broken, but a safe alternate path works.",
+    "unknown": "Tool has not been checked yet.",
+    "not_connected": "Tool is absent in this session.",
+    "blocked": "Tool exists, but approval or risk gate prevents use now.",
+    "forbidden": "Never allowed by Agent OS rules."
+  },
   "tools": {
-    "filesystem": "workspace_write",
-    "git": "local_write",
+    "filesystem": "available: workspace_write",
+    "git_status_diff": "available: local read-only evidence",
+    "git_commit": "blocked: requires exact file-list approval and guard checks",
+    "git_push": "blocked: requires explicit current-session approval",
     "github": "unknown",
-    "koda": "read_write_if_health_check_passes",
+    "koda": "available_or_fallback: direct health/fallback determines state",
     "plane": "unknown",
     "planner": "unknown",
     "google_drive": "unknown",
     "production_logs": "unknown",
-    "deploy": "none"
+    "deploy": "blocked_or_not_connected: explicit approval required"
   },
   "risk_gates": {
     "discussion": "no_code_edits_unless_user_asks_to_proceed",

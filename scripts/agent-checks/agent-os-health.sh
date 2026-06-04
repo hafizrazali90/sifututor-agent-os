@@ -55,6 +55,8 @@ check_file "internal build plan" "$ROOT/docs/agent-playbooks/agent-os-internal-b
 check_file "context authority" "$ROOT/docs/agent-playbooks/context-authority.md"
 check_file "Agent OS evals" "$ROOT/docs/agent-playbooks/agent-os-evals.md"
 check_file "Agent OS memory" "$ROOT/docs/agent-playbooks/agent-os-memory.md"
+check_file "Agent OS capability model" "$ROOT/docs/agent-playbooks/agent-os-capability-model.md"
+check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
@@ -92,7 +94,7 @@ fi
 
 echo
 echo "Koda"
-if python3 "$ROOT/scripts/agent-checks/codex-lifecycle-hook.py" --check-koda >/tmp/agent-os-koda-check.out 2>/tmp/agent-os-koda-check.err; then
+if "$ROOT/scripts/agent-checks/koda" health >/tmp/agent-os-koda-check.out 2>/tmp/agent-os-koda-check.err; then
   pass "Koda direct health" "pass"
 else
   warn "Koda direct health" "failed or unavailable"
@@ -102,14 +104,17 @@ rm -f /tmp/agent-os-koda-check.out /tmp/agent-os-koda-check.err
 
 echo
 echo "Capability Summary"
-echo "- filesystem: workspace_write if detected above"
-echo "- git: local_write if git repo detected above"
-echo "- koda: read_write if direct health passed"
+echo "- filesystem: available if workspace write detected above"
+echo "- git status/diff: available if git repo detected above"
+echo "- git commit: blocked until exact file-list approval and guard checks"
+echo "- git push / PR / merge: blocked until explicit current-session approval"
+echo "- koda: available through CLI if direct health passed; chat MCP wrapper is optional"
 echo "- github: unknown unless a session-specific tool is connected"
 echo "- plane: unknown unless a session-specific tool is connected"
 echo "- planner: unknown unless a session-specific tool is connected"
 echo "- google_drive: unknown unless a session-specific tool is connected"
-echo "- deploy: none by default"
+echo "- production_logs: unknown unless a session-specific tool is connected"
+echo "- deploy: blocked or not_connected by default; explicit approval required"
 
 echo
 echo "Approval Required"

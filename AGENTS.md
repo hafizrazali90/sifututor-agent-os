@@ -71,6 +71,8 @@ Use it only as read-only reference.
 - Assume Hafiz is a self-learning engineer without a computer science
   background. Explain the practical meaning first, then add technical details
   such as files, functions, commands, tests, or workflow labels.
+- If the explanation is technical or twisted, add an easier non-technical
+  explanation as well.
 - For bugs and API issues, include a short non-technical mental model before
   the code-level diagnosis. Example: "the list is being filtered twice, so the
   item disappears after it is assigned."
@@ -86,9 +88,11 @@ Use it only as read-only reference.
 - Before ending a session, explicitly say whether all planned work is done,
   whether tests/guards passed, whether anything remains unverified, and whether
   the recommended next action is continue, QA, commit, save-session, or close.
-- Avoid leading user-facing replies with words like `PARTIAL`, `BLOCKER`,
-  `Gate 2A`, or `Critical Save` unless Hafiz asks for a formal report or a
-  playbook requires an exact audit trail.
+- Avoid user-facing filler labels such as `PARTIAL`, `BLOCKER`, `Gate 2A`, or
+  `Critical Save` unless Hafiz asks for a formal report, the label is useful
+  for teaching industry/Agent OS terminology, or a playbook requires an exact
+  audit trail. When a label is used for learning, translate it into normal
+  language immediately.
 - If work is incomplete, explain the practical reason and next move in normal
   words.
 - Keep formal labels inside commits, QA notes, save-session reports, and agent

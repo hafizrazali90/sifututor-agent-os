@@ -266,6 +266,16 @@ It defines the startup order:
 Those are useful later. The first job is to make the internal Sifututor Agent
 OS reliable for our own work.
 
+## Current Correction
+
+As of 2026-06-04, early installer and staff quick-start docs exist. Treat them
+as parked assets, not the main path.
+
+Before expanding staff rollout, use
+[agent-os-review-roadmap.md](agent-os-review-roadmap.md) to review the
+Hafiz-Agent operating model, routing, approvals, memory, verification, and
+close-out behavior one layer at a time.
+
 ## Done When
 
 The internal MVP is ready when:

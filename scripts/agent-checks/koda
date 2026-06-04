@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="/Users/hafizrazali/Projects/Sifututor"
+HELPER="$ROOT/scripts/agent-checks/codex-lifecycle-hook.py"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/agent-checks/koda health
+  scripts/agent-checks/koda search '<json-args>'
+  scripts/agent-checks/koda store '<json-args>'
+  scripts/agent-checks/koda update '<json-args>'
+
+Examples:
+  scripts/agent-checks/koda search '{"query":"communication preference","tags":["sifututor"],"limit":5}'
+  scripts/agent-checks/koda store '{"category":"lesson","content":"...","project":"sifututor","source":"auto-captured","tags":["sifututor","agent-os"],"why":"..."}'
+  scripts/agent-checks/koda update '{"id":"mem_XXXX","content":"...","source":"correction","tags":["sifututor","agent-os"],"why":"..."}'
+
+Notes:
+  - Do not pass secrets, raw tokens, .env values, or private payloads.
+  - Use this CLI as the Codex-first Koda path in this workspace.
+EOF
+}
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 2
+fi
+
+command="$1"
+shift
+
+case "$command" in
+  health)
+    python3 "$HELPER" --check-koda
+    ;;
+  search)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 2
+    fi
+    python3 "$HELPER" --koda-search-json "$1"
+    ;;
+  store)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 2
+    fi
+    python3 "$HELPER" --koda-store-json "$1"
+    ;;
+  update)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 2
+    fi
+    python3 "$HELPER" --koda-update-json "$1"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac

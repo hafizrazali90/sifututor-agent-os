@@ -25,6 +25,22 @@ classify, resume, or create work.
 8. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
 
+## Intent Routing Model
+
+Use [agent-os-routing-model.md](agent-os-routing-model.md) for Agent OS prompt
+classification rules.
+
+Important routing principles:
+
+- Do not route by keyword alone.
+- Discussion, learning, architecture review, and retrospectives should stay
+  light unless Hafiz asks to document or implement.
+- `proceed` means act on the last clear recommended step.
+- `approve` means execute the last exact approval request, including a safe
+  bundle if the agent clearly asked for that bundle.
+- Push, deploy, merge, PR, critical-lane, destructive, secret, and production
+  actions still need their stricter gates.
+
 ## State-File Projects
 
 Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
