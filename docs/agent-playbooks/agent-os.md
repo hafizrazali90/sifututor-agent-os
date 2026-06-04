@@ -98,3 +98,7 @@ lesson belongs in Koda.
 Use [agent-os-installation.md](agent-os-installation.md) and
 [agent-os-install-manifest.json](agent-os-install-manifest.json) when checking
 or applying the Agent OS baseline to another project.
+
+Use [agent-os-staff-quick-start.md](agent-os-staff-quick-start.md) when rolling
+out the Agent OS to staff using Codex, Claude, Copilot, Cursor, Gemini, or
+another LLM-assisted tool.

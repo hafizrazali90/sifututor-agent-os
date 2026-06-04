@@ -65,6 +65,12 @@ scripts/agent-checks/agent-os-install.sh
 scripts/agent-checks/agent-os-install.sh --target sifututor_parent
 ```
 
+For staff rollout:
+
+```bash
+cat docs/agent-playbooks/agent-os-staff-quick-start.md
+```
+
 Then run the guard from the project you are about to commit:
 
 ```bash

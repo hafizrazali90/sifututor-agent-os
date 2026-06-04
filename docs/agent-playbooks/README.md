@@ -15,6 +15,7 @@ Use these when the user asks for:
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
 - Agent OS research notes: [agent-os-research.md](agent-os-research.md)
 - Agent OS installation: [agent-os-installation.md](agent-os-installation.md)
+- Agent OS staff quick start: [agent-os-staff-quick-start.md](agent-os-staff-quick-start.md)
 - Agent OS capability manifest example: [capabilities.example.json](capabilities.example.json)
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)

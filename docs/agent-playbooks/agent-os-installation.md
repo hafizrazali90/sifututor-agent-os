@@ -92,6 +92,9 @@ Start staff with the smallest safe setup:
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 
+For the staff-facing first-run guide, use
+[agent-os-staff-quick-start.md](agent-os-staff-quick-start.md).
+
 ## Manifest
 
 The install/check source of truth is:
