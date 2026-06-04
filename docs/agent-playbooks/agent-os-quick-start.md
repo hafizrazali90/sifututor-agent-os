@@ -101,6 +101,8 @@ contracts:
 - [agent-os-evals.md](agent-os-evals.md): workflow eval cases.
 - [capabilities.example.json](capabilities.example.json): capability manifest
   example.
+- [agent-os-installation.md](agent-os-installation.md): install/check guide for
+  applying the Agent OS baseline to a project.
 - [task-router.md](task-router.md): route selection.
 - [verify.md](verify.md), [qa.md](qa.md), [review.md](review.md),
   [commit.md](commit.md), [save-session.md](save-session.md): core workflow

@@ -1,0 +1,58 @@
+{
+  "name": "Sifututor Agent OS Install Manifest",
+  "version": 1,
+  "purpose": "Baseline files used by the Agent OS installer/checker. Do not store secrets here.",
+  "umbrella_required_files": [
+    "AGENTS.md",
+    ".codex/config.toml",
+    "docs/agent-playbooks/agent-os.md",
+    "docs/agent-playbooks/agent-os-quick-start.md",
+    "docs/agent-playbooks/agent-os-installation.md",
+    "docs/agent-playbooks/agent-os-install-manifest.json",
+    "scripts/agent-checks/agent-os-health.sh",
+    "scripts/agent-checks/agent-os-install.sh",
+    "scripts/agent-checks/pre-commit-guard.sh",
+    "scripts/agent-checks/workflow-doctor.sh"
+  ],
+  "codex_skill_files": [
+    ".agents/skills/task-router/SKILL.md",
+    ".agents/skills/verify/SKILL.md",
+    ".agents/skills/qa/SKILL.md",
+    ".agents/skills/review/SKILL.md",
+    ".agents/skills/commit/SKILL.md",
+    ".agents/skills/save-session/SKILL.md",
+    ".agents/skills/handoff/SKILL.md",
+    ".agents/skills/snapshot/SKILL.md",
+    ".agents/skills/diagnose/SKILL.md",
+    ".agents/skills/quick-check/SKILL.md",
+    ".agents/skills/product-design/SKILL.md"
+  ],
+  "shared_hook_files": [
+    ".claude/hooks/koda-context-injector.py",
+    ".claude/hooks/validate-branch-name.py",
+    ".claude/hooks/conventional-commits.py",
+    ".claude/hooks/test-coverage-gate.py",
+    ".claude/hooks/friction-logger.py"
+  ],
+  "project_baseline": {
+    "required_existing_files": [
+      "AGENTS.md"
+    ],
+    "recommended_existing_files": [
+      "CLAUDE.md"
+    ],
+    "generated_directories": [
+      ".claude",
+      ".claude/hooks",
+      ".claude/tasks",
+      ".claude/tasks/archive"
+    ],
+    "generated_files": [
+      ".claude/settings.json",
+      ".claude/hooks/README.md",
+      ".claude/tasks/active.json",
+      ".claude/tasks/SCHEMA.md",
+      ".claude/tasks/archive/.gitkeep"
+    ]
+  }
+}

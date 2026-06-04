@@ -55,6 +55,9 @@ check_file "internal build plan" "$ROOT/docs/agent-playbooks/agent-os-internal-b
 check_file "context authority" "$ROOT/docs/agent-playbooks/context-authority.md"
 check_file "Agent OS evals" "$ROOT/docs/agent-playbooks/agent-os-evals.md"
 check_file "Agent OS memory" "$ROOT/docs/agent-playbooks/agent-os-memory.md"
+check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
+check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
+check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then

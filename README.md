@@ -58,6 +58,13 @@ For a workspace health check:
 cat docs/agent-playbooks/quick-check.md
 ```
 
+For an Agent OS install/readiness check:
+
+```bash
+scripts/agent-checks/agent-os-install.sh
+scripts/agent-checks/agent-os-install.sh --target sifututor_parent
+```
+
 Then run the guard from the project you are about to commit:
 
 ```bash

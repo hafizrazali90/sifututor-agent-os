@@ -94,3 +94,7 @@ guards, and approval gates behave correctly.
 
 Use [agent-os-memory.md](agent-os-memory.md) when deciding whether an Agent OS
 lesson belongs in Koda.
+
+Use [agent-os-installation.md](agent-os-installation.md) and
+[agent-os-install-manifest.json](agent-os-install-manifest.json) when checking
+or applying the Agent OS baseline to another project.

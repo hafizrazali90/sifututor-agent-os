@@ -14,6 +14,7 @@ Use these when the user asks for:
 - Agent OS Koda memory discipline: [agent-os-memory.md](agent-os-memory.md)
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
 - Agent OS research notes: [agent-os-research.md](agent-os-research.md)
+- Agent OS installation: [agent-os-installation.md](agent-os-installation.md)
 - Agent OS capability manifest example: [capabilities.example.json](capabilities.example.json)
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)
