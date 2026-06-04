@@ -21,10 +21,15 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
    missing permanent E2E regression decision as a review finding. If the change
    affects browser/mobile behavior and no E2E was added or updated, require a
    specific blocker and follow-up fixture/test.
-7. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
+7. For staff-facing feature, bugfix, hotfix, or small-change work, treat
+   missing release communication as a review finding when relevant. Check for a
+   `CHANGELOG.md` entry, affected module help updates, and a What's New release
+   entry or seed script. If any item is intentionally not needed, the PR or
+   final answer must say why.
+8. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
-8. Report findings by severity with file and line references where possible.
+9. Report findings by severity with file and line references where possible.
 
 ## Output Shape
 
@@ -42,6 +47,9 @@ Test gaps:
 
 Permanent E2E:
 - <added/updated file path | missing finding | not feasible with reason>
+
+Release communication:
+- <CHANGELOG/help/What's New current | missing finding | not relevant with reason>
 
 Session release ledger:
 - <not applicable | current | missing finding>
