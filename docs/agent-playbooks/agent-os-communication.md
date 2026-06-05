@@ -91,6 +91,17 @@ the docs batch.
 Use a structured close-out only when it improves scanning, such as after a long
 task, QA run, handoff, commit prep, or incomplete work.
 
+The executable response-shape subset lives at:
+
+```bash
+scripts/agent-checks/agent-os-response-shape-runner.py
+```
+
+It checks sample close-outs for the required meaning above. Plain meaning: it
+does not judge style perfectly, but it catches vague "done" replies that do not
+tell Hafiz what changed, what was checked, what state the work is in, what
+remains, and what should happen next.
+
 ## Progress Updates
 
 During longer work, give short updates that explain what is happening and why.

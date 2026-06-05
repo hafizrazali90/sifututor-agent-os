@@ -30,6 +30,7 @@ be automated next.
 | Planning bundles | AO-015, AO-027 | Turning safe docs/planning work into product implementation without confirmed scope. |
 | State truth | AO-018, AO-065, AO-067 | Confusing saved, local, committed, pushed, deployed, or live-smoke-passed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
+| Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
 
 ## Manual Scenario Coverage
 
@@ -37,7 +38,7 @@ These are important but not honest as simple router-classifier tests yet.
 
 | Area | Eval IDs | Why manual for now |
 | --- | --- | --- |
-| Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Needs full assistant response review, not only router output. |
+| Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner; still needs full assistant response review for tone and layered explanations. |
 | Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Plane, Planner, Koda, or production/deploy evidence. |
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Needs memory write/read behavior, not only prompt classification. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Needs session tool availability and permission state. |
@@ -49,8 +50,8 @@ These are important but not honest as simple router-classifier tests yet.
 1. Add conversation-state fixtures so `approve`, `proceed`, and `what next`
    can be tested with real previous-message context instead of synthetic
    prompt text.
-2. Add response-shape checks for plain-language close-out, practical meaning,
-   evidence summary, and recommended next action.
+2. Add richer response fixtures for practical meaning, easier explanation,
+   technical detail, and formal-label translation.
 3. Add repo-state fixtures for local-only, committed, pushed, deployed, and
    live-smoke-passed scenarios.
 4. Add Koda fixture tests for memory retrieval quality, stale-memory handling,

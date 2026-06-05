@@ -71,6 +71,7 @@ check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installat
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
+check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
@@ -92,6 +93,16 @@ else
   sed -n '1,8p' /tmp/agent-os-eval-self-test.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-eval-self-test.out /tmp/agent-os-eval-self-test.err
+
+if "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py" >/tmp/agent-os-response-shape.out 2>/tmp/agent-os-response-shape.err; then
+  response_shape_summary="$(tail -1 /tmp/agent-os-response-shape.out 2>/dev/null || true)"
+  pass "Agent OS response shape" "${response_shape_summary:-passed}"
+else
+  fail "Agent OS response shape" "response-shape runner failed"
+  sed -n '1,12p' /tmp/agent-os-response-shape.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-response-shape.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-response-shape.out /tmp/agent-os-response-shape.err
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
