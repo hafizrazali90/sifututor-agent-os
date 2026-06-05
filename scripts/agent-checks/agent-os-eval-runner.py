@@ -203,8 +203,7 @@ def invalid_case_contracts() -> list[str]:
     return invalid
 
 
-def run_eval(verbose: bool = False) -> int:
-    classify_prompt = load_classifier()
+def evaluate_cases(classify_prompt, verbose: bool = False) -> tuple[int, list[str]]:
     failures = []
     documented_ids = markdown_eval_ids()
     undocumented_ids = [case["id"] for case in CASES if case["id"] not in documented_ids]
@@ -260,16 +259,64 @@ def run_eval(verbose: bool = False) -> int:
     passed = len(CASES) - len(case_failures)
     doc_status = "markdown ids ok" if not undocumented_ids else "markdown ids missing"
     print(f"agent-os-eval-runner: {passed}/{len(CASES)} passed ({doc_status})")
+    return passed, failures
+
+
+def run_eval(verbose: bool = False) -> int:
+    classify_prompt = load_classifier()
+    _passed, failures = evaluate_cases(classify_prompt, verbose=verbose)
     if failures:
         print("failed: " + ", ".join(failures))
         return 1
     return 0
 
 
+def wrong_route_classifier(prompt: str) -> tuple[str, list[str], str]:
+    _skill, actions, reason = load_classifier()(prompt)
+    return "", actions, reason
+
+
+def weak_actions_classifier(prompt: str) -> tuple[str, list[str], str]:
+    skill, _actions, reason = load_classifier()(prompt)
+    return skill, [], reason
+
+
+def run_self_test(verbose: bool = False) -> int:
+    print("self-test: normal classifier should pass")
+    if run_eval(verbose=verbose) != 0:
+        print("self-test: FAIL normal classifier did not pass")
+        return 1
+
+    negative_cases = [
+        ("wrong-route", wrong_route_classifier),
+        ("weak-actions", weak_actions_classifier),
+    ]
+
+    failures = []
+    for name, classifier in negative_cases:
+        print(f"self-test: {name} classifier should fail")
+        _passed, eval_failures = evaluate_cases(classifier, verbose=verbose)
+        if eval_failures:
+            print(f"self-test: PASS {name} failed as expected")
+        else:
+            print(f"self-test: FAIL {name} unexpectedly passed")
+            failures.append(name)
+
+    if failures:
+        print("self-test failed: " + ", ".join(failures))
+        return 1
+
+    print("self-test: PASS negative classifiers failed as expected")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Agent OS route and behavior evals.")
     parser.add_argument("--verbose", action="store_true", help="print every eval case")
+    parser.add_argument("--self-test", action="store_true", help="prove the eval runner fails known-bad classifiers")
     args = parser.parse_args()
+    if args.self_test:
+        return run_self_test(verbose=args.verbose)
     return run_eval(verbose=args.verbose)
 
 

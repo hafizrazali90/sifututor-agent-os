@@ -22,6 +22,16 @@ the right workflow but forgets an important next-step instruction.
 The umbrella health check runs this executable subset, so routing/behavior
 regressions fail `scripts/agent-checks/agent-os-health.sh`.
 
+The runner also has a self-test mode:
+
+```bash
+scripts/agent-checks/agent-os-eval-runner.py --self-test
+```
+
+This deliberately runs known-bad classifiers and expects them to fail. In
+plain language: it tests the test itself, so a passing eval suite is more
+trustworthy.
+
 ## How To Use
 
 For each case:

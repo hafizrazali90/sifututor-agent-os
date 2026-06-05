@@ -82,6 +82,16 @@ else
 fi
 rm -f /tmp/agent-os-eval-runner.out /tmp/agent-os-eval-runner.err
 
+if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" --self-test >/tmp/agent-os-eval-self-test.out 2>/tmp/agent-os-eval-self-test.err; then
+  self_test_summary="$(tail -1 /tmp/agent-os-eval-self-test.out 2>/dev/null || true)"
+  pass "Agent OS eval self-test" "${self_test_summary:-passed}"
+else
+  fail "Agent OS eval self-test" "negative eval self-test failed"
+  sed -n '1,12p' /tmp/agent-os-eval-self-test.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-eval-self-test.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-eval-self-test.out /tmp/agent-os-eval-self-test.err
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
   branch="$(git branch --show-current 2>/dev/null || true)"
