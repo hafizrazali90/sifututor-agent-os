@@ -646,6 +646,29 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "User explicitly invoked a Codex workflow skill.",
         )
 
+    if "approve" in normalized and "commit" in normalized and "push" in normalized:
+        return (
+            "$review",
+            [
+                "Use $review first as a pre-push risk check for the approved commit+push bundle.",
+                "Confirm the exact approved file list from visible chat context before staging.",
+                "After review and guard checks pass, commit and push exactly that approved bundle.",
+                "Do not include deploy, merge, PR, or unrelated files in the bundle.",
+            ],
+            "Prompt approves a visible commit+push bundle and requires pre-push review.",
+        )
+
+    if "approve" in normalized and "commit" in normalized:
+        return (
+            "$commit",
+            [
+                "Use $commit and run the shared pre-commit guard for the approved commit-only bundle.",
+                "Stage and commit only the exact approved file list from visible chat context.",
+                "Do not push because push was not part of the approval request.",
+            ],
+            "Prompt approves a visible commit-only bundle.",
+        )
+
     if discussion_prompt(normalized):
         return (
             "",

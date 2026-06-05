@@ -114,6 +114,22 @@ CASES = [
         "why": "Proceed-next should route through task-router so the model can use visible chat context.",
     },
     {
+        "id": "AO-022",
+        "prompt": "approve after the agent asked: approve commit and push for these three files",
+        "skill": "$review",
+        "reason_contains": "commit+push bundle",
+        "actions_contain": ["pre-push risk check", "exact approved file list", "commit and push exactly"],
+        "why": "Approved commit+push bundles should go through review and execute only the named bundle.",
+    },
+    {
+        "id": "AO-023",
+        "prompt": "approve after the agent asked: approve commit only for these three files",
+        "skill": "$commit",
+        "reason_contains": "commit-only bundle",
+        "actions_contain": ["pre-commit guard", "exact approved file list", "do not push"],
+        "why": "Approved commit-only bundles must not silently become commit+push.",
+    },
+    {
         "id": "AO-076",
         "prompt": "go next",
         "skill": "$task-router",

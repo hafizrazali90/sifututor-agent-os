@@ -22,6 +22,10 @@ the right workflow but forgets an important next-step instruction.
 The umbrella health check runs this executable subset, so routing/behavior
 regressions fail `scripts/agent-checks/agent-os-health.sh`.
 
+The executable subset includes the approval-bundle distinction between
+`commit+push` and `commit only` so that `approve` does not silently do more
+than the previous exact approval request allowed.
+
 The runner also has a self-test mode:
 
 ```bash
