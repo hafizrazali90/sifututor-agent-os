@@ -24,6 +24,7 @@
     "docs/agent-playbooks/agent-os-install-manifest.json",
     "scripts/agent-checks/agent-os-health.sh",
     "scripts/agent-checks/agent-os-install.sh",
+    "scripts/agent-checks/agent-os-eval-runner.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"
   ],

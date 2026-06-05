@@ -69,6 +69,7 @@ check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
+check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then

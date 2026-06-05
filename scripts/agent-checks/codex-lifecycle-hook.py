@@ -619,6 +619,17 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
     lower = prompt.lower()
     normalized = re.sub(r"\s+", " ", lower).strip()
 
+    if re.search(r"(^|\s|/|\\)\.env($|\b|[./_-])", normalized) or re.search(r"(^|\s|/|\\)live(/|\\|\b)", normalized):
+        return (
+            "$task-router",
+            [
+                "Treat this as a blocked boundary, not implementation work.",
+                "Do not read `.env*`, reveal secrets, or modify `live/`.",
+                "Explain the boundary in plain language and offer a safe alternative if one exists.",
+            ],
+            "Prompt requests a forbidden boundary.",
+        )
+
     direct_skill = re.search(
         r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|diagnose|review|quick-check|product-design)\b",
         normalized,
@@ -668,6 +679,44 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Reduce noise: ask only questions that change requirements, risk, UX, RBAC, data contracts, or acceptance tests.",
             ],
             "Prompt is asking for product design, PRD/UX/build prompts, or major workflow redesign.",
+        )
+
+    critical_domain_patterns = (
+        "payment",
+        "payments",
+        "invoice",
+        "invoices",
+        "commission",
+        "commissions",
+        "migration",
+        "migrations",
+        "auth",
+        "authentication",
+        "mobile api",
+        "api response",
+        "api contract",
+    )
+    critical_action_patterns = (
+        "fix",
+        "change",
+        "update",
+        "modify",
+        "patch",
+        "implement",
+        "response changed",
+        "contract changed",
+    )
+    if any(domain in normalized for domain in critical_domain_patterns) and any(
+        action in normalized for action in critical_action_patterns
+    ):
+        return (
+            "$diagnose",
+            [
+                "Use $diagnose before editing.",
+                "This is a critical lane: auth, payments, invoices, commissions, migrations, deployment, or mobile API contract behavior.",
+                "Stop after read-only Phase A diagnosis and wait for approval before implementation.",
+            ],
+            "Prompt touches a critical lane and requires diagnosis first.",
         )
 
     if any(word in normalized for word in ("quick check", "quick-check", "health check", "workflow doctor", "doctor", "wired correctly")):

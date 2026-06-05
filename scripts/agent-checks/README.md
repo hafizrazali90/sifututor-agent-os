@@ -33,3 +33,12 @@ scripts/agent-checks/workflow-doctor.sh
 
 Checks all ten projects, Codex skills, hook scripts, active task JSON, and
 Claude parent `additionalDirectories`.
+
+## Agent OS Evals
+
+```bash
+scripts/agent-checks/agent-os-eval-runner.py
+```
+
+Runs the first routing eval batch against the real Codex lifecycle classifier.
+Use `--verbose` to see every prompt, expected skill, observed skill, and reason.
