@@ -60,6 +60,16 @@ accepted by Hafiz
 Do not use "done" alone when a user could reasonably think it means shipped or
 live.
 
+The executable state wording subset lives at:
+
+```bash
+scripts/agent-checks/agent-os-state-fixture-runner.py
+```
+
+It checks sample state summaries so local, committed, pushed, deployed, and
+live-smoke-passed states do not get mixed together. Plain meaning: it catches
+answers that say "done" or "live" when the evidence only proves a lower state.
+
 ## Normal Work State Flow
 
 For one normal coding task:

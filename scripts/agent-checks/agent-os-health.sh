@@ -72,6 +72,7 @@ check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-inst
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
+check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
@@ -103,6 +104,16 @@ else
   sed -n '1,8p' /tmp/agent-os-response-shape.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-response-shape.out /tmp/agent-os-response-shape.err
+
+if "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py" >/tmp/agent-os-state-fixtures.out 2>/tmp/agent-os-state-fixtures.err; then
+  state_fixture_summary="$(tail -1 /tmp/agent-os-state-fixtures.out 2>/dev/null || true)"
+  pass "Agent OS state fixtures" "${state_fixture_summary:-passed}"
+else
+  fail "Agent OS state fixtures" "state fixture runner failed"
+  sed -n '1,12p' /tmp/agent-os-state-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-state-fixtures.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-state-fixtures.out /tmp/agent-os-state-fixtures.err
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"

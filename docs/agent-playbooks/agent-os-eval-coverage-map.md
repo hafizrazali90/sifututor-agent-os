@@ -31,6 +31,7 @@ be automated next.
 | State truth | AO-018, AO-065, AO-067 | Confusing saved, local, committed, pushed, deployed, or live-smoke-passed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
 | Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
+| State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005 | Saying local or committed work is live, deployed, or smoke-passed without evidence. |
 
 ## Manual Scenario Coverage
 
@@ -52,8 +53,8 @@ These are important but not honest as simple router-classifier tests yet.
    prompt text.
 2. Add richer response fixtures for practical meaning, easier explanation,
    technical detail, and formal-label translation.
-3. Add repo-state fixtures for local-only, committed, pushed, deployed, and
-   live-smoke-passed scenarios.
+3. Add richer repo-state fixtures for PR open, merged, deployed, and
+   live-smoke-passed scenarios with external evidence links.
 4. Add Koda fixture tests for memory retrieval quality, stale-memory handling,
    and correction storage.
 5. Add tool-capability fixtures for GitHub, Plane, Planner, Google Drive, and
