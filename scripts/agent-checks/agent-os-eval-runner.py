@@ -13,6 +13,7 @@ import types
 ROOT = Path(__file__).resolve().parents[2]
 HOOK = ROOT / "scripts" / "agent-checks" / "codex-lifecycle-hook.py"
 EVAL_DOC = ROOT / "docs" / "agent-playbooks" / "agent-os-evals.md"
+COVERAGE_MAP = ROOT / "docs" / "agent-playbooks" / "agent-os-eval-coverage-map.md"
 
 CASES = [
     {
@@ -304,9 +305,9 @@ def load_classifier():
     return module.classify_prompt
 
 
-def markdown_eval_ids() -> set[str]:
-    text = EVAL_DOC.read_text()
-    return set(re.findall(r"\|\s*(AO-\d{3})\s*\|", text))
+def markdown_eval_ids(path: Path) -> set[str]:
+    text = path.read_text()
+    return set(re.findall(r"\bAO-\d{3}\b", text))
 
 
 def normalize_text(value: str) -> str:
@@ -333,8 +334,10 @@ def invalid_case_contracts() -> list[str]:
 
 def evaluate_cases(classify_prompt, verbose: bool = False) -> tuple[int, list[str]]:
     failures = []
-    documented_ids = markdown_eval_ids()
+    documented_ids = markdown_eval_ids(EVAL_DOC)
+    coverage_map_ids = markdown_eval_ids(COVERAGE_MAP)
     undocumented_ids = [case["id"] for case in CASES if case["id"] not in documented_ids]
+    unmapped_ids = [case["id"] for case in CASES if case["id"] not in coverage_map_ids]
     contract_errors = invalid_case_contracts()
 
     if undocumented_ids:
@@ -343,6 +346,13 @@ def evaluate_cases(classify_prompt, verbose: bool = False) -> tuple[int, list[st
         for case_id in undocumented_ids:
             print(f"    - {case_id}")
         failures.extend(undocumented_ids)
+
+    if unmapped_ids:
+        print("FAIL eval-coverage-map-sync")
+        print("  executable case IDs missing from docs/agent-playbooks/agent-os-eval-coverage-map.md:")
+        for case_id in unmapped_ids:
+            print(f"    - {case_id}")
+        failures.extend(unmapped_ids)
 
     if contract_errors:
         print("FAIL eval-contract")
@@ -386,7 +396,8 @@ def evaluate_cases(classify_prompt, verbose: bool = False) -> tuple[int, list[st
     case_failures = {failure for failure in failures if failure.startswith("AO-")}
     passed = len(CASES) - len(case_failures)
     doc_status = "markdown ids ok" if not undocumented_ids else "markdown ids missing"
-    print(f"agent-os-eval-runner: {passed}/{len(CASES)} passed ({doc_status})")
+    coverage_status = "coverage map ids ok" if not unmapped_ids else "coverage map ids missing"
+    print(f"agent-os-eval-runner: {passed}/{len(CASES)} passed ({doc_status}; {coverage_status})")
     return passed, failures
 
 

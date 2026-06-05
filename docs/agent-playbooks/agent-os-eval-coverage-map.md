@@ -67,5 +67,7 @@ When adding or changing an eval:
    runner.
 3. If it cannot be executable yet, record it under manual scenario or future
    harness coverage here.
-4. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
-5. Run `scripts/agent-checks/agent-os-health.sh`.
+4. Keep every executable `AO-*` case listed in this coverage map; the runner
+   fails when a code case is missing from the map.
+5. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
+6. Run `scripts/agent-checks/agent-os-health.sh`.
