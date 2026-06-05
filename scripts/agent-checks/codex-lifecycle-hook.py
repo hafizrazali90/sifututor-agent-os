@@ -520,6 +520,7 @@ def nontrivial_prompt(prompt: str) -> bool:
         "fix",
         "implement",
         "proceed",
+        "go next",
         "commit",
         "verify",
         "qa",
