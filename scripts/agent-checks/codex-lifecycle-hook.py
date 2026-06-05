@@ -620,7 +620,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
     lower = prompt.lower()
     normalized = re.sub(r"\s+", " ", lower).strip()
 
-    if re.search(r"(^|\s|/|\\)\.env($|\b|[./_-])", normalized) or re.search(r"(^|\s|/|\\)live(/|\\|\b)", normalized):
+    if re.search(r"(^|\s|/|\\)\.env($|\b|[./_-])", normalized) or re.search(r"(^|\s|/|\\)live(/|\\)", normalized):
         return (
             "$task-router",
             [
@@ -629,6 +629,30 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Explain the boundary in plain language and offer a safe alternative if one exists.",
             ],
             "Prompt requests a forbidden boundary.",
+        )
+
+    if "--no-verify" in normalized or "bypass hook" in normalized or "skip hook" in normalized:
+        return (
+            "$task-router",
+            [
+                "Treat this as a blocked bypass request, not implementation work.",
+                "Do not use `--no-verify` or skip hooks, tests, or quality gates.",
+                "Explain the boundary in plain language and offer to fix the failing hook or test instead.",
+            ],
+            "Prompt requests a forbidden hook or quality-gate bypass.",
+        )
+
+    if "agents.md" in normalized and "claude.md" in normalized and any(
+        word in normalized for word in ("conflict", "another", "different", "disagree")
+    ):
+        return (
+            "$task-router",
+            [
+                "Stop before editing because the source-of-truth instructions conflict.",
+                "Report the AGENTS.md versus CLAUDE.md conflict in plain language.",
+                "Ask Hafiz which instruction should control before changing files.",
+            ],
+            "Prompt reports a workflow instruction conflict.",
         )
 
     direct_skill = re.search(
@@ -667,6 +691,43 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Do not push because push was not part of the approval request.",
             ],
             "Prompt approves a visible commit-only bundle.",
+        )
+
+    if "koda" in normalized and any(word in normalized for word in ("workaround", "memory", "accepted", "apply")):
+        return (
+            "$task-router",
+            [
+                "Treat Koda as historical context, not automatic permission to edit.",
+                "Check current files and current repo behavior before applying any remembered workaround.",
+                "If the memory is stale, explain the mismatch and update Koda after verification.",
+            ],
+            "Prompt relies on Koda or historical context and needs current-state verification.",
+        )
+
+    if "staff" in normalized and any(
+        word in normalized for word in ("install", "tools", "llm", "capability", "access", "payment", "auth", "deploy")
+    ):
+        return (
+            "$task-router",
+            [
+                "Start with the staff-safe kit and least-privilege access.",
+                "Do not grant production, deploy, secret, Koda write, or critical-lane access by default.",
+                "Escalate only after Hafiz approves scoped capability, evidence expectations, and review gates.",
+            ],
+            "Prompt is about staff Agent OS rollout or capability access.",
+        )
+
+    if ("planner" in normalized or "staff member" in normalized or "staff says" in normalized) and not any(
+        word in normalized for word in ("install", "tools", "llm", "capability", "access")
+    ):
+        return (
+            "$diagnose",
+            [
+                "Treat this as a reported symptom, not verified root cause.",
+                "Check Planner or available staff-reported context when relevant, then reproduce or inspect before editing.",
+                "Convert confirmed engineering work into the normal GitHub/Plane/task workflow.",
+            ],
+            "Prompt starts from staff or Planner-reported operational context.",
         )
 
     if discussion_prompt(normalized):
@@ -753,6 +814,27 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking to check workflow health.",
         )
 
+    if "agent os" in normalized and any(word in normalized for word in ("ready", "readiness", "install-ready")):
+        return (
+            "$quick-check",
+            [
+                "Use $quick-check and run scripts/agent-checks/workflow-doctor.sh from the umbrella root.",
+                "Report PASS/FAIL/PARTIAL with any readiness warnings or missing baseline files.",
+            ],
+            "Prompt is asking to check workflow health.",
+        )
+
+    if "create" in normalized and "issue" in normalized and ("document" in normalized or "plan" in normalized):
+        return (
+            "$task-router",
+            [
+                "Treat this as a safe planning bundle only if the scope is clear and non-critical.",
+                "Create or link the engineering issue, then document the plan in the relevant Agent OS or project file.",
+                "Do not implement product changes until the planned scope is confirmed.",
+            ],
+            "Prompt asks for a bundled issue-and-plan workflow.",
+        )
+
     if any(word in normalized for word in ("save session", "save-session", "wrap up", "end session", "finish session")):
         return (
             "$save-session",
@@ -823,6 +905,32 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for QA or regression evidence.",
         )
 
+    if any(person in normalized for person in ("human", "hafiz", "staff")) and any(
+        word in normalized for word in ("check", "verify", "qa")
+    ):
+        return (
+            "$verify",
+            [
+                "Treat this as a verification gap if the agent can safely check it.",
+                "Run available browser, mobile, API, CLI, or read-only checks before asking Hafiz or staff.",
+                "Ask for human verification only for unavailable credentials, destructive paths, subjective acceptance, or risk sign-off.",
+            ],
+            "Prompt describes a verification gap where human handoff may need agent-run evidence first.",
+        )
+
+    if any(phrase in normalized for phrase in ("unit tests", "backend tests", "api tests")) and any(
+        phrase in normalized for phrase in ("staff workflow", "user workflow", "browser", "mobile evidence", "human journey")
+    ):
+        return (
+            "$qa",
+            [
+                "Report machine-level proof as partial when human-journey evidence is missing.",
+                "Gather browser, mobile, API-contract, or manual QA evidence where feasible.",
+                "Do not call the real workflow done until the human journey is proved or a named blocker is documented.",
+            ],
+            "Prompt exposes a human-journey evidence gap.",
+        )
+
     if commit_prompt(normalized):
         return (
             "$commit",
@@ -833,6 +941,28 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Do not push unless explicitly asked in the current session.",
             ],
             "Prompt is asking for commit preparation or commit execution.",
+        )
+
+    if "done" in normalized and any(phrase in normalized for phrase in ("locally", "changed files", "not pushed", "not committed")):
+        return (
+            "$task-router",
+            [
+                "Clarify the exact state: done locally, committed, pushed, PR open, merged, deployed, or live-smoke-passed.",
+                "Do not imply the change is live or shipped without git, deploy, and smoke evidence.",
+                "Recommend the next state transition, such as verify, commit, push, PR, deploy, or close.",
+            ],
+            "Prompt risks confusing local work with shipped state.",
+        )
+
+    if "all fixes" in normalized and "live" in normalized:
+        return (
+            "$task-router",
+            [
+                "Inventory every session fix by branch, commit, PR, main status, deploy status, and live smoke status.",
+                "Use the Session Release Ledger when more than one fix is in play.",
+                "Do not summarize multiple fixes as done without naming each target state.",
+            ],
+            "Prompt asks for multi-fix live-state truth.",
         )
 
     if any(word in normalized for word in ("push", "deploy", "release", "merge", "pull request", " pr ")):

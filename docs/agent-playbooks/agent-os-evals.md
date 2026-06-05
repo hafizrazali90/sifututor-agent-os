@@ -5,6 +5,9 @@ Use these eval cases to check whether the Sifututor Agent OS behaves correctly.
 These start as Markdown test cases. They can later become automated tests for
 the lifecycle hook, router, guards, or agent prompts.
 
+Use [agent-os-eval-coverage-map.md](agent-os-eval-coverage-map.md) to see which
+eval areas are executable, manual, or waiting for a future harness.
+
 The first executable route and behavior subset lives at:
 
 ```bash

@@ -20,6 +20,7 @@
     "docs/agent-playbooks/agent-os-state-model.md",
     "docs/agent-playbooks/agent-os-rollout-readiness.md",
     "docs/agent-playbooks/agent-os-evals.md",
+    "docs/agent-playbooks/agent-os-eval-coverage-map.md",
     "docs/agent-playbooks/agent-os-installation.md",
     "docs/agent-playbooks/agent-os-install-manifest.json",
     "scripts/agent-checks/agent-os-health.sh",
