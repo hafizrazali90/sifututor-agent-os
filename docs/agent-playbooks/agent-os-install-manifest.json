@@ -29,6 +29,7 @@
     "scripts/agent-checks/agent-os-response-shape-runner.py",
     "scripts/agent-checks/agent-os-state-fixture-runner.py",
     "scripts/agent-checks/agent-os-koda-fixture-runner.py",
+    "scripts/agent-checks/agent-os-capability-fixture-runner.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"
   ],

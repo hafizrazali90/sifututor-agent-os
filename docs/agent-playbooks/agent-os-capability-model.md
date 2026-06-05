@@ -135,6 +135,18 @@ The health check should report:
 Do not treat the health check as permission to cross approval gates. It reports
 capability; it does not approve business decisions.
 
+Run the local fixture runner when changing capability rules:
+
+```bash
+scripts/agent-checks/agent-os-capability-fixture-runner.py
+```
+
+This fixture runner does not call external services. It checks the decision
+rules before tool use: unknown tools must be checked before being claimed,
+not-connected tools need a plain fallback, blocked tools need approval,
+critical tools need the right gate, staff capability starts least-privilege,
+and forbidden boundaries stay forbidden even when someone asks for them.
+
 ## Koda Access By Agent
 
 Use the most reliable interface for each agent.

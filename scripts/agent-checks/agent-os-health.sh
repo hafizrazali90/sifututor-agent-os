@@ -74,6 +74,7 @@ check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runn
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
 check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
+check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
@@ -125,6 +126,16 @@ else
   sed -n '1,8p' /tmp/agent-os-koda-fixtures.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-koda-fixtures.out /tmp/agent-os-koda-fixtures.err
+
+if "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py" >/tmp/agent-os-capability-fixtures.out 2>/tmp/agent-os-capability-fixtures.err; then
+  capability_fixture_summary="$(tail -1 /tmp/agent-os-capability-fixtures.out 2>/dev/null || true)"
+  pass "Agent OS capability fixtures" "${capability_fixture_summary:-passed}"
+else
+  fail "Agent OS capability fixtures" "capability fixture runner failed"
+  sed -n '1,12p' /tmp/agent-os-capability-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-capability-fixtures.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-capability-fixtures.out /tmp/agent-os-capability-fixtures.err
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
