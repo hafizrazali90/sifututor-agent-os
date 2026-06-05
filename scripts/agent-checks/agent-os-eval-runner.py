@@ -181,11 +181,34 @@ def markdown_eval_ids() -> set[str]:
     return set(re.findall(r"\|\s*(AO-\d{3})\s*\|", text))
 
 
+def normalize_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value.lower()).strip()
+
+
+def missing_action_snippets(actions: list[str], expected_snippets: list[str]) -> list[str]:
+    normalized_actions = [normalize_text(action) for action in actions]
+    return [
+        expected
+        for expected in expected_snippets
+        if not any(normalize_text(expected) in action for action in normalized_actions)
+    ]
+
+
+def invalid_case_contracts() -> list[str]:
+    invalid = []
+    for case in CASES:
+        has_action_contract = bool(case.get("actions_contain") or case.get("actions_absent"))
+        if case["skill"] and not has_action_contract:
+            invalid.append(f"{case['id']}: workflow cases must assert required or forbidden action text")
+    return invalid
+
+
 def run_eval(verbose: bool = False) -> int:
     classify_prompt = load_classifier()
     failures = []
     documented_ids = markdown_eval_ids()
     undocumented_ids = [case["id"] for case in CASES if case["id"] not in documented_ids]
+    contract_errors = invalid_case_contracts()
 
     if undocumented_ids:
         print("FAIL eval-doc-sync")
@@ -194,16 +217,19 @@ def run_eval(verbose: bool = False) -> int:
             print(f"    - {case_id}")
         failures.extend(undocumented_ids)
 
+    if contract_errors:
+        print("FAIL eval-contract")
+        print("  executable cases missing instruction-quality expectations:")
+        for error in contract_errors:
+            print(f"    - {error}")
+        failures.extend(error.split(":", 1)[0] for error in contract_errors)
+
     for case in CASES:
         skill, actions, reason = classify_prompt(case["prompt"])
         action_text = "\n".join(actions).lower()
         skill_ok = skill == case["skill"]
         reason_ok = case["reason_contains"].lower() in reason.lower()
-        missing_actions = [
-            expected
-            for expected in case.get("actions_contain", [])
-            if expected.lower() not in action_text
-        ]
+        missing_actions = missing_action_snippets(actions, case.get("actions_contain", []))
         forbidden_actions = [
             forbidden
             for forbidden in case.get("actions_absent", [])
@@ -230,7 +256,7 @@ def run_eval(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
-    case_failures = [failure for failure in failures if failure.startswith("AO-")]
+    case_failures = {failure for failure in failures if failure.startswith("AO-")}
     passed = len(CASES) - len(case_failures)
     doc_status = "markdown ids ok" if not undocumented_ids else "markdown ids missing"
     print(f"agent-os-eval-runner: {passed}/{len(CASES)} passed ({doc_status})")
