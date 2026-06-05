@@ -33,6 +33,10 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    - For user-facing feature, bugfix, hotfix, or small-change work, confirm the
      permanent E2E regression decision is complete: added, updated, or not
      feasible with a named blocker and follow-up test/fixture.
+   - For every changed staff/admin/parent/tutor/student/customer workflow,
+     confirm the exact permanent E2E file that covers it. If any changed
+     workflow has no permanent E2E and no explicit accepted exception, stop
+     before commit.
 4. Confirm release communication for staff-facing changes before staging:
    - `CHANGELOG.md` has a plain-English entry for what changed.
    - Relevant module help content in `src/modules/<module>/lib/help.ts` is

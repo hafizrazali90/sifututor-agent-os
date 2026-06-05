@@ -140,8 +140,8 @@ language test documentation.
 | --- | --- |
 | Discussion or architecture docs | Readback, link/path check, guard script when useful. |
 | Small non-user-facing code change | Focused unit/test/build check around the changed surface. |
-| User-facing UI bugfix | Regression test or permanent E2E decision, plus browser/mobile evidence for the real action. |
-| User-facing feature | Happy path, important edge cases, affected `TESTING.md` row, and human-journey evidence. |
+| User-facing UI bugfix | Permanent E2E for the changed workflow by default, plus focused regression tests and browser/mobile evidence for the real action. |
+| User-facing feature | Permanent E2E for each new/changed workflow, happy path, important edge cases, affected `TESTING.md` row, and human-journey evidence. |
 | API contract change | Contract/API test plus paired frontend/mobile evidence when a real user depends on it. |
 | Auth, payment, invoice, commission, migration, mobile API critical lane | Read-only diagnosis first, then approved implementation, then tests plus human-journey or safe staging evidence. |
 | Release/deploy | Changed workflow smoke on the deployed environment when safe, plus log/monitoring check where relevant. |
@@ -152,8 +152,13 @@ For user-facing bugs and features, one-off proof is not enough by itself.
 
 The agent should either:
 
-- add/update a permanent E2E or equivalent regression test, or
+- add/update a permanent E2E test for every changed staff/admin/parent/tutor/
+  student/customer workflow, or
 - clearly state why it is not feasible now and name the follow-up fixture/test.
+
+Backend, API, service, route-smoke, production-smoke, and manual QA evidence can
+support the E2E, but they do not replace permanent E2E coverage when the real
+workflow can be automated safely.
 
 Allowed reasons:
 

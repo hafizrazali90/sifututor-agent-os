@@ -204,6 +204,13 @@ Every user-facing feature, bugfix, or hotfix must either add/update a permanent
 E2E regression test or explicitly document why that is not feasible in the same
 task.
 
+For any workflow a staff member, admin, parent, tutor, student, customer, or
+mobile user can perform, the default requirement is a permanent E2E test. This
+applies to every user story, feature, function, bugfix, hotfix, and visible
+workflow change, not only staff-reported bugs. Backend, unit, feature, API, or
+service tests are still required where appropriate, but they are not enough by
+themselves to call a user workflow complete.
+
 This applies especially to staff-reported SIMS bugs and browser-visible issues:
 if the bug is "clicking a button does nothing", "a modal does not open", "a row
 does not appear", "a status/filter/action is wrong", or any workflow a staff
@@ -218,6 +225,9 @@ Required behavior:
 - Add or update stable seed/fixture data when the E2E needs representative data.
 - Run the focused E2E command for the new/changed test and report the exact
   command and result.
+- Before push, PR, merge, or deploy, state which permanent E2E file covers each
+  changed user workflow. If no E2E covers it, stop and either add one or get
+  explicit Hafiz acceptance of the named exception.
 - If a permanent E2E is genuinely not feasible, state the blocker using one of
   these reasons: `missing credential`, `no safe representative data`,
   `destructive workflow`, `tooling unavailable`, or `not user-facing`; then name

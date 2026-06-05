@@ -120,6 +120,17 @@ If the change fixes a browser-visible staff/parent/tutor/admin issue, default
 to adding or updating Playwright E2E. Unit, Pest, feature, or API tests do not
 satisfy the E2E regression step by themselves.
 
+The default is stronger for real workflows: every staff/admin/parent/tutor/
+student/customer function that can be performed in the product must have a
+permanent E2E regression path so the team can run full E2E periodically and
+catch regressions. This applies to new user stories and features as much as to
+bug fixes. Do not treat backend tests, route smoke, production smoke, or manual
+verification as a substitute when the workflow can be automated safely.
+
+Before push, PR, merge, or deploy, report the permanent E2E file covering each
+changed user workflow. If one is missing, the route is not ready; add the E2E
+or record an explicit exception with the blocker and follow-up fixture/test.
+
 ## Staff Issue Intake
 
 Use Microsoft Teams Planner `Development & Support > Task Management Board`

@@ -29,6 +29,10 @@ only he can judge.
 - For user-facing feature, bugfix, hotfix, or small-change work, verify is not
   complete until the permanent E2E regression decision is recorded: added,
   updated, or not feasible with a concrete blocker and follow-up.
+- For any staff/admin/parent/tutor/student/customer workflow, the expected
+  outcome is a permanent E2E test file, not only an E2E "decision". Treat
+  missing E2E as a verify failure unless the exact workflow is not safely
+  automatable and the exception is explicitly documented.
 
 ## Project Command Matrix
 
@@ -58,6 +62,7 @@ Gate 2A:
 - implementation works: yes/no/partial
 - TESTING.md row checked: yes/no/not applicable
 - permanent E2E regression: added/updated/not feasible/not user-facing
+- changed user workflows and their permanent E2E files: <list or explicit exception>
 - baseline failures: none | listed
 - task-caused failures: none | listed
 

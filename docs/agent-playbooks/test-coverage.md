@@ -19,7 +19,12 @@ The rule is simple:
 ```text
 No user-facing feature change should leave the project with missing or fake test
 coverage for that feature, and no user-facing workflow should be called done
-without human-journey evidence.
+without permanent E2E coverage plus human-journey evidence.
+
+Any function a staff member, admin, parent, tutor, student, customer, or mobile
+user can perform should be mapped to a permanent E2E test. The purpose is not
+only to prove today's fix; it is to let the team periodically run the full E2E
+suite and catch regressions across the product.
 ```
 
 ## Start Of Work
@@ -33,13 +38,15 @@ without human-journey evidence.
    - missing: stop before implementation unless Hafiz explicitly asks for docs
      or investigation only
 5. For user-facing work, identify the human journey that needs proof:
-   - browser flow: Playwright, browser smoke, screenshot-backed QA, or manual
-     checklist
-   - mobile flow: Maestro, Detox, simulator/device smoke, screenshot-backed QA,
-     or manual checklist
+   - browser flow: Playwright E2E by default
+   - mobile flow: Maestro, Detox, Playwright-compatible mobile web, or
+     simulator/device E2E by default
    - backend-only API flow: API/curl smoke plus paired frontend/mobile evidence
      when a real user depends on the response
-6. If no row matches, treat that as a coverage-manifest gap and add/update the
+6. Name the permanent E2E file that already covers the workflow, or add/update
+   one as part of the task. Browser/mobile smoke and manual QA can supplement
+   the E2E, but they do not replace it when automation is feasible.
+7. If no row matches, treat that as a coverage-manifest gap and add/update the
    manifest as part of the work.
 
 ## What Counts As A Real Test
@@ -94,7 +101,10 @@ Use this ladder:
    systems, unavailable credentials, or business decisions.
 
 Agents must not jump straight to human QA when they can safely run an automated
-or agent-run smoke check themselves. If E2E is not feasible, record why:
+or agent-run smoke check themselves. Agent-run smoke and manual QA are
+supporting evidence; for repeatable regression protection, add/update the
+permanent E2E whenever the workflow can be automated safely. If E2E is not
+feasible, record why:
 `missing credential`, `no representative data`, `destructive action required`,
 `external system unreliable`, or `tooling unavailable`.
 
@@ -135,9 +145,10 @@ Before commit or PR review, answer these questions:
 2. Is the status still accurate?
 3. Which test proves the changed behavior?
 4. Would that test fail if the old bug or risky behavior returned?
-5. What human-journey evidence proves the user can complete the workflow?
-6. If E2E/manual QA was not run, is the reason explicit and acceptable?
-7. If coverage is partial or missing, is that explicitly reported with the next
+5. Which permanent E2E file covers every changed user workflow?
+6. What human-journey evidence proves the user can complete the workflow?
+7. If E2E/manual QA was not run, is the reason explicit and acceptable?
+8. If coverage is partial or missing, is that explicitly reported with the next
    test to add?
 
 If the answer to any question is unclear, do not call the work complete.

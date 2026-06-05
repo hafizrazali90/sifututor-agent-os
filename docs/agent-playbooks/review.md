@@ -24,6 +24,9 @@ whether the agent gathered enough proof before handing work to Hafiz or staff.
    missing permanent E2E regression decision as a review finding. If the change
    affects browser/mobile behavior and no E2E was added or updated, require a
    specific blocker and follow-up fixture/test.
+   For any staff/admin/parent/tutor/student/customer workflow, treat missing
+   permanent E2E coverage as a blocking review finding unless the workflow is
+   explicitly not safely automatable.
 7. For staff-facing feature, bugfix, hotfix, or small-change work, treat
    missing release communication as a review finding when relevant. Check for a
    `CHANGELOG.md` entry, affected module help updates, and a What's New release
@@ -50,6 +53,8 @@ Test gaps:
 
 Permanent E2E:
 - <added/updated file path | missing finding | not feasible with reason>
+Changed workflow E2E map:
+- <workflow>: <permanent E2E file | missing finding | explicit exception>
 
 Release communication:
 - <CHANGELOG/help/What's New current | missing finding | not relevant with reason>

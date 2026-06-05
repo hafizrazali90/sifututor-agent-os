@@ -27,6 +27,10 @@ itself before asking Hafiz or staff for manual verification.
   first, then agent-run browser/mobile/API smoke with screenshots or response
   evidence, then manual QA checklist/sign-off only when automation is not safe
   or feasible.
+- Any staff/admin/parent/tutor/student/customer workflow that can be performed
+  in the product should have permanent E2E coverage. QA must name the E2E file
+  that protects the changed workflow, or mark QA as incomplete with a named
+  exception and follow-up test/fixture.
 - QA should validate what a real person would validate: setup, action, expected
   result, how to verify, and what failure looks like. The agent should translate
   technical checks into this human-test shape when reporting back to Hafiz.
@@ -99,6 +103,8 @@ Regression coverage:
 
 Permanent E2E:
 - <added/updated file path | not added, reason and follow-up fixture/test>
+Changed workflows:
+- <workflow>: <permanent E2E file | explicit exception>
 
 TESTING.md:
 - <feature row checked, status, named test file, or not applicable>

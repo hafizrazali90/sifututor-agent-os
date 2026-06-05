@@ -151,7 +151,8 @@ Exit criteria:
 
 - implementation complete
 - required tests/checks run
-- E2E regression decision made for user-facing work
+- permanent E2E file named for every changed user workflow, or explicit
+  accepted exception recorded
 - QA/review evidence reported
 - commit prepared or completed with approval
 
@@ -159,7 +160,7 @@ Required evidence:
 
 - tests/type/lint/build as appropriate
 - browser/mobile/API evidence when relevant
-- permanent E2E decision for user-facing work
+- permanent E2E coverage for every changed user workflow by default
 - release communication decision for staff-facing product changes
 
 Approval boundary:
