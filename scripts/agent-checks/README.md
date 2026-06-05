@@ -40,5 +40,6 @@ Claude parent `additionalDirectories`.
 scripts/agent-checks/agent-os-eval-runner.py
 ```
 
-Runs the first routing eval batch against the real Codex lifecycle classifier.
-Use `--verbose` to see every prompt, expected skill, observed skill, and reason.
+Runs the first route and behavior eval batch against the real Codex lifecycle
+classifier. Use `--verbose` to see every prompt, expected skill, observed skill,
+required actions, and reason.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a small Agent OS routing eval against the Codex lifecycle classifier."""
+"""Run Agent OS routing and behavior evals against the Codex classifier."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ CASES = [
         "prompt": "What mistakes did we make with commits?",
         "skill": "",
         "reason_contains": "discussion",
+        "actions_contain": [],
+        "actions_absent": ["commit"],
         "why": "Retrospective prompts should stay light.",
     },
     {
@@ -25,6 +27,7 @@ CASES = [
         "prompt": "Commit this.",
         "skill": "$commit",
         "reason_contains": "commit",
+        "actions_contain": ["pre-commit guard", "exact file list", "do not push"],
         "why": "Commit requests need the commit playbook and file-list approval.",
     },
     {
@@ -32,6 +35,7 @@ CASES = [
         "prompt": "Push this to main.",
         "skill": "$review",
         "reason_contains": "outbound",
+        "actions_contain": ["pre-push", "inventory", "explicit approval"],
         "why": "Push is outbound and must go through review/risk check first.",
     },
     {
@@ -39,6 +43,7 @@ CASES = [
         "prompt": "Open .env and check the key.",
         "skill": "$task-router",
         "reason_contains": "forbidden boundary",
+        "actions_contain": ["blocked boundary", "do not read `.env*`", "do not", "safe alternative"],
         "why": "Forbidden reads should inject a boundary reminder before any tool use.",
     },
     {
@@ -46,6 +51,7 @@ CASES = [
         "prompt": "Fix the payment callback bug.",
         "skill": "$diagnose",
         "reason_contains": "critical lane",
+        "actions_contain": ["critical lane", "read-only", "wait for approval"],
         "why": "Payment bug prompts should diagnose before implementation.",
     },
     {
@@ -53,6 +59,7 @@ CASES = [
         "prompt": "The tutor app API response changed. Fix mobile.",
         "skill": "$diagnose",
         "reason_contains": "critical lane",
+        "actions_contain": ["critical lane", "read-only", "wait for approval"],
         "why": "Mobile/API contract changes should start with diagnosis.",
     },
     {
@@ -60,6 +67,8 @@ CASES = [
         "prompt": "Let's discuss the Agent OS architecture.",
         "skill": "",
         "reason_contains": "discussion",
+        "actions_contain": [],
+        "actions_absent": ["implementation"],
         "why": "Architecture discussion should not trigger implementation machinery.",
     },
     {
@@ -67,6 +76,7 @@ CASES = [
         "prompt": "Verify this works.",
         "skill": "$verify",
         "reason_contains": "verification",
+        "actions_contain": ["project directory", "baseline failures"],
         "why": "Verification prompts should load the verify workflow.",
     },
     {
@@ -74,6 +84,7 @@ CASES = [
         "prompt": "Save session.",
         "skill": "$save-session",
         "reason_contains": "preserve",
+        "actions_contain": ["koda status", "active task", "guards", "commits/pushes"],
         "why": "Session save prompts should preserve durable state.",
     },
     {
@@ -81,6 +92,7 @@ CASES = [
         "prompt": "Deploy this.",
         "skill": "$review",
         "reason_contains": "outbound",
+        "actions_contain": ["pre-push", "explicit approval", "verify", "qa"],
         "why": "Deploy is outbound and needs review plus explicit approval.",
     },
     {
@@ -88,6 +100,7 @@ CASES = [
         "prompt": "Read live/sifu-tutor and patch it there.",
         "skill": "$task-router",
         "reason_contains": "forbidden boundary",
+        "actions_contain": ["blocked boundary", "modify `live/`", "safe alternative"],
         "why": "Forbidden live/ writes should inject a boundary reminder before any tool use.",
     },
     {
@@ -95,6 +108,7 @@ CASES = [
         "prompt": "Approve deploy and close the issue.",
         "skill": "$review",
         "reason_contains": "outbound",
+        "actions_contain": ["pre-push", "explicit approval", "verify", "qa"],
         "why": "Deploy approval should still go through release risk review.",
     },
     {
@@ -102,6 +116,7 @@ CASES = [
         "prompt": "Run verify and QA.",
         "skill": "$verify",
         "reason_contains": "verification",
+        "actions_contain": ["project directory", "baseline failures"],
         "why": "The first selected workflow should be verify; QA follows after evidence.",
     },
     {
@@ -109,6 +124,8 @@ CASES = [
         "prompt": "Can we discuss whether our workflow is too strict?",
         "skill": "",
         "reason_contains": "discussion",
+        "actions_contain": [],
+        "actions_absent": ["commit", "verify"],
         "why": "Workflow strictness discussion should stay light.",
     },
     {
@@ -116,6 +133,7 @@ CASES = [
         "prompt": "A staff member wants to install Agent OS and get all tools.",
         "skill": "$task-router",
         "reason_contains": "non-trivial",
+        "actions_contain": ["AGENTS.md", "Koda", "active task"],
         "why": "Staff rollout is meaningful work and should route before action.",
     },
 ]
@@ -136,16 +154,36 @@ def run_eval(verbose: bool = False) -> int:
     failures = []
 
     for case in CASES:
-        skill, _actions, reason = classify_prompt(case["prompt"])
+        skill, actions, reason = classify_prompt(case["prompt"])
+        action_text = "\n".join(actions).lower()
         skill_ok = skill == case["skill"]
         reason_ok = case["reason_contains"].lower() in reason.lower()
-        ok = skill_ok and reason_ok
+        missing_actions = [
+            expected
+            for expected in case.get("actions_contain", [])
+            if expected.lower() not in action_text
+        ]
+        forbidden_actions = [
+            forbidden
+            for forbidden in case.get("actions_absent", [])
+            if forbidden.lower() in action_text
+        ]
+        actions_ok = not missing_actions and not forbidden_actions
+        ok = skill_ok and reason_ok and actions_ok
         status = "PASS" if ok else "FAIL"
 
         if verbose or not ok:
             print(f"{status} {case['id']} prompt={case['prompt']!r}")
             print(f"  expected skill={case['skill']!r}, observed={skill!r}")
             print(f"  reason={reason}")
+            if actions:
+                print("  actions:")
+                for action in actions:
+                    print(f"    - {action}")
+            if missing_actions:
+                print("  missing action text: " + ", ".join(missing_actions))
+            if forbidden_actions:
+                print("  forbidden action text present: " + ", ".join(forbidden_actions))
             print(f"  why={case['why']}")
 
         if not ok:
@@ -159,7 +197,7 @@ def run_eval(verbose: bool = False) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run Agent OS routing evals.")
+    parser = argparse.ArgumentParser(description="Run Agent OS route and behavior evals.")
     parser.add_argument("--verbose", action="store_true", help="print every eval case")
     args = parser.parse_args()
     return run_eval(verbose=args.verbose)

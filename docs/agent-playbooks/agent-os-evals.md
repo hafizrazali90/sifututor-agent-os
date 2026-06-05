@@ -5,11 +5,14 @@ Use these eval cases to check whether the Sifututor Agent OS behaves correctly.
 These start as Markdown test cases. They can later become automated tests for
 the lifecycle hook, router, guards, or agent prompts.
 
-The first executable routing subset lives at:
+The first executable route and behavior subset lives at:
 
 ```bash
 scripts/agent-checks/agent-os-eval-runner.py
 ```
+
+It checks the selected workflow skill, route reason, and required action text
+for the highest-risk prompt patterns.
 
 ## How To Use
 
