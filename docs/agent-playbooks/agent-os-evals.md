@@ -14,6 +14,9 @@ scripts/agent-checks/agent-os-eval-runner.py
 It checks the selected workflow skill, route reason, and required action text
 for the highest-risk prompt patterns.
 
+The umbrella health check runs this executable subset, so routing/behavior
+regressions fail `scripts/agent-checks/agent-os-health.sh`.
+
 ## How To Use
 
 For each case:

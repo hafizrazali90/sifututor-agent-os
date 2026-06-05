@@ -72,6 +72,16 @@ check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
+if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
+  eval_summary="$(tail -1 /tmp/agent-os-eval-runner.out 2>/dev/null || true)"
+  pass "Agent OS evals" "${eval_summary:-passed}"
+else
+  fail "Agent OS evals" "routing/behavior eval runner failed"
+  sed -n '1,12p' /tmp/agent-os-eval-runner.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-eval-runner.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-eval-runner.out /tmp/agent-os-eval-runner.err
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
   branch="$(git branch --show-current 2>/dev/null || true)"

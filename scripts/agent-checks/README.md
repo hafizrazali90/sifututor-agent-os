@@ -43,3 +43,5 @@ scripts/agent-checks/agent-os-eval-runner.py
 Runs the first route and behavior eval batch against the real Codex lifecycle
 classifier. Use `--verbose` to see every prompt, expected skill, observed skill,
 required actions, and reason.
+
+`agent-os-health.sh` runs this eval runner as part of the umbrella baseline.
