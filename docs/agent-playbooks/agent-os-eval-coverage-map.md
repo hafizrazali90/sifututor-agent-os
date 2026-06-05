@@ -32,6 +32,7 @@ be automated next.
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
 | Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005 | Saying local or committed work is live, deployed, or smoke-passed without evidence. |
+| Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009 | Storing unsafe, vague, unscoped, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy. |
 
 ## Manual Scenario Coverage
 
@@ -41,7 +42,7 @@ These are important but not honest as simple router-classifier tests yet.
 | --- | --- | --- |
 | Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner; still needs full assistant response review for tone and layered explanations. |
 | Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Plane, Planner, Koda, or production/deploy evidence. |
-| Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Needs memory write/read behavior, not only prompt classification. |
+| Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Needs session tool availability and permission state. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Staff kit details | AO-073, AO-074 | Needs generated staff/developer onboarding artifacts, not only routing. |
@@ -55,8 +56,8 @@ These are important but not honest as simple router-classifier tests yet.
    technical detail, and formal-label translation.
 3. Add richer repo-state fixtures for PR open, merged, deployed, and
    live-smoke-passed scenarios with external evidence links.
-4. Add Koda fixture tests for memory retrieval quality, stale-memory handling,
-   and correction storage.
+4. Add richer Koda integration fixtures for live memory retrieval quality,
+   duplicate detection, correction updates, and read-only memory audits.
 5. Add tool-capability fixtures for GitHub, Plane, Planner, Google Drive, and
    production-log availability.
 

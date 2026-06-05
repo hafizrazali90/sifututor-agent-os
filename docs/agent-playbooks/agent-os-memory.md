@@ -107,6 +107,19 @@ same MCP HTTP endpoint and `KODA_API_KEY`, but avoids the chat-level
 `mcp__memory` wrapper when that wrapper is unreliable. Do not print or paste
 secret values.
 
+## Executable Memory Discipline Check
+
+Run this local fixture check when changing Agent OS memory rules:
+
+```bash
+scripts/agent-checks/agent-os-koda-fixture-runner.py
+```
+
+This check does not write to Koda. It validates the memory discipline rules
+locally: allowed schema values, project tags, secret-like content rejection,
+vague-progress rejection, stale-memory handling, and CLI fallback behavior when
+chat MCP is unreliable.
+
 Agent defaults:
 
 | Agent | Koda path |

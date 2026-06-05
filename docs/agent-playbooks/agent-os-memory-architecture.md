@@ -174,6 +174,17 @@ scripts/agent-checks/koda-memory-audit.py
 The first version should be read-only and produce a report. Cleanup should be
 separate and explicit.
 
+Current fixture check:
+
+```text
+scripts/agent-checks/agent-os-koda-fixture-runner.py
+```
+
+This is a non-writing local check. It proves the basic memory discipline rules
+without creating test memories: safe schema values, project/domain tags,
+secret-like content rejection, vague-memory rejection, stale-memory safeguards,
+and direct CLI fallback behavior.
+
 ## Performance Principles
 
 To improve memory performance:
