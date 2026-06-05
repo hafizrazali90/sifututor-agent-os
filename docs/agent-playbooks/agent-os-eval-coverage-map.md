@@ -34,6 +34,7 @@ be automated next.
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005 | Saying local or committed work is live, deployed, or smoke-passed without evidence. |
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009 | Storing unsafe, vague, unscoped, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013 | Claiming unverified tools, using blocked tools without approval, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
+| Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 
 ## Manual Scenario Coverage
 
@@ -50,16 +51,13 @@ These are important but not honest as simple router-classifier tests yet.
 
 ## Future Harness Targets
 
-1. Add conversation-state fixtures so `approve`, `proceed`, and `what next`
-   can be tested with real previous-message context instead of synthetic
-   prompt text.
-2. Add richer response fixtures for practical meaning, easier explanation,
+1. Add richer response fixtures for practical meaning, easier explanation,
    technical detail, and formal-label translation.
-3. Add richer repo-state fixtures for PR open, merged, deployed, and
+2. Add richer repo-state fixtures for PR open, merged, deployed, and
    live-smoke-passed scenarios with external evidence links.
-4. Add richer Koda integration fixtures for live memory retrieval quality,
+3. Add richer Koda integration fixtures for live memory retrieval quality,
    duplicate detection, correction updates, and read-only memory audits.
-5. Add live tool-capability probes for GitHub, Plane, Planner, Google Drive,
+4. Add live tool-capability probes for GitHub, Plane, Planner, Google Drive,
    and production-log availability when each connector has a stable safe check.
 
 ## Maintenance Rule

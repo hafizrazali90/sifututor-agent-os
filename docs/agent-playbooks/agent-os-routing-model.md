@@ -80,6 +80,19 @@ If the last recommendation was "review routing model next," `proceed next`
 means start that review. If the last request was "approve commit+push for these
 files," `approve` means commit and push.
 
+## Conversation-State Fixture Check
+
+Run this local fixture runner when changing short-command behavior:
+
+```bash
+scripts/agent-checks/agent-os-conversation-fixture-runner.py
+```
+
+It checks short replies against visible prior assistant context. Plain meaning:
+`approve` follows the last exact approval request, `proceed` follows the last
+clear safe recommendation, `what next` returns one next action, and missing
+previous context should trigger clarification instead of guessing.
+
 Decision: for now, this uses visible chat context only. Do not add hidden
 lifecycle-hook or session-file state for last recommended step yet. Add stored
 state later only if repeated failures show chat context is not enough.
