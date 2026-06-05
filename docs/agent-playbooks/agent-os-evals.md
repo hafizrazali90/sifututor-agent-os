@@ -11,8 +11,8 @@ The first executable route and behavior subset lives at:
 scripts/agent-checks/agent-os-eval-runner.py
 ```
 
-It checks the selected workflow skill, route reason, and required action text
-for the highest-risk prompt patterns.
+It checks the selected workflow skill, route reason, required action text, and
+whether every executable case ID is documented in this Markdown table.
 
 The umbrella health check runs this executable subset, so routing/behavior
 regressions fail `scripts/agent-checks/agent-os-health.sh`.

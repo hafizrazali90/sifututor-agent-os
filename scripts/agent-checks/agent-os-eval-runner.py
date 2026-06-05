@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import sys
 import types
 
 
 ROOT = Path(__file__).resolve().parents[2]
 HOOK = ROOT / "scripts" / "agent-checks" / "codex-lifecycle-hook.py"
+EVAL_DOC = ROOT / "docs" / "agent-playbooks" / "agent-os-evals.md"
 
 CASES = [
     {
@@ -174,9 +176,23 @@ def load_classifier():
     return module.classify_prompt
 
 
+def markdown_eval_ids() -> set[str]:
+    text = EVAL_DOC.read_text()
+    return set(re.findall(r"\|\s*(AO-\d{3})\s*\|", text))
+
+
 def run_eval(verbose: bool = False) -> int:
     classify_prompt = load_classifier()
     failures = []
+    documented_ids = markdown_eval_ids()
+    undocumented_ids = [case["id"] for case in CASES if case["id"] not in documented_ids]
+
+    if undocumented_ids:
+        print("FAIL eval-doc-sync")
+        print("  executable case IDs missing from docs/agent-playbooks/agent-os-evals.md:")
+        for case_id in undocumented_ids:
+            print(f"    - {case_id}")
+        failures.extend(undocumented_ids)
 
     for case in CASES:
         skill, actions, reason = classify_prompt(case["prompt"])
@@ -214,7 +230,10 @@ def run_eval(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
-    print(f"agent-os-eval-runner: {len(CASES) - len(failures)}/{len(CASES)} passed")
+    case_failures = [failure for failure in failures if failure.startswith("AO-")]
+    passed = len(CASES) - len(case_failures)
+    doc_status = "markdown ids ok" if not undocumented_ids else "markdown ids missing"
+    print(f"agent-os-eval-runner: {passed}/{len(CASES)} passed ({doc_status})")
     if failures:
         print("failed: " + ", ".join(failures))
         return 1
