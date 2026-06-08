@@ -157,6 +157,17 @@ Quality gates:
 - Gate 3: stop on ambiguity.
 - Gate 4: adversarial pre-push review, never skipped.
 
+## AI Implementation Readiness
+
+Before coding critical-lane work, cross-module workflows, or any task that will
+be handed from one AI/human developer to another, apply
+`docs/agent-playbooks/ai-implementation-readiness.md`.
+
+The plan/build prompt must identify the real entry point, contract moment,
+state transition, idempotency/retry behavior, realistic external payloads,
+backward compatibility, and exact evidence. Green tests are not enough if the
+tests prove a weaker behavior than the acceptance rule.
+
 ## Agent-As-Tester Evidence
 
 Hafiz is technical and self-taught in IT, but the agent is the bridge into

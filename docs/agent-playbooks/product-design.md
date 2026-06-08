@@ -207,6 +207,11 @@ This phase exists to avoid UI-forward specs that miss backend cascade effects.
 Generate build-order prompts only after the PRD and UX/backend contract are
 clear enough to build.
 
+For critical-lane work, cross-module workflows, or any AI-to-AI/human handoff,
+first apply [ai-implementation-readiness.md](ai-implementation-readiness.md).
+The build prompt must be strong enough that another agent cannot satisfy a
+weaker nearby behavior and still claim the slice is done.
+
 Each prompt must be self-contained:
 
 - plain-language purpose,

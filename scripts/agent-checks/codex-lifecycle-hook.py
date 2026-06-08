@@ -15,6 +15,7 @@ import urllib.request
 WORKSPACE = Path("/Users/hafizrazali/Projects/Sifututor")
 CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "http://178.105.120.34:3848/mcp"
+KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
 KODA_TIMEOUT = 2
 KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
@@ -334,15 +335,25 @@ def codex_memory_config_status() -> tuple[bool, str]:
     block = memory_block.group(1)
     url_match = re.search(r'(?m)^\s*url\s*=\s*"([^"]+)"', block)
     token_match = re.search(r'(?m)^\s*bearer_token_env_var\s*=\s*"([^"]+)"', block)
+    command_match = re.search(r'(?m)^\s*command\s*=\s*"([^"]+)"', block)
+    args_match = re.search(r'(?m)^\s*args\s*=\s*\[(.*?)\]', block, flags=re.S)
     url = url_match.group(1) if url_match else ""
     token_env = token_match.group(1) if token_match else ""
+    command = command_match.group(1) if command_match else ""
+    args_block = args_match.group(1) if args_match else ""
 
-    if url != KODA_URL:
-        return False, f"Codex memory MCP URL is {url or 'missing'}, expected {KODA_URL}"
-    if token_env != "KODA_API_KEY":
-        return False, f"Codex memory MCP bearer_token_env_var is {token_env or 'missing'}, expected KODA_API_KEY"
+    if url or token_env:
+        if url != KODA_URL:
+            return False, f"Codex memory MCP URL is {url or 'missing'}, expected {KODA_URL}"
+        if token_env != "KODA_API_KEY":
+            return False, f"Codex memory MCP bearer_token_env_var is {token_env or 'missing'}, expected KODA_API_KEY"
 
-    return True, "Codex memory MCP config is direct HTTP with KODA_API_KEY"
+        return True, "Codex memory MCP config is direct HTTP with KODA_API_KEY"
+
+    if command == "node" and KODA_STDIO_BRIDGE in args_block:
+        return True, "Codex memory MCP config uses the Koda stdio bridge"
+
+    return False, "Codex memory MCP config is neither direct HTTP nor the Koda stdio bridge"
 
 
 def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
@@ -452,9 +463,9 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
 
 def koda_repair_text() -> str:
     return (
-        "Repair command: `codex mcp remove memory; "
-        "codex mcp add memory --url http://178.105.120.34:3848/mcp "
-        "--bearer-token-env-var KODA_API_KEY`, then start a fresh Codex session."
+        "Repair command: open Codex > Settings > MCP Servers, remove 'memory', "
+        "add new Streamable HTTP MCP named 'memory' with URL http://178.105.120.34:3848/mcp "
+        "and Authorization header 'Bearer <KODA_API_KEY value>', then start a fresh Codex session."
     )
 
 

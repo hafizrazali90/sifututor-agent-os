@@ -18,6 +18,10 @@ only he can judge.
 - If baseline failures exist before your change, report them separately from
   failures caused by your change.
 - A failing verify blocks commit unless the user explicitly changes the scope.
+- For critical-lane or AI-handoff work, use
+  [ai-implementation-readiness.md](ai-implementation-readiness.md) as an
+  additional acceptance lens. Green tests are not enough when the tests prove a
+  weaker behavior than the PRD/build prompt required.
 - Do not delegate verification that the agent can safely perform. For UI-visible
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
@@ -65,6 +69,8 @@ Gate 2A:
 - changed user workflows and their permanent E2E files: <list or explicit exception>
 - baseline failures: none | listed
 - task-caused failures: none | listed
+- readiness gaps: none | listed, especially where tests prove a weaker behavior
+  than the acceptance rule
 
 Next:
 - <qa/review/blocked action>

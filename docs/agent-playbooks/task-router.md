@@ -16,13 +16,19 @@ classify, resume, or create work.
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only
    when the design risk is real; small fixes stay on the normal route.
-7. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+7. For critical-lane work, cross-module workflows, or any task being handed
+   from one AI/human developer to another, apply
+   [ai-implementation-readiness.md](ai-implementation-readiness.md) before
+   coding. If the plan/build prompt is missing real entry points, contract
+   moments, retry/idempotency, realistic payloads, or exact evidence, close the
+   documentation gap first.
+8. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
    staff-reported operational issues, check Microsoft Teams Planner
    `Development & Support > Task Management Board` as intake/context before
    deciding scope. Treat Planner as staff-reported issue context, not the
    engineering source of truth. Do not modify Planner unless Hafiz explicitly
    asks in the current session.
-8. Check the relevant Plane mission-board item for non-trivial work. If no card
+9. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
 
 ## Intent Routing Model
