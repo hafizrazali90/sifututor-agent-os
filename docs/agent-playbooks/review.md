@@ -10,6 +10,31 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 Use [agent-os-evidence-model.md](agent-os-evidence-model.md) when judging
 whether the agent gathered enough proof before handing work to Hafiz or staff.
 
+## Natural-Language PR Review With Hafiz
+
+When Hafiz asks to review a PR, the default review surface is the same chat, not
+the GitHub code diff. The agent still reads the PR metadata, issue, changed
+files, diff, tests, CI, and release state internally, then translates the result
+into natural language for Hafiz to review.
+
+The chat review must explain:
+
+- what the PR changes in product or workflow terms
+- what staff, parents, tutors, students, or admins will see differently
+- the before/after behavior
+- the important business rules and risk areas
+- the evidence checked, including tests, E2E, build, CI, or manual smoke
+- gaps, unknowns, or decisions that still need Hafiz's judgment
+- the recommended decision: approve, request changes, QA first, hold, or merge-ready
+
+If there are blocking findings, start with those in plain language before the
+summary. Code-level file references should appear as proof for a finding or in a
+technical appendix, but Hafiz should not need to read the diff unless he asks or
+the decision depends on product judgment only he can make.
+
+Approval in chat can count as Hafiz's PR review decision. Merge, deploy, and
+production state changes still require explicit current-session approval.
+
 ## Steps
 
 1. Identify the intended scope.
@@ -36,6 +61,37 @@ whether the agent gathered enough proof before handing work to Hafiz or staff.
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
 9. Report findings by severity with file and line references where possible.
+
+## PR Chat Output Shape
+
+Use this shape when Hafiz is reviewing a PR in chat. Keep it natural; the labels
+are prompts for meaning, not rigid ceremony.
+
+```text
+PR review:
+
+Recommendation:
+- <approve | request changes | QA first | hold | merge-ready>
+
+What changes for users:
+- <plain-language behavior change>
+
+Before vs after:
+- <old behavior>
+- <new behavior>
+
+Risk areas:
+- <business rule, permission, payment, invoice, mobile contract, or data risk>
+
+Evidence checked:
+- <tests, E2E, build, CI, smoke, or not checked with reason>
+
+What Hafiz needs to decide:
+- <decision or none>
+
+Technical appendix:
+- <only when useful: key files, functions, or line references>
+```
 
 ## Output Shape
 

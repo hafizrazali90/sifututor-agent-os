@@ -31,6 +31,32 @@ allowed when they are useful for:
 Do not use those labels as filler. If the label does not make the message
 clearer, leave it out.
 
+## PR Reviews In Chat
+
+When Hafiz says he needs to review a PR, the agent should make the chat the
+review surface. Hafiz should not have to open GitHub and read the code diff by
+default.
+
+The agent must still do the technical work underneath: read the PR, issue,
+changed files, diff, tests, CI, release ledger, and relevant rules. Then explain
+the PR in normal language:
+
+- what changes for the business or user journey
+- who is affected
+- before vs after behavior
+- risks and business rules
+- what evidence was checked
+- what remains uncertain
+- the decision Hafiz is being asked to make
+
+If there is a blocker, lead with it in plain language. Put file names, function
+names, and line references after the plain-language review, or only where they
+prove a finding.
+
+Approving the review in chat is enough for Hafiz's review decision. It is not
+permission to merge, deploy, or change production unless he explicitly says so in
+the current session.
+
 ## Explanation Layers
 
 When something is technical, explain it in layers.

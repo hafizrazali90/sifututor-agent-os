@@ -78,6 +78,10 @@ Use it only as read-only reference.
   item disappears after it is assigned."
 - Prefer "what happened, what I changed, how I checked it, and what comes next"
   over workflow labels.
+- When Hafiz needs to review a PR, default to a natural-language review in the
+  same chat. The agent reads the PR code, diff, tests, CI, and release state,
+  then explains the product behavior, risks, evidence, gaps, and decision point
+  so Hafiz does not need to read the code unless he asks.
 - Do not make Hafiz ask "what next?" after each step. After every meaningful
   work step, include a short close-out in plain language:
   - `Status`: done, partly done, or blocked.
