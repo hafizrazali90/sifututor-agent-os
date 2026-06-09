@@ -32,7 +32,10 @@ This workflow should remove ambiguity, not create ceremony.
   UX flow, RBAC rule, data contract, or acceptance test.
 - Prefer reading code/docs/data over asking Hafiz when the answer is discoverable.
 - Ask one decision at a time when the topic is complex.
-- Give 2-4 options plus a recommendation and one-sentence justification.
+- For every decision or clarifier question, give 2-4 options, mark the
+  recommended option, explain why it is recommended, and name the key tradeoff
+  or risk. Do this even when Hafiz asks "what do you suggest?" so he can compare
+  the choices instead of receiving only one answer.
 - Mark confirmed decisions as confirmed before moving to the next decision.
 - Do not repeat already-confirmed decisions unless a later answer conflicts.
 - Keep "out of scope" explicit so build prompts do not grow quietly.
@@ -98,6 +101,7 @@ Decision needed:
 Options:
 Recommendation:
 Why:
+Tradeoff / risk:
 Edge cases:
 ```
 
@@ -150,6 +154,9 @@ Each clarification entry should include:
 ```text
 Question
 Why it matters
+Options
+Recommendation
+Tradeoff / risk
 Answer
 Requirement clarified
 Artifact section updated
