@@ -1082,6 +1082,16 @@ def main() -> int:
         skill, actions, reason = classify_prompt(prompt)
         if not skill:
             return 0
+        if skill == "$task-router":
+            actions = [
+                *actions,
+                "If the prompt may be a follow-up, adjacent task, paused question, or part of a bigger goal, search `docs/agent-playbooks/mission-ledger` with `rg` and read only the relevant section.",
+            ]
+        elif skill == "$save-session":
+            actions = [
+                *actions,
+                "Check whether any follow-up, adjacent task, paused decision, or bigger-goal link should be captured in the Mission Ledger; search/open only the relevant project file.",
+            ]
         action_text = "\n".join(f"- {action}" for action in actions)
         memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$review", "$commit"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""

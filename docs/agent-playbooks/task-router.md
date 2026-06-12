@@ -30,6 +30,10 @@ classify, resume, or create work.
    asks in the current session.
 9. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
+10. If the prompt sounds like a follow-up, adjacent task, paused question, or
+    part of a bigger goal, check the Mission Ledger before treating it as an
+    isolated task. Use [mission-ledger.md](mission-ledger.md), but search first
+    and read only the relevant project section.
 
 ## Intent Routing Model
 
@@ -42,6 +46,11 @@ right intensity: Light, Medium, Full, or Critical.
 Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
+
+Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
+goal or should be captured for later but is not ready for GitHub or Plane yet.
+To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`
+and open only the relevant matching section.
 
 Important routing principles:
 
