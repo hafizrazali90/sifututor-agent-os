@@ -104,7 +104,33 @@ Stop the packet when:
   needed
 - a critical-lane implementation decision is needed
 
-### 3. Exact Bundled Approval
+### 3. Standing Task Access Approval
+
+Hafiz has granted standing task-scoped approval for agents to use the narrowest
+required local access files and connected tools when he has already asked the
+agent to finish a task end-to-end.
+
+This means the agent should not stop to ask another permission question just to
+read an approved local agent-access file or run a connected tool that is needed
+for the active task. Examples:
+
+- authenticated production smoke after Hafiz says to continue until deploy
+- read-only monitoring tokens after Hafiz asks for post-deploy monitoring
+- scoped server access when a deploy/preflight task already requires it
+- backup access when a production release playbook requires a pre-deploy backup
+
+Standing access approval is not blanket access. The agent must still:
+
+- use the narrowest relevant access file or tool
+- keep secrets out of chat, docs, screenshots, logs, commits, and Koda
+- avoid repository `.env*` files and `live/`
+- avoid unrelated credentials or systems
+- stop before destructive data/file actions unless Hafiz explicitly requested
+  that destructive action
+- keep deploy, push, PR, merge, and critical-lane implementation tied to an
+  explicit current-session task instruction
+
+### 4. Exact Bundled Approval
 
 The agent may ask once for a bundle when the bundle is exact and naturally
 belongs together.
@@ -131,7 +157,7 @@ deploy", `approve` covers all normal steps required to reach that boundary:
 review, checks, commit if exact file list was named, push, PR, and merge when
 allowed. It does not cover deploy because deploy was explicitly excluded.
 
-### 4. Separate Approval Always
+### 5. Separate Approval Always
 
 These actions must not be hidden inside a larger bundle:
 
@@ -140,7 +166,7 @@ These actions must not be hidden inside a larger bundle:
 | Deploy or production release | Can affect real users and revenue. |
 | Merge to protected branch | Changes shared source of truth. |
 | Open PR | Creates external review/state; ask unless explicitly requested. |
-| Production log access or production data action | May expose sensitive operational data. |
+| Production log access or production data action outside the active task | May expose sensitive operational data; use standing task access only when the current task already requires the scoped check. |
 | Auth/payment/invoice/commission/migration/mobile API implementation | Critical-lane changes need diagnosis first and approval before implementation. |
 | Destructive cleanup | File/data loss risk. |
 | Force push, reset, rebase, or history rewrite | Can destroy or confuse shared work. |
@@ -183,6 +209,8 @@ The agent should not:
 - silently expand from architecture/docs into product code
 - bundle deploy, production, secrets, destructive actions, or critical-lane
   implementation with ordinary workflow work
+- ask for another access approval when Hafiz already asked the agent to finish
+  an end-to-end task and the scoped access is necessary to complete it
 
 ## Review Later
 

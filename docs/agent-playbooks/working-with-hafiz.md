@@ -44,6 +44,7 @@ These preferences were stated by Hafiz on 2026-06-04.
 | Approval bundles | Bundle sensible adjacent actions when scope is exact. | Reduce nagging for safe sequences, but keep critical/deploy/destructive/secret/production actions separate. |
 | Relaxed work packets | Agent OS/docs/workflow work should not require approval for every small substep once Hafiz says proceed. | Continue the safe packet, update living docs, run non-destructive checks, and stop at risk boundaries. |
 | Autopilot boundary | For multi-step work, Hafiz prefers one clear stopping point instead of approving every small action. | At the start, ask for or infer the boundary: one by one, until PR opened, until merged, until staging QA passes, until deploy, or until monitoring completes. Continue inside that boundary and stop at any risk boundary not explicitly included. |
+| Task-scoped access | When Hafiz asks the agent to finish a task end-to-end, the agent should use required scoped access without another permission prompt. | Use the narrowest relevant local access file/tool, never print secrets, and continue through required verify, QA, deploy, smoke, or monitoring unless the next action is destructive or outside the task. |
 
 ## How To Interpret Short Commands
 
@@ -229,6 +230,32 @@ Do not bundle by default:
 
 For these higher-risk actions, ask separately and explain the risk in normal
 language.
+
+## Standing Task Access
+
+When Hafiz explicitly asks an agent to finish a task end-to-end, such as
+`continue until deploy`, `test on prod`, `monitor after deploy`, or equivalent,
+the agent should treat the scoped access required for that task as already
+approved. Do not ask again for routine access-file approval when the access is
+needed to complete the active task.
+
+Examples:
+
+- Use `production-smoke.conf` for authenticated smoke after a production deploy
+  task already includes production smoke.
+- Use monitoring read-only access during a post-deploy monitoring task.
+- Use scoped server/backup access when the deployment playbook requires
+  preflight or backup.
+
+Boundaries stay strict:
+
+- do not print, copy, commit, or store secret values
+- do not read repository `.env*` files
+- do not use unrelated access files
+- do not perform destructive cleanup or data mutation unless Hafiz explicitly
+  requested that specific risky action
+- do not expand a task into push, PR, merge, deploy, or production change unless
+  Hafiz's current-session instruction includes that action
 
 ## Koda Mistake Memory
 

@@ -58,6 +58,13 @@ Use it only as read-only reference.
   when needed for the task, such as read-only agent access files under
   `~/.config/sifututor/`. Do not reveal, commit, copy into the repo, or log
   secret values.
+- Hafiz has granted standing task-scoped approval for agents to use the
+  narrowest required local agent access files and connected tools when he asks
+  the agent to finish work end-to-end, including verify, QA, deploy, smoke, or
+  monitoring. Do not stop to ask again for routine access that is necessary to
+  complete the active task. This does not allow reading repository `.env*`
+  files, printing secrets, using unrelated credentials, destructive actions,
+  or broad access outside the current task.
 - Never push, merge, deploy, or open a PR without explicit instruction in the current session.
 - Never bypass hooks or verification with `--no-verify` or equivalent flags.
 - Never make broad cleanup or adjacent refactors unless explicitly requested.

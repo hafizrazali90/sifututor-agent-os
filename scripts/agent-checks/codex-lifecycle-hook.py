@@ -1069,6 +1069,7 @@ def main() -> int:
                     active_summary,
                     *koda_lines,
                     "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
+                    "Standing task access: when Hafiz asks Codex to finish a task end-to-end, use the narrowest required local agent-access files/tools without asking another permission question; never print secrets, read repo .env*, or use unrelated access.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
                     "Available skills: $task-router, $product-design, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $diagnose, $review.",
                     "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
@@ -1114,6 +1115,7 @@ def main() -> int:
                     action_text,
                     memory_section,
                     "Communication default: start with a plain-language explanation and practical meaning, then provide technical file/test/workflow detail.",
+                    "Standing task access: if the current task already requires scoped access for verify, QA, deploy, smoke, or monitoring, use the narrowest required access without another approval prompt; keep secrets hidden and stay inside the task.",
                     "Do not bypass the selected skill. Read its SKILL.md and the linked docs/agent-playbooks/ file before acting.",
                     "Critical lanes require Phase A diagnosis before implementation: auth, payments, invoices, commissions, migrations, deployment, and mobile API contracts.",
                 ]
