@@ -25,6 +25,12 @@ Runs:
 These checks are intentionally conservative. A failing check means stop and ask
 the user or run the project-specific Claude workflow step.
 
+Sensitive path matching has a focused fixture runner:
+
+```bash
+scripts/agent-checks/check-sensitive-paths-fixture-runner.sh
+```
+
 ## Doctor
 
 ```bash
