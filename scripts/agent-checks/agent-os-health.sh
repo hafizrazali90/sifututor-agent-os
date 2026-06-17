@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-ROOT="/Users/hafizrazali/Projects/Sifututor"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 failures=0
 
 pass() {
@@ -50,6 +50,9 @@ cd "$ROOT" || {
 echo "Detected"
 check_file "root AGENTS" "$ROOT/AGENTS.md"
 check_file "Agent OS overview" "$ROOT/docs/agent-playbooks/agent-os.md"
+check_file "Agent OS infrastructure" "$ROOT/docs/agent-playbooks/agent-os-infrastructure.md"
+check_file "Agent OS skill registry" "$ROOT/docs/agent-playbooks/agent-os-skill-registry.md"
+check_file "Agent OS hook dispatcher" "$ROOT/docs/agent-playbooks/agent-os-hook-dispatcher.md"
 check_file "Agent OS quick start" "$ROOT/docs/agent-playbooks/agent-os-quick-start.md"
 check_file "working with Hafiz" "$ROOT/docs/agent-playbooks/working-with-hafiz.md"
 check_file "Agent OS routing model" "$ROOT/docs/agent-playbooks/agent-os-routing-model.md"
@@ -62,6 +65,7 @@ check_file "Agent OS memory" "$ROOT/docs/agent-playbooks/agent-os-memory.md"
 check_file "Agent OS memory architecture" "$ROOT/docs/agent-playbooks/agent-os-memory-architecture.md"
 check_file "Agent OS capability model" "$ROOT/docs/agent-playbooks/agent-os-capability-model.md"
 check_file "Agent OS workflow lanes" "$ROOT/docs/agent-playbooks/agent-os-workflow-lanes.md"
+check_file "Agent OS workflows" "$ROOT/docs/agent-playbooks/agent-os-workflows.md"
 check_file "Agent OS evidence model" "$ROOT/docs/agent-playbooks/agent-os-evidence-model.md"
 check_file "Agent OS state model" "$ROOT/docs/agent-playbooks/agent-os-state-model.md"
 check_file "Agent OS rollout readiness" "$ROOT/docs/agent-playbooks/agent-os-rollout-readiness.md"

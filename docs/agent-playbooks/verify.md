@@ -26,6 +26,10 @@ only he can judge.
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
   environment when safe credentials and representative data are available.
+- For `sifu-tutor` UI-visible changes, verify against
+  `sifu-tutor/docs/ui-ux/quality-gate.md` in addition to tests. Report which
+  SIMS UI/UX docs were followed when the work changes page layout, components,
+  visual styling, staff-facing copy, or browser interaction.
 - Verification should prove both the machine part and the human journey when a
   real user depends on the behavior. Unit/API tests prove the engine; browser,
   mobile, API smoke, screenshots, or read-only state checks prove the workflow
@@ -67,6 +71,7 @@ Gate 2A:
 - TESTING.md row checked: yes/no/not applicable
 - permanent E2E regression: added/updated/not feasible/not user-facing
 - changed user workflows and their permanent E2E files: <list or explicit exception>
+- SIMS UI/UX docs checked: <paths or not applicable>
 - baseline failures: none | listed
 - task-caused failures: none | listed
 - readiness gaps: none | listed, especially where tests prove a weaker behavior

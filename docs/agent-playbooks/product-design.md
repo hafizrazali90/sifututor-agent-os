@@ -52,10 +52,18 @@ Before producing artifacts:
 4. Search existing docs under `docs/`, `.claude/plans/`, and project feature
    docs for overlapping PRDs, UX specs, or build prompts.
 5. Read relevant source files when the design changes existing behavior.
-6. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or staff-reported
+6. For SIMS browser UI/UX work, compare the current branch with
+   `origin/integration` before finalizing the audit, UX spec, or build prompts.
+   Prefer the exact same page/component path. If it does not exist there, use
+   the nearest module or page-pattern equivalent and document the fallback.
+7. For SIMS browser UI/UX work, treat the tracked `docs/ui-ux/` design system
+   as the color/token authority. If implementation, `tailwind.config.js`, or
+   integration-branch behavior conflicts with the docs, stop and document the
+   conflict before choosing colors.
+8. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or staff-reported
    operational work, read the relevant Microsoft Teams Planner card as intake
    context when available.
-7. Check Plane for related mission-board context before creating major new work.
+9. Check Plane for related mission-board context before creating major new work.
 
 If the current design conflicts with `AGENTS.md`, `CLAUDE.md`, Koda, existing
 docs, or production facts, stop and explain the conflict before writing a spec.
@@ -73,6 +81,23 @@ sifu-tutor/docs/features/<feature-slug>/ux-spec.md
 sifu-tutor/docs/features/<feature-slug>/build-prompts.md
 sifu-tutor/docs/features/<feature-slug>/user-stories.md
 ```
+
+For SIMS browser UI/UX work, also read and reference:
+
+```text
+sifu-tutor/docs/ui-ux/README.md
+sifu-tutor/docs/ui-ux/surface-map.md
+sifu-tutor/docs/ui-ux/design-system.md
+sifu-tutor/docs/ui-ux/page-patterns.md
+sifu-tutor/docs/ui-ux/component-patterns.md
+sifu-tutor/docs/ui-ux/content-style-guide.md
+sifu-tutor/docs/ui-ux/accessibility-and-states.md
+sifu-tutor/docs/ui-ux/review-and-qa-checklist.md
+sifu-tutor/docs/ui-ux/quality-gate.md
+```
+
+Use `sifu-tutor/docs/ui-ux/templates/ux-spec-template.md` for new SIMS UX
+specs unless a closer module template already exists.
 
 If the project already uses a different nearby feature-doc pattern, follow the
 existing project pattern. For early brainstorming only, `.claude/plans/` may be
@@ -186,9 +211,11 @@ Only after these passes, describe:
 - links to existing pages,
 - mobile/browser considerations when relevant.
 
-For SIMS UI, read existing design-system guidance and nearby pages before
-specifying components. Avoid inventing new patterns when the project has an
-existing one.
+For SIMS UI, read `sifu-tutor/docs/ui-ux/README.md`, the relevant docs it
+points to, and nearby pages/components before specifying components. Name the
+SIMS surface, page pattern, shared components, copy rules, state coverage, and
+accessibility expectations in the UX spec. Avoid inventing new patterns when the
+project has an existing one.
 
 ## Phase 5: Backend Contract
 
@@ -222,6 +249,7 @@ weaker nearby behavior and still claim the slice is done.
 Each prompt must be self-contained:
 
 - plain-language purpose,
+- SIMS UI/UX pre-read files when the prompt touches browser UI,
 - pre-read files,
 - requirements,
 - states,

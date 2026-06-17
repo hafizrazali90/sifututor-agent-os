@@ -42,25 +42,32 @@ production state changes still require explicit current-session approval.
 3. Check project rules in `AGENTS.md` and relevant `CLAUDE.md`.
 4. Look for broken contracts, missing tests, unsafe paths, and unverified
    critical behavior.
-5. Treat "human should check this" as a finding unless Playwright, API, CLI, or
+5. For `sifu-tutor` browser UI/UX changes, read
+   `sifu-tutor/docs/ui-ux/README.md` and check the diff against the SIMS
+   surface-map, design-system, page-pattern, component-pattern, content-style,
+   accessibility/state, review-checklist, and quality-gate docs. Treat missing
+   state coverage, invented one-off UI patterns, token drift, unclear
+   critical-action copy, or missing browser/screenshot evidence as review
+   findings.
+6. Treat "human should check this" as a finding unless Playwright, API, CLI, or
    server-side evidence is genuinely unavailable or unsafe. The review should
    push the agent to gather its own non-destructive evidence first.
-6. For user-facing feature, bugfix, hotfix, or small-change work, treat a
+7. For user-facing feature, bugfix, hotfix, or small-change work, treat a
    missing permanent E2E regression decision as a review finding. If the change
    affects browser/mobile behavior and no E2E was added or updated, require a
    specific blocker and follow-up fixture/test.
    For any staff/admin/parent/tutor/student/customer workflow, treat missing
    permanent E2E coverage as a blocking review finding unless the workflow is
    explicitly not safely automatable.
-7. For staff-facing feature, bugfix, hotfix, or small-change work, treat
+8. For staff-facing feature, bugfix, hotfix, or small-change work, treat
    missing release communication as a review finding when relevant. Check for a
    `CHANGELOG.md` entry, affected module help updates, and a What's New release
    entry or seed script. If any item is intentionally not needed, the PR or
    final answer must say why.
-8. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
+9. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
-9. Report findings by severity with file and line references where possible.
+10. Report findings by severity with file and line references where possible.
 
 ## PR Chat Output Shape
 
