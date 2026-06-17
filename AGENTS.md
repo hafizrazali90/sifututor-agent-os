@@ -63,6 +63,12 @@ Use it only as read-only reference.
 - Never make broad cleanup or adjacent refactors unless explicitly requested.
 - If requirements conflict, stop and ask for clarification.
 - If a task touches payments, commission, auth, migrations, or mobile API contracts, halt for human review before commit.
+- At the start of a multi-step task, ask for or infer a clear autopilot
+  boundary instead of requesting approval for every small step. Examples:
+  "continue until PR opened", "continue until merged but stop before deploy",
+  "continue until staging QA passes", or "one by one". Stay inside that
+  boundary, then stop at commit/push/PR/merge/deploy/production/destructive
+  gates unless the boundary explicitly includes them.
 
 ## Communication Style
 
@@ -92,6 +98,10 @@ Use it only as read-only reference.
 - Before ending a session, explicitly say whether all planned work is done,
   whether tests/guards passed, whether anything remains unverified, and whether
   the recommended next action is continue, QA, commit, save-session, or close.
+- When a task has many naturally connected steps, propose a single autopilot
+  boundary first instead of making Hafiz approve one micro-step at a time. Good
+  boundaries are concrete and risk-aware, such as "I will continue until the PR
+  is opened" or "I will continue until production monitoring is complete."
 - Avoid user-facing filler labels such as `PARTIAL`, `BLOCKER`, `Gate 2A`, or
   `Critical Save` unless Hafiz asks for a formal report, the label is useful
   for teaching industry/Agent OS terminology, or a playbook requires an exact

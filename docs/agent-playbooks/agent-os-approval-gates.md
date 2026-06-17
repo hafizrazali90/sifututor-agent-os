@@ -12,6 +12,7 @@ The model is:
 ```text
 Relaxed inside a clear safe work packet.
 Strict at risk boundaries.
+Ask for one clear autopilot boundary instead of many micro-approvals.
 ```
 
 ## Why This Exists
@@ -24,6 +25,12 @@ At the same time, the Agent OS must not let convenience weaken expensive
 boundaries such as deploys, production, secrets, payment, auth, invoices,
 commissions, migrations, mobile API contracts, protected branches, or
 destructive git actions.
+
+The practical compromise: for multi-step work, the agent should ask Hafiz for
+one clear stopping point, then keep moving until that point. The stopping point
+can be "one by one", "PR opened", "merged", "staging QA passed", "deployed",
+or "monitoring complete". Anything outside that named boundary still needs a
+fresh explicit decision.
 
 ## Current Scope
 
@@ -60,6 +67,24 @@ the action is non-destructive and inside the current request:
 
 When Hafiz says `proceed`, `proceed next`, or confirms the recommendation, the
 agent may complete the safe packet without asking for each substep.
+
+For any packet with more than one natural step, the agent should name the
+autopilot boundary before or at the start of execution.
+
+Examples:
+
+```text
+Autopilot boundary: I will continue until the PR is opened, then stop.
+```
+
+```text
+Autopilot boundary: I will continue until staging QA passes, then report before
+production.
+```
+
+```text
+Autopilot boundary: I will work one by one and ask before each major gate.
+```
 
 Allowed work-packet actions:
 
@@ -101,6 +126,11 @@ covers the whole named bundle.
 If the agent asked only for commit, `approve` means commit only. If the agent
 asked for commit and push, `approve` means commit and push.
 
+If the agent asked for an autopilot boundary such as "until merged, stop before
+deploy", `approve` covers all normal steps required to reach that boundary:
+review, checks, commit if exact file list was named, push, PR, and merge when
+allowed. It does not cover deploy because deploy was explicitly excluded.
+
 ### 4. Separate Approval Always
 
 These actions must not be hidden inside a larger bundle:
@@ -127,6 +157,7 @@ These actions must not be hidden inside a larger bundle:
 | `approve` | Approve the last exact approval request, including a bundle if the request named it. |
 | `yes` | Confirm the current recommendation or discussion point; act if the action is clear and safe. |
 | `what next` | Recommend one next step; do not scatter options unless there is a real decision. |
+| `autopilot until <boundary>` | Continue through the named safe path and stop at the boundary or any unapproved risk gate. |
 
 If there is no clear previous recommendation or exact approval request, ask one
 short clarification.
@@ -135,6 +166,8 @@ short clarification.
 
 During a safe work packet, the agent should:
 
+- ask for or state the autopilot boundary when the work has multiple connected
+  steps
 - keep moving until the packet is complete or hits a boundary
 - give short progress updates while working
 - update living docs as decisions are made
@@ -144,6 +177,8 @@ During a safe work packet, the agent should:
 The agent should not:
 
 - ask Hafiz to approve every small docs edit
+- ask separately for every natural substep after a boundary has already been
+  approved
 - treat a relaxed docs packet as approval to commit or push
 - silently expand from architecture/docs into product code
 - bundle deploy, production, secrets, destructive actions, or critical-lane

@@ -43,6 +43,7 @@ These preferences were stated by Hafiz on 2026-06-04.
 | Mistake memory | Save mistakes that should change future agent behavior. | Do not save every task; save corrections, repeated friction, risk near-misses, source-of-truth errors, project gotchas, tool lessons, and approval misunderstandings. |
 | Approval bundles | Bundle sensible adjacent actions when scope is exact. | Reduce nagging for safe sequences, but keep critical/deploy/destructive/secret/production actions separate. |
 | Relaxed work packets | Agent OS/docs/workflow work should not require approval for every small substep once Hafiz says proceed. | Continue the safe packet, update living docs, run non-destructive checks, and stop at risk boundaries. |
+| Autopilot boundary | For multi-step work, Hafiz prefers one clear stopping point instead of approving every small action. | At the start, ask for or infer the boundary: one by one, until PR opened, until merged, until staging QA passes, until deploy, or until monitoring completes. Continue inside that boundary and stop at any risk boundary not explicitly included. |
 
 ## How To Interpret Short Commands
 
@@ -59,6 +60,21 @@ Short commands are common and should be handled by context, not keyword alone.
 
 If the previous action was ambiguous, ask a short clarification instead of
 guessing.
+
+For multi-step tasks, prefer asking for one boundary instead of repeatedly
+asking for each micro-action. Examples:
+
+```text
+I can autopilot this until the PR is opened, then stop.
+```
+
+```text
+I can autopilot this until it is merged, but I will stop before deploy.
+```
+
+```text
+I can continue one by one if you want tighter review.
+```
 
 If the agent wants approval for multiple sensible actions, ask once with the
 bundle clearly named. Example:
@@ -121,6 +137,8 @@ for a specific change.
 
 The agent should:
 
+- set a clear autopilot boundary for multi-step work, or infer it from Hafiz's
+  instruction when it is already explicit
 - keep scope narrow
 - state what it is about to edit
 - edit the smallest useful file set
@@ -138,6 +156,11 @@ For docs/workflow changes, implementation usually means:
 
 Commit and push can be approved together only when the agent explicitly asks for
 them together.
+
+When commit, push, PR, merge, deploy, or monitoring are part of a natural
+sequence, ask for the largest safe exact bundle once. Do not ask separately for
+commit, then push, then PR, then merge if Hafiz already approved that exact
+autopilot boundary.
 
 Commit approval requires:
 
@@ -170,6 +193,17 @@ approval boundaries.
 
 The agent may ask for one approval covering a bundle when all actions are
 sensible together, non-critical, and exact.
+
+The agent should name the stopping point in normal language:
+
+```text
+Autopilot boundary: I will continue until the PR is opened, then stop.
+```
+
+```text
+Autopilot boundary: I will continue until staging QA passes, then report before
+production.
+```
 
 Safe bundles:
 
@@ -267,6 +301,7 @@ The agent should proactively:
 - search Koda for durable lessons
 - create a GitHub issue for coding work when required
 - run guard checks before commit
+- ask for or state an autopilot boundary for multi-step work
 - suggest one next action after each meaningful step
 - combine approval requests for sensible action bundles when safe and exact
 - save durable corrections
@@ -338,6 +373,23 @@ Bad:
 Approved. I committed, pushed, closed the issue, and started the next feature.
 ```
 
+### Hafiz says: "I hate approving every step"
+
+Good:
+
+```text
+You're right. For the next task I will ask for one autopilot boundary upfront:
+one by one, until PR opened, until merged, until staging QA passes, until
+deploy, or until monitoring completes. I will still stop at any high-risk
+boundary that was not included.
+```
+
+Bad:
+
+```text
+Understood. I will continue asking for each step to be safe.
+```
+
 ### Hafiz challenges the plan
 
 Good:
@@ -377,6 +429,9 @@ Answered by Hafiz on 2026-06-04:
 - relaxed work-packet approval: safe Agent OS/docs/workflow packets can proceed
   after Hafiz confirms the direction, without asking for every small docs edit
   or check; commit/push and high-risk boundaries still need exact approval.
+- autopilot boundary: for multi-step tasks, ask for or infer one clear stopping
+  point so Hafiz can approve the whole safe path once instead of micro-approving
+  every step.
 
 ## Open Questions
 
