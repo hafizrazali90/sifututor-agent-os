@@ -12,25 +12,30 @@ classify, resume, or create work.
 5. If the project has `TESTING.md` and the task may change user-facing
    behavior, read it and identify the affected feature row before
    implementation. Use [test-coverage.md](test-coverage.md).
-6. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
+6. If the active project is `sifu-tutor` and the task touches SIMS browser UI,
+   UX design, page layout, React/Inertia components, staff-facing copy, or
+   visual QA, read `sifu-tutor/docs/ui-ux/README.md` before routing the build or
+   review. Then read the relevant files it points to plus the nearest
+   `sifu-tutor/docs/features/<feature>/` docs.
+7. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only
    when the design risk is real; small fixes stay on the normal route.
-7. For critical-lane work, cross-module workflows, or any task being handed
+8. For critical-lane work, cross-module workflows, or any task being handed
    from one AI/human developer to another, apply
    [ai-implementation-readiness.md](ai-implementation-readiness.md) before
    coding. If the plan/build prompt is missing real entry points, contract
    moments, retry/idempotency, realistic payloads, or exact evidence, close the
    documentation gap first.
-8. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+9. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
    staff-reported operational issues, check Microsoft Teams Planner
    `Development & Support > Task Management Board` as intake/context before
    deciding scope. Treat Planner as staff-reported issue context, not the
    engineering source of truth. Do not modify Planner unless Hafiz explicitly
    asks in the current session.
-9. Check the relevant Plane mission-board item for non-trivial work. If no card
+10. Check the relevant Plane mission-board item for non-trivial work. If no card
    exists for meaningful work, ask Hafiz before creating a major new one.
-10. If the prompt sounds like a follow-up, adjacent task, paused question, or
+11. If the prompt sounds like a follow-up, adjacent task, paused question, or
     part of a bigger goal, check the Mission Ledger before treating it as an
     isolated task. Use [mission-ledger.md](mission-ledger.md), but search first
     and read only the relevant project section.
@@ -157,12 +162,17 @@ when the task starts from or may relate to internal staff reports about:
 - support tickets, TREQ/TUT references, app reports, operational bugs, or staff
   complaints about what is happening in SIMS or either app
 
-Planner cards provide the human-reported symptom and support context. Convert
-confirmed engineering work into the normal Sifututor workflow: create or link a
-GitHub issue for coding work, maintain Plane for Hafiz-visible mission status,
-read/update project active task state where applicable, and run the normal
-verify/QA/review path. Keep Planner read-only unless Hafiz explicitly asks for a
-Planner update.
+Planner cards provide the human-reported symptom and support context. For
+outside intake, do a quick read-only diagnosis before creating engineering
+noise: understand the symptom, identify the affected user or role, locate the
+likely project/module, check whether it looks like real engineering work, and
+gather one or two pieces of non-destructive evidence. Stop before code edits,
+data mutation, commit, deploy, destructive action, or broad investigation.
+Convert confirmed or likely engineering work into the normal Sifututor
+workflow: create or link a GitHub issue for coding work, maintain Plane for
+Hafiz-visible mission status, read/update project active task state where
+applicable, and run the normal verify/QA/review path. Keep Planner read-only
+unless Hafiz explicitly asks for a Planner update.
 
 If there is no active task file, do not invent one unless the user asks to start
 a routed task. For simple tasks, state that no active task exists and proceed

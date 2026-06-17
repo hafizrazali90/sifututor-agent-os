@@ -8,6 +8,9 @@ an agent needs the same workflow but cannot invoke Claude skills directly.
 Use these when the user asks for:
 
 - Sifututor Agent OS overview: [agent-os.md](agent-os.md)
+- Agent OS infrastructure map: [agent-os-infrastructure.md](agent-os-infrastructure.md)
+- Agent OS skill registry: [agent-os-skill-registry.md](agent-os-skill-registry.md)
+- Agent OS hook and dispatcher map: [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md)
 - fresh Agent OS session startup: [agent-os-quick-start.md](agent-os-quick-start.md)
 - internal Agent OS build plan: [agent-os-internal-build-plan.md](agent-os-internal-build-plan.md)
 - Agent OS context accuracy: [context-authority.md](context-authority.md)
@@ -15,6 +18,7 @@ Use these when the user asks for:
 - Agent OS memory architecture v2: [agent-os-memory-architecture.md](agent-os-memory-architecture.md)
 - Agent OS tool and capability model: [agent-os-capability-model.md](agent-os-capability-model.md)
 - Agent OS workflow lanes: [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)
+- Agent OS master workflows: [agent-os-workflows.md](agent-os-workflows.md)
 - Agent OS evidence model: [agent-os-evidence-model.md](agent-os-evidence-model.md)
 - Agent OS state model: [agent-os-state-model.md](agent-os-state-model.md)
 - Agent OS mission ledger: [mission-ledger.md](mission-ledger.md)

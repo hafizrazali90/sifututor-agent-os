@@ -41,6 +41,11 @@ itself before asking Hafiz or staff for manual verification.
 - `sifu-tutor`: use Pest for backend behavior, Playwright smoke for UI or
   browser-visible bugfixes, and manual QA references in `docs/` when the module
   has a checklist. Financial modules need human review before commit.
+- `sifu-tutor` UI/UX QA must also check `sifu-tutor/docs/ui-ux/quality-gate.md`
+  plus the relevant surface-map, design-system, page/component/content,
+  accessibility/state, and review-checklist docs. Report any token drift,
+  missing loading/empty/error states, unclear critical-action copy, or invented
+  one-off patterns as QA findings.
 - Agents must not hand off checks that they can safely run themselves. Before
   asking Hafiz, staff, or another human to verify, exhaust the available
   non-destructive evidence channels in this order: automated tests, Playwright
@@ -108,6 +113,9 @@ Changed workflows:
 
 TESTING.md:
 - <feature row checked, status, named test file, or not applicable>
+
+SIMS UI/UX:
+- <docs checked, findings, or not applicable>
 
 Blockers:
 - none | <list>

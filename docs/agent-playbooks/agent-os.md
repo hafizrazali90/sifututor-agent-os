@@ -1,7 +1,7 @@
 # Sifututor Agent OS
 
-The **Sifututor Agent OS** is the shared operating layer for Hafiz, Claude,
-Codex, Koda, GitHub, Plane, Planner, and project-specific tools.
+The **Sifututor Agent OS** is the shared operating layer for Hafiz, AI agents,
+Koda, GitHub, Plane, Planner, and project-specific tools.
 
 Its job is simple: help us plan, build, verify, remember, and ship work without
 losing context or adding unnecessary ceremony.
@@ -23,13 +23,65 @@ system. The Agent OS includes:
 
 - shared rules in `AGENTS.md`
 - deeper project context in `CLAUDE.md`
+- model-agnostic workflow rules that any capable LLM can follow
 - Koda memory for durable lessons and preferences
 - task state files for active work
 - Plane and GitHub for human-visible tracking
 - Planner for staff-reported intake where relevant
 - playbooks under `docs/agent-playbooks/`
 - guard scripts under `scripts/agent-checks/`
-- Claude and Codex role split
+- agent adapters such as Codex skills/hooks and Claude skills
+
+## Phased Purpose
+
+Start narrow enough to work. Design wide enough to grow.
+
+Phase 1 focuses on Hafiz and development delivery:
+
+- Hafiz as the main user, owner, and decision maker.
+- AI agents as the bridge between Hafiz and coding.
+- Development work moving from idea or report to diagnosis, implementation,
+  verification, QA, review, commit, release when approved, and memory.
+- Staff as intake/report sources, not full Agent OS users yet.
+
+Later phases expand into the full operating layer:
+
+- Hafiz personal development OS.
+- Staff-safe AI work system.
+- Engineering delivery OS.
+- Company-wide operating layer connecting people, agents, tools, memory,
+  work intake, delivery, and rollout.
+
+Plain version:
+
+```text
+Build first for Hafiz + development delivery.
+Keep the core LLM-agnostic so Codex, Claude, Cursor, Copilot, Gemini, or future
+agents can use adapters later.
+Bring staff in as full users only after the internal workflow is stable.
+```
+
+## Core Layers
+
+Use these twelve layers as the high-level table of contents for the Agent OS:
+
+| Layer | Plain meaning |
+| --- | --- |
+| Purpose | Why the Agent OS exists and what good looks like. |
+| People | Hafiz, agents, staff, developers, reviewers, and tool owners. |
+| Intake | How work enters from chat, staff reports, Planner, GitHub, Plane, Koda, or production signals. |
+| Routing | How the OS chooses discuss, diagnose, design, implement, verify, QA, review, commit, deploy, or save. |
+| Workflows | The actual paths for bugfix, feature, critical lane, release, incident, and handoff. |
+| Tools | What the active agent can access and how capability is checked. |
+| Memory | What goes to Koda, docs, GitHub, Plane, Mission Ledger, or nowhere. |
+| Testing | How the agent proves work through tests, E2E, smoke, screenshots, API checks, or monitoring. |
+| Safety | Approval gates, forbidden actions, critical lanes, and destructive boundaries. |
+| Agent Adapters | How Codex, Claude, and future LLMs connect to the same core rules. |
+| Change Control | How Agent OS changes are proposed, reviewed, committed, and versioned. |
+| Rollout | How the system is installed, trained, and expanded to staff or projects. |
+
+Phase 1 should deeply build Purpose through Safety, with basic Codex/Claude
+adapters. Change Control and Rollout stay lighter until the core is stable.
 
 ## Collaboration Model
 
@@ -46,9 +98,9 @@ Use the lightest lane that fits the work:
 
 ## Internal-First Build
 
-Build the Agent OS for the Sifututor workspace first. Staff distribution comes
-later, after the internal system works reliably for Hafiz, Codex, Claude, Koda,
-GitHub, Plane, Planner, and the existing product repos.
+Build the Agent OS for the Sifututor workspace first. Staff distribution and
+full multi-LLM rollout come later, after the internal system works reliably for
+Hafiz, AI agents, Koda, GitHub, Plane, Planner, and the existing product repos.
 
 Internal-first means:
 
@@ -66,6 +118,8 @@ Internal-first means:
   meaning.
 - **Claude**: adversarial review, broader QA, and final confidence checks when
   useful.
+- **Future LLM adapters**: use the same core rules through their own adapter
+  layer when the workflow is mature enough.
 - **Hafiz**: owns product direction, risk tolerance, and ship decisions.
 
 ## North Star
@@ -80,6 +134,9 @@ Read these as the core internal kit:
 
 | Layer | Source |
 | --- | --- |
+| Full infrastructure map | [agent-os-infrastructure.md](agent-os-infrastructure.md) |
+| Workflow skill registry | [agent-os-skill-registry.md](agent-os-skill-registry.md) |
+| Hook and dispatcher map | [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md) |
 | How Hafiz and agents work together | [working-with-hafiz.md](working-with-hafiz.md) |
 | Prompt routing | [agent-os-routing-model.md](agent-os-routing-model.md) |
 | Approval boundaries | [agent-os-approval-gates.md](agent-os-approval-gates.md) |
@@ -88,6 +145,7 @@ Read these as the core internal kit:
 | Memory | [agent-os-memory.md](agent-os-memory.md), [agent-os-memory-architecture.md](agent-os-memory-architecture.md) |
 | Tools and capability | [agent-os-capability-model.md](agent-os-capability-model.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
+| Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
 | Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
 | Bigger goals and remembered follow-ups | [mission-ledger.md](mission-ledger.md), [mission-ledger/README.md](mission-ledger/README.md) |
@@ -99,6 +157,18 @@ Read these as the core internal kit:
 Use [agent-os-research.md](agent-os-research.md) as the living research note for
 external references, source-backed design lessons, and the distributable staff
 starter-kit direction.
+
+Use [agent-os-infrastructure.md](agent-os-infrastructure.md) to understand how
+Agent OS pieces fit together: hooks, workflow skills, playbooks, guards, Koda,
+GitHub, Plane, Planner, evidence, and install checks.
+
+Use [agent-os-skill-registry.md](agent-os-skill-registry.md) to understand
+which Sifututor workflow skills exist, who owns them, what triggers them, which
+playbook they follow, and what they must not hide.
+
+Use [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md) to understand
+how Codex hooks add context, suggest workflow skills, inject Koda memories, and
+where the hook must stop.
 
 Use [agent-os-review-roadmap.md](agent-os-review-roadmap.md) to document what
 exists today and review the internal Hafiz-Agent operating model one layer at a
@@ -142,6 +212,10 @@ gates, and forbidden boundaries.
 
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right workflow intensity: Light, Medium, Full, or Critical.
+
+Use [agent-os-workflows.md](agent-os-workflows.md) to map a request from intake
+to design, build, verification, QA, review, commit, release, save-session, or
+mission-ledger capture.
 
 Use [agent-os-evidence-model.md](agent-os-evidence-model.md) to decide what the
 agent should verify itself and what should be left for Hafiz's judgment.
