@@ -18,6 +18,7 @@ Active task files tell agents what to do next.
 Git proves what changed.
 QA evidence proves whether it works.
 Koda remembers the lesson.
+Mission Ledger remembers the bigger goal and follow-up map.
 ```
 
 No single tool should pretend to be all of these at once.
@@ -31,6 +32,7 @@ No single tool should pretend to be all of these at once.
 | Agent OS docs | workflow architecture, playbooks, durable operating models | current task status unless the doc is specifically a status report |
 | Project `AGENTS.md` / `CLAUDE.md` | project-specific rules and deep project context | live proof that the latest code works |
 | Koda | durable corrections, lessons, preferences, and non-obvious patterns | raw transcripts, temporary progress, secrets, current branch state |
+| Mission Ledger | bigger goals, child tasks, adjacent ideas, paused decisions, and follow-ups not ready for GitHub or Plane | exact implementation ticket state, production truth, raw lesson memory |
 | Plane | Hafiz-visible mission board: goal, status, owner, blocker, next action, evidence links | code diff, detailed implementation steps, test output archive |
 | Microsoft Teams Planner | staff-reported intake and operational symptom context | engineering source of truth, final code status, production truth |
 | GitHub issue | developer execution ticket for code work | Hafiz's whole mission view, production smoke result unless linked |
@@ -158,12 +160,13 @@ Use them together, not interchangeably.
 
 | Tool | Best Use |
 | --- | --- |
+| Mission Ledger | "What bigger goal does this follow-up belong to, and what should we not forget?" |
 | Plane | "Where are we, what is next, who owns it?" |
 | GitHub issue | "What exact engineering task should a developer/agent implement?" |
 | Planner | "What did staff report or experience operationally?" |
 
-Planner is intake. GitHub is engineering execution. Plane is Hafiz's mission
-board.
+Mission Ledger is the map of remembered work. Planner is intake. GitHub is
+engineering execution. Plane is Hafiz's active mission board.
 
 ## Agent Close-Out Shape
 

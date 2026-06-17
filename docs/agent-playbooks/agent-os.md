@@ -90,6 +90,7 @@ Read these as the core internal kit:
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
 | Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
+| Bigger goals and remembered follow-ups | [mission-ledger.md](mission-ledger.md), [mission-ledger/README.md](mission-ledger/README.md) |
 | Rollout readiness | [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) |
 | Behavior checks | [agent-os-evals.md](agent-os-evals.md) |
 
@@ -147,6 +148,10 @@ agent should verify itself and what should be left for Hafiz's judgment.
 
 Use [agent-os-state-model.md](agent-os-state-model.md) to decide where task
 status, evidence, approvals, and release state should live.
+
+Use [mission-ledger.md](mission-ledger.md) when a task, adjacent idea, paused
+decision, or follow-up needs to stay linked to a bigger goal before it is ready
+for GitHub, Plane, PRD, QA, or Koda.
 
 Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) before
 expanding the Agent OS from Hafiz/internal use to staff or project installs.

@@ -20,6 +20,7 @@ Runs:
 
 - branch name validation
 - sensitive path check
+- Mission Ledger structure and parent-link check
 - active task state summary
 
 These checks are intentionally conservative. A failing check means stop and ask

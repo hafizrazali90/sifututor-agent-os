@@ -24,7 +24,8 @@ Do not end a meaningful session with only "done." End it with:
 4. what Plane says the current goal, status, and next action are
 5. what task is still active
 6. what remains next
-7. whether the session can be closed now or should continue with QA, commit,
+7. what was captured in the Mission Ledger, if anything
+8. whether the session can be closed now or should continue with QA, commit,
    review, deploy preparation, or another named next step
 
 If those seven things are clear, the session is saved well.
@@ -253,7 +254,11 @@ Before Codex gives the final answer for meaningful work:
 4. Read `.claude/tasks/active.json` when present and report the active task
    state.
 5. Update or report the relevant Plane card for non-trivial work.
-6. Run the shared guard when code or workflow files changed.
-7. Report what changed, why, tests/guards run, files or commits touched, and
+6. Check the Mission Ledger for new follow-ups, adjacent tasks, paused
+   decisions, or bigger-goal links. Update it when needed. See
+   [mission-ledger.md](mission-ledger.md). Search/open only the relevant project
+   file unless doing a full ledger cleanup.
+7. Run the shared guard when code or workflow files changed.
+8. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-8. If Koda is unavailable, say so and use the fallback path.
+9. If Koda is unavailable, say so and use the fallback path.
