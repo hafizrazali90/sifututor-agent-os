@@ -134,4 +134,3 @@ follow-ups.
   normal upload should suggest attaching to generated receipt records.
 - **Promote to:** GitHub issue or PRD
 - **Links:** none yet
-

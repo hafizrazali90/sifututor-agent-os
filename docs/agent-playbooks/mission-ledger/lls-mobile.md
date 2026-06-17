@@ -6,4 +6,3 @@ follow-ups.
 ## Missions
 
 No mission-ledger items captured yet.
-

@@ -36,4 +36,3 @@ that span more than one project.
 - **Promote to:** none yet
 - **Links:** [task-router](../../agent-playbooks/task-router.md),
   [save-session](../../agent-playbooks/save-session.md)
-
