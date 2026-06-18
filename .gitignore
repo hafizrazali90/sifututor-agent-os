@@ -12,6 +12,8 @@
 docs/*
 !docs/agent-playbooks/
 !docs/agent-playbooks/**
+!docs/onboarding/
+!docs/onboarding/**
 
 # Track shared guard scripts.
 !scripts/
