@@ -658,7 +658,7 @@ private space on it. This is complementary to claude-mem, not a replacement:
 
 | | claude-mem (Layer 1) | Koda (Layer 3) |
 | --- | --- | --- |
-| Where it runs | Local on your machine | Shared server (`178.105.120.34:3848`) |
+| Where it runs | Local on your machine | Shared server (`koda.tutorla.tech`) |
 | Capture | Automatic (hooks) | Manual — Claude calls memory tools |
 | Reach | This machine only | Any machine you log in from |
 | Best for | Passive session recall | Deliberate decisions/lessons you want to query later |
@@ -687,7 +687,7 @@ original meaning and wording are preserved.
      "mcpServers": {
        "memory": {
          "type": "http",
-         "url": "http://178.105.120.34:3848/mcp",
+         "url": "https://koda.tutorla.tech/mcp",
          "headers": {
            "Authorization": "Bearer <YOUR_PERSONAL_KEY>"
          }

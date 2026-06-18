@@ -34,7 +34,7 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecyc
 `SessionStart` must verify Koda before normal work:
 
 - `KODA_API_KEY` is present, without printing the value
-- Codex `memory` MCP points to `http://178.105.120.34:3848/mcp`
+- Codex `memory` MCP points to `https://koda.tutorla.tech/mcp`
 - `bearer_token_env_var` is `KODA_API_KEY`
 - Koda MCP initializes and returns a session id
 - required tools exist: `memory_search`, `memory_store`, `memory_context`, `session_start`

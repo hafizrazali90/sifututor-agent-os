@@ -34,7 +34,7 @@ Do the following:
    {
      "memory": {
        "type": "http",
-       "url": "http://178.105.120.34:3848/mcp",
+       "url": "https://koda.tutorla.tech/mcp",
        "headers": {
          "Authorization": "Bearer YOUR_KEY_HERE"
        }
