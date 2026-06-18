@@ -14,9 +14,9 @@ import urllib.request
 
 WORKSPACE = Path("/Users/hafizrazali/Projects/Sifututor")
 CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
-KODA_URL = "http://178.105.120.34:3848/mcp"
+KODA_URL = "https://koda.tutorla.tech/mcp"
 KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
-KODA_TIMEOUT = 2
+KODA_TIMEOUT = 10
 KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
 PROJECTS = {
@@ -464,7 +464,7 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
 def koda_repair_text() -> str:
     return (
         "Repair command: open Codex > Settings > MCP Servers, remove 'memory', "
-        "add new Streamable HTTP MCP named 'memory' with URL http://178.105.120.34:3848/mcp "
+        "add new Streamable HTTP MCP named 'memory' with URL https://koda.tutorla.tech/mcp "
         "and Authorization header 'Bearer <KODA_API_KEY value>', then start a fresh Codex session."
     )
 
