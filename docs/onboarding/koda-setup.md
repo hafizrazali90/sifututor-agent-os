@@ -109,6 +109,26 @@ Claude should store the memory, find it in the search, and confirm success. If i
 
 ---
 
+## Step 6 — Shared team brain (project scope)
+
+Koda has two levels of memory:
+
+| Level | Who sees it | When to use |
+|---|---|---|
+| **Personal** (default) | Only you | Corrections, preferences, your own lessons |
+| **Project** (`scope: "project"`) | All team members | Architectural decisions, API contracts, team-wide gotchas |
+
+When you or Claude discover something important that every developer should know, store it as project-scoped. Claude should do this automatically for architectural and team-wide lessons. You can also ask Claude explicitly:
+
+```
+Store this as a project memory so the whole team can see it:
+[the decision or rule]
+```
+
+Project memories cannot be deleted or overwritten by individual developers — they are organization-level knowledge owned by Sifututor.
+
+---
+
 ## Daily habit
 
 At the end of every coding session, type:
