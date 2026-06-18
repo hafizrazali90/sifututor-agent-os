@@ -129,6 +129,21 @@ Project memories cannot be deleted or overwritten by individual developers — t
 
 ---
 
+## Step 7 — Flagging an outdated team memory
+
+Project memories are protected — you can't delete or edit someone else's. But if you spot a shared memory that looks **wrong or out of date** (a stale URL, a rule that changed), you can *flag* it for review without destroying it. Just ask Claude:
+
+```
+That team memory looks outdated — flag it for review:
+[memory ID or description]
+```
+
+Flagging records who raised the concern and when. It does **not** delete the memory or change its trust level — the memory stays searchable until a human reviews it. Flagged memories show up in the health report (`/save-session` runs `project_health`) so they don't get lost.
+
+If you flagged something by mistake, ask Claude to clear the flag.
+
+---
+
 ## Daily habit
 
 At the end of every coding session, type:
