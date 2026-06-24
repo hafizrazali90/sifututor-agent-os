@@ -86,10 +86,9 @@ Do not mark an agent inference as `user-stated`.
 
 Before storing:
 
-1. Search Koda for the topic when the MCP path is working.
+1. Search Koda for the topic through the direct CLI/helper path.
 2. If a similar memory exists, update it instead of creating a duplicate.
-3. If Koda MCP is timing out but direct health works, use the direct safe path
-   or report that memory save is deferred.
+3. For Codex, do not rely on the chat-level `mcp__memory` wrapper.
 4. If Koda is unavailable, include the durable lesson in the final response and
    note the fallback.
 
@@ -104,8 +103,8 @@ scripts/agent-checks/koda update '{"id":"mem_XXXX","content":"<safe corrected me
 
 Use the Koda CLI as the Codex-first memory path in this workspace. It uses the
 same MCP HTTP endpoint and `KODA_API_KEY`, but avoids the chat-level
-`mcp__memory` wrapper when that wrapper is unreliable. Do not print or paste
-secret values.
+`mcp__memory` wrapper. Do not install the Codex `memory` MCP unless Hafiz
+explicitly reverses this decision. Do not print or paste secret values.
 
 ## Executable Memory Discipline Check
 

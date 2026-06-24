@@ -104,8 +104,9 @@ It registers these hooks:
 | `PreCompact` | Reminds Codex to snapshot/save before relying on compacted context |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
 
-`SessionStart` is a Koda startup gate. It checks direct HTTP MCP config,
-initialization, required memory tools, `memory_search`, and a small write
+`SessionStart` is a Koda startup gate. It checks that Codex is using the direct
+Koda CLI/helper path, direct HTTP initialization, required memory tools,
+`memory_search`, and a small write
 sentinel. If it reports `Koda: FAILED`, Codex must repair Koda before doing
 non-trivial work:
 

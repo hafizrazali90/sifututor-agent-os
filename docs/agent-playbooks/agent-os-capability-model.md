@@ -153,7 +153,7 @@ Use the most reliable interface for each agent.
 
 | Agent | Default Koda path | Notes |
 | --- | --- | --- |
-| Codex in this workspace | CLI-first | Use `scripts/agent-checks/koda`; chat MCP is optional/unreliable until proven healthy. |
+| Codex in this workspace | CLI-first, no chat memory MCP | Use `scripts/agent-checks/koda`; do not install the Codex `memory` MCP because it has repeatedly timed out in chat sessions. |
 | Claude Code | MCP-first if stable | Use normal Koda MCP when working; use CLI fallback only when needed and available. |
 | Staff/general LLM | no write access by default | Staff should use docs or local notes until Koda permission/risk is reviewed. |
 | Automation/scripts | CLI-first | Easier to test, log, and enforce memory rules. |

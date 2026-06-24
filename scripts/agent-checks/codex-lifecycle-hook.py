@@ -321,7 +321,7 @@ def parse_tool_content(response: dict) -> object:
 
 def codex_memory_config_status() -> tuple[bool, str]:
     if not CODEX_CONFIG.exists():
-        return False, f"Codex config not found at {CODEX_CONFIG}"
+        return True, "Codex memory MCP disabled; using direct Koda CLI/helper path"
 
     try:
         content = CODEX_CONFIG.read_text(encoding="utf-8")
@@ -330,7 +330,7 @@ def codex_memory_config_status() -> tuple[bool, str]:
 
     memory_block = re.search(r"(?ms)^\[mcp_servers\.memory\]\s*(.*?)(?=^\[|\Z)", content)
     if not memory_block:
-        return False, "Codex config has no [mcp_servers.memory] block"
+        return True, "Codex memory MCP disabled; using direct Koda CLI/helper path"
 
     block = memory_block.group(1)
     url_match = re.search(r'(?m)^\s*url\s*=\s*"([^"]+)"', block)
@@ -348,12 +348,12 @@ def codex_memory_config_status() -> tuple[bool, str]:
         if token_env != "KODA_API_KEY":
             return False, f"Codex memory MCP bearer_token_env_var is {token_env or 'missing'}, expected KODA_API_KEY"
 
-        return True, "Codex memory MCP config is direct HTTP with KODA_API_KEY"
+        return False, "Codex memory MCP is configured; remove it and use the direct Koda CLI/helper path"
 
     if command == "node" and KODA_STDIO_BRIDGE in args_block:
-        return True, "Codex memory MCP config uses the Koda stdio bridge"
+        return False, "Codex memory MCP uses the old Koda stdio bridge; remove it and use the direct Koda CLI/helper path"
 
-    return False, "Codex memory MCP config is neither direct HTTP nor the Koda stdio bridge"
+    return False, "Codex memory MCP config is unknown; remove the memory MCP and use the direct Koda CLI/helper path"
 
 
 def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
@@ -367,7 +367,7 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     session, init_error = koda_initialize("codex-koda-health-check")
     if init_error:
         return False, details + [init_error]
-    details.append("Koda MCP initialize returned a session id")
+    details.append("Koda direct HTTP initialize returned a session id")
 
     body, content_type, _sid = post_koda(
         {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
@@ -463,9 +463,8 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
 
 def koda_repair_text() -> str:
     return (
-        "Repair command: open Codex > Settings > MCP Servers, remove 'memory', "
-        "add new Streamable HTTP MCP named 'memory' with URL https://koda.tutorla.tech/mcp "
-        "and Authorization header 'Bearer <KODA_API_KEY value>', then start a fresh Codex session."
+        "Repair command: run `codex mcp remove memory`, ensure KODA_API_KEY is available "
+        "to the shell, then verify with `scripts/agent-checks/koda health`."
     )
 
 
