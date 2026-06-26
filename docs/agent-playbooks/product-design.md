@@ -42,6 +42,54 @@ This workflow should remove ambiguity, not create ceremony.
 - For critical lanes, stop at PRD/UX/build-plan unless Hafiz approves
   implementation separately.
 
+## SIMS Module Redesign Loop
+
+For SIMS module redesigns or module-wide UI/UX transformations, follow the
+Tutor Requests / SIMS Shell loop before implementation. This applies especially
+to Parent Invoices, Classes, Student Reports, payments, finance, dashboard, and
+navigation work.
+
+1. **Diagnose the real system first.** Read code, routes, controllers, services,
+   UI docs, feature docs, relevant tests, current branch behavior, staging or
+   local screenshots when available, Koda memories, and `origin/integration`.
+2. **Map the end-to-end surface.** Include list pages, detail pages, forms,
+   wizards, modals, drawers, popovers, row actions, destructive actions,
+   exports, PDFs, notifications/copy, permissions, mobile/narrow layouts,
+   loading/empty/error/disabled states, and downstream side effects.
+3. **Discuss one decision at a time.** Each decision must include:
+
+```text
+Current behavior:
+Problem / opportunity:
+Options:
+Recommendation:
+Why:
+Tradeoff / risk:
+Decision needed:
+```
+
+4. **Record confirmed decisions.** Do not move to build prompts until the major
+   module choices are confirmed or explicitly deferred.
+5. **Create artifacts only after direction is clear.** Use the smallest safe
+   set, but for high-risk modules prefer PRD, UX spec, backend contract, and
+   build prompts.
+6. **Implementation is a separate approval.** Critical lanes like invoices,
+   payments, commissions, migrations, deployment, auth, and mobile API
+   contracts must stay in Phase A diagnosis/design until Hafiz approves Phase B.
+7. **Evidence must be reviewable.** For visible UI work, plan screenshots and a
+   consistent HTML review board before calling a slice complete. The review
+   board format should stay stable across modules unless Hafiz approves a new
+   template.
+8. **Turn mistakes into reusable rules.** If review catches repeated issues
+   such as spacing, color, action labels, copy capitalization, menu behavior,
+   overlap, responsive layout, or staging/local mismatch, update the relevant
+   `docs/ui-ux/` or Agent OS workflow doc in the same cycle.
+
+Practical trigger: if Hafiz asks to "repeat the Tutor Requests process", "learn
+from the mistake", "brainstorm first", "diagnose all", or "ask one by one",
+start here and do not implement until the discussion and approval gates are
+clear.
+
 ## Accuracy Rules
 
 Before producing artifacts:

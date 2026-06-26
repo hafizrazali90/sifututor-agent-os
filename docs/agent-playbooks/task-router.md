@@ -21,6 +21,11 @@ classify, resume, or create work.
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only
    when the design risk is real; small fixes stay on the normal route.
+   For SIMS module redesigns or module-wide UI/UX transformation work, always
+   treat the first phase as discussion-first product design. Do not start
+   coding because Hafiz says "proceed" unless the current discussion already
+   produced the module scope, user/system flow decisions, screen inventory,
+   state coverage, evidence plan, and explicit implementation approval.
 8. For critical-lane work, cross-module workflows, or any task being handed
    from one AI/human developer to another, apply
    [ai-implementation-readiness.md](ai-implementation-readiness.md) before
@@ -210,3 +215,34 @@ deployment work:
 
 Do not collapse these phases unless the user explicitly authorizes emergency
 hotfix risk.
+
+## SIMS Module Redesign Guard
+
+Use this guard for module-wide SIMS UI/UX work such as Tutor Requests, Parent
+Invoices, Classes, Student Reports, payments, finance, dashboards, and shell
+navigation.
+
+The learned Tutor Requests and SIMS Shell workflow is:
+
+1. Diagnose first: read code, docs, current staging/local UI, current branch,
+   `origin/integration`, and relevant Koda memories.
+2. Inventory the whole module: list pages, subpages, modals, drawers, popovers,
+   buttons/actions, copy, fields, empty/loading/error states, desktop/mobile
+   layouts, permissions, and downstream side effects.
+3. Discuss decisions one by one with Hafiz. For each decision, explain the
+   current behavior, the problem, options, recommendation, why, and tradeoff.
+4. Record confirmed decisions before moving on. Do not silently reinterpret an
+   earlier choice when later work becomes complex.
+5. Produce or update the PRD/UX spec/backend contract/build prompts only after
+   the discussion direction is clear.
+6. Implement in safe slices only after approval, especially for critical lanes.
+7. Capture browser screenshots and a consistent HTML review board after each
+   visible slice; update it whenever screenshots change.
+8. Verify the real changed workflow on staging after deploy, not only route
+   availability or local screenshots.
+9. Update reusable docs when a mistake reveals a missing rule, such as spacing,
+   copy style, action labels, mobile responsiveness, menu behavior, or review
+   board format.
+
+If Hafiz asks "are we brainstorming?", "why are we coding?", or similar, stop
+and return to this guard instead of continuing implementation.

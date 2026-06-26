@@ -17,6 +17,32 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Promote to:** GitHub issue
 - **Links:** `Sifututor/sifu-tutor#1572`, `Sifututor/sifu-tutor#1573`, `Sifututor/sifu-tutor#1574`
 
+### SIMS-BILLING-ALLOC-LEGACY-001.A1 — Paid-Invoice Duplicate Postponed Class Review
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** adjacent
+- **Parent:** SIMS-BILLING-ALLOC-LEGACY-001
+- **End goal:** Historical duplicate postponed class rows on paid invoices are classified and either left alone or cleaned with finance-approved rules, without altering paid invoice or tutor-payment history accidentally.
+- **Why it matters:** The 2026-06-24 production repair cleaned only 8 active unpaid/draft duplicate postponed rows after a fresh DB backup. The same diagnosis still showed 221 active and 104 inactive clean-looking duplicate postponed extras on paid invoices; these were intentionally not touched because paid invoice history is finance-sensitive.
+- **Source:** Codex postponed duplicate class production repair session, 2026-06-24.
+- **Next action:** Decide with finance/product whether paid-invoice duplicate postponed rows should remain as historical audit noise or be cleaned through a separate reviewed script.
+- **Promote to:** GitHub issue
+- **Links:** `Sifututor/sifu-tutor#1637`, `Sifututor/sifu-tutor#1640`, production deploy `7794f9e67`, Koda `mem_5b825d408b45`
+
+### SIMS-CLASS-LIFECYCLE-001 — Clear Class Lifecycle Model
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** mission
+- **Parent:** none
+- **End goal:** SIMS has a clearer class/session model where schedule, reschedule/postpone history, attendance, verification, quota, invoice allocation, and tutor-payment state are understandable without reading raw duplicate-looking rows in `classes`.
+- **Why it matters:** The current model stores both the live class and lifecycle history in the same table, so postponed/rescheduled flows can look like extra classes, confuse staff review, and make quota/invoice diagnosis harder even when the allocator excludes postponed rows correctly.
+- **Source:** Hafiz class lifecycle redesign discussion and postponed duplicate repair session, 2026-06-24.
+- **Next action:** Hafiz decision gate for Phase 4: approve or adjust the tutor-app-only same-row postpone backend contract, then create the implementation issue/branch before coding.
+- **Promote to:** PRD
+- **Links:** `Sifututor/sifu-tutor#1637`, `Sifututor/sifu-tutor#1640`, `Sifututor/sifu-tutor#1648`, Koda `mem_5b825d408b45`, `sifu-tutor/docs/features/class-lifecycle-option-c/phase-4-readiness.md`
+
 ### SIMS-NOTIF-MATCH-001 — Shared Tutor Candidate Ranking For Opportunity Notifications
 
 - **Project:** sifu-tutor
@@ -64,8 +90,8 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Parent:** none
 - **End goal:** Tutor profile/service-preference data stays consistent across the tutor app, SIMS portal, and future enhanced-data collection rollouts.
 - **Why it matters:** Availability, language proficiency, mode/class-type options, and mobile logout behavior now cross the backend, portal, and mobile API boundary. Small contract drift can affect old app builds or staff profile edits.
-- **Source:** Codex review/fix/deploy of profile-features PR #1580, 2026-06-17.
-- **Next action:** Promote concrete cleanup items to GitHub issues when they become implementation-ready.
+- **Source:** Codex review/fix/deploy of profile-features PR #1580, 2026-06-17; production EDC availability-save flag cutover, 2026-06-19.
+- **Next action:** Have the tutor/app side retry Service Preference Step 3 availability save with a real tutor session; promote remaining cleanup items to GitHub issues when they become implementation-ready.
 - **Promote to:** none yet
 - **Links:** `Sifututor/sifu-tutor#1580`, production deploy `652023846`
 
@@ -81,3 +107,29 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Next action:** Open a small GitHub issue/PR to normalize `availability_slots` in tutor details and keep the existing API-contract tests focused on the minimal shape.
 - **Promote to:** GitHub issue
 - **Links:** `Sifututor/sifu-tutor#1580`, production deploy `652023846`
+
+### SIMS-TUTOR-PROFILE-001.A2 — Tutor App M10 Notification Preferences Cleanup
+
+- **Project:** sifututor_tutor
+- **Status:** captured
+- **Type:** adjacent
+- **Parent:** SIMS-TUTOR-PROFILE-001
+- **End goal:** The tutor app M10 Settings notification preferences screen uses the backend canonical 5-category wording and keys while keeping critical account-status notifications untoggleable.
+- **Why it matters:** PR #1610 made the backend production-safe by accepting both the current app's legacy keys and the new canonical keys. The app does not need an emergency fix, but aligning it later avoids long-term API-contract drift.
+- **Source:** Codex review/fix/merge/deploy of profile-features PR #1610, 2026-06-18.
+- **Next action:** Mobile dev should open a small app cleanup task to update the M10 screen labels/keys to `job_opportunities`, `class_reminders`, `payments_earnings`, `reports_scheduling`, and `tips_guidance`; do not show `account_status`.
+- **Promote to:** GitHub issue
+- **Links:** `Sifututor/sifu-tutor#1610`, production deploy `696cb0704`
+
+### SIMS-FIUU-PAYMENT-REVIEW-001 — FIUU Pending Review Alerts And Dashboard
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** mission
+- **Parent:** none
+- **End goal:** FIUU payments that cannot be automatically reconciled are visible to Finance/Admin through alerts and a pending-review queue.
+- **Why it matters:** PR #1609 fixed the silent ordering-guard drop for successful FIUU callbacks, but `mismatch_review` still depends on staff noticing the issue manually. Successful bank payments should never stay invisible until a parent complaint.
+- **Source:** Codex FIUU ordering-guard hotfix/deploy/data-repair session, 2026-06-18.
+- **Next action:** Open a GitHub issue for Finance/Admin alerting on `mismatch_review`, plus an Operations Centre pending-payment-review section with safe manual resolution steps.
+- **Promote to:** GitHub issue
+- **Links:** `Sifututor/sifu-tutor#1609`, production deploy `696cb0704`
