@@ -20,6 +20,8 @@ docs/*
 scripts/*
 !scripts/agent-checks/
 !scripts/agent-checks/**
+!scripts/agent-access/
+!scripts/agent-access/**
 
 # Track repo-local Codex skills that wrap shared playbooks.
 !.agents/

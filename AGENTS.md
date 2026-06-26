@@ -77,6 +77,40 @@ Use it only as read-only reference.
   boundary, then stop at commit/push/PR/merge/deploy/production/destructive
   gates unless the boundary explicitly includes them.
 
+## Agent Access Registry
+
+Before declaring that a credential, tool, or infrastructure check is unavailable,
+consult `docs/agent-playbooks/agent-access-map.md`. It documents all approved
+access lanes with tier, allowed operations, Hafiz approval requirement, and a safe
+verification command for each. The current registry has 21 lanes: 20 scoped
+agent-access conf files plus the Microsoft 365 read-only env lane.
+
+Wrapper scripts for common checks live in `scripts/agent-access/`:
+
+| Script | What it checks |
+| --- | --- |
+| `agent-access-doctor.sh` | All lanes — conf file presence + connectivity (run for full health) |
+| `check-st-admin-cert.sh` | SSL cert expiry and API route for st.admin.sifututor.my |
+| `check-ripple-prod.sh` | PM2 status on KVM8, Ripple HTTPS, SIMS API reachability |
+| `check-sims-db-readonly.sh` | SIMS production DB connection and aggregate spot-checks |
+| `check-cloudflare-dns.sh` | A records for key domains via read-only Cloudflare API |
+| `check-cpanel-autossl.sh` | AutoSSL last-run log and combined cert expiry on production |
+| `check-monitoring.sh` | Sentry unresolved issue count, BetterStack monitor status |
+| `check-microsoft-planner.sh` | M365/Teams Planner access (Lokka binary + m365-readonly.env) |
+| `check-backups.sh` | Backup/Wasabi object count and latest timestamp |
+
+Approval tiers (from `agent-access-map.md`):
+
+- **Auto-read**: no approval needed — use freely for reads, smoke, monitoring, DNS.
+- **Write**: Hafiz scope approval per session — e.g., "deploy to staging", "update DNS".
+- **Admin**: Hafiz scope approval per session — e.g., "run AutoSSL", "manage cPanel".
+- **Critical**: per-operation approval — payments, DB writes, auth changes, migrations.
+- **Destructive**: explicit current-session approval for each action.
+
+Security rule: wrapper scripts may source scoped conf files, but must **never echo,
+print, log, or commit** secret values. Use these scripts to gather evidence, not to
+print credentials to the terminal or to files.
+
 ## Communication Style
 
 - Talk to Hafiz in natural language first, like code translated into plain
