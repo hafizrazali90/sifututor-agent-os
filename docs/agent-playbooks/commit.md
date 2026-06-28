@@ -52,8 +52,12 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 5. If the session contains multiple fixes, update the Session Release Ledger
    and confirm no intended fix is stranded on another branch or local-only
    commit.
-6. Review `git status --short`, `git diff`, and `git diff --staged`.
-7. Ask the user to approve the exact staged file list unless already approved.
+6. Apply the Review And Risk Checkpoint from [review.md](review.md). Plain
+   meaning: before saving the commit, confirm the change is scoped, evidenced,
+   honest about state, not hiding critical-lane risk, not missing relevant
+   release communication, and not confusing multi-fix session state.
+7. Review `git status --short`, `git diff`, and `git diff --staged`.
+8. Ask the user to approve the exact staged file list unless already approved.
 
 ## Message Format
 

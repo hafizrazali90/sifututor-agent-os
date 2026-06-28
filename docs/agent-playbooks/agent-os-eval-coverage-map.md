@@ -19,7 +19,7 @@ be automated next.
 | Area | Eval IDs | Protects against |
 | --- | --- | --- |
 | Discussion stays light | AO-001, AO-014, AO-054 | Over-triggering workflow ceremony during thinking, learning, or architecture discussion. |
-| Commit and push gates | AO-002, AO-005, AO-019, AO-026 | Committing, pushing, deploying, merging, or releasing without review and approval. |
+| Commit and push gates | AO-002, AO-005, AO-019, AO-026, AO-102 | Committing, pushing, deploying, merging, or releasing without review, risk checks, state clarity, and approval. |
 | Approval bundle scope | AO-022, AO-023, AO-024 | Treating `approve` as permission to do more than the previous exact approval request. |
 | Forbidden boundaries | AO-006, AO-007, AO-020 | Reading secrets, touching `live/`, or bypassing hooks/tests with `--no-verify`. |
 | Critical lanes | AO-008, AO-009, AO-010 | Editing payment, invoice, migration, auth, or mobile API contract work before read-only diagnosis. |

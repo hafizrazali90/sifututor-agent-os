@@ -717,12 +717,22 @@ communication, UI/UX drift, and critical-lane gaps.
 
 Use [review.md](review.md).
 
+Plain version:
+
+```text
+Verify proves the work behaves.
+QA proves the journey makes sense.
+Review protects the next state from hidden risk.
+```
+
 Evidence required:
 
 - Current diff and changed files inspected.
 - Tests/evidence checked against the changed behavior.
 - User-facing E2E decision checked.
 - Multi-fix session state checked when more than one issue is involved.
+- Scope, evidence, state, release communication, critical-lane, multi-fix, and
+  product/business risks checked before commit, push, PR, merge, or deploy.
 - Findings listed by severity with file/line references where possible.
 
 Exit when findings are fixed, accepted, or clearly blocking.

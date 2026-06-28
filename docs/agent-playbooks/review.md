@@ -10,6 +10,47 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 Use [agent-os-evidence-model.md](agent-os-evidence-model.md) when judging
 whether the agent gathered enough proof before handing work to Hafiz or staff.
 
+## Review And Risk Checkpoint
+
+Review is the agent's second-brain check before work is saved or sent outward.
+
+Plain version:
+
+```text
+Verify asks: does it work?
+QA asks: can a real user complete the journey?
+Review asks: is it scoped, evidenced, safe, and honest about its state?
+```
+
+Run this checkpoint before commit, push, PR, merge, deploy, or whenever Hafiz
+asks whether work is safe to approve.
+
+| Risk Area | What To Check | Blocks Next State When |
+| --- | --- | --- |
+| Scope creep | Did the agent change files, behavior, copy, dependencies, or cleanup outside the approved task? | Unapproved adjacent work is included or the review cannot explain why each changed file belongs. |
+| Evidence gap | Does the evidence match the work type and state being claimed? | Required tests, browser/mobile proof, permanent E2E decision, or live smoke are missing without a valid named exception. |
+| State confusion | Is the work only changed locally, committed, pushed, PR-open, merged, deployed, live checked, or accepted? | The report implies a higher state than Git/PR/deploy/QA evidence proves. |
+| Critical-lane boundary | Did auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract behavior change? | Read-only diagnosis, approval, reviewer, or safe evidence is missing. |
+| Release communication | Do staff/users need changelog, help text, What's New, or operational notice? | A relevant staff-facing change has no release communication and no reason it is unnecessary. |
+| Multi-fix state | Are there multiple fixes, branches, commits, PRs, or deploy candidates in this session? | Session Release Ledger is missing/stale or any fix state is unclear before push/merge/deploy. |
+| Product/business risk | Does Hafiz need to decide wording, UX fit, staff workflow, policy, timing, or risk acceptance? | The agent presents a business/product judgment as already decided. |
+
+When review finds a risk, say the practical meaning first:
+
+```text
+This can be committed locally, but it is not ready to push because the browser
+journey is still unproven.
+```
+
+Then name the next action:
+
+```text
+Recommended next: run the focused Playwright path, then re-review before push.
+```
+
+Do not bury a blocking risk inside a long summary. If something blocks commit,
+push, PR, merge, deploy, or a "ready" claim, lead with it.
+
 ## Natural-Language PR Review With Hafiz
 
 When Hafiz asks to review a PR, the default review surface is the same chat, not
@@ -67,7 +108,9 @@ production state changes still require explicit current-session approval.
 9. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
-10. Report findings by severity with file and line references where possible.
+10. Run the Review And Risk Checkpoint before saying the work is safe for the
+    next state.
+11. Report findings by severity with file and line references where possible.
 
 ## PR Chat Output Shape
 
@@ -124,6 +167,9 @@ Release communication:
 
 Session release ledger:
 - <not applicable | current | missing finding>
+
+Next state:
+- <safe for commit | safe for push | safe for PR | safe for merge | safe for deploy | not safe yet, with reason>
 
 Summary:
 - <brief context>
