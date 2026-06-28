@@ -274,7 +274,9 @@ Intake outcomes:
 For coding work, prefer creating or linking a GitHub issue after quick
 diagnosis. Do not create an issue from a vague symptom if the agent has not yet
 identified the affected role, likely project/module, and one or two pieces of
-supporting evidence.
+supporting evidence. Also do not begin real implementation with no trace. Once
+quick diagnosis shows likely engineering work, create/link the GitHub issue or
+use the approved active task/work packet before editing code.
 
 Detailed intake rules:
 

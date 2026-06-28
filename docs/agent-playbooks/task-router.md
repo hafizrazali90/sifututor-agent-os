@@ -92,6 +92,12 @@ goal or should be captured for later but is not ready for GitHub yet.
 To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`
 and open only the relevant matching section.
 
+Use the Work Intake And Task State Rules in
+[agent-os-state-model.md](agent-os-state-model.md) before creating GitHub
+issues or starting real coding work. Plain meaning: quick-diagnose the signal,
+then choose the lightest useful home. Do not create issues from vague symptoms
+too early, and do not start execution-ready coding with no trace.
+
 Important routing principles:
 
 - Do not route by keyword alone.

@@ -118,6 +118,83 @@ If two sources disagree, use [context-authority.md](context-authority.md).
 Plain meaning: route the information to the right home, but do not trust stale
 or conflicting context without checking the source that owns the current truth.
 
+## Work Intake And Task State Rules
+
+Use this when a request first becomes possible work.
+
+Plain version:
+
+```text
+Do not create GitHub issues too early.
+Do not start real coding work with no trace.
+Do a quick diagnosis, then put the work in the lightest useful home.
+```
+
+Separate intake into three moments:
+
+| Moment | Practical Meaning | What To Record |
+| --- | --- | --- |
+| Signal | Something was reported, requested, noticed, or remembered. | Keep the source clear: Hafiz chat, Planner/support, GitHub, Koda, Mission Ledger, production signal, or Session Map. |
+| Quick diagnosis | The agent checks enough current evidence to avoid routing noise. | Short finding in chat or Session Map: symptom, likely project/module, affected role, evidence checked, and recommended home. |
+| Execution state | The work is ready for building, verifying, reviewing, or saving. | GitHub issue for code work, Mission Ledger for bigger/future work, active task file where the project uses one, Session Release Ledger for multi-fix sessions, and git commit for exact changed files. |
+
+Quick diagnosis is not a hidden implementation phase. It should stay read-only
+and narrow:
+
+- identify the reported symptom or requested outcome
+- identify affected user, role, project, module, or workflow when possible
+- check current repo/docs/test/runtime/production-safe evidence where relevant
+- decide whether the work is discussion, design, diagnosis, GitHub issue,
+  Mission Ledger follow-up, Koda lesson, chat-only clarification, or reject/close
+- stop before code edits, data mutation, commit, deploy, destructive action, or
+  critical-lane implementation
+
+Use this routing table:
+
+| Intake | First Move | Create GitHub Issue When | Do Not Create Yet When |
+| --- | --- | --- | --- |
+| Hafiz direct coding request | Route and quick-diagnose enough to title the work. | The work is real coding and has a clear scope, likely project/module, and acceptance shape. | Hafiz is still brainstorming, scope is too vague, or the request is docs/discussion only. |
+| Staff or Planner report | Treat as symptom and gather current evidence. | The symptom looks like likely engineering work after quick diagnosis. | It is only a complaint, duplicate, missing role/page/data, or may be support/training/process instead of code. |
+| Agent-discovered issue | Report it and compare with current scope. | It is inside approved scope or Hafiz approves tracking it as engineering work. | It is adjacent cleanup, broader refactor, or future improvement. Use Mission Ledger instead. |
+| Bigger idea or future improvement | Capture in Mission Ledger. | It becomes execution-ready with scope and acceptance. | It is still an idea, research topic, parked decision, or product direction. |
+| Durable preference or repeated mistake | Save to Koda and usually docs. | Only if it also creates concrete engineering work. | It is only a workflow lesson or behavior rule. |
+| Long current session with side paths | Update Session Map. | Only for execution-ready code work inside the session. | It is only current-session continuity. |
+| Multiple fixes in one chat | Update Session Release Ledger. | Each fix that needs engineering execution should have or link its issue. | The ledger itself is state tracking, not a replacement for issues. |
+
+Good default flow:
+
+```text
+report / idea / request
+-> quick diagnosis
+-> choose the lightest useful home
+-> work through the right workflow
+-> evidence
+-> commit/push/PR/deploy state when approved
+-> Koda only for durable lessons
+```
+
+Examples:
+
+```text
+Staff says "invoice button does nothing".
+The agent checks the page/module, role, related route/component, existing issue,
+and safe evidence first. If it looks like a real bug, create/link a GitHub
+issue before coding. If it looks like training/data/process, report that and
+do not create engineering noise.
+```
+
+```text
+Hafiz says "we should improve the parent invoice journey later".
+That is Mission Ledger first, not GitHub. Promote to GitHub only when the work
+has a titleable scope and acceptance shape.
+```
+
+```text
+During a bugfix, the agent notices unrelated cleanup.
+Do not silently add it. Mention it, then either skip it, park it in Mission
+Ledger, or create a GitHub issue if Hafiz agrees it is execution-ready.
+```
+
 ## Source Of Truth Map
 
 | Source | Owns | Does Not Own |
