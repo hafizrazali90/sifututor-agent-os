@@ -8,6 +8,12 @@ truth for the agent-as-tester rule: the agent should gather the same practical
 evidence a capable human tester would gather before asking Hafiz to verify what
 only he can judge.
 
+Use the Evidence By Work Type matrix in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) before reporting that
+work is ready. Plain meaning: "ready" must name the evidence level reached, such
+as docs evidence, backend evidence, UI evidence, deploy evidence, or live-check
+evidence. Do not say ready without saying ready for what.
+
 ## Rules
 
 - Run verification in the project directory, not the umbrella root.

@@ -25,7 +25,7 @@ be automated next.
 | Critical lanes | AO-008, AO-009, AO-010 | Editing payment, invoice, migration, auth, or mobile API contract work before read-only diagnosis. |
 | Staff and reported context | AO-011, AO-071, AO-075 | Treating staff reports or capability requests as verified implementation permission. |
 | Context authority | AO-012, AO-013, AO-096, AO-097, AO-098 | Trusting Koda, prior memories, chat, commits, PRs, deploy records, or conflicting docs as the wrong kind of truth; storing new information in the wrong home; ignoring stale-context conflicts. |
-| Verify, QA, and evidence | AO-016, AO-017, AO-028, AO-059, AO-060 | Asking Hafiz to check what the agent can safely test, or calling machine proof enough for a human workflow. |
+| Verify, QA, and evidence | AO-016, AO-017, AO-028, AO-059, AO-060, AO-099 | Asking Hafiz to check what the agent can safely test, calling machine proof enough for a human workflow, or saying ready without naming evidence level reached. |
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
 | Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |
 | Planning bundles | AO-015, AO-027 | Turning safe docs/planning work into product implementation without confirmed scope. |

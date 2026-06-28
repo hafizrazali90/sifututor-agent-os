@@ -136,15 +136,52 @@ language test documentation.
 
 ## Evidence By Work Type
 
-| Work Type | Minimum Evidence |
+Use this matrix before saying work is ready.
+
+| Work Type | Minimum Evidence Before Saying Ready |
 | --- | --- |
-| Discussion or architecture docs | Readback, link/path check, guard script when useful. |
-| Small non-user-facing code change | Focused unit/test/build check around the changed surface. |
-| User-facing UI bugfix | Permanent E2E for the changed workflow by default, plus focused regression tests and browser/mobile evidence for the real action. |
-| User-facing feature | Permanent E2E for each new/changed workflow, happy path, important edge cases, affected `TESTING.md` row, and human-journey evidence. |
-| API contract change | Contract/API test plus paired frontend/mobile evidence when a real user depends on it. |
-| Auth, payment, invoice, commission, migration, mobile API critical lane | Read-only diagnosis first, then approved implementation, then tests plus human-journey or safe staging evidence. |
-| Release/deploy | Changed workflow smoke on the deployed environment when safe, plus log/monitoring check where relevant. |
+| Discussion / planning | Clear summary, captured decision, named next step, and any open question made explicit. |
+| Docs / Agent OS changes | Readback or diff review, link/path check where relevant, Agent OS health/doctor for workflow changes, and pre-commit guard when committing. |
+| Small non-user-facing code | Focused unit/service/lint/type/build check around the changed surface. |
+| Backend logic | Unit/service/feature test proving the rule, plus meaningful edge-case coverage when the rule has business or data risk. |
+| API contract | API/contract test, response shape checked, permission/error behavior where relevant, and paired frontend/mobile evidence when a real user depends on it. |
+| UI bugfix | Old failure reproduced or clearly described, focused regression proof, browser/Playwright proof of the real action, screenshot when useful, and permanent E2E by default. |
+| New user-facing feature | Happy path, important edge cases, role/permission/state coverage, affected `TESTING.md` row, permanent E2E for each new/changed workflow, and human-journey evidence. |
+| Mobile app change | Unit/screen tests, lint/type checks, and simulator/device/build smoke when native behavior or a real journey changes. |
+| Auth, payment, invoice, commission, migration, or mobile API critical lane | Read-only diagnosis first, Hafiz approval, then implementation tests plus safe staging/human-journey evidence before release. |
+| Deploy / release | Confirm deployed version, smoke the changed workflow on the target environment when safe, check logs/monitoring, and name anything not live checked. |
+| Production incident | Confirm symptom, scope impact, mitigation, fix evidence, deploy/smoke/monitor result, and durable post-incident lesson when useful. |
+
+Plain meaning:
+
+```text
+Lower-level evidence proves the engine.
+Human-journey evidence proves a real person can use the workflow.
+Deployment evidence proves the version is running.
+Live-check evidence proves the changed workflow works where it was deployed.
+```
+
+Every final report should say the evidence level reached.
+
+Examples:
+
+```text
+Docs evidence: Agent OS health and workflow doctor passed.
+Backend evidence: feature test passed; no browser journey needed.
+UI evidence: Playwright clicked the real button and captured a screenshot.
+Deploy evidence: commit is deployed, but live workflow smoke is still waiting.
+```
+
+Do not say "ready" without saying ready for what:
+
+```text
+ready for commit
+ready for PR review
+ready for staging QA
+ready for deploy
+deployed, live check still waiting
+live checked, waiting for Hafiz acceptance
+```
 
 ## Permanent Regression Decision
 

@@ -7,6 +7,12 @@ Use [agent-os-evidence-model.md](agent-os-evidence-model.md) as the source of
 truth for human-journey evidence and for deciding what the agent should test
 itself before asking Hafiz or staff for manual verification.
 
+Use the Evidence By Work Type matrix in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) to decide the minimum
+QA proof for the changed surface. Plain meaning: docs, backend logic, API
+contracts, UI, mobile, deploys, and incidents do not need the same proof, but
+each must name the strongest evidence actually gathered.
+
 ## Pick The QA Tier
 
 | Route | QA expectation |
