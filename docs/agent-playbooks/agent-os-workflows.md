@@ -126,6 +126,7 @@ Every workflow should answer these questions before it is called done:
 | Idea and discussion | Light | Hafiz wants to think, compare, understand, or decide. |
 | Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Mission Ledger item, or production signal becomes work. |
 | Product design | Medium | A feature, redesign, workflow, PRD, UX spec, or build prompt is needed. |
+| Implementation readiness | Medium to Critical | A task is moving from idea/design into coding or to another builder. |
 | Bugfix | Full or Critical | Something is broken and needs diagnosis, fix, proof, and close loop. |
 | Feature | Full or Critical | New behavior or a product workflow needs to be built. |
 | Staff issue | Full or Critical | Staff report a SIMS/mobile/support problem through Planner or chat. |
@@ -404,6 +405,57 @@ Save to:
 
 Common failure: building from a weak prompt that lets another agent satisfy a
 nearby behavior instead of the actual requirement.
+
+## 3A. Implementation Readiness And Build Handoff Workflow
+
+Starts when a task is about to move from discussion, PRD, UX, diagnosis, or
+issue intake into coding, especially when another agent or human builder will
+implement it.
+
+Hafiz owns business meaning, risk acceptance, and final scope. The agent owns
+making sure the implementation is clear enough to build without guessing.
+
+Use [ai-implementation-readiness.md](ai-implementation-readiness.md).
+
+Plain meaning:
+
+```text
+Before an agent writes code, it should know what problem is being solved, where
+the behavior starts, what rule must be preserved, what state changes, what must
+not change, how edge cases behave, how the work will be proven, and where the
+task should stop.
+```
+
+Use conversational readiness:
+
+- quick explanation for tiny safe changes
+- build-ready brief for real implementation work
+- full implementation design for critical lanes, cross-module work, mobile/API
+  contracts, new modules, or handoff to another builder
+
+Evidence required:
+
+- current understanding in plain language
+- options considered when there is more than one valid path
+- recommendation and why
+- real entry point or explicit investigation needed
+- business rule and state transition
+- out-of-scope list
+- evidence plan and permanent E2E decision when user-facing
+- stop point and approval boundary
+
+Exit when the task is either build-ready, intentionally sent back for more
+diagnosis/design, or waiting for Hafiz's decision.
+
+Save to:
+
+- PRD/UX/build prompt when product work is being handed off,
+- GitHub issue when engineering work is execution-ready,
+- Mission Ledger for future or adjacent work,
+- Koda for durable readiness rules.
+
+Common failure: the agent starts coding from a vague instruction because it can
+find a nearby file, then proves a weaker behavior than Hafiz actually needed.
 
 ## 4. Bugfix Workflow
 

@@ -100,6 +100,7 @@ Use this as the master tracker while reviewing the architecture.
 | 10 | GitHub/Plane/Planner/Task State | `task-router.md`, `plane.md`, session ledger, active-task docs | `agent-os-state-model.md`, task/router/Plane/save-session/ledger docs, evals | Draft accepted | state source map |
 | 11 | Staff Rollout Readiness | install docs, staff quick start, research note | `agent-os-rollout-readiness.md`, installer manifest, staff docs, evals | Draft accepted | readiness ladder |
 | 12 | Save Session And Handoff Quality | `save-session.md`, `handoff.md`, `snapshot.md`, `session-map.md` | save-session/handoff/snapshot docs, workflow docs, evals | Draft accepted | continuation pack standard |
+| 13 | Implementation Readiness And Build Handoff Quality | `ai-implementation-readiness.md`, `product-design.md`, `agent-os-workflows.md` | readiness/product/workflow docs, evals | Draft accepted | build-ready brief standard |
 
 ## Touch Map
 
@@ -157,6 +158,7 @@ created.
 | 2026-06-29 | Work Intake and Task State review accepts quick diagnosis before GitHub issue creation or implementation. | Hafiz wants traceability without noise: agents should not create GitHub issues from vague symptoms too early, but should not start real coding work with no trace. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` for intake routing. |
 | 2026-06-29 | Review and Risk Before Commit/Push accepts a risk checkpoint before outward state changes. | Hafiz needs the agent to catch scope creep, missing evidence, state confusion, critical-lane gaps, release communication gaps, multi-fix confusion, and product/business risk before commit, push, PR, merge, or deploy. | Use `review.md`, `commit.md`, and `agent-os-workflows.md` before saying the next state is safe. |
 | 2026-06-29 | Save Session and Handoff Quality accepts the Continuation Pack standard. | Hafiz needs long sessions, compacted context, and agent-to-agent handoffs to resume from the main goal, current focus, highest proven state, evidence, boundaries, and next action instead of forcing the next agent to rediscover everything. | Use `save-session.md`, `handoff.md`, `snapshot.md`, and Session Maps when sessions need continuity. |
+| 2026-06-29 | Implementation Readiness and Build Handoff Quality accepts the build-ready brief standard. | Hafiz needs to understand intended code behavior in plain English before coding starts, and future builders need enough context to find the real entry point, preserve the business rule, prove the right behavior, and stop at the approved boundary. | Use `ai-implementation-readiness.md`, `product-design.md`, and `agent-os-workflows.md` before non-trivial implementation or build handoff. |
 
 ### Core Operating Layer
 

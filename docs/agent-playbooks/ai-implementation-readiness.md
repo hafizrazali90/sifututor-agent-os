@@ -27,6 +27,83 @@ Before coding starts, the PRD, test plan, and build prompt must answer every
 item below. If any answer is missing, the first build prompt is not "code"; it is
 "close the documentation gap."
 
+Plain meaning:
+
+```text
+Do not let an agent start coding from a weak brief.
+If the agent cannot explain the build clearly in English, the task is not ready
+to build yet.
+```
+
+This is not meant to slow down every small change. It is meant to prevent the
+expensive mistake where an agent guesses the wrong entry point, edits the
+nearby file, writes tests for a softer behavior, and produces something that
+looks complete but does not match the real workflow.
+
+## Conversational Readiness Levels
+
+Do not make Hafiz remember numeric levels. Use natural language.
+
+| Say this | Use when | What must be clear before coding |
+| --- | --- | --- |
+| `This is ready after a quick explanation.` | Tiny docs/copy/config change, obvious one-file fix, or low-risk tool update. | What changes, what does not change, and how it will be checked. |
+| `This needs a build-ready brief first.` | Real bugfix, feature slice, user-facing behavior, staff workflow, multiple files, or unclear implementation options. | Problem, user/role, real entry point, business rule, scope, risks, evidence plan, and stop point. |
+| `This needs full implementation design first.` | Critical lane, cross-module workflow, new module, mobile/API contract, payment/invoice/commission/auth/migration/deploy work, or handoff to another builder. | Full workflow, state transitions, contracts, edge cases, rollback, tests, human-journey proof, and build handoff package. |
+
+The agent recommends the lightest safe version. Hafiz can ask for more detail
+or less ceremony, but risk can force a deeper brief.
+
+## Build-Ready Brief
+
+For real implementation work, the agent should be able to explain this before
+editing:
+
+```text
+Current understanding:
+What problem are we solving, and who is affected?
+
+Recommendation:
+What approach should we take, and why?
+
+What I will change:
+The behavior, files, modules, routes, screens, or services likely affected.
+
+What I will not change:
+Explicit out-of-scope areas, so the work does not quietly grow.
+
+Real entry point:
+Where the behavior actually starts: route, screen, controller, API call, job,
+command, webhook, or mobile app call site.
+
+Business rule:
+The exact rule the code must satisfy.
+
+State change:
+What exists before, what changes after, and what must stay compatible.
+
+Edge cases:
+Duplicate click, retry, abandoned flow, expired flow, wrong role, missing data,
+stale state, mismatch, or external payload quirks.
+
+Evidence plan:
+Which tests, browser/mobile/API checks, screenshots, smoke checks, or read-only
+production-safe checks will prove the real behavior.
+
+Stop point:
+Where this task is intended to end: local fix, commit, push, PR, staging
+verified, production live, or production monitored.
+```
+
+Plain meaning for Hafiz:
+
+```text
+You should understand the intended code behavior as if the code was translated
+into normal English before the agent builds it.
+```
+
+If the agent cannot fill this in honestly, the next action is to investigate or
+clarify, not code.
+
 | Area | Required answer |
 |---|---|
 | Real entry point | Which route, controller, command, job, service, screen, app call site, or webhook starts the behavior? |
@@ -80,6 +157,26 @@ Every implementation prompt for this class of work must include:
 12. Stop conditions.
 13. Final report format that maps each acceptance item to evidence.
 
+## Build Handoff Package
+
+When work moves from planning to another AI agent or human builder, include a
+compact handoff package:
+
+- main goal and accepted scope
+- current evidence and files already read
+- exact pre-read files
+- real entry points and call sites
+- business rules and state transitions
+- out-of-scope list
+- likely files to change
+- tests to add or update, including negative and production-shaped cases
+- human-journey evidence requirement
+- stop conditions and approval boundaries
+- final report format that maps requirements to evidence
+
+The receiver should not need to rediscover the starting point. They should
+still verify current files before editing, because stale context is only a lead.
+
 ## Slice Acceptance Standard
 
 A slice is not accepted when the implementer says "tests green." It is accepted
@@ -98,4 +195,3 @@ only when an independent verifier confirms:
 If an independent verifier finds a gap, the task state must not mark that slice
 as accepted. Use "implemented by builder, verifier needs fix" or equivalent
 wording until the gap is corrected.
-

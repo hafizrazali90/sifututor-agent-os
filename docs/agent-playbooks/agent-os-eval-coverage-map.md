@@ -29,6 +29,7 @@ be automated next.
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
 | Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |
 | Planning bundles | AO-015, AO-027 | Turning safe docs/planning work into product implementation without confirmed scope. |
+| Implementation readiness | AO-104 | Starting code from a weak brief, guessing the entry point, skipping the plain-English implementation explanation, or handing another builder an incomplete prompt. |
 | State truth | AO-018, AO-065, AO-067, AO-095 | Confusing drafted, changed locally, committed locally, pushed to GitHub, PR open, merged, deployed, live checked, or accepted / closed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
 | Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
@@ -49,6 +50,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Partly covered by capability fixtures; still needs live session tool discovery for each connector. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
+| Build handoff quality | AO-104 | Needs real feature/bug context, codebase entry points, risks, and evidence plan. A simple router fixture cannot prove a build-ready brief is complete. |
 | Staff kit details | AO-073, AO-074 | Needs generated staff/developer onboarding artifacts, not only routing. |
 | Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity is executable. Full behavior comparison still needs adapter-aware checks that compare real Claude and Codex responses for approval gates, evidence standard, and close-out behavior. |
 | Pre-push batch completion | AO-094 | Needs real local commit context, current Session Map state, check output, and human-readable package review. A simple router fixture cannot honestly tell whether a batch tells one complete story. |

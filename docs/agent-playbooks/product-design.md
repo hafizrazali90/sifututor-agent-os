@@ -74,6 +74,13 @@ Decision needed:
 The explanation should be specific enough that Hafiz can understand the
 behavior, scope, and risk before the agent writes code.
 
+For non-trivial implementation, cross-module work, critical lanes, or handoff
+to another builder, also apply
+[ai-implementation-readiness.md](ai-implementation-readiness.md). Plain meaning:
+the PRD or UX spec is not enough by itself; the build must be clear enough that
+another agent can find the real entry point, preserve the business rule, and
+prove the exact behavior.
+
 Do not start implementation when:
 
 - Hafiz is still choosing between options,
@@ -126,6 +133,14 @@ Content standard:
 | Quick explanation | What is wrong? What will change? What will not be touched? How will it be checked? | Use a short paragraph or small bullets. No PRD needed. |
 | Design brief | What is the problem? What is current behavior? Who is affected? What are the options? What is recommended and why? What will/won't change? What risks/tradeoffs exist? How will it be proven? What decision is needed? | Explain options and recommendation like a discussion, not a rigid form. |
 | Full design | Problem, users/roles, current workflow, target workflow, business rules, states/edge cases, options/recommendation, UX behavior, backend/API/data contract if needed, permissions, out of scope, risks, evidence/test plan, implementation slices, build prompt, approval needed. | Use sections when needed, but keep every section understandable in plain language. |
+
+Implementation-readiness rule:
+
+```text
+The agent can build only when it can explain the intended implementation in
+plain English clearly enough that Hafiz understands the behavior, scope, risk,
+and evidence without reading the code.
+```
 
 Example quick explanation:
 
