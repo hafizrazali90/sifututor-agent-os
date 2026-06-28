@@ -170,3 +170,8 @@ If it is only UI/tool difference, document it as an adapter difference.
 
 If it changes behavior, treat it as parity drift and fix the shared playbook,
 adapter wrapper, hook, eval, or Koda memory.
+
+Use [agent-os-enforcement-drift.md](agent-os-enforcement-drift.md) to decide
+which layer owns the fix. Plain meaning: do not automatically patch Claude,
+Codex, and hooks separately. First identify whether the drift is docs, adapter,
+behavior, hook, state, or memory drift, then fix the owning layer.

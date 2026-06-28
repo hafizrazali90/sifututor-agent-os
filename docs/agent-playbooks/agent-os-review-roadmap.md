@@ -101,6 +101,7 @@ Use this as the master tracker while reviewing the architecture.
 | 11 | Staff Rollout Readiness | install docs, staff quick start, research note | `agent-os-rollout-readiness.md`, installer manifest, staff docs, evals | Draft accepted | readiness ladder |
 | 12 | Save Session And Handoff Quality | `save-session.md`, `handoff.md`, `snapshot.md`, `session-map.md` | save-session/handoff/snapshot docs, workflow docs, evals | Draft accepted | continuation pack standard |
 | 13 | Implementation Readiness And Build Handoff Quality | `ai-implementation-readiness.md`, `product-design.md`, `agent-os-workflows.md` | readiness/product/workflow docs, evals | Draft accepted | build-ready brief standard |
+| 14 | Enforcement And Drift Detection | `agent-os-hook-dispatcher.md`, `agent-os-skill-registry.md`, `agent-os-parity-contract.md`, health/eval scripts | enforcement docs, infrastructure, hook/parity docs, evals | Draft accepted | enforcement ladder and drift map |
 
 ## Touch Map
 
@@ -123,6 +124,7 @@ Use this to avoid scattering changes across the wrong files.
 | Save-session and Koda | `save-session.md`, `agent-os-memory.md` | Koda memories, fallback notes |
 | Memory architecture and performance | `agent-os-memory-architecture.md` | `agent-os-memory.md`, `save-session.md`, evals, future audit script |
 | Tool and capability model | `agent-os-capability-model.md` | `capabilities.example.json`, `agent-os-health.sh`, quick-check, evals |
+| Enforcement and drift detection | `agent-os-enforcement-drift.md` | hook dispatcher, skill registry, parity contract, evals, health checks |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
 | Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |
@@ -159,6 +161,7 @@ created.
 | 2026-06-29 | Review and Risk Before Commit/Push accepts a risk checkpoint before outward state changes. | Hafiz needs the agent to catch scope creep, missing evidence, state confusion, critical-lane gaps, release communication gaps, multi-fix confusion, and product/business risk before commit, push, PR, merge, or deploy. | Use `review.md`, `commit.md`, and `agent-os-workflows.md` before saying the next state is safe. |
 | 2026-06-29 | Save Session and Handoff Quality accepts the Continuation Pack standard. | Hafiz needs long sessions, compacted context, and agent-to-agent handoffs to resume from the main goal, current focus, highest proven state, evidence, boundaries, and next action instead of forcing the next agent to rediscover everything. | Use `save-session.md`, `handoff.md`, `snapshot.md`, and Session Maps when sessions need continuity. |
 | 2026-06-29 | Implementation Readiness and Build Handoff Quality accepts the build-ready brief standard. | Hafiz needs to understand intended code behavior in plain English before coding starts, and future builders need enough context to find the real entry point, preserve the business rule, prove the right behavior, and stop at the approved boundary. | Use `ai-implementation-readiness.md`, `product-design.md`, and `agent-os-workflows.md` before non-trivial implementation or build handoff. |
+| 2026-06-29 | Enforcement and Drift Detection accepts the enforcement ladder. | Hafiz needs Agent OS rules to be followed without turning every preference into brittle hook automation. Dangerous actions need hard blocks, workflow behavior needs skills/playbooks, repeated drift needs evals, wiring needs health checks, current story needs Session Map, and durable lessons need Koda. | Use `agent-os-enforcement-drift.md` to choose the right layer before changing hooks, skills, evals, or memory. |
 
 ### Core Operating Layer
 

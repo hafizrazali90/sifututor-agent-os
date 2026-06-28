@@ -20,6 +20,7 @@ The Sifututor Agent OS has these layers:
 | Playbook | The actual written workflow steps behind a skill. | `docs/agent-playbooks/*.md` |
 | Hook / dispatcher | The automatic layer that gives Codex startup context, prompt routing hints, and tool guardrails. | `.codex/config.toml`, `scripts/agent-checks/codex-lifecycle-hook.py`, `agent-os-hook-dispatcher.md` |
 | Guard script | A local check that prevents unsafe or invalid actions. | `scripts/agent-checks/*` |
+| Enforcement/drift layer | The rule for deciding whether something belongs in docs, skills, hooks, guards, evals, health checks, Session Map, or Koda. | `agent-os-enforcement-drift.md` |
 | Memory | Durable lessons, corrections, and preferences. | Koda through `scripts/agent-checks/koda` |
 | State systems | Places that track work status and evidence. | GitHub, Planner, `.claude/tasks`, Mission Ledger |
 | Evidence system | Rules for proving work like a developer/tester would. | `verify.md`, `qa.md`, `agent-os-evidence-model.md` |
@@ -207,6 +208,27 @@ The current hook events are:
 
 The hook can inject a selected workflow skill, but the agent must still decide
 whether the route is correct.
+
+## Enforcement And Drift Detection
+
+Use [agent-os-enforcement-drift.md](agent-os-enforcement-drift.md) when a rule
+needs to be made reliable or when Claude, Codex, hooks, skills, docs, memories,
+or checks start behaving differently.
+
+Plain meaning:
+
+```text
+Hooks stop danger.
+Skills guide normal work.
+Evals catch repeated drift.
+Health checks prove the wiring.
+Session Map keeps the live story readable.
+Koda remembers durable lessons.
+```
+
+Do not push every rule into a hook. Hooks are strongest for dangerous or
+repeatable boundaries. Workflow judgment usually belongs in playbooks, skills,
+and evals.
 
 ## How A Prompt Moves Through The System
 

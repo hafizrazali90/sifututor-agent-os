@@ -225,6 +225,11 @@ Change the dispatcher only when:
 Do not change dispatcher code just because one prompt was awkward. First update
 the docs or add a scenario example unless the bug is clearly dangerous.
 
+Use [agent-os-enforcement-drift.md](agent-os-enforcement-drift.md) before
+turning a workflow preference into hook behavior. Plain meaning: if the mistake
+is dangerous, repeated, and easy to detect, a hook may be right. If it needs
+judgment, keep it in the playbook/skill and test it with evals instead.
+
 ## Required Checks After Dispatcher Changes
 
 Run the focused checks first:

@@ -70,6 +70,7 @@ check_file "Agent OS workflow lanes" "$ROOT/docs/agent-playbooks/agent-os-workfl
 check_file "Agent OS workflows" "$ROOT/docs/agent-playbooks/agent-os-workflows.md"
 check_file "Agent OS evidence model" "$ROOT/docs/agent-playbooks/agent-os-evidence-model.md"
 check_file "Agent OS state model" "$ROOT/docs/agent-playbooks/agent-os-state-model.md"
+check_file "Agent OS enforcement drift" "$ROOT/docs/agent-playbooks/agent-os-enforcement-drift.md"
 check_file "Agent OS session map" "$ROOT/docs/agent-playbooks/session-map.md"
 check_file "Agent OS rollout readiness" "$ROOT/docs/agent-playbooks/agent-os-rollout-readiness.md"
 check_file "Agent OS eval coverage" "$ROOT/docs/agent-playbooks/agent-os-eval-coverage-map.md"

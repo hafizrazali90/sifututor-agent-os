@@ -127,6 +127,7 @@ Every workflow should answer these questions before it is called done:
 | Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Mission Ledger item, or production signal becomes work. |
 | Product design | Medium | A feature, redesign, workflow, PRD, UX spec, or build prompt is needed. |
 | Implementation readiness | Medium to Critical | A task is moving from idea/design into coding or to another builder. |
+| Enforcement and drift detection | Medium | Agent OS rules need stronger enforcement, hooks/skills/evals need alignment, or Claude/Codex behavior diverges. |
 | Bugfix | Full or Critical | Something is broken and needs diagnosis, fix, proof, and close loop. |
 | Feature | Full or Critical | New behavior or a product workflow needs to be built. |
 | Staff issue | Full or Critical | Staff report a SIMS/mobile/support problem through Planner or chat. |
@@ -456,6 +457,47 @@ Save to:
 
 Common failure: the agent starts coding from a vague instruction because it can
 find a nearby file, then proves a weaker behavior than Hafiz actually needed.
+
+## 3B. Enforcement And Drift Detection Workflow
+
+Starts when a rule is being ignored, hooks/skills/evals need alignment, Claude
+and Codex behave differently, or Hafiz asks how the Agent OS will make agents
+actually follow the workflow.
+
+Hafiz owns the desired behavior and tolerance for automation. The agent owns
+identifying the drift type, choosing the right enforcement layer, updating the
+smallest useful source, and running the right checks.
+
+Use [agent-os-enforcement-drift.md](agent-os-enforcement-drift.md).
+
+Plain meaning:
+
+```text
+Do not make every rule a hook. Hooks stop dangerous mistakes. Skills guide
+normal workflow. Evals catch repeated drift. Health checks prove the wiring.
+```
+
+Evidence required:
+
+- What drift or enforcement gap exists.
+- Which layer owns it: docs, skill/playbook, hook, guard, eval, health,
+  Session Map, or Koda.
+- Why the chosen enforcement strength is enough.
+- Which checks prove the wiring still works.
+
+Exit when the rule is documented, enforced or tested at the right strength, and
+the next action is clear.
+
+Save to:
+
+- enforcement/drift docs,
+- hook dispatcher or skill registry when their behavior changes,
+- evals/fixtures when a repeated behavior must be locked,
+- Koda for durable corrections,
+- Session Map for current-session continuity.
+
+Common failure: adding hook complexity for a rule that needs agent judgment, or
+leaving a repeated approval/safety mistake as a loose doc note.
 
 ## 4. Bugfix Workflow
 
