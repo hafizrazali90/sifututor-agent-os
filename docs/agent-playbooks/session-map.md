@@ -218,6 +218,25 @@ When sessions get long, update the Human Snapshot more aggressively than the
 technical sections. The snapshot is what prevents Hafiz from needing to reread
 the whole file.
 
+## Validation
+
+Use the Session Map checker after changing the template, the playbook, or an
+active Session Map:
+
+```bash
+python3 scripts/agent-checks/session-map-check.py
+```
+
+Use strict mode for active maps when you want to catch placeholders:
+
+```bash
+python3 scripts/agent-checks/session-map-check.py --strict .agent-os/session-maps/<file>.md
+```
+
+Plain meaning: the checker cannot judge whether the map is wise, but it catches
+missing sections, missing Human Snapshot fields, missing Agent Context fields,
+empty progress boards, and missing continuation prompts.
+
 ## Promotion Rules
 
 If an item outgrows the current session, move or link it to the right system:

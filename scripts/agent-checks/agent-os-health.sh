@@ -80,6 +80,7 @@ check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
 check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
+check_file "Agent OS session map check" "$ROOT/scripts/agent-checks/session-map-check.py"
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
 check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
@@ -125,6 +126,16 @@ else
   sed -n '1,8p' /tmp/agent-os-state-fixtures.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-state-fixtures.out /tmp/agent-os-state-fixtures.err
+
+if python3 "$ROOT/scripts/agent-checks/session-map-check.py" >/tmp/agent-os-session-map.out 2>/tmp/agent-os-session-map.err; then
+  session_map_summary="$(tail -1 /tmp/agent-os-session-map.out 2>/dev/null || true)"
+  pass "Agent OS session map check" "${session_map_summary:-passed}"
+else
+  fail "Agent OS session map check" "session-map checker failed"
+  sed -n '1,12p' /tmp/agent-os-session-map.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-session-map.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-session-map.out /tmp/agent-os-session-map.err
 
 if "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py" >/tmp/agent-os-koda-fixtures.out 2>/tmp/agent-os-koda-fixtures.err; then
   koda_fixture_summary="$(tail -1 /tmp/agent-os-koda-fixtures.out 2>/dev/null || true)"

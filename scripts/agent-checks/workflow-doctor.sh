@@ -107,6 +107,10 @@ python3 -m py_compile "$ROOT"/scripts/agent-checks/*.py >/dev/null 2>&1 \
   && pass "root guard" "passed" \
   || fail "root guard" "failed"
 
+python3 "$ROOT/scripts/agent-checks/session-map-check.py" >/dev/null 2>&1 \
+  && pass "session map check" "passed" \
+  || fail "session map check" "failed"
+
 echo
 echo "All-project guard sweep"
 for project in "${PROJECTS[@]}"; do
