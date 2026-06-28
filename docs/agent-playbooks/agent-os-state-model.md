@@ -18,6 +18,8 @@ Git proves what changed.
 QA evidence proves whether it works.
 Koda remembers the lesson.
 Mission Ledger remembers the bigger goal and follow-up map.
+Session Map keeps the current chat's main goal, side paths, and return path
+visible.
 Chat/save-session tells Hafiz the current status and next action.
 ```
 
@@ -36,6 +38,7 @@ No single tool should pretend to be all of these at once.
 | Microsoft Teams Planner | staff-reported intake and operational symptom context | engineering source of truth, final code status, production truth |
 | GitHub issue | developer execution ticket for code work | whole roadmap, production smoke result unless linked |
 | `.claude/tasks/active.json` | active agent execution pointer for state-file projects | business priority, production truth, cross-session release summary |
+| Session Map | live session story: main goal, current focus, side paths, open decisions, return path, and recommended next step | durable memory, final release truth, exact engineering ticket ownership |
 | Session Release Ledger | per-session map of fixes, commits, PRs, main state, live state | full project roadmap |
 | Git branch/commit | exact code/docs change and local history | whether the change is deployed or accepted by Hafiz |
 | PR | reviewable merge candidate and discussion of a code change | proof that the change is live |
@@ -80,6 +83,7 @@ Planner or Hafiz report
 -> route task
 -> GitHub issue when code work is needed
 -> Mission Ledger when there is a bigger/future follow-up
+-> Session Map when the current conversation has side paths or multiple goals
 -> active task file when the project uses one
 -> branch/implementation
 -> verify + QA evidence
@@ -124,6 +128,7 @@ Use the smallest update that preserves truth.
 | Hafiz asks for meaningful work | Route the task and check GitHub, Mission Ledger, and active task state where relevant. |
 | Code work is needed | Create or link a GitHub issue unless unavailable or too ambiguous. |
 | Project has active task files | Read `.claude/tasks/active.json` and resume unless Hafiz starts new work. |
+| Current chat becomes hard to track | Start or update the Session Map. |
 | Work becomes multi-fix | Start or update the Session Release Ledger. |
 | Agent finishes a step | Close out with factual progress and next action; update active task or Mission Ledger when relevant. |
 | Commit created | Record commit SHA in task/session ledger when relevant. |
@@ -160,12 +165,14 @@ Use them together, not interchangeably.
 | Tool | Best Use |
 | --- | --- |
 | Mission Ledger | "What bigger goal does this follow-up belong to, and what should we not forget?" |
+| Session Map | "Where are we in this session, what side paths exist, and where do we return next?" |
 | GitHub issue | "What exact engineering task should a developer/agent implement?" |
 | Planner | "What did staff report or experience operationally?" |
 
-Mission Ledger is the map of remembered work. Planner is intake. GitHub is
-engineering execution. Current status and next action belong in the chat,
-save-session report, active task state, or linked GitHub/PR evidence.
+Mission Ledger is the map of remembered work beyond the current session.
+Session Map is the live map of the current session. Planner is intake. GitHub
+is engineering execution. Current release truth belongs in git, PRs, deploy
+records, QA evidence, or the Session Release Ledger.
 
 ## Work Intake Source Roles
 
@@ -185,6 +192,7 @@ The agent classifies it, checks enough current evidence, then routes it.
 | GitHub | Engineering execution. |
 | Koda | Durable memory/lesson. |
 | Mission Ledger | Bigger/future/parked work. |
+| Session Map | Current conversation map. |
 | Production signal | Live system evidence. |
 | Agent-discovered issue | Finding that needs routing. |
 

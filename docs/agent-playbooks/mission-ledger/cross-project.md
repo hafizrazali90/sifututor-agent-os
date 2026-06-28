@@ -36,3 +36,22 @@ that span more than one project.
 - **Promote to:** none yet
 - **Links:** [task-router](../../agent-playbooks/task-router.md),
   [save-session](../../agent-playbooks/save-session.md)
+
+### AO-LEDGER-001.2 — Add Session Map for live conversation tracking
+
+- **Project:** cross-project
+- **Status:** promoted
+- **Type:** task
+- **Parent:** AO-LEDGER-001
+- **End goal:** Agents can maintain a lightweight live map of the current
+  session so Hafiz can see the main goal, current focus, side paths, decisions,
+  and return path without rereading the chat.
+- **Why it matters:** Long Agent OS and development sessions often start with
+  one goal, branch into side problems, then need to return to the original
+  problem. Without a live map, both Hafiz and the agent can lose the story.
+- **Source:** Hafiz request, 2026-06-28
+- **Next action:** Try the Session Map template in the next multi-topic Agent
+  OS session, then decide whether to add generated HTML.
+- **Promote to:** Agent OS playbook/template
+- **Links:** [session map playbook](../../agent-playbooks/session-map.md),
+  [session map template](../../agent-playbooks/templates/session-map.md)

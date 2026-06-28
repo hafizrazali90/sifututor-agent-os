@@ -23,6 +23,7 @@ Use these when the user asks for:
 - Agent OS master workflows: [agent-os-workflows.md](agent-os-workflows.md)
 - Agent OS evidence model: [agent-os-evidence-model.md](agent-os-evidence-model.md)
 - Agent OS state model: [agent-os-state-model.md](agent-os-state-model.md)
+- Agent OS live session map: [session-map.md](session-map.md)
 - Agent OS mission ledger: [mission-ledger.md](mission-ledger.md)
 - Agent OS rollout readiness: [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md)
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
@@ -47,6 +48,7 @@ Use these when the user asks for:
 - code or workflow review: [review.md](review.md)
 - product design, PRDs, UX specs, and build prompts: [product-design.md](product-design.md)
 - multiple fixes in one chat or release inventory: [session-release-ledger.md](session-release-ledger.md)
+- live mindmap and progress board for a messy session: [session-map.md](session-map.md)
 - bigger goals, child tasks, adjacent ideas, or remembered follow-ups: [mission-ledger.md](mission-ledger.md)
 - quick workflow health check: [quick-check.md](quick-check.md)
 - Plane exception-only legacy reference: [plane.md](plane.md)
@@ -86,6 +88,7 @@ Use these when the user asks for:
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
 | Claude/Codex | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
+| Claude/Codex | Session Map capture/review | [session-map.md](session-map.md) |
 
 ## Codex Hook Layer
 
@@ -148,6 +151,13 @@ Release Ledger into the path:
 
 ```text
 $task-router -> session release ledger -> per-fix verify/qa/review -> commit/PR -> pre-deploy inventory -> deploy/smoke
+```
+
+When the conversation itself becomes hard to follow, add or update the Session
+Map:
+
+```text
+$task-router -> session map -> route/design/diagnose/build/verify -> save-session
 ```
 
 ## Plain-Language Reporting

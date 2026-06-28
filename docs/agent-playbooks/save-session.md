@@ -24,11 +24,12 @@ Do not end a meaningful session with only "done." End it with:
 4. what the current status and next action are
 5. what task is still active
 6. what remains next
-7. what was captured in the Mission Ledger, if anything
-8. whether the session can be closed now or should continue with QA, commit,
+7. whether the Session Map is current, if the session needed one
+8. what was captured in the Mission Ledger, if anything
+9. whether the session can be closed now or should continue with QA, commit,
    review, deploy preparation, or another named next step
 
-If those seven things are clear, the session is saved well.
+If those things are clear, the session is saved well.
 
 ## Choose A Save Level
 
@@ -215,6 +216,7 @@ SESSION SAVED - <project or workspace>
 
 Koda: <stored/updated/skipped/failed> <memory ids if available>
 Active task: <id + route + next step | none>
+Session Map: <updated/current/not needed>
 Mission Ledger: <updated item | no new follow-up | skipped>
 Guards: <passed/failed/not run>
 Commits/pushes: <summary or none>
@@ -236,6 +238,7 @@ For Quick Save, a shorter version is fine:
 ```text
 SESSION SAVED - <project>
 Koda: skipped, no durable lesson
+Session Map: <updated/current/not needed>
 Mission Ledger: <updated item | no new follow-up | skipped>
 Next: <next step or none>
 ```
@@ -254,7 +257,9 @@ Before Codex gives the final answer for meaningful work:
    decisions, or bigger-goal links. Update it when needed. See
    [mission-ledger.md](mission-ledger.md). Search/open only the relevant project
    file unless doing a full ledger cleanup.
-6. Run the shared guard when code or workflow files changed.
-7. Report what changed, why, tests/guards run, files or commits touched, and
+6. If the session had side paths, multiple sub-goals, or a confusing return
+   path, update or reference the Session Map using [session-map.md](session-map.md).
+7. Run the shared guard when code or workflow files changed.
+8. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-8. If Koda is unavailable, say so and use the fallback path.
+9. If Koda is unavailable, say so and use the fallback path.

@@ -63,6 +63,10 @@ Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
 
+Use [session-map.md](session-map.md) when the current conversation has a main
+goal plus side paths, multiple sub-goals, unclear return path, or enough moving
+parts that Hafiz or the next agent could lose the story.
+
 Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
 goal or should be captured for later but is not ready for GitHub yet.
 To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`
@@ -73,6 +77,8 @@ Important routing principles:
 - Do not route by keyword alone.
 - Discussion, learning, architecture review, and retrospectives should stay
   light unless Hafiz asks to document or implement.
+- When a session becomes hard to follow, start or update the Session Map before
+  continuing deeper.
 - `proceed` means act on the last clear recommended step.
 - `approve` means execute the last exact approval request, including a safe
   bundle if the agent clearly asked for that bundle.
