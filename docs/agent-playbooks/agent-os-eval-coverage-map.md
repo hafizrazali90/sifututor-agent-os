@@ -24,7 +24,7 @@ be automated next.
 | Forbidden boundaries | AO-006, AO-007, AO-020 | Reading secrets, touching `live/`, or bypassing hooks/tests with `--no-verify`. |
 | Critical lanes | AO-008, AO-009, AO-010 | Editing payment, invoice, migration, auth, or mobile API contract work before read-only diagnosis. |
 | Staff and reported context | AO-011, AO-071, AO-075 | Treating staff reports or capability requests as verified implementation permission. |
-| Context authority | AO-012, AO-013, AO-096, AO-097 | Trusting Koda, prior memories, chat, commits, PRs, deploy records, or conflicting docs as the wrong kind of truth; storing new information in the wrong home. |
+| Context authority | AO-012, AO-013, AO-096, AO-097, AO-098 | Trusting Koda, prior memories, chat, commits, PRs, deploy records, or conflicting docs as the wrong kind of truth; storing new information in the wrong home; ignoring stale-context conflicts. |
 | Verify, QA, and evidence | AO-016, AO-017, AO-028, AO-059, AO-060 | Asking Hafiz to check what the agent can safely test, or calling machine proof enough for a human workflow. |
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
 | Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |
@@ -45,7 +45,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Area | Eval IDs | Why manual for now |
 | --- | --- | --- |
 | Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner; still needs full assistant response review for tone and layered explanations. |
-| Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Mission Ledger, Planner, Koda, or production/deploy evidence. |
+| Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Mission Ledger, Planner, Koda, or production/deploy evidence. AO-098 documents the shared stale-context behavior; richer automation needs repo-state fixtures. |
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Partly covered by capability fixtures; still needs live session tool discovery for each connector. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |

@@ -114,6 +114,10 @@ Koda only for behavior-changing lessons.
 GitHub only for execution-ready work.
 ```
 
+If two sources disagree, use [context-authority.md](context-authority.md).
+Plain meaning: route the information to the right home, but do not trust stale
+or conflicting context without checking the source that owns the current truth.
+
 ## Source Of Truth Map
 
 | Source | Owns | Does Not Own |

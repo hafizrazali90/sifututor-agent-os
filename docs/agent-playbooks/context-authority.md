@@ -129,6 +129,54 @@ I found conflicting context:
 
 Do not silently choose the convenient source.
 
+## Stale Context Protocol
+
+Use this when memory, old chat, docs, GitHub, task state, or the current repo do
+not line up.
+
+Plain meaning:
+
+```text
+Old context is a lead, not proof. Current checked evidence decides the current
+state. If the conflict changes scope, risk, or business meaning, explain it to
+Hafiz before editing.
+```
+
+Steps:
+
+1. Name the stale or conflicting source.
+2. Name the fresher source checked now.
+3. Explain the practical mismatch.
+4. Decide whether the agent can continue safely or must stop.
+5. Update the stale source only when it is safe and clearly owned by this task.
+
+Use this shape:
+
+```text
+I found a context mismatch:
+- Older source: <Koda / old chat / GitHub / Mission Ledger / docs> says ...
+- Current evidence: <git status / code / tests / PR / deploy / QA> shows ...
+- Practical meaning: ...
+- Recommended action: continue with verified evidence / update memory / ask
+  Hafiz / stop before editing.
+```
+
+Scenarios:
+
+| Conflict | Agent should do |
+| --- | --- |
+| Koda says a workaround is accepted, but current code no longer has that path | Treat Koda as historical. Check current code, explain the mismatch, and update Koda after verification if the old memory would mislead future work. |
+| Prior chat says "done", but `git status` is dirty or local commits are not pushed | Trust current Git state. Say the work is changed locally or committed locally, not pushed/merged/deployed/live. |
+| GitHub issue says one small fix, but Mission Ledger describes a larger goal | Keep the implementation scoped to the issue unless Hafiz approves expanding scope. Mention the larger goal as context or follow-up. |
+| Staff report says a feature is broken, but reproduction works | Treat the report as a symptom. Gather evidence, explain that the issue was not reproduced, and ask for more data only if needed. |
+| Docs say one workflow, but code behavior is different | Code proves current behavior; docs may define intended workflow. Explain whether this is stale documentation, a bug, or a desired behavior change. |
+| Current code conflicts with Hafiz's new business direction | Code proves current state; Hafiz defines desired target. Treat as a change request, and use critical-lane diagnosis when the domain is risky. |
+| Deploy record says version is live, but QA/live smoke has not run | Say deployed, not live checked. Run or request the appropriate smoke/QA evidence before calling it live checked. |
+
+Do not auto-edit just because one source appears stronger. If the conflict
+changes product meaning, risk, scope, production state, or critical-lane
+behavior, stop and ask Hafiz for the decision.
+
 ## Task Start Checklist
 
 For non-trivial work, classify the important context before editing:
