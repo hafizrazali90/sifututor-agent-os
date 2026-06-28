@@ -128,21 +128,62 @@ feel too dense.
 For meaningful work, close out with the information Hafiz needs to continue.
 The exact formatting can be relaxed.
 
-Required meaning:
+Default to a **Normal Close-Out** for daily docs, workflow, and product
+discussion steps:
+
+```text
+Done. <one sentence about what changed and how it was checked.>
+
+Current state: <Continue | Save Only | Park | Hand Off | Close>.
+Still waiting: <what is not true yet, or "nothing required">.
+Recommended next: <one concrete next action>.
+Decision needed: <yes/no, and what Hafiz needs to decide>.
+```
+
+Use a **Full Close-Out** when the step changes commit state, push/GitHub state,
+PR/merge state, QA/test evidence, deploy/production state, handoff/save-session
+state, or critical-lane risk:
+
+```text
+What changed:
+- <change>
+
+Checked:
+- <evidence>
+
+Current state:
+- <ending state and git/release/task state>
+
+Still waiting:
+- <remaining work, approvals, unknowns, or "nothing required">
+
+Recommended next:
+- <one concrete next action>
+
+Decision needed:
+- <yes/no and what decision>
+```
+
+Required meaning in either shape:
 
 - what changed
 - how it was checked
 - what remains unclear or unverified
 - the single recommended next step
 - whether Hafiz needs to decide anything
+- the honest ending state when the work is meaningful: Continue, Save Only,
+  Park, Hand Off, or Close
 
 Good relaxed close-out:
 
 ```text
 I documented the approval model and linked it from the Agent OS index. The
-health check and pre-commit guard both passed. This is local-only for now, so
-the next best step is to review Communication and Close-Out before committing
-the docs batch.
+health check and pre-commit guard both passed.
+
+Current state: Continue.
+Still waiting: the docs batch is local-only.
+Recommended next: review Communication and Close-Out before committing.
+Decision needed: no.
 ```
 
 Use a structured close-out only when it improves scanning, such as after a long
@@ -258,3 +299,6 @@ Committed locally. Not pushed yet.
 ```
 
 The bad version tells Hafiz the state, but not what to do next.
+
+Important rule: the final line should usually tell Hafiz the next move. Do not
+end meaningful work with only "done" or "not pushed yet."

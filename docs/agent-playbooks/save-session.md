@@ -36,6 +36,22 @@ If the session used a Session Map, close or update it using
 the map should say whether the work should continue, is parked, was handed off,
 is closed, or did not need a map.
 
+For normal step-by-step close-outs inside a session, use the lighter wording
+from [agent-os-communication.md](agent-os-communication.md):
+
+```text
+Done. <what changed and how it was checked.>
+
+Current state: <Continue | Save Only | Park | Hand Off | Close>.
+Still waiting: <what is not true yet>.
+Recommended next: <one concrete next action>.
+Decision needed: <yes/no and what decision>.
+```
+
+Use the fuller save-session report below when the user asks to save, hand off,
+compact, end, or when the session is complex enough that the next agent would
+otherwise need to reconstruct the story.
+
 ## Ending State
 
 Before the final save report, choose the honest ending state.

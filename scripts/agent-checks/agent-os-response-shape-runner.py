@@ -20,10 +20,11 @@ CASES = [
         "id": "RS-001",
         "name": "docs work close-out",
         "text": (
-            "I documented the approval model and linked it from the Agent OS index. "
-            "The health check and pre-commit guard passed. This is local-only for now, "
-            "and nothing remains unverified for this docs change. Recommended next action: "
-            "approve commit and push for these files."
+            "Done. I documented the approval model and linked it from the Agent OS index. "
+            "The health check and pre-commit guard passed. Current state: Continue; this is "
+            "local-only for now. Still waiting: nothing remains unverified for this docs change. "
+            "Recommended next action: approve commit and push for these files. Decision needed: yes, "
+            "whether to push now."
         ),
         "should_pass": True,
         "why": "Meaningful docs work should say what changed, checks, state, remaining risk, and next action.",
