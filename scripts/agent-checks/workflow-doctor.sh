@@ -26,6 +26,7 @@ SKILLS=(
   diagnose
   review
   quick-check
+  workflow-improvement
 )
 
 failures=0

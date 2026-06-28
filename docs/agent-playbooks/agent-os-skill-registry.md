@@ -87,6 +87,7 @@ skill.
 | `$review` | Review | Code review, risk review, PR review, pre-commit review, or pre-push/deploy risk check. | `.agents/skills/review/SKILL.md` | `docs/agent-playbooks/review.md` | `/review` | Quietly fixing findings without scope/approval when review-only was requested. |
 | `$commit` | Commit | Preparing or creating a local commit. | `.agents/skills/commit/SKILL.md` | `docs/agent-playbooks/commit.md` | `/commit` | Push, merge, deploy, PR, `--no-verify`, secrets, `.env*`, or `live/`. |
 | `$product-design` | Product Design | Brainstorming, workflow design, PRD, UX spec, backend contract, build prompts, or major redesign. | `.agents/skills/product-design/SKILL.md` | `docs/agent-playbooks/product-design.md` | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | Ordinary narrow bugfixes, small copy edits, or implementation before approval. |
+| `$workflow-improvement` | Workflow Improvement | Improving Agent OS behavior, making future agents handle something better, resolving workflow drift, or cleaning up docs/skills/hooks/evals/Koda consistency. | `.agents/skills/workflow-improvement/SKILL.md` | `docs/agent-playbooks/agent-os-improvement-loop.md` | `/workflow-improvement` later or natural-language workflow improvement | Ordinary product bugs, related-impact audits after product fixes, or hook automation before the playbook/eval shape is clear. |
 
 ## Continuation Skills
 
@@ -136,6 +137,18 @@ $product-design
 -> backend contract if needed
 -> build prompts
 -> implementation approval
+```
+
+Agent OS workflow improvement:
+
+```text
+$workflow-improvement
+-> classify the Agent OS mistake
+-> choose the source of truth
+-> check connected docs/skills/hooks/evals/Koda/Session Map
+-> update the smallest coherent set
+-> run Agent OS checks
+-> close out with what future agents should do differently
 ```
 
 Session map update:

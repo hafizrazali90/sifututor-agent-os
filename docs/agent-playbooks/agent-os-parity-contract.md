@@ -71,6 +71,7 @@ questions, decisions, evidence, and stopping points match.
 | Session Map | `/session-map` or natural-language update | `$session-map` | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
 | Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
 | Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
+| Workflow Improvement | `/workflow-improvement` later or natural-language workflow improvement | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
 
 ## Product Design Special Case
 
@@ -156,6 +157,7 @@ must produce even when their command names differ.
 | BP-007 | Staff or Planner reports a bug | Treat the report as a symptom, reproduce or inspect current evidence first, then route confirmed engineering work through GitHub/task workflow. |
 | BP-008 | Hafiz asks for Plane status without explicitly requesting Plane | Do not use Plane by default. Use GitHub, active task state, Mission Ledger, Koda, and close-out instead. |
 | BP-009 | A session has multiple goals, side paths, or parallel agent work | Create or update the Session Map so Hafiz and future agents can see the main goal, current focus, decisions, side paths, evidence, and return path. |
+| BP-010 | Hafiz asks to improve the workflow or make future agents handle a mistake better | Use the Agent OS Improvement Loop: classify the mistake, choose the owning source of truth, check connected docs/skills/hooks/evals/Koda/Session Map, update the smallest coherent set, and do not silently self-rewrite. |
 
 ## Decision Rule
 

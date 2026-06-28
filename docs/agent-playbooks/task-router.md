@@ -94,6 +94,12 @@ development/workflow work that may move through diagnosis, implementation,
 verification, QA, commit, push, PR, deploy, handoff, or save-session. Skip it
 only for tiny one-shot work.
 
+Use [agent-os-improvement-loop.md](agent-os-improvement-loop.md) when Hafiz asks
+to improve the workflow, fix Agent OS behavior, make future agents handle
+something better, resolve Claude/Codex workflow drift, or clean up docs, skills,
+hooks, evals, Koda, and Session Map consistency. Plain meaning: do not patch one
+file and call the Agent OS fixed when the behavior depends on several layers.
+
 Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
 goal or should be captured for later but is not ready for GitHub yet.
 To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`
@@ -110,6 +116,8 @@ Important routing principles:
 - Do not route by keyword alone.
 - Discussion, learning, architecture review, and retrospectives should stay
   light unless Hafiz asks to document or implement.
+- Workflow-improvement prompts should route to the Agent OS Improvement Loop,
+  not to ordinary product implementation or Koda-only memory saving.
 - When a session becomes hard to follow, or when real work starts moving through
   multiple states, start or update the Session Map before continuing deeper.
 - `proceed` means act on the last clear recommended step.

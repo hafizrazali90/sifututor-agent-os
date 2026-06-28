@@ -135,6 +135,7 @@ Every workflow should answer these questions before it is called done:
 | Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Mission Ledger item, or production signal becomes work. |
 | Product design | Medium | A feature, redesign, workflow, PRD, UX spec, or build prompt is needed. |
 | Implementation readiness | Medium to Critical | A task is moving from idea/design into coding or to another builder. |
+| Agent OS improvement loop | Medium | Hafiz wants the Agent OS itself to learn, fix workflow behavior, update skills/playbooks/evals consistently, or make future agents handle something better. |
 | Enforcement and drift detection | Medium | Agent OS rules need stronger enforcement, hooks/skills/evals need alignment, or Claude/Codex behavior diverges. |
 | Bugfix | Full or Critical | Something is broken and needs diagnosis, fix, proof, and close loop. |
 | Feature | Full or Critical | New behavior or a product workflow needs to be built. |
@@ -466,7 +467,52 @@ Save to:
 Common failure: the agent starts coding from a vague instruction because it can
 find a nearby file, then proves a weaker behavior than Hafiz actually needed.
 
-## 3B. Enforcement And Drift Detection Workflow
+## 3B. Agent OS Improvement Loop
+
+Starts when Hafiz asks to improve the workflow, fix Agent OS behavior, make
+future agents handle something better, or prevent a repeated agent mistake.
+
+Hafiz owns the desired collaboration behavior and whether the system should get
+stricter or more relaxed. The agent owns classifying the mistake, choosing the
+source of truth, checking connected files, updating the smallest coherent set
+of docs/skills/evals/Koda/Session Map, and proving the wiring still works.
+
+Use [agent-os-improvement-loop.md](agent-os-improvement-loop.md).
+
+Plain meaning:
+
+```text
+Do not add one random rule somewhere. Work out what went wrong, update the
+layer that owns it, check connected files, and add proof if the mistake should
+not quietly return.
+```
+
+Evidence required:
+
+- What Agent OS behavior was wrong or confusing.
+- The mistake type: communication, routing, approval, memory, state,
+  skill/playbook drift, hook drift, eval gap, parity issue, or workflow weight.
+- The source of truth that owns the fix.
+- Which connected files were checked or intentionally left alone.
+- Which checks prove the workflow still works.
+- Whether Koda was stored, updated, or skipped.
+
+Exit when Hafiz understands the improvement, the right layers are updated, the
+checks pass or gaps are named, and the next Agent OS or product workflow is
+clear.
+
+Save to:
+
+- the owning Agent OS playbook,
+- skill registry or adapter files when skill behavior changes,
+- evals/fixtures when repeated behavior should be caught,
+- Koda for durable corrections and lessons,
+- Session Map for current-session continuity.
+
+Common failure: saving a Koda memory or adding a sentence to one doc while the
+skill, router, eval, or hook that actually controls the behavior stays stale.
+
+## 3C. Enforcement And Drift Detection Workflow
 
 Starts when a rule is being ignored, hooks/skills/evals need alignment, Claude
 and Codex behave differently, or Hafiz asks how the Agent OS will make agents
@@ -507,7 +553,7 @@ Save to:
 Common failure: adding hook complexity for a rule that needs agent judgment, or
 leaving a repeated approval/safety mistake as a loose doc note.
 
-## 3C. Session Map Lifecycle Workflow
+## 3D. Session Map Lifecycle Workflow
 
 Starts when a conversation is long, multi-goal, resumed after a pause, split
 across agents, or at risk of losing the main story.

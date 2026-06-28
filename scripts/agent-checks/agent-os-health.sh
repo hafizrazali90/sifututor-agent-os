@@ -68,6 +68,7 @@ check_file "Agent OS memory architecture" "$ROOT/docs/agent-playbooks/agent-os-m
 check_file "Agent OS capability model" "$ROOT/docs/agent-playbooks/agent-os-capability-model.md"
 check_file "Agent OS workflow lanes" "$ROOT/docs/agent-playbooks/agent-os-workflow-lanes.md"
 check_file "Agent OS workflows" "$ROOT/docs/agent-playbooks/agent-os-workflows.md"
+check_file "Agent OS improvement loop" "$ROOT/docs/agent-playbooks/agent-os-improvement-loop.md"
 check_file "Agent OS evidence model" "$ROOT/docs/agent-playbooks/agent-os-evidence-model.md"
 check_file "Agent OS state model" "$ROOT/docs/agent-playbooks/agent-os-state-model.md"
 check_file "Agent OS enforcement drift" "$ROOT/docs/agent-playbooks/agent-os-enforcement-drift.md"

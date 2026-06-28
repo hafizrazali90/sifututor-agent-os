@@ -1,0 +1,7 @@
+interface:
+  display_name: "Workflow Improvement"
+  short_description: "Improve Agent OS behavior without scattered rules"
+  default_prompt: "Use $workflow-improvement to improve the Sifututor Agent OS workflow."
+
+policy:
+  allow_implicit_invocation: true

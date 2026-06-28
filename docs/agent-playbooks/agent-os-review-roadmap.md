@@ -102,6 +102,7 @@ Use this as the master tracker while reviewing the architecture.
 | 12 | Save Session And Handoff Quality | `save-session.md`, `handoff.md`, `snapshot.md`, `session-map.md` | save-session/handoff/snapshot docs, workflow docs, evals | Draft accepted | continuation pack standard |
 | 13 | Implementation Readiness And Build Handoff Quality | `ai-implementation-readiness.md`, `product-design.md`, `agent-os-workflows.md` | readiness/product/workflow docs, evals | Draft accepted | build-ready brief standard |
 | 14 | Enforcement And Drift Detection | `agent-os-hook-dispatcher.md`, `agent-os-skill-registry.md`, `agent-os-parity-contract.md`, health/eval scripts | enforcement docs, infrastructure, hook/parity docs, evals | Draft accepted | enforcement ladder and drift map |
+| 15 | Agent OS Improvement Loop | `agent-os-enforcement-drift.md`, `agent-os-memory.md`, `agent-os-skill-registry.md`, evals, Koda corrections | `agent-os-improvement-loop.md`, workflow-improvement skill, task-router, workflow map, evals | Draft accepted for Track A | controlled self-learning workflow |
 
 ## Touch Map
 
@@ -125,6 +126,7 @@ Use this to avoid scattering changes across the wrong files.
 | Memory architecture and performance | `agent-os-memory-architecture.md` | `agent-os-memory.md`, `save-session.md`, evals, future audit script |
 | Tool and capability model | `agent-os-capability-model.md` | `capabilities.example.json`, `agent-os-health.sh`, quick-check, evals |
 | Enforcement and drift detection | `agent-os-enforcement-drift.md` | hook dispatcher, skill registry, parity contract, evals, health checks |
+| Agent OS self-improvement and workflow cleanup | `agent-os-improvement-loop.md` | task router, skill registry, workflow map, evals, Koda, Session Map |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
 | Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |

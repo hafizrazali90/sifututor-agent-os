@@ -113,6 +113,13 @@ WORKFLOWS = [
         "codex_alias": "$monitor-production-logs",
         "claude_aliases": ["/monitor-production-logs"],
     },
+    {
+        "name": "Workflow Improvement",
+        "playbook": "agent-os-improvement-loop.md",
+        "codex_skill": "workflow-improvement",
+        "codex_alias": "$workflow-improvement",
+        "claude_aliases": ["/workflow-improvement"],
+    },
 ]
 
 
@@ -173,6 +180,11 @@ BEHAVIOR_FIXTURES = [
         "id": "BP-009",
         "scenario": "multiple goals or side paths",
         "snippets": ["Session Map", "main goal", "return path"],
+    },
+    {
+        "id": "BP-010",
+        "scenario": "workflow improvement request",
+        "snippets": ["Agent OS Improvement Loop", "classify the mistake", "connected docs"],
     },
 ]
 

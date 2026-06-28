@@ -20,6 +20,7 @@
     "docs/agent-playbooks/agent-os-capability-model.md",
     "docs/agent-playbooks/agent-os-workflow-lanes.md",
     "docs/agent-playbooks/agent-os-workflows.md",
+    "docs/agent-playbooks/agent-os-improvement-loop.md",
     "docs/agent-playbooks/agent-os-evidence-model.md",
     "docs/agent-playbooks/agent-os-state-model.md",
     "docs/agent-playbooks/agent-os-enforcement-drift.md",
@@ -55,7 +56,8 @@
     ".agents/skills/session-map/SKILL.md",
     ".agents/skills/diagnose/SKILL.md",
     ".agents/skills/quick-check/SKILL.md",
-    ".agents/skills/product-design/SKILL.md"
+    ".agents/skills/product-design/SKILL.md",
+    ".agents/skills/workflow-improvement/SKILL.md"
   ],
   "shared_hook_files": [
     ".claude/hooks/koda-context-injector.py",
