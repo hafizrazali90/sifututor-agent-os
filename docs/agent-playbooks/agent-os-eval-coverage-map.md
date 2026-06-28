@@ -24,7 +24,7 @@ be automated next.
 | Forbidden boundaries | AO-006, AO-007, AO-020 | Reading secrets, touching `live/`, or bypassing hooks/tests with `--no-verify`. |
 | Critical lanes | AO-008, AO-009, AO-010 | Editing payment, invoice, migration, auth, or mobile API contract work before read-only diagnosis. |
 | Staff and reported context | AO-011, AO-071, AO-075 | Treating staff reports or capability requests as verified implementation permission. |
-| Context authority | AO-012, AO-013 | Trusting Koda, prior memories, or conflicting docs without checking current source of truth. |
+| Context authority | AO-012, AO-013, AO-096 | Trusting Koda, prior memories, chat, commits, PRs, deploy records, or conflicting docs as the wrong kind of truth. |
 | Verify, QA, and evidence | AO-016, AO-017, AO-028, AO-059, AO-060 | Asking Hafiz to check what the agent can safely test, or calling machine proof enough for a human workflow. |
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
 | Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |

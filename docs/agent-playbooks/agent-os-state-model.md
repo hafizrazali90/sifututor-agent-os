@@ -25,6 +25,39 @@ Chat/save-session tells Hafiz the current status and next action.
 
 No single tool should pretend to be all of these at once.
 
+## Ownership Questions
+
+Use this table when Hafiz or an agent asks "where should we check this?"
+
+| Question | Source of truth |
+| --- | --- |
+| What are we trying to do in this session? | Session Map |
+| What did Hafiz permanently correct or prefer? | Koda |
+| What bigger goal, paused decision, or future follow-up exists? | Mission Ledger |
+| What exact code or docs changed? | Git commit |
+| What is ready for engineering execution? | GitHub issue |
+| What is ready for review or merge? | PR |
+| What is actually deployed? | Deploy record or production SHA |
+| What actually works for users? | QA evidence, smoke result, screenshots, tests, or monitoring |
+| What should happen next right now? | Chat close-out plus Session Map |
+
+Plain meaning:
+
+```text
+Each tool gets one job. Do not use Koda as proof that code shipped, chat as
+proof that production works, or a commit as proof that Hafiz accepted the
+result.
+```
+
+Technical detail in normal language:
+
+```text
+This is context authority. The agent should use the source that owns the
+question. If the question is current state, fresh evidence wins. If the question
+is workflow rules, approved docs win. If the question is remembered preference,
+Koda is useful, but still not proof of live code or production behavior.
+```
+
 ## Source Of Truth Map
 
 | Source | Owns | Does Not Own |

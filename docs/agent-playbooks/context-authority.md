@@ -78,6 +78,25 @@ change request or business-rule change instead of pretending it is already true.
 | Test truth | command output, CI, screenshots, QA evidence | evidence determines result |
 | External best practice | official docs, reputable primary sources | source quality and current date |
 
+## Ownership Shortcut
+
+When deciding where to look first, ask the practical question:
+
+| If the agent needs to know... | Check first |
+| --- | --- |
+| the current session goal, side paths, or return path | Session Map |
+| Hafiz's durable preference or correction | Koda |
+| bigger goals, paused decisions, or future follow-ups | Mission Ledger |
+| exact files changed | Git diff or Git commit |
+| whether work is on GitHub | remote branch, commit, PR, or GitHub issue |
+| whether work is deployed | deploy record or production SHA |
+| whether the user journey works | QA evidence, browser/mobile smoke, tests, screenshots, or monitoring |
+| the next immediate action | latest chat close-out plus Session Map |
+
+Do not substitute one tool for another just because it is convenient. A memory
+can remind the agent what happened before, but current evidence proves what is
+true now.
+
 ## Promotion Rules
 
 Important context should move upward before action:
