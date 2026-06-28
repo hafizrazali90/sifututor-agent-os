@@ -72,6 +72,14 @@ Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
 
+Use the Routing New Information section in
+[agent-os-state-model.md](agent-os-state-model.md) before storing a new idea,
+correction, issue, or follow-up. Plain meaning: do not put everything in Koda,
+Mission Ledger, Session Map, and GitHub at the same time. Route it by purpose:
+current-session continuity to Session Map, durable behavior lessons to Koda,
+future goals/follow-ups to Mission Ledger, execution-ready engineering work to
+GitHub, and exact changed files to Git commits.
+
 Use [session-map.md](session-map.md) when the current conversation has a main
 goal plus side paths, multiple sub-goals, unclear return path, enough moving
 parts that Hafiz or the next agent could lose the story, or non-trivial

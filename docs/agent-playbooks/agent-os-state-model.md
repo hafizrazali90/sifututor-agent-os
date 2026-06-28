@@ -58,6 +58,62 @@ is workflow rules, approved docs win. If the question is remembered preference,
 Koda is useful, but still not proof of live code or production behavior.
 ```
 
+## Routing New Information
+
+Use this when deciding where a new idea, correction, issue, or follow-up should
+be recorded.
+
+Plain meaning:
+
+```text
+Do not store everything everywhere. Put each piece of information in the place
+where it will help future work the most.
+```
+
+| New information | Put it in |
+| --- | --- |
+| It affects the current session story, side path, decision, return path, or next step | Session Map |
+| It is a durable correction, preference, repeated mistake, tool lesson, or workflow rule | Koda, and usually the relevant doc/playbook too |
+| It is a bigger goal, paused decision, adjacent idea, future follow-up, research topic, or not-yet-ready task | Mission Ledger |
+| It is exact engineering work ready to build, fix, test, or review | GitHub issue |
+| It is exact code/docs that changed | Git commit |
+| It is multiple fixes in one chat with separate PR/merge/deploy/live states | Session Release Ledger |
+| It is a staff-reported symptom | Planner/support context first, then diagnosis before GitHub |
+| It is only a short temporary clarification for this moment | Chat only |
+
+Decision tree:
+
+```text
+Is it needed only for this chat?
+-> Chat or Session Map.
+
+Should future agents behave differently because of it?
+-> Koda plus docs/playbook if it is a system rule.
+
+Is it a bigger goal or follow-up but not ready to execute?
+-> Mission Ledger.
+
+Is it ready for a developer/agent to implement?
+-> GitHub issue.
+
+Does it describe exact changed files?
+-> Git commit.
+
+Does it describe whether work is pushed, PR-open, merged, deployed, or live
+checked?
+-> Git/PR/deploy/QA evidence, plus Session Release Ledger when multiple fixes
+exist in one session.
+```
+
+When in doubt, prefer the lightest durable home:
+
+```text
+Session Map for current-session continuity.
+Mission Ledger for future work.
+Koda only for behavior-changing lessons.
+GitHub only for execution-ready work.
+```
+
 ## Source Of Truth Map
 
 | Source | Owns | Does Not Own |
