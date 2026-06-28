@@ -11,6 +11,16 @@ def normalize(value: object) -> str:
     return re.sub(r"\s+", " ", str(value or "").lower()).strip()
 
 
+def has_exact_commit_only_recommendation(previous: str) -> bool:
+    if "commit and push" in previous or "commit + push" in previous:
+        return False
+    has_commit = "commit" in previous
+    has_files = "file" in previous or "files:" in previous
+    has_stop = "stop before push" in previous or "do not push" in previous
+    has_exact = "exact" in previous or "listed" in previous
+    return has_commit and has_files and has_stop and has_exact
+
+
 def resolve_short_reply(case: dict) -> dict:
     user_reply = normalize(case.get("user_reply"))
     previous = normalize(case.get("previous_assistant"))
@@ -82,11 +92,17 @@ def resolve_short_reply(case: dict) -> dict:
         result["must_not"].append("guess_approval_scope")
         return result
 
-    if user_reply in {"proceed", "proceed next", "go next", "ok proceed"}:
+    if user_reply in {"proceed", "continue", "yes", "ok", "proceed next", "go next", "ok proceed"}:
         if risk in {"critical", "destructive", "secret", "deploy"}:
             result["action"] = "clarify_or_diagnose"
             result["scope"] = "risk_boundary"
             result["must_not"].append("implement_without_explicit_approval")
+            return result
+        if user_reply in {"proceed", "continue", "yes", "ok"} and has_exact_commit_only_recommendation(previous):
+            result["action"] = "commit_only"
+            result["scope"] = "last_exact_file_list"
+            result["requires_approval"] = True
+            result["must_not"].extend(["push", "include_unlisted_files"])
             return result
         if "recommended next" in previous or "next best step" in previous or "recommended action" in previous:
             result["action"] = "act_on_last_recommendation"
@@ -260,6 +276,21 @@ CASES = [
             "must_not": ["reask_same_approval", "start_unrelated_task"],
         },
         "why": "Already-approved paths should continue without re-asking for the same approvals.",
+    },
+    {
+        "id": "CV-013",
+        "name": "proceed approves exact commit-only bundle",
+        "previous_assistant": (
+            "Recommended next: commit these exact files only: docs/a.md and "
+            "docs/b.md. I will run the guard, commit locally, and stop before push."
+        ),
+        "user_reply": "proceed",
+        "expected": {
+            "action": "commit_only",
+            "scope": "last_exact_file_list",
+            "must_not": ["push", "include_unlisted_files"],
+        },
+        "why": "Short replies can approve commit-only when the previous recommendation is exact.",
     },
 ]
 

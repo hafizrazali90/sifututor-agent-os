@@ -153,6 +153,13 @@ print credentials to the terminal or to files.
   workflow steps. Good boundaries are concrete and risk-aware, such as "I will
   continue until the PR is opened" or "I will continue until production
   monitoring is complete."
+- For commit-only work, short replies may count as approval when the previous
+  agent message clearly proposed an exact commit-only bundle with file list,
+  checks/guard plan, and stop-before-push boundary. In that case, `proceed`,
+  `continue`, `yes`, or `ok` means create that local commit. If the bundle was
+  not exact, ask once. Push, PR, merge, deploy, production, destructive, and
+  critical-lane actions remain stricter unless they were explicitly included in
+  the already-approved path.
 - Interpret natural end-to-end phrases by intent, not exact wording. Phrases
   like "proceed until done", "continue until done", "finish this end to end",
   "do everything needed", "handle this fully", or "complete it properly" mean:

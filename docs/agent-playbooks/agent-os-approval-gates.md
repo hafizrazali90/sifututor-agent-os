@@ -212,6 +212,7 @@ These actions must not be hidden inside a larger bundle:
 | Hafiz says | Meaning |
 | --- | --- |
 | `proceed` | Continue the last clear safe recommendation. |
+| `proceed` / `continue` / `yes` / `ok` after an exact commit-only recommendation | Commit exactly that listed bundle, after guard/checks, and stop before push. |
 | `proceed next` | Continue the next review/action from visible chat context. |
 | `proceed until done` / `continue until done` | Treat as end-to-end intent. Explain what done means, how far the agent can go now, and what approval is needed to go further. |
 | `proceed until finish` after a clear approved path | Continue using the already-approved path. Do not re-ask for approvals already included in the current task context. |
@@ -231,6 +232,8 @@ During a safe work packet, the agent should:
   work has multiple connected steps
 - recommend the stop point and suggested path so Hafiz does not need to know or
   list every workflow step
+- treat short replies as commit-only approval only when the immediately previous
+  recommendation named an exact commit-only bundle and stop-before-push boundary
 - recognize natural end-to-end intent instead of requiring the exact word
   `autopilot`
 - check whether the path was already approved in the current task context before

@@ -4,7 +4,10 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 
 ## Hard Rules
 
-- Never commit without explicit user approval of the file list.
+- Never commit without user approval of the file list. Approval can be a short
+  reply such as `proceed`, `continue`, `yes`, or `ok` only when the previous
+  agent message clearly proposed an exact commit-only bundle with file list,
+  guard/check plan, and stop-before-push boundary.
 - Never push, merge, deploy, or open a PR unless the user explicitly asks in
   the current session.
 - Never use `--no-verify`.

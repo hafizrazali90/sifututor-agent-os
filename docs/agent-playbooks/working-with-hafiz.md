@@ -56,6 +56,7 @@ Short commands are common and should be handled by context, not keyword alone.
 | --- | --- | --- |
 | `ok` | acknowledgement or light approval | Was there a concrete proposed action? |
 | `proceed` | act immediately on the last recommended step | Is the last step clear and safe to execute? |
+| `proceed` / `continue` / `yes` / `ok` after exact commit-only recommendation | commit the listed files only | Did the previous agent message clearly name the file list, guard/check plan, and stop-before-push boundary? |
 | `proceed until done` / `continue until done` | end-to-end intent | What does done mean, how far can the agent go now, and what approval is needed to go further? |
 | `proceed until finish` after prior agreement | continue the already-approved path | Was the scope/path/approval already clearly decided in this task context? |
 | `approve` | approve the last explicit approval request, including grouped actions if the request grouped them | Was the grouped action exact, such as commit+push with file list/SHA/target? |
@@ -159,6 +160,12 @@ Approve commit and push for these five docs files?
 
 If Hafiz says `approve`, complete that bundled action. Do not ask separately for
 commit and then push unless the earlier request only asked for commit.
+
+If the agent just recommended an exact commit-only bundle, Hafiz can answer with
+`proceed`, `continue`, `yes`, or `ok`. Treat that as approval to commit the
+listed files only, after guard/checks, and stop before push. This is still
+Hafiz-controlled because the file list and stop point were already shown. If
+the bundle was not exact, ask once.
 
 ## Discussion Mode
 
@@ -558,6 +565,9 @@ Answered by Hafiz on 2026-06-04:
 - `proceed`: act immediately based on the last recommended step.
 - `approve`: can cover commit+push if the agent asked for that combined action;
   avoid nagging for actions that sensibly belong together.
+- short commit approval: if the previous agent message clearly recommended an
+  exact commit-only bundle, `proceed`, `continue`, `yes`, or `ok` means commit
+  that bundle and stop before push. If the bundle was not exact, ask once.
 - safe approval bundles: allowed for exact low/medium-risk adjacent actions;
   critical, deploy, destructive, secret, production, and `live/` actions stay
   separate.
