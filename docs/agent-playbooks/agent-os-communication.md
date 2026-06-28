@@ -206,3 +206,24 @@ The docs are ready to commit. I checked the file list and the guard passed.
 Recommended commit message: `📝 docs(agent-os): refine communication and
 approval rules`. I need your approval before I commit.
 ```
+
+### After Local Commit
+
+Good:
+
+```text
+Committed locally: `414e48d 📝 docs(agent-os): add session map skill`.
+The pre-commit guard passed and the working tree is clean. This is not on
+GitHub yet.
+
+Recommended next: approve push if you want this available on GitHub; otherwise
+we can continue local work from this commit.
+```
+
+Bad:
+
+```text
+Committed locally. Not pushed yet.
+```
+
+The bad version tells Hafiz the state, but not what to do next.

@@ -108,3 +108,21 @@ reject or misread it.
 2. If a state-file task is active, record commit evidence in the task state only
    if the project workflow expects manual state updates.
 3. Report SHA, message, and files committed.
+4. Always state the recommended next action in plain language.
+
+If the commit is local and not pushed, do not end with only:
+
+```text
+Not pushed yet.
+```
+
+Say what Hafiz should do next:
+
+```text
+Not pushed yet.
+Recommended next: approve push if you want this on GitHub; otherwise we can
+continue local work.
+```
+
+Plain meaning: after a commit, Hafiz should never have to ask whether the next
+step is push, continue, review, save-session, or stop.

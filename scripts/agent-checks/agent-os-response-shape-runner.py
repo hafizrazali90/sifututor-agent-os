@@ -41,6 +41,19 @@ CASES = [
         "why": "Commit/push close-out must name pushed state, evidence, and next action.",
     },
     {
+        "id": "RS-005",
+        "name": "local commit close-out",
+        "text": (
+            "Committed locally: 414e48d docs(agent-os): add session map skill. "
+            "The pre-commit guard passed and the working tree is clean. This is "
+            "not pushed yet, and nothing remains unverified for this docs commit. "
+            "Recommended next: approve push if you want this on GitHub; otherwise "
+            "we can continue local work."
+        ),
+        "should_pass": True,
+        "why": "Local commit close-out must explain the push decision instead of only saying not pushed yet.",
+    },
+    {
         "id": "RS-003",
         "name": "vague done",
         "text": "Done. Everything should be okay.",
