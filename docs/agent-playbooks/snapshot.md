@@ -6,6 +6,13 @@ Use this before compaction, context loss, risky switching, or a long pause.
 
 A snapshot freezes the working context without pretending the task is complete.
 
+Plain meaning:
+
+```text
+Use snapshot when the same work should continue after compaction, interruption,
+or a pause. Use handoff when another agent or human should take over.
+```
+
 ## Steps
 
 1. Record the current goal in one sentence.
@@ -15,6 +22,9 @@ A snapshot freezes the working context without pretending the task is complete.
 5. Mention dirty files and whether they are yours.
 6. Save only durable lessons to Koda; keep temporary breadcrumbs in the final
    snapshot text.
+7. Name the highest proven state so the resumed agent does not confuse local
+   work with pushed, merged, deployed, live checked, or accepted work.
+8. Include the return path: the exact next action and the first source to read.
 
 ## Output Shape
 
@@ -35,4 +45,10 @@ Next move:
 
 Dirty state:
 - <none or summary>
+
+Highest proven state:
+- <drafted | changed locally | committed locally | pushed | PR open | merged | deployed | live checked | accepted/closed>
+
+Read first:
+- <Session Map, file, command, PR, issue, or evidence>
 ```

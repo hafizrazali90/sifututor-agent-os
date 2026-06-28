@@ -852,6 +852,14 @@ current state, durable lessons, task status, risks, and exact next step.
 Use [save-session.md](save-session.md), Koda CLI when available, and the
 handoff/snapshot playbooks when applicable.
 
+Plain meaning:
+
+```text
+Save-session and handoff are restart packs, not diaries. The next agent should
+know the goal, current focus, highest proven state, evidence, boundaries, and
+single next action without rereading the whole chat.
+```
+
 Evidence required:
 
 - Current git state.
@@ -860,6 +868,9 @@ Evidence required:
 - Koda search/store result or honest failure/fallback.
 - Mission Ledger state when relevant.
 - Remaining work and next recommended action.
+- Continuation Pack details: main goal, current focus, highest proven state,
+  dirty/ahead/behind Git state, local-only commits, links/files, evidence gaps,
+  approval boundaries, and do-not-redo context.
 
 Exit when the next agent or future session can continue without guessing.
 
@@ -871,6 +882,9 @@ Save to:
 - final response.
 
 Common failure: storing vague memory noise instead of actionable lessons.
+
+Another common failure: a handoff says "done" but omits that the work is only
+committed locally, not pushed, merged, deployed, or live checked.
 
 ## 16. Mission Ledger Workflow
 

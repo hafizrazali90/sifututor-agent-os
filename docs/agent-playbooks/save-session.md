@@ -31,6 +31,48 @@ Do not end a meaningful session with only "done." End it with:
 
 If those things are clear, the session is saved well.
 
+## Continuation Pack Standard
+
+A save-session is not a transcript. It is a restart pack.
+
+Plain meaning:
+
+```text
+The next Claude, Codex, or human should be able to continue in a few minutes,
+not reconstruct the whole story from chat.
+```
+
+For meaningful sessions, the save report must include these facts:
+
+1. Main goal: why the session started.
+2. Current focus: what the agent was doing when the session stopped.
+3. Highest proven state: drafted, changed locally, committed locally, pushed,
+   PR open, merged, deployed, live checked, accepted, or closed.
+4. Git state: branch, dirty/staged state, ahead/behind state, and important
+   local-only commits.
+5. What changed: files, commits, PRs, issues, docs, or Session Map links.
+6. Evidence: checks, tests, QA, screenshots, smoke checks, monitoring, or what
+   could not be checked.
+7. Open decisions: what Hafiz must decide versus what the agent can continue.
+8. Boundaries: stop-before-push, stop-before-deploy, critical-lane,
+   destructive, production, secret, or approval limits.
+9. Return path: the single recommended next action.
+10. Do-not-redo context: what the next agent should trust from this session
+    and what it should still verify from current evidence.
+
+If the session has multiple fixes, branches, PRs, or deploy candidates, include
+or update the Session Release Ledger before saving. Do not let "fixed in code"
+sound like "merged", "deployed", or "live checked".
+
+If local commits are not pushed, say that plainly:
+
+```text
+Committed locally, not pushed to GitHub yet.
+```
+
+That sentence matters because another machine, another agent, or GitHub will
+not see the work until it is pushed.
+
 If the session used a Session Map, close or update it using
 [session-map.md](session-map.md) before the final save report. In normal words:
 the map should say whether the work should continue, is parked, was handed off,
@@ -237,6 +279,20 @@ Fallback options:
 
 When Koda works again, store the durable lesson there.
 
+## Snapshot Versus Handoff
+
+Use these differently:
+
+| Situation | Use | Practical meaning |
+| --- | --- | --- |
+| Same agent continues after compaction or a long pause | Snapshot | Freeze the current working context without ending the work. |
+| Another agent, another session, or a human should continue | Handoff | Package the work so the next owner starts from the right place. |
+| The session is ending or Hafiz asks to save | Save-session | Save state, durable lessons, evidence, and next action. |
+
+Do not use Koda as a raw transcript store. Koda gets durable corrections,
+preferences, rules, and non-obvious lessons. Session Map gets the current story.
+Save-session gets the restart pack.
+
 ## Critical Save Extra Checks
 
 For critical work, explicitly answer:
@@ -258,17 +314,27 @@ Use this exact shape for Normal or Critical Save:
 ```text
 SESSION SAVED - <project or workspace>
 
+Main goal: <why the session existed>
+Current focus: <what was being worked on when saved>
+Highest proven state: <drafted | changed locally | committed locally | pushed | PR open | merged | deployed | live checked | accepted/closed>
 Koda: <stored/updated/skipped/failed> <memory ids if available>
 Active task: <id + route + next step | none>
 Session Map: <updated/current/not needed>
 Mission Ledger: <updated item | no new follow-up | skipped>
 Guards: <passed/failed/not run>
 Commits/pushes: <summary or none>
+Git state: <branch, dirty/staged state, ahead/behind, local-only commits if any>
 Ending state: <Continue | Save Only | Park | Hand Off | Close>
 
 Key learnings:
 - <lesson>
 - <lesson>
+
+Continuation pack:
+- What changed: <files/commits/PRs/issues/docs>
+- Evidence: <checks and gaps>
+- Boundaries: <what needs approval before continuing>
+- Return path: <single recommended next action>
 
 Remaining work:
 - <next step>
