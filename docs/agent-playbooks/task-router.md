@@ -64,8 +64,11 @@ current task, issue, mission status, evidence, and release state should be
 recorded.
 
 Use [session-map.md](session-map.md) when the current conversation has a main
-goal plus side paths, multiple sub-goals, unclear return path, or enough moving
-parts that Hafiz or the next agent could lose the story.
+goal plus side paths, multiple sub-goals, unclear return path, enough moving
+parts that Hafiz or the next agent could lose the story, or non-trivial
+development/workflow work that may move through diagnosis, implementation,
+verification, QA, commit, push, PR, deploy, handoff, or save-session. Skip it
+only for tiny one-shot work.
 
 Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
 goal or should be captured for later but is not ready for GitHub yet.
@@ -77,8 +80,8 @@ Important routing principles:
 - Do not route by keyword alone.
 - Discussion, learning, architecture review, and retrospectives should stay
   light unless Hafiz asks to document or implement.
-- When a session becomes hard to follow, start or update the Session Map before
-  continuing deeper.
+- When a session becomes hard to follow, or when real work starts moving through
+  multiple states, start or update the Session Map before continuing deeper.
 - `proceed` means act on the last clear recommended step.
 - `approve` means execute the last exact approval request, including a safe
   bundle if the agent clearly asked for that bundle.

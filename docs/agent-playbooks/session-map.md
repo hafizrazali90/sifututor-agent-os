@@ -103,7 +103,19 @@ Still report the path in chat so Hafiz can reopen it later.
 
 ## When To Create Or Update One
 
-Create or update a Session Map when any of these are true:
+Create or update a Session Map for both:
+
+1. **Long or confusing sessions**
+2. **Non-trivial development or workflow work**
+
+Plain meaning:
+
+```text
+Use Session Map when losing track would cost Hafiz or the next agent time.
+Skip it only for tiny one-shot work.
+```
+
+Create or update one when any of these are true:
 
 - Hafiz explicitly asks for a mindmap, session map, progress board, or HTML
   session view.
@@ -114,11 +126,31 @@ Create or update a Session Map when any of these are true:
 - A side issue appears and Hafiz wants to return to the original topic later.
 - The chat resumes after compaction, a long pause, or another agent's work.
 - Hafiz asks "what next?" and the answer depends on earlier session context.
+- The work is a bugfix, feature, refactor, hotfix, QA, review, release, deploy,
+  handoff, or save-session that may move through multiple states.
+- The work may need to continue in another session or agent.
+- The work has real state to track: local, committed, pushed, PR open, merged,
+  deployed, live smoke passed, blocked, or closed.
 - Before handoff or save-session, when the next agent would otherwise need to
   reconstruct the story from chat.
 
-Do not create one for a tiny one-shot answer, typo fix, or single-file docs
-change unless Hafiz asks.
+Do not create one for a tiny one-shot answer, quick command output, typo fix,
+or small single-file docs edit unless Hafiz asks.
+
+## Operating Rhythm
+
+Use this rhythm during normal work:
+
+| Moment | Agent behavior |
+| --- | --- |
+| Start | Decide if the session is long/confusing or non-trivial dev/workflow work. If yes, create or reuse a unique Session Map. |
+| Meaningful change | Update the Human Snapshot first, then progress, decisions, side paths, evidence, or continuation prompt as needed. |
+| Review needed | Regenerate HTML and open it automatically for Hafiz. |
+| Commit/push/PR/deploy state changes | Update the progress board and evidence so "done" is never ambiguous. |
+| Handoff/save-session | Update the continuation prompt and say whether the session can close or should continue. |
+
+Do not update the map after every small chat reply. Update it when the practical
+state changes.
 
 ## Where It Should Live
 
