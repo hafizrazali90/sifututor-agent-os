@@ -52,7 +52,7 @@ mindmap
 ## Agent Context
 
 - **Date:** <YYYY-MM-DD>
-- **Session ID:** <stable slug or generated id>
+- **Session ID:** <YYYY-MM-DD-HHMMSS-agent-short-topic>
 - **Project:** <umbrella | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent | lls | other>
 - **Agent:** <Codex | Claude | human | mixed>
 - **Repo/worktree:** <path>
@@ -79,7 +79,7 @@ mindmap
 Use this if another agent or future session continues:
 
 ```text
-Continue from <session map path>.
+Continue from .agent-os/session-maps/<YYYY-MM-DD-HHMMSS-agent-short-topic>.md.
 Main goal: <main goal>.
 Current focus: <current focus>.
 Next action: <one concrete next action>.

@@ -111,6 +111,11 @@ python3 "$ROOT/scripts/agent-checks/session-map-check.py" >/dev/null 2>&1 \
   && pass "session map check" "passed" \
   || fail "session map check" "failed"
 
+python3 "$ROOT/scripts/agent-checks/session-map-html.py" "$ROOT/docs/agent-playbooks/templates/session-map.md" -o /tmp/sifututor-session-map-doctor.html >/dev/null 2>&1 \
+  && pass "session map html" "passed" \
+  || fail "session map html" "failed"
+rm -f /tmp/sifututor-session-map-doctor.html
+
 echo
 echo "All-project guard sweep"
 for project in "${PROJECTS[@]}"; do

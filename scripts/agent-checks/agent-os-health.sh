@@ -81,6 +81,7 @@ check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runn
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
 check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
 check_file "Agent OS session map check" "$ROOT/scripts/agent-checks/session-map-check.py"
+check_file "Agent OS session map HTML" "$ROOT/scripts/agent-checks/session-map-html.py"
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
 check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
@@ -136,6 +137,16 @@ else
   sed -n '1,8p' /tmp/agent-os-session-map.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-session-map.out /tmp/agent-os-session-map.err
+
+if python3 "$ROOT/scripts/agent-checks/session-map-html.py" "$ROOT/docs/agent-playbooks/templates/session-map.md" -o /tmp/agent-os-session-map.html >/tmp/agent-os-session-map-html.out 2>/tmp/agent-os-session-map-html.err; then
+  html_summary="$(tail -1 /tmp/agent-os-session-map-html.out 2>/dev/null || true)"
+  pass "Agent OS session map HTML" "${html_summary:-passed}"
+else
+  fail "Agent OS session map HTML" "HTML generator failed"
+  sed -n '1,12p' /tmp/agent-os-session-map-html.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-session-map-html.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-session-map.html /tmp/agent-os-session-map-html.out /tmp/agent-os-session-map-html.err
 
 if "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py" >/tmp/agent-os-koda-fixtures.out 2>/tmp/agent-os-koda-fixtures.err; then
   koda_fixture_summary="$(tail -1 /tmp/agent-os-koda-fixtures.out 2>/dev/null || true)"

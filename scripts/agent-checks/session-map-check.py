@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TEMPLATE = ROOT / "docs" / "agent-playbooks" / "templates" / "session-map.md"
+SESSION_FILENAME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{6}-[a-z0-9][a-z0-9-]*\.md$")
 
 REQUIRED_SECTIONS = [
     "Human Snapshot",
@@ -103,6 +105,11 @@ def validate(path: Path, *, allow_placeholders: bool) -> list[str]:
     text = path.read_text(encoding="utf-8")
     label = relative(path)
 
+    if path != DEFAULT_TEMPLATE and not SESSION_FILENAME_PATTERN.match(path.name):
+        errors.append(
+            f"{label}: filename must use 'YYYY-MM-DD-HHMMSS-agent-short-topic.md'"
+        )
+
     if not text.startswith("# Session Map:"):
         errors.append(f"{label}: title must start with '# Session Map:'")
 
@@ -123,6 +130,12 @@ def validate(path: Path, *, allow_placeholders: bool) -> list[str]:
             continue
         if not allow_placeholders and is_placeholder(value_for_field(text, field)):
             errors.append(f"{label}: Agent Context field '{field}' is still placeholder")
+
+    if path != DEFAULT_TEMPLATE and has_field(text, "Session ID"):
+        session_id = value_for_field(text, "Session ID")
+        expected = path.stem
+        if session_id != expected:
+            errors.append(f"{label}: Session ID must match filename stem '{expected}'")
 
     rows = progress_rows(text)
     if not rows:

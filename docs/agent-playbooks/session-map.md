@@ -83,6 +83,16 @@ session-map.md -> generated session-map.html
 The generated HTML can show a mindmap, progress table, current focus, open
 decisions, linked issues, linked docs, and the recommended next action.
 
+Generate the HTML view with:
+
+```bash
+python3 scripts/agent-checks/session-map-html.py .agent-os/session-maps/<file>.md
+```
+
+Plain meaning: the agent edits the Markdown, then generates the nice browser
+view from that same source. Do not manually edit the generated HTML as the
+truth.
+
 ## When To Create Or Update One
 
 Create or update a Session Map when any of these are true:
@@ -116,6 +126,38 @@ For now, keep session maps in one of these places:
 Do not commit active local session maps by default. Commit the playbook,
 template, or durable examples only when the content is meant to become shared
 Agent OS behavior.
+
+## Naming Rule
+
+Every active Session Map filename must be unique enough for parallel sessions.
+Do not use date-only names such as:
+
+```text
+2026-06-28-agent-os-session-map.md
+```
+
+Use:
+
+```text
+YYYY-MM-DD-HHMMSS-<agent>-<short-topic>.md
+```
+
+Example:
+
+```text
+.agent-os/session-maps/2026-06-28-201900-codex-agent-os-session-map.md
+```
+
+Plain meaning:
+
+```text
+Same chat/session = keep updating the same file.
+New chat/session = create a new timestamped file.
+Generated HTML = use the same basename with .html.
+```
+
+The `Session ID` in Agent Context should match the filename without `.md`.
+This prevents two same-day sessions from overwriting each other.
 
 ## Required Sections
 
@@ -153,7 +195,7 @@ Agent Context should include:
 
 ```md
 - **Date:** <YYYY-MM-DD>
-- **Session ID:** <stable slug or generated id>
+- **Session ID:** <YYYY-MM-DD-HHMMSS-agent-short-topic>
 - **Project:** <umbrella or project>
 - **Agent:** <Codex | Claude | human | mixed>
 - **Repo/worktree:** <path>
