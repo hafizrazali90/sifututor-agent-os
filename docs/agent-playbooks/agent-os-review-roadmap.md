@@ -157,6 +157,7 @@ created.
 | 2026-06-05 | Verification and Evidence review accepts the Agent-As-Tester Evidence Model. | Hafiz wants agents to be the bridge between him and coding, including tester work the agent can safely perform. Testing should validate the same observable workflow a human tester would validate, while Hafiz verifies business judgment, unavailable access, destructive actions, and final risk acceptance. | Use `agent-os-evidence-model.md` as the source and make verify/QA/review enforce human-journey evidence. |
 | 2026-06-29 | Verification, QA, and Evidence accepts the Proof Standard. | Hafiz needs the agent to distinguish code proof, journey proof, and release proof so "tests passed" is not mistaken for "users can do it" or "it is live." | Use `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `review.md`, and workflow close-outs to report the highest proven state. |
 | 2026-06-05 | GitHub/Plane/Planner/Task State review accepts the State Model. | Hafiz needs agents to stop using vague "done" language when work may only be local, pushed, PR-open, merged, deployed, or live-smoke-passed. Each tool should own a specific kind of truth. | Use `agent-os-state-model.md` as the source for state language and source-of-truth ownership. |
+| 2026-06-29 | Task State and Work Tracking accepts the State Ownership Rule. | Hafiz needs agents to use the right source for the right question instead of treating Planner, Koda, chat, GitHub, git, deploy records, and QA evidence as interchangeable truth. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` before trusting or updating task state. |
 | 2026-06-05 | Staff Rollout Readiness review accepts the readiness ladder: internal Agent OS, project baseline, staff-safe kit, approved builder kit, advanced operations. | Staff rollout should not mean giving every person every tool. The safe path is internal-first, then staff reporting/QA/docs, then code builder access only for trusted users, and advanced operations only by explicit approval. | Use `agent-os-rollout-readiness.md` before installing or expanding staff capabilities. |
 | 2026-06-29 | Work Intake and Task State review accepts quick diagnosis before GitHub issue creation or implementation. | Hafiz wants traceability without noise: agents should not create GitHub issues from vague symptoms too early, but should not start real coding work with no trace. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` for intake routing. |
 | 2026-06-29 | Review and Risk Before Commit/Push accepts a risk checkpoint before outward state changes. | Hafiz needs the agent to catch scope creep, missing evidence, state confusion, critical-lane gaps, release communication gaps, multi-fix confusion, and product/business risk before commit, push, PR, merge, or deploy. | Use `review.md`, `commit.md`, and `agent-os-workflows.md` before saying the next state is safe. |
@@ -466,6 +467,9 @@ Output:
 
 Question: what belongs where so Hafiz does not have to reconstruct status from
 chat?
+
+Decision: use the State Ownership Rule. Every source gets one job; use the
+source that owns the question and report the highest proven state.
 
 Review:
 

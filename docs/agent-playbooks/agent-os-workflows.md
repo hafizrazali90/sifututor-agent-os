@@ -115,6 +115,10 @@ Every workflow should answer these questions before it is called done:
   risks/tradeoffs, and evidence plan.
 - Do not treat memory, old chat, staff symptoms, or a screenshot as stronger
   than current code, docs, data, tests, or production evidence.
+- Use the State Ownership Rule from
+  [agent-os-state-model.md](agent-os-state-model.md): each state source gets
+  one job, and the agent should use the source that owns the question instead
+  of duplicating or upgrading weak evidence.
 - When current evidence needs approved read-only access, use the narrowest
   relevant auto-read lane proactively instead of asking Hafiz to prompt for it.
 - Ask Hafiz to verify only business judgment, subjective acceptance, unsafe

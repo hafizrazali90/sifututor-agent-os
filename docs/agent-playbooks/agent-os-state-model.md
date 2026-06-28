@@ -25,6 +25,58 @@ Chat/save-session tells Hafiz the current status and next action.
 
 No single tool should pretend to be all of these at once.
 
+## State Ownership Rule
+
+Every state source gets one job.
+
+Plain meaning:
+
+```text
+Use the source that owns the question.
+Do not use the nearest source, loudest source, or oldest source as proof.
+```
+
+Use this practical ownership split:
+
+| Source | Primary job |
+| --- | --- |
+| Chat | What Hafiz just asked or decided right now. |
+| Session Map | Where this current session is, what side paths exist, and what happens next. |
+| Koda | Durable lessons, corrections, preferences, and repeated mistakes. |
+| Mission Ledger | Bigger goals, parked decisions, and future work that is not execution-ready yet. |
+| Planner | Staff-reported symptoms and operational context. |
+| GitHub issue | Engineering work that is ready for a developer or agent to execute. |
+| Active task file | The current agent/dev work pointer inside a project. |
+| Git commit | Exact files saved locally. |
+| PR | Reviewable change before merge. |
+| Deploy record / production SHA | What code reached staging or production. |
+| QA evidence | What actually works for users. |
+
+The agent must not promote a weaker source into a stronger claim.
+
+Examples:
+
+| Weak claim | Correct reading |
+| --- | --- |
+| Planner says fixed | Staff reported status; verify Git/PR/deploy/QA before saying fixed. |
+| Koda says this was accepted | Durable memory; check current files/state before acting. |
+| Chat says done | Historical conversation; check Git, PR, deploy, and evidence. |
+| Commit exists | Files changed locally; not proof of push, merge, deploy, or acceptance. |
+| PR merged | Source is merged; not proof that production contains it. |
+| Deploy happened | Version reached an environment; not proof the user journey works. |
+
+Before acting, answer:
+
+```text
+What question am I answering?
+Which source owns that answer?
+What is the highest proven state?
+What should be updated, if anything?
+```
+
+If the answer belongs in another source, update or link that source instead of
+duplicating the same truth everywhere.
+
 ## Ownership Questions
 
 Use this table when Hafiz or an agent asks "where should we check this?"

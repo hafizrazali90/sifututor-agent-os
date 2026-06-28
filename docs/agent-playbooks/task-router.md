@@ -72,6 +72,13 @@ Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
 
+Use the State Ownership Rule in
+[agent-os-state-model.md](agent-os-state-model.md) before trusting or updating
+task state. Plain meaning: Planner is staff intake, GitHub is engineering
+execution, Koda is durable memory, Session Map is current-session story, Git is
+exact changed files, deploy records prove deployed code, and QA evidence proves
+real behavior.
+
 Use the Routing New Information section in
 [agent-os-state-model.md](agent-os-state-model.md) before storing a new idea,
 correction, issue, or follow-up. Plain meaning: do not put everything in Koda,
