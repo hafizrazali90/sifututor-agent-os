@@ -53,6 +53,7 @@ mindmap
 
 - **Date:** <YYYY-MM-DD>
 - **Session ID:** <YYYY-MM-DD-HHMMSS-agent-short-topic>
+- **Lifecycle state:** <Active | Continued | Parked | Handed off | Promoted | Closed | Not needed>
 - **Project:** <umbrella | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent | lls | other>
 - **Agent:** <Codex | Claude | human | mixed>
 - **Repo/worktree:** <path>

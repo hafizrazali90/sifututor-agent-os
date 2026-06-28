@@ -499,6 +499,47 @@ Save to:
 Common failure: adding hook complexity for a rule that needs agent judgment, or
 leaving a repeated approval/safety mistake as a loose doc note.
 
+## 3C. Session Map Lifecycle Workflow
+
+Starts when a conversation is long, multi-goal, resumed after a pause, split
+across agents, or at risk of losing the main story.
+
+Hafiz owns the real mission and whether a new topic is actually separate. The
+agent owns keeping the map honest: current focus, side paths, evidence, Git
+state, waiting decisions, and next action.
+
+Use [session-map.md](session-map.md).
+
+Plain meaning:
+
+```text
+One meaningful session gets one map. Keep using that map for the same mission.
+Start a new map only when the work becomes a different mission.
+```
+
+Evidence required:
+
+- The map matches the current main goal, project, branch, and next action.
+- Side paths are inside the current map unless they become a different mission.
+- Multiple possible maps are resolved before editing.
+- The lifecycle state is clear: Active, Continued, Parked, Handed off,
+  Promoted, or Closed.
+
+Exit when the map tells the next reader whether to continue, park, hand off,
+promote, close, or create a new map.
+
+Save to:
+
+- active Session Map for current-session continuity,
+- Koda for durable Session Map rules or Hafiz corrections,
+- Mission Ledger when a side path becomes future work,
+- GitHub issue when a side path becomes execution-ready coding work,
+- save-session or handoff when another session or person must continue.
+
+Common failure: creating several maps for one continuing mission, or keeping
+one map after the work has become a different project, branch, release path,
+owner, or unrelated mission.
+
 ## 4. Bugfix Workflow
 
 Starts when something is broken, failing, confusing, or reported as not working.

@@ -130,6 +130,19 @@ Still report the path in chat so Hafiz can reopen it later.
 
 ## When To Create Or Update One
 
+Default rule:
+
+```text
+One meaningful session = one Session Map.
+```
+
+Plain meaning:
+
+```text
+Each real work session gets one whiteboard. Keep updating that same whiteboard
+until the session is continued, parked, handed off, promoted, or closed.
+```
+
 Create or update a Session Map for both:
 
 1. **Long or confusing sessions**
@@ -163,6 +176,57 @@ Create or update one when any of these are true:
 
 Do not create one for a tiny one-shot answer, quick command output, typo fix,
 or small single-file docs edit unless Hafiz asks.
+
+## Session Map Lifecycle
+
+Use one Session Map per meaningful session. Do not create a new map just
+because the conversation has a side path, a commit, a check, or a short pause.
+Those belong inside the current map.
+
+Create a new Session Map only when the work becomes a different session:
+
+- a different main goal
+- a different project or repo
+- a different branch, PR, release, or deployment path
+- a different owner or handoff target
+- enough unrelated scope that keeping it in the current map would confuse
+  Hafiz or the next agent
+
+Plain meaning:
+
+```text
+Same mission = same map.
+Different mission = new map.
+Tiny question = no map unless Hafiz asks.
+```
+
+Use these lifecycle states:
+
+| State | Meaning | Agent behavior |
+| --- | --- | --- |
+| Active | This is the live map for the current meaningful session. | Keep the Human Snapshot, current focus, next action, and evidence current. |
+| Continued | The same map is being reused after a pause, compaction, or later prompt. | Read the Reference Pack first, summarize where we are, then continue. |
+| Parked | The work is intentionally paused, but not finished. | Record why it is paused, what is waiting, and how to resume. |
+| Handed off | Another agent or human should continue. | Record owner, boundary, evidence, files, commits, and continuation prompt. |
+| Promoted | Part of the session became durable elsewhere. | Link the GitHub issue, Mission Ledger item, Koda memory, committed doc, PR, or save-session note. |
+| Closed | Nothing required remains for this session. | Record final state, checks, durable saves, Git/GitHub/deploy state, and no required next action. |
+
+When multiple maps exist, choose the one whose main goal, project, branch, and
+latest next action match Hafiz's prompt. If more than one active map appears to
+match, pause before editing and say the practical conflict:
+
+```text
+I found two possible session maps for this work. I need to choose one before
+editing so we do not split the story.
+```
+
+Then recommend the likely map using current evidence: latest modified time,
+matching project, matching branch, matching commit/PR references, and matching
+Continuation Prompt.
+
+Do not merge two maps casually. Merge only by writing a clear handoff or
+promotion note that says which map continues and which map is parked, closed,
+or superseded.
 
 ## Smart Resume Behavior
 

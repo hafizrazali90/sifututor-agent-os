@@ -587,6 +587,12 @@ A review area is not done until all of these are true:
 - Koda is stored, updated, or intentionally skipped
 - the next review topic is stated
 
+## Decision Log
+
+| Date | Decision | Why it matters | Use it |
+| --- | --- | --- | --- |
+| 2026-06-29 | Session Map Lifecycle accepts the one meaningful session, one map rule. | Hafiz needs parallel and long-running sessions to stay understandable without duplicate maps for the same mission or one map stretched across unrelated work. | Use `session-map.md` lifecycle states and split rules before creating, reusing, parking, handing off, promoting, or closing a Session Map. |
+
 ## Immediate Next Review
 
 Continue with section 9: **Verification, QA, And Evidence**.

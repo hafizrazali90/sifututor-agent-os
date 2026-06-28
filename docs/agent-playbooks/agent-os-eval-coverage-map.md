@@ -53,6 +53,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Build handoff quality | AO-104 | Needs real feature/bug context, codebase entry points, risks, and evidence plan. A simple router fixture cannot prove a build-ready brief is complete. |
 | Enforcement layer choice | AO-105 | Needs the specific rule, repeated-failure history, danger level, and automation feasibility. A simple router fixture cannot honestly choose the best enforcement strength. |
+| Session Map lifecycle | AO-106 | Needs real parallel sessions, side paths, compaction, branch state, and handoff context. A simple fixture can catch obvious over-creation, but not whether two maps should be merged, parked, or split. |
 | Staff kit details | AO-073, AO-074 | Needs generated staff/developer onboarding artifacts, not only routing. |
 | Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity is executable. Full behavior comparison still needs adapter-aware checks that compare real Claude and Codex responses for approval gates, evidence standard, and close-out behavior. |
 | Pre-push batch completion | AO-094 | Needs real local commit context, current Session Map state, check output, and human-readable package review. A simple router fixture cannot honestly tell whether a batch tells one complete story. |

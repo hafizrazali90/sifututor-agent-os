@@ -25,12 +25,15 @@ format inside this skill.
 1. Identify whether a Session Map already exists for the current session.
 2. If no map exists and the session is non-trivial, create one from
    `docs/agent-playbooks/templates/session-map.md`.
-3. Keep the `Human Snapshot` current before changing deeper technical sections.
-4. Add or update side paths when the conversation branches.
-5. Record decisions, evidence, linked commits, Koda memories, GitHub issues,
+3. Use one map for one meaningful session. Reuse the same map for the same
+   main goal; create a new map only for a different mission, project, branch,
+   release path, owner, or confusing unrelated scope.
+4. Keep the `Human Snapshot` current before changing deeper technical sections.
+5. Add or update side paths when the conversation branches.
+6. Record decisions, evidence, linked commits, Koda memories, GitHub issues,
    PRs, Mission Ledger items, and continuation prompts when they matter.
-6. Keep active session maps local by default under `.agent-os/session-maps/`.
-7. Promote only durable examples, templates, or playbook changes into committed
+7. Keep active session maps local by default under `.agent-os/session-maps/`.
+8. Promote only durable examples, templates, or playbook changes into committed
    docs.
 
 ## Human-Facing Alias
