@@ -9,8 +9,10 @@ Current registry count: 21 lanes — 20 scoped files under
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
-map is already approved for the stated tier — do not ask Hafiz for permission to use
-a read-only check that is needed for the active task.
+map is already approved for the stated tier. If the lane is `auto-read` and it is
+relevant to the active task, use it proactively instead of asking Hafiz to remind
+the agent to check. This applies across diagnosis, planning, verify, QA, review,
+monitoring, release checks, and safe current-state evidence gathering.
 
 Credential files live in `~/.config/sifututor/agent-access/`.
 Do NOT read, echo, print, log, or commit secret values from any lane.
@@ -21,7 +23,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 
 | Tier | Meaning | Hafiz approval needed? |
 |------|---------|----------------------|
-| **auto-read** | Read-only; allowed whenever the task needs it | No |
+| **auto-read** | Read-only; expected whenever the task needs current evidence | No |
 | **write** | Modifies data, DNS, or config | Yes — state exact scope before acting |
 | **admin** | Full management plane; can break production | Yes — per-session explicit approval |
 | **critical** | Real money, real users, production DB writes | Yes — diagnosis first, then separate approval |
@@ -403,7 +405,7 @@ When Codex needs infrastructure access for a task:
 
 ```text
 1. Identify the required lane from this map.
-2. Check the tier. If auto-read → proceed.
+2. Check the tier. If auto-read and relevant → proceed without asking.
 3. If write/admin/critical → state the exact action and lane to Hafiz, wait for approval.
 4. Run the safe wrapper first to confirm access is working.
 5. Source the conf file in a subshell. Do not echo secrets.

@@ -65,17 +65,24 @@ Use it only as read-only reference.
   complete the active task. This does not allow reading repository `.env*`
   files, printing secrets, using unrelated credentials, destructive actions,
   or broad access outside the current task.
+- This standing approval applies across all Agent OS workflows when accuracy
+  depends on current evidence. For diagnosis, planning, verification, QA,
+  review, monitoring, and release checks, agents should proactively use
+  task-relevant approved read-only access instead of asking Hafiz to prompt for
+  it. Read-only evidence does not permit writes, deploys, data mutation,
+  critical-lane implementation, secret access, destructive actions, or broad
+  exploration outside the active task.
 - Never push, merge, deploy, or open a PR without explicit instruction in the current session.
 - Never bypass hooks or verification with `--no-verify` or equivalent flags.
 - Never make broad cleanup or adjacent refactors unless explicitly requested.
 - If requirements conflict, stop and ask for clarification.
 - If a task touches payments, commission, auth, migrations, or mobile API contracts, halt for human review before commit.
-- At the start of a multi-step task, ask for or infer a clear autopilot
-  boundary instead of requesting approval for every small step. Examples:
-  "continue until PR opened", "continue until merged but stop before deploy",
-  "continue until staging QA passes", or "one by one". Stay inside that
-  boundary, then stop at commit/push/PR/merge/deploy/production/destructive
-  gates unless the boundary explicitly includes them.
+- At the start of meaningful multi-step work, explain what done means in plain
+  language before asking for or inferring an autopilot boundary. Examples:
+  diagnosed only, fixed locally, committed, PR opened, staging verified,
+  production live, or production monitored. Then stay inside that boundary and
+  stop at commit/push/PR/merge/deploy/production/destructive gates unless the
+  boundary explicitly includes them.
 
 ## Agent Access Registry
 
@@ -101,7 +108,7 @@ Wrapper scripts for common checks live in `scripts/agent-access/`:
 
 Approval tiers (from `agent-access-map.md`):
 
-- **Auto-read**: no approval needed — use freely for reads, smoke, monitoring, DNS.
+- **Auto-read**: no approval needed — proactively use when relevant for reads, smoke, monitoring, DNS, and evidence gathering.
 - **Write**: Hafiz scope approval per session — e.g., "deploy to staging", "update DNS".
 - **Admin**: Hafiz scope approval per session — e.g., "run AutoSSL", "manage cPanel".
 - **Critical**: per-operation approval — payments, DB writes, auth changes, migrations.
@@ -140,9 +147,23 @@ print credentials to the terminal or to files.
   whether tests/guards passed, whether anything remains unverified, and whether
   the recommended next action is continue, QA, commit, save-session, or close.
 - When a task has many naturally connected steps, propose a single autopilot
-  boundary first instead of making Hafiz approve one micro-step at a time. Good
-  boundaries are concrete and risk-aware, such as "I will continue until the PR
-  is opened" or "I will continue until production monitoring is complete."
+  boundary first instead of making Hafiz approve one micro-step at a time. Say
+  what done means first so Hafiz knows the practical end goal for this task.
+  Then recommend the stop point and path so Hafiz does not need to remember the
+  workflow steps. Good boundaries are concrete and risk-aware, such as "I will
+  continue until the PR is opened" or "I will continue until production
+  monitoring is complete."
+- Interpret natural end-to-end phrases by intent, not exact wording. Phrases
+  like "proceed until done", "continue until done", "finish this end to end",
+  "do everything needed", "handle this fully", or "complete it properly" mean:
+  explain what done means, say how far the agent can go now, name what approval
+  is needed to go further, then continue until the approved stop point or a hard
+  risk gate.
+- Previously agreed context counts. If Hafiz and the agent already agreed the
+  scope, path, approvals, and stop point in the current task context, a later
+  "proceed until finish" should continue through that approved path without
+  re-asking for the same approvals. Pause only if new scope, risk, evidence,
+  access failure, or an unapproved boundary appears.
 - Avoid user-facing filler labels such as `PARTIAL`, `BLOCKER`, `Gate 2A`, or
   `Critical Save` unless Hafiz asks for a formal report, the label is useful
   for teaching industry/Agent OS terminology, or a playbook requires an exact

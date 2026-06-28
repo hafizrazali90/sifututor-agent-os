@@ -53,6 +53,13 @@ safety boundary does not forbid it
 
 If any part is missing, the agent must say what is missing in plain language.
 
+For `auto-read` evidence lanes, "approval gate allows it" means the agent should
+use the lane proactively when it is relevant to the active task. The agent should
+not ask Hafiz to approve every safe read-only check, and should not skip the
+check silently. The limit is scope: use the narrowest relevant read-only source,
+never expose secrets, and stop before writes, deploys, mutation, destructive
+actions, or critical-lane implementation.
+
 ## Default Internal Manifest
 
 For a normal Sifututor umbrella Codex session:
@@ -69,7 +76,8 @@ For a normal Sifututor umbrella Codex session:
 | Plane | `exception-only` | Do not use by default; only if Hafiz explicitly asks in the current session. |
 | Planner | `unknown` | Read-only intake when connected and relevant. |
 | Google Drive | `unknown` | Check connector/tooling before claiming. |
-| Production logs | `unknown` | Must be explicitly connected and risk-reviewed. |
+| Approved auto-read lanes | `unknown` | Check access map; if available and relevant, use proactively for current evidence. |
+| Production logs | `unknown` | Read-only monitoring may be auto-read when scoped; writes/resolution need approval. |
 | Deploy | `blocked` or `not_connected` | Always requires explicit approval; often absent by default. |
 | `.env*` and secrets | `forbidden` | Do not read, reveal, store, or commit. |
 | `live/` modification | `forbidden` | `live/` is read-only reference. |

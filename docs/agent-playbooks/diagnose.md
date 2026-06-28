@@ -5,6 +5,8 @@ Use this for bugs, failing tests, unexpected behavior, or unclear root cause.
 ## Rules
 
 - Start read-only unless the user explicitly approved implementation.
+- Use relevant approved auto-read access proactively during diagnosis. Do not
+  ask Hafiz to prompt for safe read-only evidence that the active task needs.
 - Separate symptoms, hypotheses, evidence, and fix recommendation.
 - For auth, payments, invoices, commissions, migrations, deployment, financial
   behavior, or mobile API contracts, this is Phase A and must stop before

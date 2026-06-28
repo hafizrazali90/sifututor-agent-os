@@ -166,6 +166,7 @@ Read these as the core internal kit:
 | --- | --- |
 | Full infrastructure map | [agent-os-infrastructure.md](agent-os-infrastructure.md) |
 | Claude/Codex parity contract | [agent-os-parity-contract.md](agent-os-parity-contract.md) |
+| Roles and responsibilities | [agent-os-roles.md](agent-os-roles.md) |
 | Workflow skill registry | [agent-os-skill-registry.md](agent-os-skill-registry.md) |
 | Hook and dispatcher map | [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md) |
 | How Hafiz and agents work together | [working-with-hafiz.md](working-with-hafiz.md) |

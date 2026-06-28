@@ -167,6 +167,31 @@ Mission Ledger is the map of remembered work. Planner is intake. GitHub is
 engineering execution. Current status and next action belong in the chat,
 save-session report, active task state, or linked GitHub/PR evidence.
 
+## Work Intake Source Roles
+
+Use this model when deciding whether an input should become discussion,
+diagnosis, GitHub issue, Mission Ledger item, Koda memory, or implementation.
+
+```text
+Every input is a signal first, not truth yet.
+The agent classifies it, checks enough current evidence, then routes it.
+```
+
+| Source | Role |
+| --- | --- |
+| Hafiz chat | Current direction. |
+| Staff report | Real-world symptom. |
+| Planner | Staff intake/context. |
+| GitHub | Engineering execution. |
+| Koda | Durable memory/lesson. |
+| Mission Ledger | Bigger/future/parked work. |
+| Production signal | Live system evidence. |
+| Agent-discovered issue | Finding that needs routing. |
+
+Current repo, test, runtime, and production-safe evidence decide what is true
+now. Hafiz still owns product direction, priority, business rules, and risk
+acceptance.
+
 ## Agent Close-Out Shape
 
 Every meaningful close-out should answer:

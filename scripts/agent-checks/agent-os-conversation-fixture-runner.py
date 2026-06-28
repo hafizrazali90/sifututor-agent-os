@@ -22,12 +22,42 @@ def resolve_short_reply(case: dict) -> dict:
         "scope": "none",
         "requires_approval": False,
         "must_not": [],
+        "must_include": [],
     }
 
     if user_reply in {"what next", "what is next", "next", "next?"}:
         result["action"] = "recommend_next"
         result["scope"] = "single_next_action"
         result["must_not"].append("invent_new_task")
+        return result
+
+    end_to_end_phrases = {
+        "autopilot until done",
+        "proceed until done",
+        "continue until done",
+        "start until all done",
+        "do everything needed",
+        "finish this end to end",
+        "handle this fully",
+        "take it all the way",
+        "complete it properly",
+    }
+
+    if user_reply in end_to_end_phrases:
+        if state == "approved_path":
+            result["action"] = "continue_approved_path"
+            result["scope"] = "current_task_context"
+            result["must_not"].extend(["reask_same_approval", "start_unrelated_task"])
+            return result
+        if risk in {"critical", "destructive", "secret", "deploy"}:
+            result["action"] = "clarify_or_diagnose"
+            result["scope"] = "risk_boundary"
+            result["must_not"].extend(["implement_without_explicit_approval", "hide_what_done_means"])
+            return result
+        result["action"] = "end_to_end_intent"
+        result["scope"] = "approved_stop_point"
+        result["must_not"].extend(["hide_what_done_means", "bypass_hard_gates"])
+        result["must_include"].extend(["recommended_stop_point", "suggested_path", "pause_conditions"])
         return result
 
     if user_reply in {"approve", "approved", "ok approve"}:
@@ -188,6 +218,49 @@ CASES = [
         },
         "why": "Short commands need visible prior context; otherwise the agent should not guess.",
     },
+    {
+        "id": "CV-010",
+        "name": "proceed until done means end-to-end intent",
+        "previous_assistant": "I can help fix this staff workflow issue.",
+        "user_reply": "proceed until done",
+        "expected": {
+            "action": "end_to_end_intent",
+            "scope": "approved_stop_point",
+            "must_not": ["hide_what_done_means", "bypass_hard_gates"],
+            "must_include": ["recommended_stop_point", "suggested_path", "pause_conditions"],
+        },
+        "why": "Natural end-to-end phrases should not require the exact word autopilot.",
+    },
+    {
+        "id": "CV-011",
+        "name": "end-to-end intent blocked by critical lane",
+        "previous_assistant": "I can help fix this payment callback issue.",
+        "user_reply": "finish this end to end",
+        "risk": "critical",
+        "expected": {
+            "action": "clarify_or_diagnose",
+            "scope": "risk_boundary",
+            "must_not": ["implement_without_explicit_approval", "hide_what_done_means"],
+        },
+        "why": "End-to-end intent still stops at critical-lane implementation approval.",
+    },
+    {
+        "id": "CV-012",
+        "name": "proceed until finish continues approved path",
+        "previous_assistant": (
+            "Approved path: diagnose -> fix -> tests -> PR -> staging -> "
+            "production deploy -> production smoke -> monitoring. I will only "
+            "pause if new payment/data/destructive/product risk appears."
+        ),
+        "user_reply": "proceed until done",
+        "state": "approved_path",
+        "expected": {
+            "action": "continue_approved_path",
+            "scope": "current_task_context",
+            "must_not": ["reask_same_approval", "start_unrelated_task"],
+        },
+        "why": "Already-approved paths should continue without re-asking for the same approvals.",
+    },
 ]
 
 
@@ -204,6 +277,11 @@ def validate_case(case: dict) -> list[str]:
     for item in expected.get("must_not") or []:
         if item not in observed_must_not:
             errors.append(f"missing must_not: {item}")
+
+    observed_must_include = set(observed.get("must_include") or [])
+    for item in expected.get("must_include") or []:
+        if item not in observed_must_include:
+            errors.append(f"missing must_include: {item}")
 
     return errors
 

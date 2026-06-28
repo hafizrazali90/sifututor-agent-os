@@ -72,6 +72,7 @@ Every workflow should answer these questions before it is called done:
 | What tools/state systems are used? | Chat, docs, GitHub, Planner, Koda, Mission Ledger, tests, browser, server, or logs. |
 | What evidence is required? | What proof shows the work is real and not just described? |
 | What approval is required? | What boundary needs explicit Hafiz approval? |
+| What does done mean? | Should this task end at diagnosis, local fix, commit, PR, staging, production, or monitored live state? |
 | When does it exit? | What state means the workflow is finished or ready for the next workflow? |
 | What should be saved? | What goes to docs, Koda, GitHub, Planner, Mission Ledger, or final reply? |
 | What can go wrong? | The common failure mode the agent must watch for. |
@@ -83,8 +84,32 @@ Every workflow should answer these questions before it is called done:
 - Prefer checking the real source over asking Hafiz when the answer is
   discoverable.
 - Keep living drafts updated during architecture and workflow discussions.
+- For meaningful work, explain what done means before asking how far to
+  continue. "Fixed" can mean diagnosed only, fixed locally, committed, PR
+  opened, staging verified, production live, or production monitored.
+- Recommend the stop point and suggested path. Hafiz should not need to remember
+  or list the workflow steps; the agent should suggest the route and explain why
+  that route fits the task.
+- Treat natural end-to-end phrases by intent, not exact wording. "Proceed until
+  done", "continue until done", "do everything needed", and "finish this end to
+  end" all mean the agent should explain what done means, say how far it can go
+  now, name what approval is needed to go further, and then continue until the
+  approved stop point or a hard gate.
+- Check the current task context before pausing. If the scope, path, approvals,
+  and stop point were already clearly agreed, continue through that approved
+  path. Pause only if new scope, risk, evidence, access failure, or an
+  unapproved boundary appears.
+- Say "I will only pause if..." before meaningful execution. Pause reasons
+  should be specific to the task, such as new scope, contradictory evidence,
+  unavailable access, product/business decision, unapproved production action,
+  destructive action, or critical-lane risk.
+- Before implementation, explain the intended code/workflow change in plain
+  English: options, recommendation, what will change, what will not change,
+  risks/tradeoffs, and evidence plan.
 - Do not treat memory, old chat, staff symptoms, or a screenshot as stronger
   than current code, docs, data, tests, or production evidence.
+- When current evidence needs approved read-only access, use the narrowest
+  relevant auto-read lane proactively instead of asking Hafiz to prompt for it.
 - Ask Hafiz to verify only business judgment, subjective acceptance, unsafe
   actions, unavailable access, final risk acceptance, priority, or scope.
 - Never read or modify `.env*`, secrets, raw tokens, or files under `live/`.
@@ -200,6 +225,13 @@ The practical job of this workflow is to stop messy inputs from becoming messy
 engineering work. Intake should identify what was reported, what is actually
 known, what is still assumption, and where the work belongs next.
 
+Confirmed decision:
+
+```text
+Every input is a signal first, not truth yet.
+The agent classifies it, checks enough current evidence, then routes it.
+```
+
 Official principle:
 
 ```text
@@ -208,18 +240,21 @@ Hafiz requests are current direction.
 GitHub issues are engineering execution.
 Mission Ledger is for important later or bigger work.
 Koda is durable memory, not current task state.
+Current repo/test/production evidence decides what is true now.
 ```
 
 Use this source split:
 
 | Source | Treat it as | First move |
 | --- | --- | --- |
-| Hafiz direct request | Current instruction or product direction | Route immediately, then decide whether to discuss, design, diagnose, or build. |
-| Staff report / Planner | Symptom, not proven root cause | Do quick read-only diagnosis before creating engineering work. |
-| GitHub issue | Execution-ready engineering ticket | Check scope, current branch/state, and whether the issue is still true. |
-| Koda memory | Historical lesson or preference | Verify against current files/state before acting. |
-| Production signal/log | Possible live issue | Use read-only evidence first; route critical domains through critical lane. |
-| Mission Ledger | Bigger goal or remembered follow-up | Promote to GitHub, PRD, QA plan, or Koda only when ready. |
+| Hafiz direct request | Current direction | Route immediately, then decide whether to discuss, design, diagnose, or build. If it conflicts with existing GitHub scope, explain the mismatch before expanding work. |
+| Staff report | Real-world symptom | Gather reproduction context and quick read-only evidence before treating it as engineering work. |
+| Planner card | Staff intake/context | Read as operational context for SIMS/mobile/support work; do not treat as engineering truth or modify Planner unless Hafiz asks. |
+| GitHub issue / PR | Engineering execution record | Check scope, current branch/state, and whether the issue is still true. |
+| Koda memory | Durable memory/lesson | Treat as historical/trusted context and verify against current files/state before acting. |
+| Production signal/log | Live system evidence | Use read-only evidence first; route critical domains through critical lane. |
+| Mission Ledger | Bigger goal, future work, or parked decision | Promote to GitHub, PRD, QA plan, or Koda only when ready. |
+| Agent-discovered issue | Finding that needs routing | Report it, then fix if in scope, create/link GitHub if execution-ready, or park it in Mission Ledger if bigger/future. |
 
 Intake outcomes:
 
@@ -237,6 +272,22 @@ For coding work, prefer creating or linking a GitHub issue after quick
 diagnosis. Do not create an issue from a vague symptom if the agent has not yet
 identified the affected role, likely project/module, and one or two pieces of
 supporting evidence.
+
+Detailed intake rules:
+
+- Planner should not automatically become a GitHub issue without quick
+  diagnosis.
+- Staff reports should always be treated as symptoms first.
+- Agent-discovered issues should be reported before action unless they are
+  clearly inside the approved scope and safe to fix.
+- Hafiz chat can override priority or direction, but if it expands a GitHub
+  issue, the agent must explain the scope mismatch before expanding work.
+- Koda can explain why a rule exists, but current files, tests, runtime
+  evidence, or production-safe evidence decide whether the old memory still
+  applies.
+- If a relevant auto-read lane exists, the agent should use it during quick
+  diagnosis instead of skipping evidence or asking Hafiz to repeat the access
+  instruction.
 
 Scenario examples:
 
@@ -294,6 +345,39 @@ Use [product-design.md](product-design.md). For SIMS browser UI/UX work, read
 the tracked `sifu-tutor/docs/ui-ux/` package before specifying screens,
 components, copy, states, or quality gates.
 
+Confirmed implementation-readiness rule:
+
+```text
+Before code is written, Hafiz should understand the intended implementation in
+plain English. The agent should explain options, recommendation, what will
+change, what will not change, likely files/modules, risks, and evidence plan.
+```
+
+This does not mean Hafiz must manually review code. It means the agent must
+translate the implementation plan into understandable behavior before build
+starts.
+
+Use conversational preparation depth, not numeric labels:
+
+| Phrase | Use when |
+| --- | --- |
+| `quick explanation` | Small safe changes where a short English explanation is enough before implementation. |
+| `design brief` | User workflow, staff process, unclear expected behavior, or multiple implementation options. |
+| `full design` | Major workflow, critical lane, multi-role/module work, backend/frontend contract, or handoff to another builder. |
+
+The agent should recommend the lightest safe preparation, but risk can force
+deeper preparation. Hafiz can ask for more or less, and the agent should explain
+any safety concern in normal language.
+
+Content standard:
+
+- Quick explanation answers what is wrong, what will change, what will not be
+  touched, and how it will be checked.
+- Design brief explains the problem, current behavior, affected users, options,
+  recommendation, tradeoffs, evidence plan, and decision needed.
+- Full design maps the workflow/spec/contract/test plan/build prompt before
+  implementation.
+
 Evidence required:
 
 - Current-state evidence from code, docs, Planner, Koda, or production-safe
@@ -328,6 +412,15 @@ Use [diagnose.md](diagnose.md), then build only after the scope and approval
 are clear. If the bug touches a critical domain, route through the Critical Lane
 workflow first.
 
+Simple version:
+
+```text
+Do not just change code and ask Hafiz to test.
+Understand the symptom, check the current truth, explain the planned fix,
+implement the smallest real cause, then prove both the code and the real user
+journey where the behavior is user-facing.
+```
+
 Evidence required:
 
 - Symptom and affected user journey described in plain language.
@@ -336,6 +429,46 @@ Evidence required:
 - Focused test that fails before or would have caught the bug, where feasible.
 - Permanent E2E regression decision for user-facing workflows.
 - Agent-run human-journey proof when safe.
+
+Scenario:
+
+| Staff says | Agent should do |
+| --- | --- |
+| `The invoice button does nothing` | Treat this as a symptom first. Identify the page, role, and expected action; check current code/browser/API/log evidence where safe; explain the likely cause and planned fix in English; fix the smallest cause; add or update a regression test; run focused checks; use browser or Playwright proof when feasible; then report what changed, what was checked, what remains, and the recommended next action. |
+
+What done means examples:
+
+| Situation | What done means | Why |
+| --- | --- | --- |
+| Clear low-risk bug | Fixed, tested, reviewed, and committed | The useful end is a saved fix, but push/PR still depends on approval. |
+| User-facing staff workflow bug | Staging verified when staging exists and is safe | The real proof is that the affected journey works outside local code. |
+| Production incident | Production monitored after explicit deploy approval | The job is not done until live behavior is healthy after release. |
+| Critical invoice/payment/auth/mobile API bug | Diagnosis first, then Hafiz approves how far to continue | The first end state is understanding risk before implementation. |
+
+Daily control shape:
+
+```text
+What done means:
+<true end goal>
+
+My recommended stop point:
+<where I think we should stop for this task>
+
+Why:
+<short reason>
+
+Suggested path:
+<plain workflow steps>
+
+I will proceed until:
+<current approved boundary>
+
+I will only pause if:
+<new scope, risk, evidence, access, approval, or owner decision appears>
+
+To go further:
+<approval phrase or decision needed>
+```
 
 Exit when the fix is verified, QA/review risk is addressed, and the repo state
 is clear: local-only, committed, pushed, PR open, merged, deployed, or live
@@ -363,9 +496,23 @@ Use product design artifacts first when the feature is more than a narrow
 change. Use vertical-slice TDD where applicable: one failing test, one
 implementation, one passing test, repeat.
 
+Simple version:
+
+```text
+For features, the agent is not only the coder. It is also the first tester and
+workflow checker. Backend/unit tests prove the engine; E2E, browser/mobile
+smoke, API evidence, screenshots, or a clear QA checklist prove that a real
+staff/admin/parent/tutor/student/customer can complete the journey.
+```
+
 Evidence required:
 
 - Clear acceptance rules.
+- What done means and why: local, committed, PR, staging, production, or
+  monitored live state.
+- Suggested path and stop point, in plain workflow steps.
+- Pause conditions: the specific situations that would make the agent stop and
+  ask Hafiz instead of continuing.
 - Backend/API/state contract when behavior crosses modules.
 - Tests at the right layer.
 - Permanent E2E coverage for changed user workflows by default.

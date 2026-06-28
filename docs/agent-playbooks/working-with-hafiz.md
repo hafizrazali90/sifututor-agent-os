@@ -44,6 +44,8 @@ These preferences were stated by Hafiz on 2026-06-04.
 | Approval bundles | Bundle sensible adjacent actions when scope is exact. | Reduce nagging for safe sequences, but keep critical/deploy/destructive/secret/production actions separate. |
 | Relaxed work packets | Agent OS/docs/workflow work should not require approval for every small substep once Hafiz says proceed. | Continue the safe packet, update living docs, run non-destructive checks, and stop at risk boundaries. |
 | Autopilot boundary | For multi-step work, Hafiz prefers one clear stopping point instead of approving every small action. | At the start, ask for or infer the boundary: one by one, until PR opened, until merged, until staging QA passes, until deploy, or until monitoring completes. Continue inside that boundary and stop at any risk boundary not explicitly included. |
+| What done means | Hafiz needs to know the practical end goal before deciding how far the agent should continue. | Explain what "done" means for the task: diagnosed only, fixed locally, committed, PR opened, staging verified, production live, or production monitored. Explain why, then let Hafiz approve a tighter or wider boundary. |
+| Recommended path | Hafiz should not need to remember the workflow steps. | Suggest the stop point and path, such as diagnose -> fix -> test -> QA/review -> commit -> PR -> staging -> production monitoring, adjusted to the task risk. |
 | Task-scoped access | When Hafiz asks the agent to finish a task end-to-end, the agent should use required scoped access without another permission prompt. | Use the narrowest relevant local access file/tool, never print secrets, and continue through required verify, QA, deploy, smoke, or monitoring unless the next action is destructive or outside the task. |
 
 ## How To Interpret Short Commands
@@ -54,6 +56,8 @@ Short commands are common and should be handled by context, not keyword alone.
 | --- | --- | --- |
 | `ok` | acknowledgement or light approval | Was there a concrete proposed action? |
 | `proceed` | act immediately on the last recommended step | Is the last step clear and safe to execute? |
+| `proceed until done` / `continue until done` | end-to-end intent | What does done mean, how far can the agent go now, and what approval is needed to go further? |
+| `proceed until finish` after prior agreement | continue the already-approved path | Was the scope/path/approval already clearly decided in this task context? |
 | `approve` | approve the last explicit approval request, including grouped actions if the request grouped them | Was the grouped action exact, such as commit+push with file list/SHA/target? |
 | `next` / `what next` | recommend the single next action | Is the current work actually complete? |
 | `pause` / `stop` | stop action and report current state | Are tools or servers still running? |
@@ -62,15 +66,68 @@ Short commands are common and should be handled by context, not keyword alone.
 If the previous action was ambiguous, ask a short clarification instead of
 guessing.
 
-For multi-step tasks, prefer asking for one boundary instead of repeatedly
-asking for each micro-action. Examples:
+For multi-step tasks, explain what done means first, then prefer asking for one
+boundary instead of repeatedly asking for each micro-action. Examples:
 
 ```text
+What done means: the PR is opened and ready for review.
 I can autopilot this until the PR is opened, then stop.
 ```
 
 ```text
+What done means: the fix is live and monitoring is clean after release.
 I can autopilot this until it is merged, but I will stop before deploy.
+```
+
+End-to-end intent does not require one exact phrase. Treat these as the same
+kind of instruction:
+
+```text
+proceed until done
+continue until done
+start until all done
+do everything needed
+finish this end to end
+handle this fully
+take it all the way
+complete it properly
+```
+
+For all of them, explain what done means, how far the agent can go now, and
+what approval or decision is needed to go further.
+
+If the path was already discussed and approved, do not restart the approval
+conversation. Continue using the approved path and say:
+
+```text
+I will continue using the already-approved path.
+I will only pause if something new changes scope, risk, evidence, access, or
+the approval boundary.
+```
+
+Daily shape:
+
+```text
+What done means:
+<the true end goal>
+
+My recommended stop point:
+<where I think we should stop for this task>
+
+Why:
+<short reason>
+
+Suggested path:
+<plain workflow steps>
+
+I will proceed until:
+<the current approved boundary>
+
+I will only pause if:
+<new scope, risk, evidence, access, approval, or owner decision appears>
+
+To go further:
+<plain approval phrase or decision needed>
 ```
 
 ```text
@@ -329,6 +386,14 @@ The agent should proactively:
 - create a GitHub issue for coding work when required
 - run guard checks before commit
 - ask for or state an autopilot boundary for multi-step work
+- explain what done means before asking how far to continue
+- recommend the stop point and suggested path instead of making Hafiz list the
+  steps
+- say "I will only pause if..." so Hafiz knows which interruptions are useful
+- understand natural end-to-end phrases such as "proceed until done" or
+  "finish this fully"
+- continue through an already-approved path without re-asking for the same
+  approvals
 - suggest one next action after each meaningful step
 - combine approval requests for sensible action bundles when safe and exact
 - save durable corrections
@@ -365,6 +430,42 @@ non-technical explanation before or after the code-level detail.
 Workflow labels are allowed when they help Hafiz learn what the industry or the
 Agent OS calls something, but they should not be used as filler. If the agent
 uses a label, it should translate the label immediately.
+
+Before implementation, keep the preparation language conversational. Do not
+ask Hafiz to remember numeric levels. Say:
+
+```text
+quick explanation
+design brief
+full design
+```
+
+Use them in normal sentences:
+
+```text
+This looks small enough for a quick explanation.
+```
+
+```text
+This needs a design brief first because there are a few ways to do it.
+```
+
+```text
+This needs full design before implementation because it touches invoices and
+payment state.
+```
+
+The goal is for Hafiz to understand the implementation direction like code
+translated into English, not to memorize Agent OS terminology.
+
+Minimum content:
+
+- Quick explanation: what is wrong, what will change, what will not be touched,
+  and how it will be checked.
+- Design brief: problem, current behavior, affected users, options,
+  recommendation, tradeoffs, evidence plan, and decision needed.
+- Full design: workflow, rules, states, UX, backend/API contract when needed,
+  risks, evidence plan, implementation slices, and build prompt.
 
 ## Good Behavior Examples
 
@@ -459,6 +560,23 @@ Answered by Hafiz on 2026-06-04:
 - autopilot boundary: for multi-step tasks, ask for or infer one clear stopping
   point so Hafiz can approve the whole safe path once instead of micro-approving
   every step.
+- what done means: before meaningful work, explain the practical end goal so
+  Hafiz can decide whether to stop at diagnosis, local fix, commit, PR,
+  staging, production, or monitoring.
+- recommended path: the agent suggests the stop point and workflow path; Hafiz
+  should not need to know or list commit -> push -> PR -> merge -> staging ->
+  production -> monitoring steps from memory.
+- end-to-end intent: natural phrases such as `proceed until done`, `continue
+  until done`, `finish this end to end`, and `do everything needed` mean the
+  agent should carry the task as far as safely allowed, while still stopping at
+  hard approval/risk gates.
+- context-aware continuation: if the current task context already approved the
+  scope, path, and stop point, `proceed until finish` means continue that path
+  without re-asking unless new scope, risk, evidence, access, or approval
+  boundary appears.
+- pause wording: use "I will only pause if..." in normal conversation. The pause
+  reasons should be specific to the task and current context, not a repeated
+  checklist of every possible gate.
 
 ## Open Questions
 

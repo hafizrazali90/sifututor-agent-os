@@ -10,6 +10,7 @@ Use these when the user asks for:
 - Sifututor Agent OS overview: [agent-os.md](agent-os.md)
 - Agent OS infrastructure map: [agent-os-infrastructure.md](agent-os-infrastructure.md)
 - Agent OS Claude/Codex parity contract: [agent-os-parity-contract.md](agent-os-parity-contract.md)
+- Agent OS roles and responsibilities: [agent-os-roles.md](agent-os-roles.md)
 - Agent OS skill registry: [agent-os-skill-registry.md](agent-os-skill-registry.md)
 - Agent OS hook and dispatcher map: [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md)
 - fresh Agent OS session startup: [agent-os-quick-start.md](agent-os-quick-start.md)

@@ -10,6 +10,7 @@ approval.
 The model is:
 
 ```text
+Explain what done means first.
 Relaxed inside a clear safe work packet.
 Strict at risk boundaries.
 Ask for one clear autopilot boundary instead of many micro-approvals.
@@ -26,11 +27,16 @@ boundaries such as deploys, production, secrets, payment, auth, invoices,
 commissions, migrations, mobile API contracts, protected branches, or
 destructive git actions.
 
-The practical compromise: for multi-step work, the agent should ask Hafiz for
-one clear stopping point, then keep moving until that point. The stopping point
-can be "one by one", "PR opened", "merged", "staging QA passed", "deployed",
-or "monitoring complete". Anything outside that named boundary still needs a
-fresh explicit decision.
+The practical compromise: for multi-step work, the agent should explain what
+done means first, then ask Hafiz for one clear stopping point, then keep moving
+until that point. "Done" may mean diagnosed only, fixed locally, committed, PR
+opened, staging verified, production live, or production monitored. Anything
+outside that named boundary still needs a fresh explicit decision.
+
+Previously agreed context counts. If the current task context already contains
+the scope, path, approvals, and stop point, the agent should continue through
+that approved path without asking again for the same decision. The agent pauses
+only when something new changes scope, risk, evidence, access, or approval.
 
 ## Current Scope
 
@@ -58,6 +64,7 @@ the action is non-destructive and inside the current request:
 | Read normal docs and code | Do not read `.env*`, production secrets, or modify `live/`. |
 | Search files, git status, and git diff | Keep it scoped to the current repo/task. |
 | Run safe local checks | Commands must be non-destructive and not require production access. |
+| Use approved auto-read access | Only the narrowest task-relevant read-only lane from `agent-access-map.md`; no writes, deploys, mutation, or secret output. |
 | Update living draft docs | Only when Hafiz asked to document the discussion or said to proceed. |
 | Link a new docs source from indexes | Only when it is part of the current docs/workflow packet. |
 | Save a clear correction to Koda | Only behavior-changing lessons; no secrets or vague progress notes. |
@@ -68,18 +75,27 @@ the action is non-destructive and inside the current request:
 When Hafiz says `proceed`, `proceed next`, or confirms the recommendation, the
 agent may complete the safe packet without asking for each substep.
 
-For any packet with more than one natural step, the agent should name the
+For any packet with more than one natural step, the agent should explain what
+done means, recommend the stop point, show the suggested path, and name the
 autopilot boundary before or at the start of execution.
 
 Examples:
 
 ```text
+What done means: the PR is opened and ready for review.
+My recommended stop point: PR opened.
+Suggested path: diagnose -> fix -> test -> review -> commit -> push -> open PR.
 Autopilot boundary: I will continue until the PR is opened, then stop.
+I will only pause if: new scope, risk, evidence, access, or approval issues appear.
 ```
 
 ```text
+What done means: staging QA passes for the changed workflow.
+My recommended stop point: staging verified.
+Suggested path: diagnose -> fix -> test -> review -> PR -> staging deploy -> staging QA.
 Autopilot boundary: I will continue until staging QA passes, then report before
 production.
+I will only pause if: staging evidence fails, scope changes, or production/critical risk appears.
 ```
 
 ```text
@@ -110,10 +126,17 @@ Hafiz has granted standing task-scoped approval for agents to use the narrowest
 required local access files and connected tools when he has already asked the
 agent to finish a task end-to-end.
 
-This means the agent should not stop to ask another permission question just to
-read an approved local agent-access file or run a connected tool that is needed
-for the active task. Examples:
+This also applies to evidence gathering inside all Agent OS workflows. When
+accuracy depends on current evidence, the agent should proactively use the
+narrowest relevant approved read-only access instead of waiting for Hafiz to
+say "check the tool" or "verify with access".
 
+This means the agent should not stop to ask another permission question just to
+read an approved local agent-access file or run a connected read-only tool that
+is needed for the active task. Examples:
+
+- safe read-only access during diagnosis, planning, verify, QA, review, and
+  monitoring
 - authenticated production smoke after Hafiz says to continue until deploy
 - read-only monitoring tokens after Hafiz asks for post-deploy monitoring
 - scoped server access when a deploy/preflight task already requires it
@@ -125,6 +148,7 @@ Standing access approval is not blanket access. The agent must still:
 - keep secrets out of chat, docs, screenshots, logs, commits, and Koda
 - avoid repository `.env*` files and `live/`
 - avoid unrelated credentials or systems
+- avoid broad evidence gathering outside the active task
 - stop before destructive data/file actions unless Hafiz explicitly requested
   that destructive action
 - keep deploy, push, PR, merge, and critical-lane implementation tied to an
@@ -180,10 +204,12 @@ These actions must not be hidden inside a larger bundle:
 | --- | --- |
 | `proceed` | Continue the last clear safe recommendation. |
 | `proceed next` | Continue the next review/action from visible chat context. |
+| `proceed until done` / `continue until done` | Treat as end-to-end intent. Explain what done means, how far the agent can go now, and what approval is needed to go further. |
+| `proceed until finish` after a clear approved path | Continue using the already-approved path. Do not re-ask for approvals already included in the current task context. |
 | `approve` | Approve the last exact approval request, including a bundle if the request named it. |
 | `yes` | Confirm the current recommendation or discussion point; act if the action is clear and safe. |
 | `what next` | Recommend one next step; do not scatter options unless there is a real decision. |
-| `autopilot until <boundary>` | Continue through the named safe path and stop at the boundary or any unapproved risk gate. |
+| `autopilot until <boundary>` / `finish this end to end` / `do everything needed` | Continue through the named or natural safe path and stop at the boundary or any unapproved risk gate. |
 
 If there is no clear previous recommendation or exact approval request, ask one
 short clarification.
@@ -192,8 +218,16 @@ short clarification.
 
 During a safe work packet, the agent should:
 
-- ask for or state the autopilot boundary when the work has multiple connected
-  steps
+- explain what done means, then ask for or state the autopilot boundary when the
+  work has multiple connected steps
+- recommend the stop point and suggested path so Hafiz does not need to know or
+  list every workflow step
+- recognize natural end-to-end intent instead of requiring the exact word
+  `autopilot`
+- check whether the path was already approved in the current task context before
+  pausing at a normal approval boundary
+- say "I will only pause if..." using context-aware reasons, not a generic wall
+  of approval labels
 - keep moving until the packet is complete or hits a boundary
 - give short progress updates while working
 - update living docs as decisions are made

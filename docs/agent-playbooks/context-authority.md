@@ -29,6 +29,13 @@ Hafiz owns business/product truth.
 Code, tests, logs, and runtime evidence prove technical truth.
 ```
 
+For Work Intake, use the same principle in shorter form:
+
+```text
+Every input is a signal first, not truth yet.
+The agent classifies it, checks enough current evidence, then routes it.
+```
+
 ## Context Authority Ladder
 
 Use this ladder when deciding what to trust first.

@@ -43,6 +43,7 @@ def validate_capability_record(record: dict) -> list[str]:
     safety = normalize(record.get("safety"))
     reporting = normalize(record.get("reporting"))
     actor = normalize(record.get("actor") or "agent")
+    tier = normalize(record.get("tier"))
     checked = bool(record.get("checked"))
 
     if state not in ALLOWED_STATES:
@@ -59,6 +60,12 @@ def validate_capability_record(record: dict) -> list[str]:
 
     if state == "exception_only" and action in {"use", "write", "claim"} and approval != "explicit":
         errors.append("exception-only capability needs explicit current-session request before use")
+
+    if tier == "auto_read" and state in ACTIONABLE_STATES:
+        if action in {"ask_permission", "skip"}:
+            errors.append("auto-read capability should be used proactively when task-relevant")
+        if action == "use" and approval in {"requested", "explicit"}:
+            errors.append("auto-read capability should not need extra approval when task-relevant")
 
     if state == "forbidden" and action != "refuse":
         errors.append("forbidden capability must be refused, not worked around")
@@ -289,6 +296,38 @@ CASES = [
         },
         "should_pass": False,
         "why": "Agents must tell Hafiz what is missing instead of silently skipping capability work.",
+    },
+    {
+        "id": "CP-014",
+        "name": "auto-read evidence used proactively",
+        "record": {
+            "name": "monitoring_readonly",
+            "state": "available",
+            "action": "use",
+            "approval": "not_needed",
+            "safety": "safe",
+            "tier": "auto_read",
+            "checked": True,
+            "reporting": "plain",
+        },
+        "should_pass": True,
+        "why": "Approved read-only evidence should be used when it is relevant to the active task.",
+    },
+    {
+        "id": "CP-015",
+        "name": "auto-read evidence should not ask again",
+        "record": {
+            "name": "monitoring_readonly",
+            "state": "available",
+            "action": "ask_permission",
+            "approval": "requested",
+            "safety": "safe",
+            "tier": "auto_read",
+            "checked": True,
+            "reporting": "plain",
+        },
+        "should_pass": False,
+        "why": "Extra permission questions for task-relevant auto-read access create the back-and-forth Hafiz wants to remove.",
     },
 ]
 
