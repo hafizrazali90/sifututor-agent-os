@@ -141,6 +141,127 @@ def render_table(rows: list[dict[str, str]], *, status_key: str = "Status") -> s
     return "\n".join(parts)
 
 
+def status_label(status: str) -> str:
+    css = status_class(status)
+    label = status.strip().replace("_", " ").replace("-", " ")
+    label = " ".join(label.split())
+    return f"<span class=\"badge {css}\">{markdown_inline(label.title())}</span>"
+
+
+def status_counts(rows: list[dict[str, str]]) -> dict[str, int]:
+    counts = {"done": 0, "active": 0, "waiting": 0, "neutral": 0}
+    for row in rows:
+        counts[status_class(row.get("Status", ""))] += 1
+    return counts
+
+
+def render_metric_strip(progress: list[dict[str, str]], decisions: list[dict[str, str]], side_paths: list[dict[str, str]]) -> str:
+    counts = status_counts(progress)
+    metrics = [
+        ("Moving", str(counts["active"]), "Open work in this session"),
+        ("Finished", str(counts["done"]), "Completed or already pushed"),
+        ("Parked", str(counts["waiting"]), "Captured for later"),
+        ("Choices", str(len(decisions)), "Decisions already made"),
+        ("Side paths", str(len(side_paths)), "Topics outside the main path"),
+    ]
+    return "\n".join(
+        [
+            "<section class=\"metrics\" aria-label=\"Session metrics\">",
+            *[
+                (
+                    "<article class=\"metric-card\">"
+                    f"<strong>{html.escape(value)}</strong>"
+                    f"<span>{html.escape(label)}</span>"
+                    f"<small>{html.escape(help_text)}</small>"
+                    "</article>"
+                )
+                for label, value, help_text in metrics
+            ],
+            "</section>",
+        ]
+    )
+
+
+def render_focus_banner(human: dict[str, str]) -> str:
+    next_move = human.get("Next recommended move", "")
+    decision = human.get("Decision needed from Hafiz", "")
+    return (
+        "<section class=\"focus-banner\" aria-label=\"Current decision point\">"
+        "<div><span>Do Next</span>"
+        f"<strong>{markdown_inline(next_move) if next_move else 'Not recorded.'}</strong></div>"
+        "<div><span>Needs Hafiz</span>"
+        f"<strong>{markdown_inline(decision) if decision else 'Not recorded.'}</strong></div>"
+        "</section>"
+    )
+
+
+def render_progress_cards(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return "<p class=\"muted\">No progress items recorded yet.</p>"
+
+    cards = []
+    for row in rows:
+        status = row.get("Status", "")
+        cards.append(
+            "<article class=\"work-card\">"
+            f"<div class=\"work-card-top\">{status_label(status)}<span>{markdown_inline(row.get('Owner', ''))}</span></div>"
+            f"<h3>{markdown_inline(row.get('Item', 'Untitled item'))}</h3>"
+            f"<p>{markdown_inline(row.get('Next', ''))}</p>"
+            f"<small>{markdown_inline(row.get('Evidence / Link', ''))}</small>"
+            "</article>"
+        )
+    return "<div class=\"work-grid\">" + "\n".join(cards) + "</div>"
+
+
+def render_decision_timeline(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return "<p class=\"muted\">No decisions recorded yet.</p>"
+
+    items = []
+    for row in rows:
+        items.append(
+            "<article class=\"timeline-item\">"
+            f"<time>{markdown_inline(row.get('Date', ''))}</time>"
+            f"<h3>{markdown_inline(row.get('Decision', 'Untitled decision'))}</h3>"
+            f"<p>{markdown_inline(row.get('Why', ''))}</p>"
+            f"<small>{markdown_inline(row.get('Owner', ''))}</small>"
+            "</article>"
+        )
+    return "<div class=\"timeline\">" + "\n".join(items) + "</div>"
+
+
+def render_side_path_cards(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return "<p class=\"muted\">No side paths recorded yet.</p>"
+
+    cards = []
+    for row in rows:
+        cards.append(
+            "<article class=\"side-card\">"
+            f"<div class=\"side-card-top\">{status_label(row.get('Status', ''))}</div>"
+            f"<h3>{markdown_inline(row.get('Side path', 'Untitled side path'))}</h3>"
+            f"<p>{markdown_inline(row.get('Why it appeared', ''))}</p>"
+            "<div class=\"return-box\"><span>Return path</span>"
+            f"<strong>{markdown_inline(row.get('Return path', ''))}</strong></div>"
+            "</article>"
+        )
+    return "<div class=\"side-grid\">" + "\n".join(cards) + "</div>"
+
+
+def render_visual_mindmap(section: str) -> str:
+    cleaned = strip_code_blocks(section)
+    items = [line for line in cleaned.splitlines() if line.strip().startswith("- ")]
+    if not items:
+        return "<p class=\"muted\">No mindmap recorded yet.</p>"
+
+    nodes = []
+    for line in items:
+        depth = max(0, (len(line) - len(line.lstrip(" "))) // 2)
+        label = markdown_inline(line.strip().removeprefix("- ").strip())
+        nodes.append(f"<div class=\"map-node depth-{min(depth, 3)}\">{label}</div>")
+    return "<div class=\"map-board\">" + "\n".join(nodes) + "</div>"
+
+
 def card(title: str, value: str, accent: str = "") -> str:
     css = f" summary-card {accent}".strip()
     return (
@@ -166,11 +287,9 @@ def build_html(markdown_path: Path, markdown: str) -> str:
 
     summary_cards = "\n".join(
         [
-            card("Main goal", context.get("Main goal", ""), "primary"),
-            card("Current focus", human.get("Right now", context.get("Current focus", "")), "focus"),
-            card("What changed", human.get("What changed so far", "")),
-            card("Recommended next", human.get("Next recommended move", ""), "next"),
-            card("Decision needed", human.get("Decision needed from Hafiz", ""), "decision"),
+            card("Why this exists", context.get("Main goal", ""), "primary"),
+            card("Where we are now", human.get("Right now", context.get("Current focus", "")), "focus"),
+            card("What changed so far", human.get("What changed so far", "")),
         ]
     )
 
@@ -184,6 +303,9 @@ def build_html(markdown_path: Path, markdown: str) -> str:
     if mermaid:
         mermaid_panel = f"<details><summary>Mermaid source</summary><pre>{html.escape(mermaid)}</pre></details>"
 
+    metrics = render_metric_strip(progress, decisions, side_paths)
+    focus_banner = render_focus_banner(human)
+
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -192,17 +314,18 @@ def build_html(markdown_path: Path, markdown: str) -> str:
   <title>{html.escape(title)}</title>
   <style>
     :root {{
-      --bg: #f5f7fb;
+      --bg: #f6f8fb;
       --panel: #ffffff;
       --ink: #18202f;
       --muted: #697386;
-      --line: #dce3ee;
+      --line: #e1e7f0;
+      --soft: #f8fafc;
       --brand: #2563eb;
       --teal: #0f766e;
       --amber: #b45309;
       --green: #15803d;
       --rose: #be123c;
-      --shadow: 0 18px 45px rgba(22, 35, 60, 0.08);
+      --shadow: 0 10px 30px rgba(22, 35, 60, 0.06);
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -261,15 +384,71 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       min-height: 28px;
       border-radius: 999px;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--soft);
       padding: 4px 10px;
       color: var(--muted);
       font-size: 0.82rem;
       font-weight: 650;
     }}
-    .summary-grid {{
+    .focus-banner {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }}
+    .focus-banner div {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+    }}
+    .focus-banner span {{
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }}
+    .focus-banner strong {{
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }}
+    .metrics {{
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }}
+    .metric-card {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }}
+    .metric-card strong {{
+      display: block;
+      color: var(--brand);
+      font-size: 2rem;
+      line-height: 1;
+    }}
+    .metric-card span {{
+      display: block;
+      margin-top: 8px;
+      font-weight: 800;
+    }}
+    .metric-card small {{
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+    }}
+    .summary-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       margin-bottom: 20px;
     }}
@@ -282,7 +461,6 @@ def build_html(markdown_path: Path, markdown: str) -> str:
     .summary-card {{
       padding: 16px;
       min-height: 148px;
-      border-top: 4px solid #94a3b8;
     }}
     .summary-card span {{
       display: block;
@@ -298,10 +476,8 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       font-size: 0.96rem;
       font-weight: 620;
     }}
-    .summary-card.primary {{ border-top-color: var(--brand); }}
-    .summary-card.focus {{ border-top-color: var(--teal); }}
-    .summary-card.next {{ border-top-color: var(--green); }}
-    .summary-card.decision {{ border-top-color: var(--amber); }}
+    .summary-card.primary {{ background: #f8fbff; }}
+    .summary-card.focus {{ background: #f6fefc; }}
     .grid {{
       display: grid;
       grid-template-columns: 1.35fr 0.85fr;
@@ -321,7 +497,7 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       width: 100%;
       border-collapse: collapse;
       min-width: 720px;
-      background: #fff;
+      background: var(--soft);
     }}
     th, td {{
       border-bottom: 1px solid var(--line);
@@ -342,14 +518,143 @@ def build_html(markdown_path: Path, markdown: str) -> str:
     .badge.active {{ border-color: #bfdbfe; background: #eff6ff; color: var(--brand); }}
     .badge.waiting {{ border-color: #fed7aa; background: #fff7ed; color: var(--amber); }}
     .badge.neutral {{ background: #f8fafc; }}
+    .work-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }}
+    .work-card, .side-card, .timeline-item {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(22, 35, 60, 0.04);
+    }}
+    .work-card-top {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }}
+    .work-card-top > span {{
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }}
+    .work-card h3, .side-card h3, .timeline-item h3 {{
+      margin: 0 0 8px;
+      font-size: 0.98rem;
+      letter-spacing: 0;
+    }}
+    .work-card p, .side-card p, .timeline-item p {{
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }}
+    .work-card small, .timeline-item small {{
+      color: var(--muted);
+      font-size: 0.8rem;
+    }}
+    .timeline {{
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding-left: 18px;
+    }}
+    .timeline::before {{
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--line);
+    }}
+    .timeline-item {{
+      position: relative;
+    }}
+    .timeline-item::before {{
+      content: "";
+      position: absolute;
+      left: -18px;
+      top: 19px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--brand);
+    }}
+    .timeline-item time {{
+      display: block;
+      color: var(--brand);
+      font-size: 0.78rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }}
+    .side-grid {{
+      display: grid;
+      gap: 12px;
+    }}
+    .side-card {{
+      display: grid;
+      gap: 9px;
+    }}
+    .side-card-top {{
+      display: flex;
+      justify-content: flex-start;
+    }}
+    .return-box {{
+      display: block;
+      border-radius: 8px;
+      background: var(--soft);
+      border: 1px solid #eef2f7;
+      padding: 10px;
+    }}
+    .return-box span {{
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }}
+    .return-box strong {{
+      display: block;
+      font-size: 0.88rem;
+    }}
+    .map-board {{
+      display: grid;
+      gap: 9px;
+    }}
+    .map-node {{
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px 12px;
+      font-weight: 750;
+    }}
+    .map-node.depth-0 {{
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 1rem;
+    }}
+    .map-node.depth-1 {{ margin-left: 18px; background: #f8fbff; }}
+    .map-node.depth-2 {{ margin-left: 36px; background: #f6fefc; font-weight: 700; }}
+    .map-node.depth-3 {{ margin-left: 54px; background: #fffaf0; font-weight: 650; }}
     .plain-list {{
       margin: 0;
       padding: 0;
       list-style: none;
     }}
     .plain-list li {{
-      border-left: 3px solid var(--line);
-      padding: 5px 0 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+      margin-bottom: 8px;
       color: var(--ink);
     }}
     pre {{
@@ -379,7 +684,7 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       font-size: 0.84rem;
     }}
     @media (max-width: 980px) {{
-      .summary-grid, .grid {{
+      .summary-grid, .grid, .focus-banner, .metrics, .work-grid {{
         grid-template-columns: 1fr;
       }}
       .summary-card {{
@@ -392,7 +697,7 @@ def build_html(markdown_path: Path, markdown: str) -> str:
   <main class="shell">
     <header class="hero">
       <div>
-        <div class="eyebrow">Sifututor Agent OS Session Dashboard</div>
+        <div class="eyebrow">Sifututor Agent OS Session Control Board</div>
         <h1>{html.escape(title)}</h1>
       </div>
       <div class="chips">{context_chips}</div>
@@ -402,45 +707,50 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       {summary_cards}
     </section>
 
+    {focus_banner}
+
+    {metrics}
+
     <section class="grid">
       <div>
         <section class="panel">
-          <h2>Progress Board</h2>
-          {render_table(progress)}
+          <h2>Work Board</h2>
+          {render_progress_cards(progress)}
+          <details><summary>Show original table</summary>{render_table(progress)}</details>
         </section>
 
         <section class="panel">
-          <h2>Decisions</h2>
-          {render_table(decisions, status_key="")}
+          <h2>Choices We Made</h2>
+          {render_decision_timeline(decisions)}
         </section>
 
         <section class="panel">
-          <h2>Side Paths And Return Path</h2>
-          {render_table(side_paths)}
+          <h2>Side Paths To Return From</h2>
+          {render_side_path_cards(side_paths)}
         </section>
       </div>
 
       <aside>
         <section class="panel">
-          <h2>Mindmap</h2>
-          {render_list(mindmap_body)}
+          <h2>Session Map</h2>
+          {render_visual_mindmap(mindmap_body)}
           {mermaid_panel}
         </section>
 
         <section class="panel">
-          <h2>Links And Evidence</h2>
+          <h2>Proof And Links</h2>
           {render_list(links)}
         </section>
 
         <section class="panel">
-          <h2>Continuation Prompt</h2>
+          <h2>Continue Later</h2>
           <pre>{html.escape(continuation) if continuation else "No continuation prompt recorded."}</pre>
         </section>
       </aside>
     </section>
 
     <p class="footer">
-      Generated from {html.escape(relative(markdown_path))}. Edit the Markdown source, then regenerate this view.
+      Source: {html.escape(relative(markdown_path))}. Update the Markdown, then regenerate this view.
     </p>
   </main>
 </body>
