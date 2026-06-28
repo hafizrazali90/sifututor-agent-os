@@ -300,6 +300,40 @@ When sessions get long, update the Human Snapshot more aggressively than the
 technical sections. The snapshot is what prevents Hafiz from needing to reread
 the whole file.
 
+## Closing A Session Map
+
+Closing a Session Map does not always mean the work is finished. It means the
+map now tells the next reader what state the session ended in.
+
+Use one of these close states:
+
+| Close state | Meaning | What the agent must write |
+| --- | --- | --- |
+| Continue | The same session should keep going. | Current focus, next action, and decision needed. |
+| Parked | Work is paused but not finished. | Why it paused, where to resume, and what is waiting. |
+| Handed off | Another agent or human should continue. | Owner, exact continuation prompt, evidence, and links. |
+| Closed | This session's goal is complete. | Final status, checks, durable saves, and no remaining action except optional follow-up. |
+| Not needed | The work was too small for a map. | Say why a map was not created, only when useful. |
+
+Plain meaning:
+
+```text
+At the end, the map should answer: can we close this, or where exactly do we
+continue?
+```
+
+Before ending a meaningful session, update:
+
+- Human Snapshot
+- Progress Board
+- Decisions
+- Side Paths And Return Path
+- Links And Evidence
+- Continuation Prompt
+- Agent Context `Done means`, `Recommended stop point`, and `Approved boundary`
+
+Then regenerate and open the HTML dashboard if Hafiz should review it.
+
 ## Validation
 
 Use the Session Map checker after changing the template, the playbook, or an

@@ -24,12 +24,17 @@ Do not end a meaningful session with only "done." End it with:
 4. what the current status and next action are
 5. what task is still active
 6. what remains next
-7. whether the Session Map is current, if the session needed one
+7. whether the Session Map is current or closed, if the session needed one
 8. what was captured in the Mission Ledger, if anything
 9. whether the session can be closed now or should continue with QA, commit,
    review, deploy preparation, or another named next step
 
 If those things are clear, the session is saved well.
+
+If the session used a Session Map, close or update it using
+[session-map.md](session-map.md) before the final save report. In normal words:
+the map should say whether the work should continue, is parked, was handed off,
+is closed, or did not need a map.
 
 ## Choose A Save Level
 
