@@ -79,7 +79,16 @@ For any packet with more than one natural step, the agent should explain what
 done means, recommend the stop point, show the suggested path, and name the
 autopilot boundary before or at the start of execution.
 
+Use the compact version for simple work and the full version for risky or
+multi-step work. The goal is clarity, not ceremony.
+
 Examples:
+
+```text
+What done means: docs are updated and checks pass.
+I will proceed until: local docs checks pass.
+I will only pause if: scope changes or checks fail.
+```
 
 ```text
 What done means: the PR is opened and ready for review.

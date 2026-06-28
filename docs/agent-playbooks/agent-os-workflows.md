@@ -103,6 +103,9 @@ Every workflow should answer these questions before it is called done:
   should be specific to the task, such as new scope, contradictory evidence,
   unavailable access, product/business decision, unapproved production action,
   destructive action, or critical-lane risk.
+- Use compact control wording for simple work and full control wording for
+  bugfixes, features, production, critical lanes, multi-step work, or whenever
+  Hafiz may not know the workflow path.
 - Before implementation, explain the intended code/workflow change in plain
   English: options, recommendation, what will change, what will not change,
   risks/tradeoffs, and evidence plan.
@@ -470,6 +473,19 @@ To go further:
 <approval phrase or decision needed>
 ```
 
+Compact shape for simple work:
+
+```text
+What done means:
+<simple end goal>
+
+I will proceed until:
+<near stop point>
+
+I will only pause if:
+<small set of likely blockers>
+```
+
 Exit when the fix is verified, QA/review risk is addressed, and the repo state
 is clear: local-only, committed, pushed, PR open, merged, deployed, or live
 smoke passed.
@@ -513,6 +529,7 @@ Evidence required:
 - Suggested path and stop point, in plain workflow steps.
 - Pause conditions: the specific situations that would make the agent stop and
   ask Hafiz instead of continuing.
+- Control message size: compact for simple work, full for risky/multi-step work.
 - Backend/API/state contract when behavior crosses modules.
 - Tests at the right layer.
 - Permanent E2E coverage for changed user workflows by default.

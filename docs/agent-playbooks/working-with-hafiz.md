@@ -105,7 +105,7 @@ I will only pause if something new changes scope, risk, evidence, access, or
 the approval boundary.
 ```
 
-Daily shape:
+Daily control shape:
 
 ```text
 What done means:
@@ -129,6 +129,22 @@ I will only pause if:
 To go further:
 <plain approval phrase or decision needed>
 ```
+
+Use the compact version for simple work:
+
+```text
+What done means:
+Docs are updated and checks pass.
+
+I will proceed until:
+local docs checks pass.
+
+I will only pause if:
+scope changes or checks fail.
+```
+
+Use the full version for bugfixes, features, production, critical lanes,
+multi-step work, or whenever Hafiz may not know the workflow path.
 
 ```text
 I can continue one by one if you want tighter review.
@@ -386,6 +402,8 @@ The agent should proactively:
 - create a GitHub issue for coding work when required
 - run guard checks before commit
 - ask for or state an autopilot boundary for multi-step work
+- use compact control wording for simple work and full control wording for
+  bugfixes, features, production, critical, or multi-step work
 - explain what done means before asking how far to continue
 - recommend the stop point and suggested path instead of making Hafiz list the
   steps
@@ -577,6 +595,10 @@ Answered by Hafiz on 2026-06-04:
 - pause wording: use "I will only pause if..." in normal conversation. The pause
   reasons should be specific to the task and current context, not a repeated
   checklist of every possible gate.
+- compact/full control message: simple work can use a short version; risky,
+  user-facing, production, critical, or multi-step work should use the full
+  shape with what done means, recommended stop point, why, suggested path,
+  proceed boundary, pause conditions, and to-go-further wording.
 
 ## Open Questions
 
