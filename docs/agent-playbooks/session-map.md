@@ -93,6 +93,14 @@ Plain meaning: the agent edits the Markdown, then generates the nice browser
 view from that same source. Do not manually edit the generated HTML as the
 truth.
 
+When the generated HTML is meant for Hafiz to review, open it automatically:
+
+```bash
+open .agent-os/session-maps/<file>.html
+```
+
+Still report the path in chat so Hafiz can reopen it later.
+
 ## When To Create Or Update One
 
 Create or update a Session Map when any of these are true:

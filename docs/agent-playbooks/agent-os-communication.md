@@ -57,6 +57,37 @@ Approving the review in chat is enough for Hafiz's review decision. It is not
 permission to merge, deploy, or change production unless he explicitly says so in
 the current session.
 
+## Open Review Artifacts Automatically
+
+When the agent creates or updates an important review artifact that Hafiz should
+inspect, open it on Hafiz's Mac automatically instead of only giving a path.
+
+Examples:
+
+- generated Session Map HTML dashboard
+- important Markdown review board
+- generated HTML mockup
+- QA report or screenshot index
+- PR/release review document
+- handoff or save-session document Hafiz must inspect
+
+Use the narrowest safe local command, usually:
+
+```bash
+open <path>
+```
+
+Plain meaning:
+
+```text
+If I need Hafiz to review a local doc, I should put it in front of him.
+Do not make him hunt for the file.
+```
+
+Still include the file path in the chat so Hafiz can reopen it later. Do not
+auto-open files that contain secrets, credentials, raw tokens, `.env*` content,
+or production-sensitive private payloads.
+
 ## Explanation Layers
 
 When something is technical, explain it in layers.
