@@ -121,6 +121,50 @@ REQUIRED_CONTRACT_PHRASES = [
 ]
 
 
+BEHAVIOR_FIXTURES = [
+    {
+        "id": "BP-001",
+        "scenario": "commit-only approval",
+        "snippets": ["Commit only", "exact approved file list", "Do not push"],
+    },
+    {
+        "id": "BP-002",
+        "scenario": "commit plus push approval",
+        "snippets": ["pre-push review", "exact approved bundle", "remote state"],
+    },
+    {
+        "id": "BP-003",
+        "scenario": "feature or workflow design",
+        "snippets": ["brainstorm/product design", "options and tradeoffs", "do not implement until approval"],
+    },
+    {
+        "id": "BP-004",
+        "scenario": "critical lane work",
+        "snippets": ["read-only diagnosis", "Wait for approval before implementation"],
+    },
+    {
+        "id": "BP-005",
+        "scenario": "verify or QA user-facing workflow",
+        "snippets": ["human-journey evidence", "what the agent can safely check"],
+    },
+    {
+        "id": "BP-006",
+        "scenario": "save or hand off session",
+        "snippets": ["current state", "evidence", "next action", "Koda"],
+    },
+    {
+        "id": "BP-007",
+        "scenario": "staff or Planner reported bug",
+        "snippets": ["report as a symptom", "reproduce or inspect", "GitHub/task workflow"],
+    },
+    {
+        "id": "BP-008",
+        "scenario": "Plane status without explicit Plane request",
+        "snippets": ["Do not use Plane by default", "Mission Ledger", "close-out"],
+    },
+]
+
+
 def read(path: Path) -> str:
     return path.read_text()
 
@@ -211,6 +255,24 @@ def check_supporting_docs(texts: dict[str, str]) -> list[str]:
     return errors
 
 
+def check_behavior_fixtures(texts: dict[str, str]) -> list[str]:
+    errors = []
+    parity_text = texts["parity"]
+
+    for fixture in BEHAVIOR_FIXTURES:
+        fixture_id = fixture["id"]
+        if fixture_id not in parity_text:
+            errors.append(f"parity contract missing behavior fixture {fixture_id}")
+            continue
+        for snippet in fixture["snippets"]:
+            if not contains(parity_text, snippet):
+                errors.append(
+                    f"{fixture_id}: expected behavior snippet missing from parity contract: {snippet}"
+                )
+
+    return errors
+
+
 def run(verbose: bool = False) -> int:
     required_files = (PARITY_CONTRACT, SKILL_REGISTRY, EVAL_DOC, COVERAGE_MAP, AGENTS, HEALTH)
     missing_files = [path for path in required_files if not path.is_file()]
@@ -234,17 +296,27 @@ def run(verbose: bool = False) -> int:
         failures.extend(check_workflow(workflow, texts))
     failures.extend(check_plane_policy(texts))
     failures.extend(check_supporting_docs(texts))
+    failures.extend(check_behavior_fixtures(texts))
 
     if verbose or failures:
         for failure in failures:
             print(f"FAIL {failure}")
 
     checked = len(WORKFLOWS)
+    behavior_checked = len(BEHAVIOR_FIXTURES)
     if failures:
-        print(f"agent-os-parity-fixture-runner: {len(failures)} failure(s) across {checked} workflows")
+        print(
+            "agent-os-parity-fixture-runner: "
+            f"{len(failures)} failure(s) across {checked} workflows "
+            f"and {behavior_checked} behavior fixtures"
+        )
         return 1
 
-    print(f"agent-os-parity-fixture-runner: {checked}/{checked} workflows passed")
+    print(
+        "agent-os-parity-fixture-runner: "
+        f"{checked}/{checked} workflows and "
+        f"{behavior_checked}/{behavior_checked} behavior fixtures passed"
+    )
     return 0
 
 

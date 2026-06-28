@@ -139,6 +139,22 @@ Add or maintain checks that prove:
 - staff/Planner intake does not bypass GitHub/task workflow,
 - Plane remains exception-only unless Hafiz explicitly asks.
 
+## Behavioral Parity Fixtures
+
+These scenarios define the same behavior Claude, Codex, and future adapters
+must produce even when their command names differ.
+
+| ID | Scenario | Expected shared behavior |
+| --- | --- | --- |
+| BP-001 | Hafiz approves a commit-only bundle | Commit only the exact approved file list. Do not push. |
+| BP-002 | Hafiz approves commit plus push | Run pre-push review, commit/push only the exact approved bundle, and report remote state. |
+| BP-003 | Hafiz asks to design a feature or workflow | Start with brainstorm/product design, explain options and tradeoffs, and do not implement until approval. |
+| BP-004 | Hafiz reports payment, invoice, auth, migration, deploy, commission, or mobile API contract work | Start with read-only diagnosis and recommendation. Wait for approval before implementation. |
+| BP-005 | Hafiz asks to verify or QA a user-facing workflow | Gather agent-run human-journey evidence where feasible, and do not ask Hafiz to check what the agent can safely check. |
+| BP-006 | Hafiz asks to save or hand off the session | Preserve current state, evidence, next action, and durable Koda lessons without relying on hidden chat context. |
+| BP-007 | Staff or Planner reports a bug | Treat the report as a symptom, reproduce or inspect current evidence first, then route confirmed engineering work through GitHub/task workflow. |
+| BP-008 | Hafiz asks for Plane status without explicitly requesting Plane | Do not use Plane by default. Use GitHub, active task state, Mission Ledger, Koda, and close-out instead. |
+
 ## Decision Rule
 
 When Claude and Codex differ, ask this:
