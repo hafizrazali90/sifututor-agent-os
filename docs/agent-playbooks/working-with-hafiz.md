@@ -268,6 +268,61 @@ Combined commit+push approval requires:
 If the agent asks only for commit approval, `approve` means commit only.
 If the agent asks clearly for commit+push approval, `approve` means do both.
 
+## Batch Completion Rule
+
+Before asking Hafiz to push a local batch to GitHub, decide whether the batch is
+actually complete enough to leave the machine.
+
+Plain meaning:
+
+```text
+Do not ask Hafiz to upload a half-finished package. First prove that the package
+has one clear story, no half-written rules, passing checks, and a clear list of
+what is still outside the package.
+```
+
+Use five questions:
+
+1. Does the package solve one clear improvement?
+2. Can the agent explain the whole package in English?
+3. Are there no half-written rules, docs, scripts, or workflows inside the
+   package?
+4. Did the required checks pass?
+5. Do we know what is still outside the package?
+
+Ready to push means:
+
+```text
+This batch tells one complete story, checks pass, and unfinished future work is
+clearly separated.
+```
+
+Not ready to push means:
+
+```text
+Keep working locally because the package still has a missing rule, unclear
+story, failed check, or mixed work that Hafiz cannot understand as one useful
+update.
+```
+
+Example:
+
+```text
+Package label: Make long Agent OS sessions easier to continue, review, and
+safely push later.
+
+What this means for you: the agent can track long work, explain what changed,
+show what is waiting, and avoid pushing half-finished workflow rules.
+
+Technical detail in normal language: the Agent OS now uses Session Maps, smart
+resume checks, close-out rules, push package summaries, and batch completion
+rules so Codex/Claude can decide whether to continue locally or ask for push
+approval.
+
+Not included yet: release/deploy workflow, incident workflow, staff rollout,
+and deeper product-code workflows.
+```
+
 ## Push Package Summary
 
 Before asking Hafiz to push a local batch to GitHub, explain the batch as a

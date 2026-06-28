@@ -129,6 +129,12 @@ Stop the packet when:
   needed
 - a critical-lane implementation decision is needed
 
+Before asking to push a local batch, apply the Batch Completion Rule from
+[working-with-hafiz.md](working-with-hafiz.md). The batch must tell one clear
+story, have no half-written rules or workflows inside it, have passing required
+checks, and clearly separate future work that is not included yet. If any of
+those are false, keep working locally instead of asking for push approval.
+
 ### 3. Standing Task Access Approval
 
 Hafiz has granted standing task-scoped approval for agents to use the narrowest
