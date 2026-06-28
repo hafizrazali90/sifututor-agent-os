@@ -406,6 +406,23 @@ the whole file.
 Closing a Session Map does not always mean the work is finished. It means the
 map now tells the next reader what state the session ended in.
 
+Use these human ending states when talking to Hafiz:
+
+| Ending state | Use when | Required before using it |
+| --- | --- | --- |
+| Continue | The same thread should keep going. | Current focus, next action, and waiting decision are clear. |
+| Save Only | The work is not finished, but context must be preserved before stopping. | Session Map, Reference Pack, Git state, Koda saves, and next action are current. |
+| Park | Work is intentionally paused. | Reason for pause, what is waiting, resume condition, and where it is recorded are clear. |
+| Hand Off | Another agent or human should continue. | Owner, continuation prompt, boundaries, files/commits/links, and evidence are listed. |
+| Close | Nothing required remains. | Checks are done, durable saves are done, Git/push/PR/deploy state is clear, no waiting decision remains, and next action is none or optional. |
+
+Plain meaning:
+
+```text
+Close is strict. If anything real is waiting, do not call the session closed.
+Use Continue, Save Only, Park, or Hand Off instead.
+```
+
 Use one of these close states:
 
 | Close state | Meaning | What the agent must write |

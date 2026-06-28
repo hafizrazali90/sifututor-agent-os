@@ -36,6 +36,29 @@ If the session used a Session Map, close or update it using
 the map should say whether the work should continue, is parked, was handed off,
 is closed, or did not need a map.
 
+## Ending State
+
+Before the final save report, choose the honest ending state.
+
+| Ending state | Use when | Required before using it |
+| --- | --- | --- |
+| Continue | The same thread should keep going. | Current focus, next action, and waiting decision are clear. |
+| Save Only | The work is not finished, but context must be preserved before stopping. | Session Map, Reference Pack, Git state, Koda saves, and next action are current. |
+| Park | Work is intentionally paused. | Reason for pause, what is waiting, resume condition, and where it is recorded are clear. |
+| Hand Off | Another agent or human should continue. | Owner, continuation prompt, boundaries, files/commits/links, and evidence are listed. |
+| Close | Nothing required remains. | Checks are done, durable saves are done, Git/push/PR/deploy state is clear, no waiting decision remains, and next action is none or optional. |
+
+Plain meaning:
+
+```text
+Do not call a session closed just because the chat is ending. Close only when
+nothing required remains.
+```
+
+If commits are local-only, checks are missing, Koda was not saved, Hafiz still
+needs to decide, or the next action is unclear, the session is not closed. Use
+Continue, Save Only, Park, or Hand Off instead.
+
 ## Choose A Save Level
 
 Pick the smallest level that honestly fits the session.
@@ -225,6 +248,7 @@ Session Map: <updated/current/not needed>
 Mission Ledger: <updated item | no new follow-up | skipped>
 Guards: <passed/failed/not run>
 Commits/pushes: <summary or none>
+Ending state: <Continue | Save Only | Park | Hand Off | Close>
 
 Key learnings:
 - <lesson>
@@ -245,6 +269,7 @@ SESSION SAVED - <project>
 Koda: skipped, no durable lesson
 Session Map: <updated/current/not needed>
 Mission Ledger: <updated item | no new follow-up | skipped>
+Ending state: <Continue | Save Only | Park | Hand Off | Close>
 Next: <next step or none>
 ```
 
@@ -265,6 +290,8 @@ Before Codex gives the final answer for meaningful work:
 6. If the session had side paths, multiple sub-goals, or a confusing return
    path, update or reference the Session Map using [session-map.md](session-map.md).
 7. Run the shared guard when code or workflow files changed.
-8. Report what changed, why, tests/guards run, files or commits touched, and
+8. Choose the honest ending state: Continue, Save Only, Park, Hand Off, or
+   Close. Do not use Close if real work or decisions remain.
+9. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-9. If Koda is unavailable, say so and use the fallback path.
+10. If Koda is unavailable, say so and use the fallback path.
