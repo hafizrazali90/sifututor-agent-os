@@ -13,6 +13,12 @@ QA proof for the changed surface. Plain meaning: docs, backend logic, API
 contracts, UI, mobile, deploys, and incidents do not need the same proof, but
 each must name the strongest evidence actually gathered.
 
+Use the Evidence Gap Stop Rules in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) when the strongest
+available evidence is weaker than the workflow normally requires. Plain
+meaning: QA may say "tested this part, still missing this proof"; it must not
+turn missing proof into a generic "please check" note.
+
 ## Pick The QA Tier
 
 | Route | QA expectation |
@@ -92,6 +98,13 @@ have tried the checks an agent can run in the current environment. If you cannot
 run Playwright, API, CLI, or server-side evidence, state the exact blocker
 (`missing credential`, `no representative data`, `destructive action required`,
 or `tooling unavailable`) and what evidence you gathered instead.
+
+If the missing evidence blocks the next state, say that directly:
+
+```text
+This is QA-checked at the API level, but not ready for UI workflow confidence
+because the browser journey is still unproven.
+```
 
 ## QA Report
 

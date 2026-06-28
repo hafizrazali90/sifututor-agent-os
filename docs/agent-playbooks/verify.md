@@ -14,6 +14,11 @@ work is ready. Plain meaning: "ready" must name the evidence level reached, such
 as docs evidence, backend evidence, UI evidence, deploy evidence, or live-check
 evidence. Do not say ready without saying ready for what.
 
+Use the Evidence Gap Stop Rules in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) when expected proof is
+missing. Plain meaning: missing proof must be reported as a named gap, not
+hidden inside "ready" or pushed onto Hafiz as a vague manual check.
+
 ## Rules
 
 - Run verification in the project directory, not the umbrella root.
@@ -47,6 +52,9 @@ evidence. Do not say ready without saying ready for what.
   outcome is a permanent E2E test file, not only an E2E "decision". Treat
   missing E2E as a verify failure unless the exact workflow is not safely
   automatable and the exception is explicitly documented.
+- When verification cannot reach the evidence level required for the next
+  state, say the highest state actually proven. Example: "backend verified,
+  UI workflow still unproven" instead of "ready".
 
 ## Project Command Matrix
 
@@ -97,3 +105,6 @@ Stop and report before continuing when:
 - financial or mobile API behavior changed and no reviewer has approved it
 - the only remaining check needs human judgment/sign-off; include the agent-run
   evidence already completed and the exact reason the rest cannot be automated
+- a required evidence gap would make the next state misleading, such as saying
+  ready for commit, PR, deploy, or live-check without the proof required by the
+  work type

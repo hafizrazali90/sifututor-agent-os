@@ -183,6 +183,73 @@ deployed, live check still waiting
 live checked, waiting for Hafiz acceptance
 ```
 
+## Evidence Gap Stop Rules
+
+An evidence gap is any missing proof that the work type normally requires.
+
+Plain version:
+
+```text
+Missing proof is not the same as failure, but it must be named.
+The agent must say what is proven, what is still unproven, and whether the next
+step is still safe.
+```
+
+Use this table before moving to commit, push, PR, merge, deploy, or "done".
+
+| Gap Type | Practical Meaning | What The Agent Should Do |
+| --- | --- | --- |
+| Low-risk note | The missing check does not affect the claim being made. Example: docs-only work has no browser journey. | Continue, but say why the stronger evidence is not needed. |
+| Named exception | The right check matters, but cannot be run safely now because of a concrete blocker. | State the blocker, strongest evidence gathered, risk if continuing, and follow-up test/fixture. Do not pretend this equals full proof. |
+| Blocks commit/PR/push | The missing proof is required to trust the changed workflow. Example: UI workflow has no browser/mobile evidence or permanent E2E decision. | Stop before calling it ready. Gather the evidence or ask Hafiz to accept a specifically named exception when policy allows it. |
+| Blocks deploy/live/production | The missing proof affects real users, money, data, critical lanes, deployed version, smoke, or monitoring. | Stop before deploy/live claim. Get the missing evidence or explicit Hafiz approval for the exact risk boundary. |
+| Cannot be accepted as done | The action would cross a forbidden boundary or the evidence is actively failing. Example: secrets, destructive action, failed required tests, unapproved critical-lane implementation. | Stop. Do not downgrade it to "manual check later" or "ready with risk." |
+
+Allowed named-exception reasons are:
+
+- `missing credential`
+- `no representative data`
+- `destructive action required`
+- `external system unreliable`
+- `tooling unavailable`
+- `not user-facing`
+
+When reporting a gap, use this shape in normal language:
+
+```text
+What I proved:
+What I could not prove:
+Why it is missing:
+Risk if we continue:
+Recommended next:
+Can Hafiz accept the risk here: yes/no, and why.
+```
+
+Examples:
+
+```text
+I proved the backend rule with a feature test, but I have not proved the real
+staff browser journey. This is ready for backend confidence, not ready for UI
+workflow confidence. Recommended next: run Playwright and add/update the
+permanent E2E coverage.
+```
+
+```text
+I confirmed the deployed route is reachable, but I could not smoke the real
+payment workflow because it would require a destructive real transaction. This
+cannot be called live-verified. Recommended next: use safe staging/test payment
+evidence or get explicit finance risk acceptance for the production limitation.
+```
+
+Some gaps can be accepted by Hafiz as a business or release-risk decision.
+Examples: wording acceptance, subjective UX fit, a non-critical check that is
+tooling-blocked, or a manual QA exception with clear follow-up.
+
+Some gaps cannot be accepted as "done" by wording alone. Examples: forbidden
+secret access, failed required tests, unapproved critical-lane implementation,
+destructive action without explicit approval, or a user-facing workflow called
+ready without either human-journey evidence or a valid named exception.
+
 ## Permanent Regression Decision
 
 For user-facing bugs and features, one-off proof is not enough by itself.

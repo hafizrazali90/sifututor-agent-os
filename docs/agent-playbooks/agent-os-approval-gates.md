@@ -125,9 +125,16 @@ Stop the packet when:
 - the next step is ambiguous
 - the scope changes materially
 - a separate-approval boundary appears
+- required evidence is missing for the state being claimed
 - commit, push, merge, PR, deploy, destructive, secret, or production action is
   needed
 - a critical-lane implementation decision is needed
+
+Use the Evidence Gap Stop Rules in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) before saying a work
+packet is ready. Plain meaning: an agent may continue through safe docs/checks
+inside an approved packet, but it must stop or clearly name the limitation when
+missing proof would make the next state misleading.
 
 Before asking to push a local batch, apply the Batch Completion Rule from
 [working-with-hafiz.md](working-with-hafiz.md). The batch must tell one clear
