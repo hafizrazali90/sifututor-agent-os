@@ -20,6 +20,7 @@ REQUIRED_SECTIONS = [
     "Side Paths And Return Path",
     "Agent Context",
     "Links And Evidence",
+    "Reference Pack",
     "Continuation Prompt",
 ]
 

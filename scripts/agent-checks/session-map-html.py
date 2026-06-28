@@ -13,6 +13,15 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SESSION_DIR = ROOT / ".agent-os" / "session-maps"
 
 FIELD_PATTERN = re.compile(r"^- \*\*(?P<name>[^:]+):\*\*\s*(?P<value>.*)$")
+FLOW_STAGES = [
+    "Exploring",
+    "Decided",
+    "Updated",
+    "Checked",
+    "Committed",
+    "On GitHub",
+    "Done",
+]
 
 
 def relative(path: Path) -> str:
@@ -109,13 +118,46 @@ def render_list(section: str) -> str:
 
 def status_class(status: str) -> str:
     normalized = status.lower()
-    if any(word in normalized for word in ["pushed", "done", "passed", "closed", "committed"]):
+    if any(word in normalized for word in ["on github", "pushed", "done", "passed", "closed", "committed"]):
         return "done"
-    if any(word in normalized for word in ["active", "progress", "discussing"]):
+    if any(word in normalized for word in ["exploring", "decided", "updated", "checked", "active", "progress", "discussing"]):
         return "active"
-    if any(word in normalized for word in ["waiting", "paused", "captured"]):
+    if any(word in normalized for word in ["waiting", "parked", "paused", "captured", "needs hafiz", "needs decision"]):
         return "waiting"
     return "neutral"
+
+
+def flow_stage(status: str) -> str:
+    normalized = " ".join(status.lower().replace("-", " ").replace("_", " ").split())
+    aliases = {
+        "thinking": "Exploring",
+        "talking": "Exploring",
+        "in discussion": "Exploring",
+        "discussing": "Exploring",
+        "not started": "Exploring",
+        "agreed": "Decided",
+        "chosen": "Decided",
+        "approved": "Decided",
+        "written": "Updated",
+        "done locally": "Updated",
+        "local": "Updated",
+        "passed": "Checked",
+        "verified": "Checked",
+        "committed": "Committed",
+        "saved": "Committed",
+        "pushed": "On GitHub",
+        "shared": "On GitHub",
+        "merged": "Done",
+        "closed": "Done",
+        "finished": "Done",
+    }
+    for stage in FLOW_STAGES:
+        if stage.lower() in normalized:
+            return stage
+    for key, stage in aliases.items():
+        if key in normalized:
+            return stage
+    return "Exploring"
 
 
 def render_table(rows: list[dict[str, str]], *, status_key: str = "Status") -> str:
@@ -182,6 +224,76 @@ def render_metric_strip(progress: list[dict[str, str]], decisions: list[dict[str
     )
 
 
+def collect_waiting(progress: list[dict[str, str]], human: dict[str, str]) -> str:
+    waiting = []
+    for row in progress:
+        status = row.get("Status", "")
+        if flow_stage(status) not in {"On GitHub", "Done"}:
+            item = row.get("Item", "Untitled item")
+            next_step = row.get("Next", "")
+            waiting.append(f"{item}: {next_step or status}")
+    if waiting:
+        return "; ".join(waiting[:3])
+    decision = human.get("Decision needed from Hafiz", "")
+    return decision if decision and decision.lower() != "no" else "Nothing urgent recorded."
+
+
+def confidence_text(progress: list[dict[str, str]], links: str) -> str:
+    evidence_text = links.lower()
+    checked_rows = [row for row in progress if flow_stage(row.get("Status", "")) in {"Checked", "Committed", "On GitHub", "Done"}]
+    if any(word in evidence_text for word in ["passed", "checked", "guard", "health", "validator"]):
+        return "Evidence recorded. Latest checks are visible below."
+    if checked_rows:
+        return "Some items have check or commit evidence. Review details below."
+    return "Not enough evidence recorded yet."
+
+
+def render_control_deck(human: dict[str, str], context: dict[str, str], progress: list[dict[str, str]], links: str) -> str:
+    cards = [
+        ("Now", human.get("Right now", context.get("Current focus", "")), "now"),
+        ("Goal", context.get("Main goal", human.get("Started because", "")), "goal"),
+        ("Next", human.get("Next recommended move", ""), "next"),
+        ("Waiting", collect_waiting(progress, human), "waiting"),
+        ("Confidence", confidence_text(progress, links), "confidence"),
+    ]
+    return "\n".join(
+        [
+            "<section class=\"control-deck\" aria-label=\"First glance session state\">",
+            *[
+                (
+                    f"<article class=\"control-card {html.escape(css)}\">"
+                    f"<span>{html.escape(label)}</span>"
+                    f"<p>{markdown_inline(value) if value else '<em>Not recorded.</em>'}</p>"
+                    "</article>"
+                )
+                for label, value, css in cards
+            ],
+            "</section>",
+        ]
+    )
+
+
+def render_progress_flow(progress: list[dict[str, str]]) -> str:
+    if not progress:
+        current_stage = "Exploring"
+    else:
+        stage_indexes = [FLOW_STAGES.index(flow_stage(row.get("Status", ""))) for row in progress]
+        current_stage = FLOW_STAGES[max(stage_indexes)]
+
+    current_index = FLOW_STAGES.index(current_stage)
+    parts = ["<section class=\"flow-panel panel\"><h2>Progress Flow</h2><div class=\"flow-bar\">"]
+    for index, stage in enumerate(FLOW_STAGES):
+        css = "complete" if index < current_index else "current" if index == current_index else "future"
+        parts.append(
+            "<div class=\"flow-step\">"
+            f"<span class=\"flow-dot {css}\"></span>"
+            f"<strong>{html.escape(stage)}</strong>"
+            "</div>"
+        )
+    parts.append("</div><p class=\"muted flow-help\">Exploring means still shaping. Committed means saved locally. On GitHub means future agents can fetch it.</p></section>")
+    return "\n".join(parts)
+
+
 def render_focus_banner(human: dict[str, str]) -> str:
     next_move = human.get("Next recommended move", "")
     decision = human.get("Decision needed from Hafiz", "")
@@ -202,9 +314,10 @@ def render_progress_cards(rows: list[dict[str, str]]) -> str:
     cards = []
     for row in rows:
         status = row.get("Status", "")
+        stage = flow_stage(status)
         cards.append(
             "<article class=\"work-card\">"
-            f"<div class=\"work-card-top\">{status_label(status)}<span>{markdown_inline(row.get('Owner', ''))}</span></div>"
+            f"<div class=\"work-card-top\">{status_label(stage)}<span>{markdown_inline(row.get('Owner', ''))}</span></div>"
             f"<h3>{markdown_inline(row.get('Item', 'Untitled item'))}</h3>"
             f"<p>{markdown_inline(row.get('Next', ''))}</p>"
             f"<small>{markdown_inline(row.get('Evidence / Link', ''))}</small>"
@@ -218,12 +331,16 @@ def render_decision_timeline(rows: list[dict[str, str]]) -> str:
         return "<p class=\"muted\">No decisions recorded yet.</p>"
 
     items = []
-    for row in rows:
+    for row in rows[:5]:
+        effect = row.get("Effect", "")
+        status = row.get("Status", "")
         items.append(
             "<article class=\"timeline-item\">"
             f"<time>{markdown_inline(row.get('Date', ''))}</time>"
+            f"{status_label(status) if status else ''}"
             f"<h3>{markdown_inline(row.get('Decision', 'Untitled decision'))}</h3>"
-            f"<p>{markdown_inline(row.get('Why', ''))}</p>"
+            f"<p><strong>Reason:</strong> {markdown_inline(row.get('Why', ''))}</p>"
+            f"{f'<p><strong>Effect:</strong> {markdown_inline(effect)}</p>' if effect else ''}"
             f"<small>{markdown_inline(row.get('Owner', ''))}</small>"
             "</article>"
         )
@@ -236,9 +353,10 @@ def render_side_path_cards(rows: list[dict[str, str]]) -> str:
 
     cards = []
     for row in rows:
+        status = row.get("Status", "")
         cards.append(
             "<article class=\"side-card\">"
-            f"<div class=\"side-card-top\">{status_label(row.get('Status', ''))}</div>"
+            f"<div class=\"side-card-top\">{status_label(status)}</div>"
             f"<h3>{markdown_inline(row.get('Side path', 'Untitled side path'))}</h3>"
             f"<p>{markdown_inline(row.get('Why it appeared', ''))}</p>"
             "<div class=\"return-box\"><span>Return path</span>"
@@ -246,6 +364,21 @@ def render_side_path_cards(rows: list[dict[str, str]]) -> str:
             "</article>"
         )
     return "<div class=\"side-grid\">" + "\n".join(cards) + "</div>"
+
+
+def render_reference_pack(section: str, markdown_path: Path, context: dict[str, str]) -> str:
+    cleaned = strip_code_blocks(section)
+    if not cleaned:
+        cleaned = "\n".join(
+            [
+                f"- Primary Session Map: `{relative(markdown_path)}`",
+                f"- Generated dashboard: `{relative(markdown_path.with_suffix('.html'))}`",
+                "- Core docs: `docs/agent-playbooks/session-map.md`, `docs/agent-playbooks/templates/session-map.md`, `scripts/agent-checks/session-map-html.py`",
+                f"- Branch: `{context.get('Branch', 'not recorded')}`",
+                "- What to ignore: product app code, production files, `.env*`, and unrelated docs unless Hafiz asks.",
+            ]
+        )
+    return render_list(cleaned)
 
 
 def render_visual_mindmap(section: str) -> str:
@@ -280,18 +413,11 @@ def build_html(markdown_path: Path, markdown: str) -> str:
     decisions = parse_table(sections.get("Decisions", ""))
     side_paths = parse_table(sections.get("Side Paths And Return Path", ""))
     links = sections.get("Links And Evidence", "")
+    reference_pack = sections.get("Reference Pack", "")
     continuation = extract_code_block(sections.get("Continuation Prompt", ""), "text")
 
     mindmap_body = strip_code_blocks(sections.get("Mindmap", ""))
     mermaid = extract_code_block(sections.get("Mindmap", ""), "mermaid")
-
-    summary_cards = "\n".join(
-        [
-            card("Why this exists", context.get("Main goal", ""), "primary"),
-            card("Where we are now", human.get("Right now", context.get("Current focus", "")), "focus"),
-            card("What changed so far", human.get("What changed so far", "")),
-        ]
-    )
 
     context_chips = "\n".join(
         f"<span>{html.escape(key)}: {markdown_inline(value)}</span>"
@@ -304,7 +430,8 @@ def build_html(markdown_path: Path, markdown: str) -> str:
         mermaid_panel = f"<details><summary>Mermaid source</summary><pre>{html.escape(mermaid)}</pre></details>"
 
     metrics = render_metric_strip(progress, decisions, side_paths)
-    focus_banner = render_focus_banner(human)
+    control_deck = render_control_deck(human, context, progress, links)
+    progress_flow = render_progress_flow(progress)
 
     return f"""<!doctype html>
 <html lang="en">
@@ -417,6 +544,39 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       font-size: 1.05rem;
       line-height: 1.35;
     }}
+    .control-deck {{
+      display: grid;
+      grid-template-columns: 1.2fr 1.2fr 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }}
+    .control-card {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-height: 138px;
+    }}
+    .control-card span {{
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }}
+    .control-card p {{
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 650;
+    }}
+    .control-card.now {{ background: #f8fbff; }}
+    .control-card.goal {{ background: #f6fefc; }}
+    .control-card.next {{ background: #fffaf0; }}
+    .control-card.waiting {{ background: #fff7ed; }}
+    .control-card.confidence {{ background: #f8fafc; }}
     .metrics {{
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -487,6 +647,50 @@ def build_html(markdown_path: Path, markdown: str) -> str:
     .panel {{
       padding: 18px;
       margin-bottom: 18px;
+    }}
+    .flow-panel {{
+      margin-bottom: 18px;
+    }}
+    .flow-bar {{
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }}
+    .flow-step {{
+      position: relative;
+      display: grid;
+      gap: 8px;
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+    }}
+    .flow-step strong {{
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }}
+    .flow-dot {{
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      background: #fff;
+    }}
+    .flow-dot.complete {{
+      border-color: #86efac;
+      background: var(--green);
+    }}
+    .flow-dot.current {{
+      border-color: #bfdbfe;
+      background: var(--brand);
+    }}
+    .flow-dot.future {{
+      background: #f8fafc;
+    }}
+    .flow-help {{
+      margin: 12px 0 0;
+      font-size: 0.86rem;
     }}
     .table-wrap {{
       overflow-x: auto;
@@ -684,7 +888,7 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       font-size: 0.84rem;
     }}
     @media (max-width: 980px) {{
-      .summary-grid, .grid, .focus-banner, .metrics, .work-grid {{
+      .summary-grid, .grid, .focus-banner, .metrics, .work-grid, .control-deck, .flow-bar {{
         grid-template-columns: 1fr;
       }}
       .summary-card {{
@@ -703,29 +907,28 @@ def build_html(markdown_path: Path, markdown: str) -> str:
       <div class="chips">{context_chips}</div>
     </header>
 
-    <section class="summary-grid" aria-label="Session summary">
-      {summary_cards}
-    </section>
-
-    {focus_banner}
+    {control_deck}
 
     {metrics}
+
+    {progress_flow}
 
     <section class="grid">
       <div>
         <section class="panel">
-          <h2>Work Board</h2>
+          <h2>Work Items</h2>
           {render_progress_cards(progress)}
           <details><summary>Show original table</summary>{render_table(progress)}</details>
         </section>
 
         <section class="panel">
-          <h2>Choices We Made</h2>
+          <h2>Decision Board</h2>
           {render_decision_timeline(decisions)}
+          <details><summary>Show full decision history</summary>{render_table(decisions)}</details>
         </section>
 
         <section class="panel">
-          <h2>Side Paths To Return From</h2>
+          <h2>Side Paths</h2>
           {render_side_path_cards(side_paths)}
         </section>
       </div>
@@ -738,12 +941,17 @@ def build_html(markdown_path: Path, markdown: str) -> str:
         </section>
 
         <section class="panel">
-          <h2>Proof And Links</h2>
+          <h2>Evidence / Checks</h2>
           {render_list(links)}
         </section>
 
         <section class="panel">
-          <h2>Continue Later</h2>
+          <h2>Reference Pack</h2>
+          {render_reference_pack(reference_pack, markdown_path, context)}
+        </section>
+
+        <section class="panel">
+          <h2>Continuation Prompt</h2>
           <pre>{html.escape(continuation) if continuation else "No continuation prompt recorded."}</pre>
         </section>
       </aside>

@@ -53,8 +53,9 @@ Recommended order:
 4. Decisions
 5. Side Paths And Return Path
 6. Agent Context
-7. Evidence
-8. Continuation Prompt
+7. Links And Evidence
+8. Reference Pack
+9. Continuation Prompt
 
 This lets Hafiz understand the session quickly while still giving Claude,
 Codex, or another agent the exact state needed to resume.
@@ -82,6 +83,32 @@ session-map.md -> generated session-map.html
 
 The generated HTML can show a mindmap, progress table, current focus, open
 decisions, linked issues, linked docs, and the recommended next action.
+
+The agreed dashboard v2 first screen should answer:
+
+```text
+Where are we, and what should happen next?
+```
+
+Use these top-screen blocks:
+
+- **Now**: what is happening right now.
+- **Goal**: why this session exists.
+- **Next**: the single recommended next action.
+- **Waiting**: approvals, local-only commits, blockers, or review still needed.
+- **Confidence**: what has been checked and what is still only assumed.
+
+Below that, show:
+
+- **Progress Flow**
+- **Decision Board**
+- **Side Paths**
+- **Evidence / Checks**
+- **Reference Pack**
+- **Continuation Prompt**
+
+Plain meaning: the dashboard should feel like opening the same working session
+again, not starting from a cold transcript.
 
 Generate the HTML view with:
 
@@ -224,12 +251,49 @@ Use the smallest useful version, but keep these headings when possible:
 
 ## Agent Context
 
-## Evidence
+## Links And Evidence
+
+## Reference Pack
 
 ## Continuation Prompt
 ```
 
 Keep technical metadata in `Agent Context`, not above `Human Snapshot`.
+
+Use this friendly progress flow for work states:
+
+```text
+Exploring -> Decided -> Updated -> Checked -> Committed -> On GitHub -> Done
+```
+
+Plain meaning:
+
+- **Exploring**: still discussing, researching, or shaping.
+- **Decided**: direction chosen.
+- **Updated**: docs, code, tools, memory, or config changed.
+- **Checked**: tests, guards, review, or another real check passed.
+- **Committed**: saved locally in Git.
+- **On GitHub**: pushed and available to future agents.
+- **Done**: no required next action remains.
+
+Only record meaningful choices in the Decision Board, not every small note.
+Each decision should include the decision, reason, effect, status, owner, and
+date.
+
+Use these Side Path states:
+
+- **Doing now**
+- **Parked**
+- **Needs decision**
+- **Turned into task**
+- **Dropped**
+
+Plain meaning: side paths are "do not forget this, but do not let it hijack the
+main task."
+
+The Reference Pack is the bridge between sessions. It should include the
+primary Session Map, generated dashboard, core docs to read first, important
+commits, Koda memories, what to ignore, and a resume instruction.
 
 Agent Context should include:
 
@@ -329,6 +393,7 @@ Before ending a meaningful session, update:
 - Decisions
 - Side Paths And Return Path
 - Links And Evidence
+- Reference Pack
 - Continuation Prompt
 - Agent Context `Done means`, `Recommended stop point`, and `Approved boundary`
 
@@ -386,19 +451,19 @@ stay local only or can be committed when they become useful examples.
 
 ## HTML Dashboard Direction
 
-The first version should be Markdown only.
+The HTML dashboard is a generated read-only view. The Markdown remains the
+source agents edit.
 
-Add generated HTML later if the Markdown map proves useful. The HTML should be
-a read-only view, not the source agents edit.
+Good HTML view:
 
-Good first HTML view:
-
-- current focus at the top
-- mindmap in the middle
-- progress table
-- open decisions
-- links
-- recommended next action
+- first-screen control blocks: Now, Goal, Next, Waiting, Confidence
+- Progress Flow using Exploring, Decided, Updated, Checked, Committed, On
+  GitHub, Done
+- Decision Board with the latest important decisions first
+- Side Paths with return paths
+- Evidence / Checks
+- Reference Pack
+- Continuation Prompt
 
 This keeps the workflow efficient: agents update one file, Hafiz can inspect a
 clear page, and future agents can still read plain Markdown.

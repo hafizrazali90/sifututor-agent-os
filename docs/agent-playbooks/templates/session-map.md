@@ -31,19 +31,19 @@ mindmap
 
 | Item | Status | Owner | Evidence / Link | Next |
 | --- | --- | --- | --- | --- |
-| <item> | <not started / in discussion / in progress / waiting / done locally / committed / pushed / PR open / merged / deployed / live smoke passed / closed> | <Hafiz / Codex / Claude / staff / dev> | <link or none> | <next step> |
+| <item> | <Exploring / Decided / Updated / Checked / Committed / On GitHub / Done> | <Hafiz / Codex / Claude / staff / dev> | <link or none> | <next step> |
 
 ## Decisions
 
-| Decision | Why | Owner | Date |
-| --- | --- | --- | --- |
-| <decision> | <plain reason> | <Hafiz / agent / team> | <YYYY-MM-DD> |
+| Decision | Why | Effect | Status | Owner | Date |
+| --- | --- | --- | --- | --- | --- |
+| <decision> | <plain reason> | <what this changes> | <Exploring / Decided / Updated / Checked / Committed / On GitHub / Done> | <Hafiz / agent / team> | <YYYY-MM-DD> |
 
 ## Side Paths And Return Path
 
 | Side path | Why it appeared | Status | Return path |
 | --- | --- | --- | --- |
-| <topic> | <reason> | <captured / active / paused / done> | <where to continue next> |
+| <topic> | <reason> | <Doing now / Parked / Needs decision / Turned into task / Dropped> | <where to continue next> |
 
 ## Open Questions
 
@@ -73,6 +73,16 @@ mindmap
 - Mission Ledger: <item/link or none>
 - Koda memory: <id or none>
 - Evidence: <test, screenshot, QA note, deploy/smoke link, or none>
+
+## Reference Pack
+
+- Primary Session Map: `.agent-os/session-maps/<YYYY-MM-DD-HHMMSS-agent-short-topic>.md`
+- Generated dashboard: `.agent-os/session-maps/<YYYY-MM-DD-HHMMSS-agent-short-topic>.html`
+- Core docs to read first: `docs/agent-playbooks/session-map.md`, `docs/agent-playbooks/templates/session-map.md`
+- Important commits: <sha and meaning, or none>
+- Koda memories: <memory ids and meaning, or none>
+- What to ignore: <files, repos, or topics the next agent should not reread or change>
+- Resume prompt: read this Reference Pack, then continue from Current focus and Next action.
 
 ## Continuation Prompt
 

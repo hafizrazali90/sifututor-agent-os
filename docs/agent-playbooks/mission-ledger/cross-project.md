@@ -51,9 +51,11 @@ that span more than one project.
   problem. Without a live map, both Hafiz and the agent can lose the story.
 - **Source:** Hafiz request, 2026-06-28
 - **Current state:** Session Map playbook, template, validator, HTML dashboard,
-  auto-open habit, lifecycle trigger, and close-state model exist.
+  auto-open habit, lifecycle trigger, close-state model, and dashboard v2
+  structure exist locally for review.
 - **Next action:** Use the Session Map in this Agent OS build session and
-  refine the human-facing dashboard/copy when it feels hard to scan.
+  review the dashboard v2 first-screen scan, Progress Flow, Decision Board,
+  Side Paths, Evidence / Checks, Reference Pack, and Continuation Prompt.
 - **Promote to:** Keep as Agent OS playbook/template; promote dashboard changes
   into reusable tooling when the design stabilizes.
 - **Links:** [session map playbook](../../agent-playbooks/session-map.md),
