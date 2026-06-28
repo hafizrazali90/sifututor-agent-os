@@ -40,7 +40,7 @@ that span more than one project.
 ### AO-LEDGER-001.2 — Add Session Map for live conversation tracking
 
 - **Project:** cross-project
-- **Status:** promoted
+- **Status:** active
 - **Type:** task
 - **Parent:** AO-LEDGER-001
 - **End goal:** Agents can maintain a lightweight live map of the current
@@ -50,8 +50,11 @@ that span more than one project.
   one goal, branch into side problems, then need to return to the original
   problem. Without a live map, both Hafiz and the agent can lose the story.
 - **Source:** Hafiz request, 2026-06-28
-- **Next action:** Try the Session Map template in the next multi-topic Agent
-  OS session, then decide whether to add generated HTML.
-- **Promote to:** Agent OS playbook/template
+- **Current state:** Session Map playbook, template, validator, HTML dashboard,
+  auto-open habit, lifecycle trigger, and close-state model exist.
+- **Next action:** Use the Session Map in this Agent OS build session and
+  refine the human-facing dashboard/copy when it feels hard to scan.
+- **Promote to:** Keep as Agent OS playbook/template; promote dashboard changes
+  into reusable tooling when the design stabilizes.
 - **Links:** [session map playbook](../../agent-playbooks/session-map.md),
   [session map template](../../agent-playbooks/templates/session-map.md)
