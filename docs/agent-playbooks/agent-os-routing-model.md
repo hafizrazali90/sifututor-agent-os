@@ -224,6 +224,36 @@ If the last recommendation was "review routing model next," `proceed next`
 means start that review. If the last request was "approve commit+push for these
 files," `approve` means commit and push.
 
+## Smart Resume
+
+Use smart automatic resume for continuation-like prompts. The agent should look
+for evidence that the user is returning to an existing thread before starting
+from zero.
+
+Resume signals:
+
+- Hafiz says `continue`, `resume`, `go next`, `proceed`, `what next`, or
+  similar.
+- A recent active Session Map exists.
+- Local Git is ahead of GitHub or another state boundary is waiting.
+- The chat resumed after compaction or a long pause.
+- The task is multi-step Agent OS, workflow, product, QA, release, or handoff
+  work.
+
+Expected behavior:
+
+1. Read the latest relevant Session Map Reference Pack before broad
+   exploration.
+2. Check Git state.
+3. Summarize the main goal, current focus, waiting items, and recommended next
+   action.
+4. Continue if the map matches the prompt.
+5. If the map looks unrelated, say so and treat the prompt as new work unless
+   Hafiz says to resume it.
+
+Plain meaning: if Hafiz says "continue", check the whiteboard first. If Hafiz
+asks a tiny unrelated question, answer the question.
+
 ## Conversation-State Fixture Check
 
 Run this local fixture runner when changing short-command behavior:

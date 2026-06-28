@@ -104,6 +104,7 @@ The dispatcher uses these signals:
 | Discussion words | explain, discuss, why, what should, architecture |
 | Prompt length / non-triviality | Longer prompts are routed instead of ignored. |
 | Project hint | `sifu-tutor`, `ripple-suite`, tutor app, parent app, LLS |
+| Smart resume signals | `continue`, `go next`, recent Session Map, or local commits ahead of GitHub |
 | Koda search | Relevant durable lessons are injected when safe. |
 
 The dispatcher should not route by keyword alone. The agent must still inspect
@@ -153,6 +154,12 @@ Short replies depend on visible conversation context.
 | `proceed next` | Continue the next review/action from visible chat context. |
 | `approve` | Execute the last exact approval request only. |
 | `what next` | Give one next recommended action. |
+
+For continuation-like prompts, the hook should add a smart resume hint when
+there is an active Session Map or local Git state waiting. Codex should read
+the Session Map Reference Pack first, then say whether the map matches the
+prompt. If it matches, continue from the map. If it does not, treat the prompt
+as new work unless Hafiz asks to resume the old map.
 
 The hook should not guess an old hidden approval. If visible context is missing
 or risky, Codex must ask a short clarification.

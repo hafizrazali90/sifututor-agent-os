@@ -14,15 +14,24 @@ classify, resume, or create work.
    audit before continuing. For Agent OS discussion, keep it light: umbrella
    repo status, recent commits, Koda/health state, and relevant docs. For
    product work, audit only the selected repo before editing.
-6. If the project has `TESTING.md` and the task may change user-facing
+6. Use smart resume behavior when context signals matter: Hafiz says
+   `continue`, `resume`, `go next`, `proceed`, `what next`, or similar; a
+   recent active Session Map exists; local Git is ahead of GitHub; the chat
+   resumed after compaction or a long pause; or the work is a multi-step Agent
+   OS/workflow/product task. Read the latest relevant Session Map Reference
+   Pack before broad exploration. If it matches the prompt, summarize the main
+   goal, current focus, waiting items, Git state, and recommended next action.
+   If it does not match, say it looks unrelated and treat the prompt as new
+   unless Hafiz wants to resume it.
+7. If the project has `TESTING.md` and the task may change user-facing
    behavior, read it and identify the affected feature row before
    implementation. Use [test-coverage.md](test-coverage.md).
-7. If the active project is `sifu-tutor` and the task touches SIMS browser UI,
+8. If the active project is `sifu-tutor` and the task touches SIMS browser UI,
    UX design, page layout, React/Inertia components, staff-facing copy, or
    visual QA, read `sifu-tutor/docs/ui-ux/README.md` before routing the build or
    review. Then read the relevant files it points to plus the nearest
    `sifu-tutor/docs/features/<feature>/` docs.
-8. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
+9. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only
    when the design risk is real; small fixes stay on the normal route.
@@ -31,22 +40,22 @@ classify, resume, or create work.
    coding because Hafiz says "proceed" unless the current discussion already
    produced the module scope, user/system flow decisions, screen inventory,
    state coverage, evidence plan, and explicit implementation approval.
-9. For critical-lane work, cross-module workflows, or any task being handed
-   from one AI/human developer to another, apply
-   [ai-implementation-readiness.md](ai-implementation-readiness.md) before
-   coding. If the plan/build prompt is missing real entry points, contract
-   moments, retry/idempotency, realistic payloads, or exact evidence, close the
-   documentation gap first.
-10. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+10. For critical-lane work, cross-module workflows, or any task being handed
+    from one AI/human developer to another, apply
+    [ai-implementation-readiness.md](ai-implementation-readiness.md) before
+    coding. If the plan/build prompt is missing real entry points, contract
+    moments, retry/idempotency, realistic payloads, or exact evidence, close the
+    documentation gap first.
+11. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
    staff-reported operational issues, check Microsoft Teams Planner
    `Development & Support > Task Management Board` as intake/context before
    deciding scope. Treat Planner as staff-reported issue context, not the
    engineering source of truth. Do not modify Planner unless Hafiz explicitly
    asks in the current session.
-11. Do not check or create Plane cards by default. If mission-level context is
+12. Do not check or create Plane cards by default. If mission-level context is
    needed, use the Mission Ledger or the project active task state. Use Plane
    only when Hafiz explicitly asks in the current session.
-12. If the prompt sounds like a follow-up, adjacent task, paused question, or
+13. If the prompt sounds like a follow-up, adjacent task, paused question, or
     part of a bigger goal, check the Mission Ledger before treating it as an
     isolated task. Use [mission-ledger.md](mission-ledger.md), but search first
     and read only the relevant project section.

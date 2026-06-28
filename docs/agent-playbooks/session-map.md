@@ -164,6 +164,43 @@ Create or update one when any of these are true:
 Do not create one for a tiny one-shot answer, quick command output, typo fix,
 or small single-file docs edit unless Hafiz asks.
 
+## Smart Resume Behavior
+
+Use smart automatic resume. Do not make Hafiz remember magic words, but do not
+force Session Map reading into tiny unrelated questions either.
+
+Resume from the latest relevant Session Map when one or more of these signals
+appear:
+
+- Hafiz says `continue`, `resume`, `go next`, `proceed`, `what next`, `where
+  were we`, or says he left the chat for a while.
+- A recent active Session Map exists.
+- Local Git has commits ahead of GitHub or other unfinished state.
+- The chat resumed after compaction, a long pause, or another agent's work.
+- The work is Agent OS/workflow/product work with multiple steps.
+
+When resuming, read the Reference Pack first, then summarize:
+
+- main goal
+- current focus
+- waiting items
+- local Git state
+- recommended next action
+
+Plain meaning:
+
+```text
+If Hafiz walks back into the room and says "continue", check the whiteboard
+first. If he asks a tiny unrelated question, answer the question.
+```
+
+If the latest Session Map does not match Hafiz's prompt, say so:
+
+```text
+I found an active Session Map for <topic>, but your prompt looks like <new
+topic>. I will treat this as new work unless you want to resume that map.
+```
+
 ## Operating Rhythm
 
 Use this rhythm during normal work:

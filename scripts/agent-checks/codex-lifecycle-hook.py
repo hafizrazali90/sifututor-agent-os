@@ -7,12 +7,14 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any
 import urllib.request
 
 
 WORKSPACE = Path("/Users/hafizrazali/Projects/Sifututor")
+SESSION_MAP_DIR = WORKSPACE / ".agent-os" / "session-maps"
 CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "https://koda.tutorla.tech/mcp"
 KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
@@ -120,6 +122,82 @@ def active_task_summary(project: str) -> str:
             except Exception:
                 pass
     return summary
+
+
+def latest_session_map() -> Path | None:
+    if not SESSION_MAP_DIR.exists():
+        return None
+    candidates = sorted(
+        SESSION_MAP_DIR.glob("*.md"),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    return candidates[0] if candidates else None
+
+
+def git_ahead_summary() -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--left-right", "--count", "origin/main...HEAD"],
+            cwd=WORKSPACE,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except Exception:
+        return ""
+    if result.returncode != 0:
+        return ""
+    parts = result.stdout.strip().split()
+    if len(parts) != 2:
+        return ""
+    behind, ahead = parts
+    if ahead == "0" and behind == "0":
+        return ""
+    return f"Git state signal: local main is ahead by {ahead} and behind by {behind} compared with origin/main."
+
+
+def continuation_signal(normalized: str) -> bool:
+    patterns = (
+        r"^\s*(continue|resume|proceed|go next|next|what next|ok proceed)\s*$",
+        r"\bcontinue\b",
+        r"\bresume\b",
+        r"\bgo next\b",
+        r"\bproceed\b",
+        r"\bwhat next\b",
+        r"\bwhere were we\b",
+        r"\bleft (this )?chat\b",
+        r"\bfrom last session\b",
+    )
+    return any(re.search(pattern, normalized) for pattern in patterns)
+
+
+def smart_resume_actions(normalized: str) -> list[str]:
+    latest_map = latest_session_map()
+    git_signal = git_ahead_summary()
+    has_signal = continuation_signal(normalized) or latest_map is not None or bool(git_signal)
+    if not has_signal:
+        return []
+
+    actions = [
+        "Smart resume check: before broad exploration, check whether this prompt continues the active Session Map or starts a new task.",
+    ]
+    if latest_map:
+        try:
+            display_path = latest_map.relative_to(WORKSPACE)
+        except ValueError:
+            display_path = latest_map
+        actions.append(f"Read the latest active Session Map Reference Pack first: `{display_path}`.")
+    if git_signal:
+        actions.append(git_signal)
+    actions.extend(
+        [
+            "If the active map matches the prompt, summarize main goal, current focus, waiting items, Git state, and the recommended next action before continuing.",
+            "If the active map is unrelated, say it looks unrelated and treat the prompt as a new task unless Hafiz wants to resume it.",
+        ]
+    )
+    return actions
 
 
 def detect_project_from_prompt(prompt: str) -> str:
@@ -530,7 +608,10 @@ def nontrivial_prompt(prompt: str) -> bool:
         "fix",
         "implement",
         "proceed",
+        "continue",
+        "resume",
         "go next",
+        "what next",
         "commit",
         "verify",
         "qa",
@@ -1105,9 +1186,11 @@ def main() -> int:
         skill, actions, reason = classify_prompt(prompt)
         if not skill:
             return 0
+        normalized = re.sub(r"\s+", " ", prompt.lower()).strip()
         if skill == "$task-router":
             actions = [
                 *actions,
+                *smart_resume_actions(normalized),
                 "If the prompt may be a follow-up, adjacent task, paused question, or part of a bigger goal, search `docs/agent-playbooks/mission-ledger` with `rg` and read only the relevant section.",
             ]
         elif skill == "$save-session":

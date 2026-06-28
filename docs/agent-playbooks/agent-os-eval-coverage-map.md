@@ -27,6 +27,7 @@ be automated next.
 | Context authority | AO-012, AO-013 | Trusting Koda, prior memories, or conflicting docs without checking current source of truth. |
 | Verify, QA, and evidence | AO-016, AO-017, AO-028, AO-059, AO-060 | Asking Hafiz to check what the agent can safely test, or calling machine proof enough for a human workflow. |
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
+| Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |
 | Planning bundles | AO-015, AO-027 | Turning safe docs/planning work into product implementation without confirmed scope. |
 | State truth | AO-018, AO-065, AO-067 | Confusing saved, local, committed, pushed, deployed, or live-smoke-passed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
