@@ -72,6 +72,50 @@ Higher levels prove a person can actually use the thing.
 Hafiz should mostly live at the top, not at the bottom.
 ```
 
+## Proof Standard
+
+Every evidence report should separate proof into three practical layers:
+
+| Layer | Proves | Typical evidence |
+| --- | --- | --- |
+| Code proof | The engine, rule, or build is not obviously broken. | Unit/service tests, feature/API tests, lint, typecheck, build, static checks. |
+| Journey proof | A real user or system can complete the changed workflow. | Playwright/browser/mobile flow, API/curl smoke, screenshots, read-only state checks, manual QA checklist when automation is unsafe. |
+| Release proof | The fix reached the claimed environment and was checked there. | Git/PR/merge state, deployed SHA/version, staging/production smoke, logs, monitoring. |
+
+Plain meaning:
+
+```text
+Code proof says the parts work.
+Journey proof says a person can use it.
+Release proof says the right version reached the right place.
+```
+
+The agent must report the highest proven state, not the hoped-for state.
+
+Examples:
+
+| Do not say | Say instead |
+| --- | --- |
+| fixed | changed locally, not committed yet |
+| done | committed locally, not pushed |
+| ready | ready for commit, but UI journey still unproven |
+| deployed | deployed to staging, production not touched |
+| live | deployed and route reachable, but live workflow smoke is still missing |
+| Hafiz can check | agent-run checks passed; Hafiz still needs to judge wording/risk |
+
+Use this sentence shape when the distinction matters:
+
+```text
+Highest proven state: <state>.
+What proves it: <tests/checks/evidence>.
+What is not proven yet: <gap or none>.
+Recommended next: <next action>.
+```
+
+This keeps Hafiz from having to translate test output into practical status.
+The agent should say whether work is ready for commit, PR, staging QA, deploy,
+live check, or Hafiz acceptance.
+
 ## Agent-As-Tester Rule
 
 Before asking Hafiz to verify something, the agent must ask:

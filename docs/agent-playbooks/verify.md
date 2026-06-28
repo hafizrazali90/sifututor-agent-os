@@ -14,6 +14,12 @@ work is ready. Plain meaning: "ready" must name the evidence level reached, such
 as docs evidence, backend evidence, UI evidence, deploy evidence, or live-check
 evidence. Do not say ready without saying ready for what.
 
+Use the Proof Standard in
+[agent-os-evidence-model.md](agent-os-evidence-model.md) when summarizing
+verification. Plain meaning: say whether you have code proof, journey proof,
+release proof, or only part of that stack. Always name the highest proven state
+instead of saying "done" generically.
+
 Use the Evidence Gap Stop Rules in
 [agent-os-evidence-model.md](agent-os-evidence-model.md) when expected proof is
 missing. Plain meaning: missing proof must be reported as a named gap, not
@@ -55,6 +61,9 @@ hidden inside "ready" or pushed onto Hafiz as a vague manual check.
 - When verification cannot reach the evidence level required for the next
   state, say the highest state actually proven. Example: "backend verified,
   UI workflow still unproven" instead of "ready".
+- Verification is not a release claim. Passing local tests does not prove a PR
+  is merged, a deploy happened, or production users can complete the changed
+  workflow.
 
 ## Project Command Matrix
 
@@ -82,6 +91,8 @@ Commands:
 
 Gate 2A:
 - implementation works: yes/no/partial
+- highest proven state: <changed locally | committed locally | ready for commit | ready for PR | deployed to staging | deployed to production | live checked | accepted / closed>
+- proof layers reached: <code proof | journey proof | release proof>
 - TESTING.md row checked: yes/no/not applicable
 - permanent E2E regression: added/updated/not feasible/not user-facing
 - changed user workflows and their permanent E2E files: <list or explicit exception>

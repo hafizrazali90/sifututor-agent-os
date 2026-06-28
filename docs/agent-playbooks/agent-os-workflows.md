@@ -103,6 +103,10 @@ Every workflow should answer these questions before it is called done:
   should be specific to the task, such as new scope, contradictory evidence,
   unavailable access, product/business decision, unapproved production action,
   destructive action, or critical-lane risk.
+- Use the Proof Standard from
+  [agent-os-evidence-model.md](agent-os-evidence-model.md): code proof proves
+  the parts, journey proof proves the user/system flow, and release proof proves
+  where the change actually reached. Always report the highest proven state.
 - Use compact control wording for simple work and full control wording for
   bugfixes, features, production, critical lanes, multi-step work, or whenever
   Hafiz may not know the workflow path.
@@ -802,6 +806,8 @@ Evidence required:
 - Permanent E2E regression decision for user-facing workflows.
 - Human-journey evidence when a real user depends on the behavior.
 - SIMS UI/UX quality-gate evidence for `sifu-tutor` browser UI-visible work.
+- Highest proven state and which proof layers were reached: code proof,
+  journey proof, and/or release proof.
 
 Exit when the changed behavior is proven, failures are separated into baseline
 vs task-caused, or a named blocker prevents honest verification.
@@ -828,6 +834,7 @@ Evidence required:
 - Role and journey being tested.
 - Setup, action, expected result, how to verify, and what failure looks like.
 - Browser/mobile/API/screenshot evidence when feasible.
+- Highest proven state for the journey and release/live state.
 - Clear list of untested areas and why.
 
 Exit when the journey is QA-passed, blocked with a specific reason, or handed
@@ -864,6 +871,7 @@ Evidence required:
 
 - Current diff and changed files inspected.
 - Tests/evidence checked against the changed behavior.
+- Code proof, journey proof, and release proof separated where relevant.
 - User-facing E2E decision checked.
 - Multi-fix session state checked when more than one issue is involved.
 - Scope, evidence, state, release communication, critical-lane, multi-fix, and

@@ -13,6 +13,11 @@ QA proof for the changed surface. Plain meaning: docs, backend logic, API
 contracts, UI, mobile, deploys, and incidents do not need the same proof, but
 each must name the strongest evidence actually gathered.
 
+Use the Proof Standard in
+[agent-os-evidence-model.md](agent-os-evidence-model.md). Plain meaning: QA
+should say whether it proved the real journey, whether the release/live state
+was checked, and what is still only code-level confidence.
+
 Use the Evidence Gap Stop Rules in
 [agent-os-evidence-model.md](agent-os-evidence-model.md) when the strongest
 available evidence is weaker than the workflow normally requires. Plain
@@ -121,6 +126,8 @@ Manual/browser evidence:
 Human journey:
 - <automated E2E | agent-run smoke | manual QA checklist | not applicable>
 - <why this is enough, or why stronger evidence was not feasible>
+Highest proven state:
+- <code proof only | journey proof | staging checked | production live checked | accepted / closed>
 
 Regression coverage:
 - <covered | not feasible, reason>

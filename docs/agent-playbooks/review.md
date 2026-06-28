@@ -9,6 +9,8 @@ tests, workflow violations, and user-facing behavior. Keep summaries secondary.
 
 Use [agent-os-evidence-model.md](agent-os-evidence-model.md) when judging
 whether the agent gathered enough proof before handing work to Hafiz or staff.
+Use its Proof Standard to separate code proof, journey proof, and release proof
+before allowing the next state to be described as ready.
 
 ## Review And Risk Checkpoint
 

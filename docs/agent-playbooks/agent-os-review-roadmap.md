@@ -155,6 +155,7 @@ created.
 | 2026-06-04 | Tool and Capability Model review accepts the Capability Manifest model. | Capability depends on connected tools, credentials, filesystem access, approval gates, and forbidden boundaries, not role labels like Codex, Claude, or staff. | Report capability as available, fallback, unknown, not_connected, blocked, or forbidden. |
 | 2026-06-05 | Workflows and Lanes review accepts the Lane Intensity Model: Light, Medium, Full, and Critical. | This matches current agent best practice: route by task type, use guardrails by risk, avoid approval fatigue, and keep critical domains strict. | Use `agent-os-workflow-lanes.md` as the source and refine individual lane playbooks through real use. |
 | 2026-06-05 | Verification and Evidence review accepts the Agent-As-Tester Evidence Model. | Hafiz wants agents to be the bridge between him and coding, including tester work the agent can safely perform. Testing should validate the same observable workflow a human tester would validate, while Hafiz verifies business judgment, unavailable access, destructive actions, and final risk acceptance. | Use `agent-os-evidence-model.md` as the source and make verify/QA/review enforce human-journey evidence. |
+| 2026-06-29 | Verification, QA, and Evidence accepts the Proof Standard. | Hafiz needs the agent to distinguish code proof, journey proof, and release proof so "tests passed" is not mistaken for "users can do it" or "it is live." | Use `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `review.md`, and workflow close-outs to report the highest proven state. |
 | 2026-06-05 | GitHub/Plane/Planner/Task State review accepts the State Model. | Hafiz needs agents to stop using vague "done" language when work may only be local, pushed, PR-open, merged, deployed, or live-smoke-passed. Each tool should own a specific kind of truth. | Use `agent-os-state-model.md` as the source for state language and source-of-truth ownership. |
 | 2026-06-05 | Staff Rollout Readiness review accepts the readiness ladder: internal Agent OS, project baseline, staff-safe kit, approved builder kit, advanced operations. | Staff rollout should not mean giving every person every tool. The safe path is internal-first, then staff reporting/QA/docs, then code builder access only for trusted users, and advanced operations only by explicit approval. | Use `agent-os-rollout-readiness.md` before installing or expanding staff capabilities. |
 | 2026-06-29 | Work Intake and Task State review accepts quick diagnosis before GitHub issue creation or implementation. | Hafiz wants traceability without noise: agents should not create GitHub issues from vague symptoms too early, but should not start real coding work with no trace. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` for intake routing. |
@@ -442,6 +443,9 @@ Output:
 ### 9. Verification, QA, And Evidence
 
 Question: how much proof is enough for each kind of work?
+
+Decision: use the Proof Standard. Separate code proof, journey proof, and
+release proof, then report the highest proven state.
 
 Review:
 
