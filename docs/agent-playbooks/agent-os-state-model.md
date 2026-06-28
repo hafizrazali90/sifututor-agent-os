@@ -48,21 +48,45 @@ No single tool should pretend to be all of these at once.
 
 ## Practical Rule
 
-Before saying work is "done", say the target state:
+Before saying work is "done", say the highest proven state:
 
 ```text
-done locally
+drafted
+changed locally
 committed locally
-pushed
+pushed to GitHub
 PR open
-merged to main
+merged
 deployed
-live and smoke passed
-accepted by Hafiz
+live checked
+accepted / closed
 ```
 
 Do not use "done" alone when a user could reasonably think it means shipped or
 live.
+
+Plain meaning:
+
+```text
+Say how far the work has truly travelled. Do not describe it as more finished
+than the evidence proves.
+```
+
+Example:
+
+```text
+Committed locally, not pushed yet.
+```
+
+This means Git saved it on Hafiz's machine, but GitHub and other agents do not
+have it yet.
+
+```text
+Deployed, live check not done yet.
+```
+
+This means the server has the version, but the real workflow still needs to be
+tested on that environment.
 
 The executable state wording subset lives at:
 
@@ -105,18 +129,23 @@ in docs, git, Koda, and the final close-out unless Hafiz asks for GitHub.
 | --- | --- |
 | `not started` | Captured, but no work has begun. |
 | `in discussion` | Hafiz and agent are shaping the work; no implementation yet. |
+| `drafted` | Idea, doc, PRD, plan, or code direction exists, but it has not been finalized as a saved implementation state yet. |
 | `in progress` | Agent/dev is actively changing or diagnosing. |
 | `blocked` | Cannot move until a named blocker is resolved. |
 | `waiting for Hafiz` | Agent has gathered what it can; Hafiz needs to decide, approve, or judge. |
 | `waiting for QA` | Built evidence exists, but manual/device/business QA still needs to happen. |
-| `done locally` | Files changed locally; not necessarily committed. |
+| `changed locally` | Files changed locally on Hafiz's machine; not necessarily committed. |
+| `done locally` | Older wording for `changed locally`; prefer `changed locally` unless quoting an old note. |
 | `committed locally` | Commit exists only in local git. |
-| `pushed` | Branch or commit exists on remote, but may not be merged. |
+| `pushed to GitHub` | Branch or commit exists on remote, but may not be merged. |
+| `pushed` | Short wording for `pushed to GitHub`. |
 | `PR open` | Pull request exists and awaits review/merge. |
 | `merged` | Change is in `origin/main` or the agreed target branch. |
 | `deployed` | Target environment contains the commit. |
-| `live smoke passed` | The changed workflow was checked on the deployed target. |
-| `closed` | Intended outcome is complete, evidence exists, and no next action remains. |
+| `live checked` | The changed workflow was checked on the deployed target. |
+| `live smoke passed` | Technical wording for `live checked`. |
+| `accepted / closed` | Hafiz or the business accepted the outcome, evidence exists, and no required next action remains. |
+| `closed` | Short wording for `accepted / closed`; use only when nothing required remains. |
 
 ## State Update Rules
 

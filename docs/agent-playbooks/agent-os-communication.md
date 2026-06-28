@@ -198,6 +198,9 @@ Required meaning in either shape:
 - whether Hafiz needs to decide anything
 - the honest ending state when the work is meaningful: Continue, Save Only,
   Park, Hand Off, or Close
+- the highest proven work state when GitHub, PR, merge, deploy, QA, or live
+  status matters: drafted, changed locally, committed locally, pushed to
+  GitHub, PR open, merged, deployed, live checked, or accepted / closed
 
 Good relaxed close-out:
 
@@ -206,7 +209,7 @@ I documented the approval model and linked it from the Agent OS index. The
 health check and pre-commit guard both passed.
 
 Current state: Continue.
-Still waiting: the docs batch is local-only.
+Still waiting: the docs batch is committed locally, not pushed to GitHub.
 Recommended next: review Communication and Close-Out before committing.
 Decision needed: no.
 ```

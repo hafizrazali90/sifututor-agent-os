@@ -29,7 +29,7 @@ be automated next.
 | Short commands | AO-021, AO-076 | Treating `proceed next` or `go next` as trivial instead of routing through visible chat context. |
 | Smart resume | AO-093 | Starting cold when an active Session Map, Reference Pack, or local Git state clearly shows the user is continuing existing work. |
 | Planning bundles | AO-015, AO-027 | Turning safe docs/planning work into product implementation without confirmed scope. |
-| State truth | AO-018, AO-065, AO-067 | Confusing saved, local, committed, pushed, deployed, or live-smoke-passed states. |
+| State truth | AO-018, AO-065, AO-067, AO-095 | Confusing drafted, changed locally, committed locally, pushed to GitHub, PR open, merged, deployed, live checked, or accepted / closed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
 | Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005 | Saying local or committed work is live, deployed, or smoke-passed without evidence. |
