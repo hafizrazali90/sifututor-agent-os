@@ -1,14 +1,14 @@
 # Mission Ledger Playbook
 
 Use this when a task, adjacent idea, follow-up, or discussion point must not be
-lost, but is not ready to become a GitHub issue, Plane card, or active task yet.
+lost, but is not ready to become a GitHub issue, PRD, QA plan, Koda memory, or
+active task yet.
 
 Plain version:
 
 ```text
 Koda remembers lessons.
 GitHub tracks engineering tickets.
-Plane tracks active missions.
 The Mission Ledger remembers what we should come back to and why.
 ```
 
@@ -20,7 +20,7 @@ The Mission Ledger is the Agent OS parking lot for work that needs context:
 - child tasks under those goals
 - adjacent ideas discovered during a session
 - paused questions waiting for Hafiz or staff
-- follow-ups that should later become GitHub issues, Plane cards, PRDs, or QA
+- follow-ups that should later become GitHub issues, PRDs, QA plans, or Koda
 
 It lives at:
 
@@ -99,7 +99,7 @@ Every non-trivial item should point to a parent mission.
 Mission
 -> child task
 -> adjacent idea
--> promoted GitHub issue / Plane card / PRD when ready
+-> promoted GitHub issue / PRD / QA plan / Koda memory when ready
 ```
 
 Use IDs that show the relationship:
@@ -116,8 +116,8 @@ RS-RECON-001.A1     # adjacent idea
 | --- | --- |
 | `captured` | Written down, not triaged yet. |
 | `triaged` | Understood; next action is clear. |
-| `active` | Currently being worked through Plane/GitHub/active task. |
-| `promoted` | Moved to GitHub, Plane, PRD, or another source of truth. |
+| `active` | Currently being worked through GitHub, PRD/QA docs, or active task state. |
+| `promoted` | Moved to GitHub, PRD, QA plan, Koda, or another source of truth. |
 | `paused` | Waiting for Hafiz, staff, evidence, or a dependency. |
 | `done` | Completed and linked to evidence. |
 | `dropped` | Intentionally not doing. |
@@ -148,8 +148,8 @@ Use this compact block for each item:
 - **Why it matters:** <plain-language reason>
 - **Source:** <chat/session/date/staff issue/PR>
 - **Next action:** <one concrete next step>
-- **Promote to:** <GitHub issue | Plane card | PRD | QA plan | Koda | none yet>
-- **Links:** <GitHub/Plane/PR/docs/evidence or none>
+- **Promote to:** <GitHub issue | PRD | QA plan | Koda | none yet>
+- **Links:** <GitHub/PR/docs/evidence or none>
 ```
 
 ## Save-Session Rule
@@ -188,7 +188,6 @@ Move an item out of the ledger when it becomes execution-ready:
 | Ready For | Promote To |
 | --- | --- |
 | exact code/docs work | GitHub issue |
-| multi-step product direction | Plane mission |
 | large new workflow or redesign | PRD / UX spec |
 | behavior lesson or future guardrail | Koda |
 | test coverage plan | QA/test docs |

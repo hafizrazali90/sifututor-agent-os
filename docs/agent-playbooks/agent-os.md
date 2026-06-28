@@ -1,7 +1,7 @@
 # Sifututor Agent OS
 
 The **Sifututor Agent OS** is the shared operating layer for Hafiz, AI agents,
-Koda, GitHub, Plane, Planner, and project-specific tools.
+Koda, GitHub, Planner, Mission Ledger, and project-specific tools.
 
 Its job is simple: help us plan, build, verify, remember, and ship work without
 losing context or adding unnecessary ceremony.
@@ -26,7 +26,8 @@ system. The Agent OS includes:
 - model-agnostic workflow rules that any capable LLM can follow
 - Koda memory for durable lessons and preferences
 - task state files for active work
-- Plane and GitHub for human-visible tracking
+- GitHub for engineering tickets and PRs
+- Mission Ledger for bigger goals, paused decisions, and future follow-ups
 - Planner for staff-reported intake where relevant
 - playbooks under `docs/agent-playbooks/`
 - guard scripts under `scripts/agent-checks/`
@@ -69,11 +70,11 @@ Use these twelve layers as the high-level table of contents for the Agent OS:
 | --- | --- |
 | Purpose | Why the Agent OS exists and what good looks like. |
 | People | Hafiz, agents, staff, developers, reviewers, and tool owners. |
-| Intake | How work enters from chat, staff reports, Planner, GitHub, Plane, Koda, or production signals. |
+| Intake | How work enters from chat, staff reports, Planner, GitHub, Koda, Mission Ledger, or production signals. |
 | Routing | How the OS chooses discuss, diagnose, design, implement, verify, QA, review, commit, deploy, or save. |
 | Workflows | The actual paths for bugfix, feature, critical lane, release, incident, and handoff. |
 | Tools | What the active agent can access and how capability is checked. |
-| Memory | What goes to Koda, docs, GitHub, Plane, Mission Ledger, or nowhere. |
+| Memory | What goes to Koda, docs, GitHub, Mission Ledger, or nowhere. |
 | Testing | How the agent proves work through tests, E2E, smoke, screenshots, API checks, or monitoring. |
 | Safety | Approval gates, forbidden actions, critical lanes, and destructive boundaries. |
 | Agent Adapters | How Codex, Claude, and future LLMs connect to the same core rules. |
@@ -96,11 +97,40 @@ Use the lightest lane that fits the work:
   deployment, and mobile API contracts require read-only diagnosis first, then
   explicit approval before implementation.
 
+## Resume Reconciliation
+
+When a chat, project, or worktree has been idle long enough that another agent,
+human, PR, or background process may have changed the state, start with a quick
+reconciliation audit before continuing.
+
+Plain version:
+
+```text
+Before we continue, first check what changed.
+Do not assume the chat memory, open editor tabs, current branch, product repo,
+or Koda memories are still the newest truth.
+```
+
+Use the lightest audit that fits:
+
+- **Agent OS discussion**: check umbrella `git status`, recent commits, Koda
+  health, and the relevant Agent OS docs. Do not deep-audit every product repo.
+- **Product repo work**: check only the selected repo's branch, dirty files,
+  active task state, recent commits, relevant docs, and safety rules before
+  editing.
+- **Cross-project confusion**: create a short workspace drift summary that
+  separates clean/current repos from dirty, stale, sensitive, or blocked repos.
+
+This is not a full review of every changed file. It is a map that tells Hafiz
+and the agent what is safe to use now, what needs a focused audit later, and
+what should not be touched without a scoped task.
+
 ## Internal-First Build
 
 Build the Agent OS for the Sifututor workspace first. Staff distribution and
 full multi-LLM rollout come later, after the internal system works reliably for
-Hafiz, AI agents, Koda, GitHub, Plane, Planner, and the existing product repos.
+Hafiz, AI agents, Koda, GitHub, Planner, Mission Ledger, and the existing
+product repos.
 
 Internal-first means:
 
@@ -135,6 +165,7 @@ Read these as the core internal kit:
 | Layer | Source |
 | --- | --- |
 | Full infrastructure map | [agent-os-infrastructure.md](agent-os-infrastructure.md) |
+| Claude/Codex parity contract | [agent-os-parity-contract.md](agent-os-parity-contract.md) |
 | Workflow skill registry | [agent-os-skill-registry.md](agent-os-skill-registry.md) |
 | Hook and dispatcher map | [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md) |
 | How Hafiz and agents work together | [working-with-hafiz.md](working-with-hafiz.md) |
@@ -160,7 +191,7 @@ starter-kit direction.
 
 Use [agent-os-infrastructure.md](agent-os-infrastructure.md) to understand how
 Agent OS pieces fit together: hooks, workflow skills, playbooks, guards, Koda,
-GitHub, Plane, Planner, evidence, and install checks.
+GitHub, Planner, Mission Ledger, evidence, and install checks.
 
 Use [agent-os-skill-registry.md](agent-os-skill-registry.md) to understand
 which Sifututor workflow skills exist, who owns them, what triggers them, which
@@ -225,7 +256,7 @@ status, evidence, approvals, and release state should live.
 
 Use [mission-ledger.md](mission-ledger.md) when a task, adjacent idea, paused
 decision, or follow-up needs to stay linked to a bigger goal before it is ready
-for GitHub, Plane, PRD, QA, or Koda.
+for GitHub, PRD, QA, or Koda.
 
 Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) before
 expanding the Agent OS from Hafiz/internal use to staff or project installs.

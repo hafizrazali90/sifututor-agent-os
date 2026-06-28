@@ -1,9 +1,10 @@
 # Plane Mission Board Playbook
 
-Use this playbook whenever an agent creates, updates, reviews, or relies on a
-Plane work item for Sifututor work.
+Plane is exception-only in the current Sifututor Agent OS. Use this playbook
+only when Hafiz explicitly asks for Plane in the current session.
 
-Plane is Hafiz's human mission board. It should answer, in plain language:
+When used, Plane is Hafiz's human mission board. It should answer, in plain
+language:
 
 - where we are now
 - what we are trying to finish
@@ -16,14 +17,14 @@ Plane is not the evidence store and not a replacement for repo docs, Koda, or
 GitHub issues.
 
 Use [agent-os-state-model.md](agent-os-state-model.md) for the broader source
-of truth split between Plane, GitHub, Planner, active task files, git, QA
-evidence, and Koda.
+of truth split between Mission Ledger, GitHub, Planner, active task files, git,
+QA evidence, Koda, and exception-only Plane.
 
 ## Source Split
 
 | Source | Role |
 | --- | --- |
-| Plane | Human mission board: goal, status, next action, owner, blocker, evidence links |
+| Plane | Exception-only human mission board when Hafiz explicitly asks for Plane |
 | Koda | Durable memory: rules, corrections, and non-obvious lessons |
 | Repo docs | Evidence, runbooks, QA reports, release notes, and technical records |
 | GitHub issues | Developer execution tickets when code work must be assigned to devs |

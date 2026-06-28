@@ -172,7 +172,7 @@ These actions must not be hidden inside a larger bundle:
 | Force push, reset, rebase, or history rewrite | Can destroy or confuse shared work. |
 | `.env*`, secrets, credentials, raw tokens | Forbidden to read, expose, or commit. |
 | Modify `live/` | `live/` is read-only reference. |
-| Change Plane scope, priority, owner, roadmap direction, or production state | Hafiz owns planning and business priority decisions. |
+| Use or change Plane | Plane is not part of the default Agent OS path; use it only if Hafiz explicitly asks in the current session. |
 
 ## Short Command Semantics
 

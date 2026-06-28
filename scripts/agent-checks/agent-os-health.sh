@@ -51,6 +51,7 @@ echo "Detected"
 check_file "root AGENTS" "$ROOT/AGENTS.md"
 check_file "Agent OS overview" "$ROOT/docs/agent-playbooks/agent-os.md"
 check_file "Agent OS infrastructure" "$ROOT/docs/agent-playbooks/agent-os-infrastructure.md"
+check_file "Agent OS parity contract" "$ROOT/docs/agent-playbooks/agent-os-parity-contract.md"
 check_file "Agent OS skill registry" "$ROOT/docs/agent-playbooks/agent-os-skill-registry.md"
 check_file "Agent OS hook dispatcher" "$ROOT/docs/agent-playbooks/agent-os-hook-dispatcher.md"
 check_file "Agent OS quick start" "$ROOT/docs/agent-playbooks/agent-os-quick-start.md"
@@ -80,6 +81,7 @@ check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
 check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
+check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
@@ -152,6 +154,16 @@ else
 fi
 rm -f /tmp/agent-os-conversation-fixtures.out /tmp/agent-os-conversation-fixtures.err
 
+if "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py" >/tmp/agent-os-parity-fixtures.out 2>/tmp/agent-os-parity-fixtures.err; then
+  parity_fixture_summary="$(tail -1 /tmp/agent-os-parity-fixtures.out 2>/dev/null || true)"
+  pass "Agent OS parity fixtures" "${parity_fixture_summary:-passed}"
+else
+  fail "Agent OS parity fixtures" "parity fixture runner failed"
+  sed -n '1,12p' /tmp/agent-os-parity-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-parity-fixtures.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-parity-fixtures.out /tmp/agent-os-parity-fixtures.err
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
   branch="$(git branch --show-current 2>/dev/null || true)"
@@ -200,7 +212,7 @@ echo "- git commit: blocked until exact file-list approval and guard checks"
 echo "- git push / PR / merge: blocked until explicit current-session approval"
 echo "- koda: available through CLI if direct health passed; chat MCP wrapper is optional"
 echo "- github: unknown unless a session-specific tool is connected"
-echo "- plane: unknown unless a session-specific tool is connected"
+echo "- plane: exception-only; do not use unless Hafiz explicitly asks in the current session"
 echo "- planner: unknown unless a session-specific tool is connected"
 echo "- google_drive: unknown unless a session-specific tool is connected"
 echo "- production_logs: unknown unless a session-specific tool is connected"

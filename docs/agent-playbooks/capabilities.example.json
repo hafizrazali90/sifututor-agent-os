@@ -8,6 +8,7 @@
     "unknown": "Tool has not been checked yet.",
     "not_connected": "Tool is absent in this session.",
     "blocked": "Tool exists, but approval or risk gate prevents use now.",
+    "exception_only": "Tool is outside the default Agent OS path and may be used only when Hafiz explicitly asks in the current session.",
     "forbidden": "Never allowed by Agent OS rules."
   },
   "tools": {
@@ -17,7 +18,7 @@
     "git_push": "blocked: requires explicit current-session approval",
     "github": "unknown",
     "koda": "available_or_fallback: direct health/fallback determines state",
-    "plane": "unknown",
+    "plane": "exception_only: explicit Hafiz request required",
     "planner": "unknown",
     "google_drive": "unknown",
     "production_logs": "unknown",

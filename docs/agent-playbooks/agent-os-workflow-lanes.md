@@ -141,7 +141,7 @@ Agent behavior:
 
 - route task and check active state
 - create/link GitHub issue when required
-- check Plane for meaningful work
+- check Mission Ledger for bigger goals or related follow-ups when relevant
 - use vertical-slice TDD when applicable
 - verify with focused commands
 - run QA/human-journey evidence when user-facing

@@ -21,7 +21,7 @@ Do not end a meaningful session with only "done." End it with:
 1. what changed
 2. what was learned
 3. what was saved to Koda
-4. what Plane says the current goal, status, and next action are
+4. what the current status and next action are
 5. what task is still active
 6. what remains next
 7. what was captured in the Mission Ledger, if anything
@@ -165,16 +165,13 @@ Mention paired `lls-frontend` work when API contracts changed. Treat old
 Superpowers specs as reference only unless Hafiz explicitly asks to preserve
 them as planning artifacts.
 
-## Plane Mission Board
+## Mission And Status Tracking
 
-For non-trivial work, update or report the relevant Plane card before ending the
-session. Plane should show the goal, sub-goals, current step, next action,
-owner, blockers, and evidence links so Hafiz can resume without reading the
-chat transcript.
-
-Auto-update factual progress. Ask Hafiz before changing scope, priority, owner,
-roadmap direction, production state, or creating major new work. Follow
-`docs/agent-playbooks/plane.md`.
+Do not update Plane by default. For non-trivial work, report the current status,
+evidence, and next action in the save-session close-out. Use GitHub for
+execution-ready engineering work, active task files for routed project work, and
+Mission Ledger for bigger goals, paused decisions, adjacent ideas, or important
+follow-ups that are not ready for GitHub.
 
 ## If Koda Fails
 
@@ -218,7 +215,7 @@ SESSION SAVED - <project or workspace>
 
 Koda: <stored/updated/skipped/failed> <memory ids if available>
 Active task: <id + route + next step | none>
-Plane: <card id/status/next action | none/skipped>
+Mission Ledger: <updated item | no new follow-up | skipped>
 Guards: <passed/failed/not run>
 Commits/pushes: <summary or none>
 
@@ -239,7 +236,7 @@ For Quick Save, a shorter version is fine:
 ```text
 SESSION SAVED - <project>
 Koda: skipped, no durable lesson
-Plane: <card id/status/next action | none/skipped>
+Mission Ledger: <updated item | no new follow-up | skipped>
 Next: <next step or none>
 ```
 
@@ -253,12 +250,11 @@ Before Codex gives the final answer for meaningful work:
    lessons.
 4. Read `.claude/tasks/active.json` when present and report the active task
    state.
-5. Update or report the relevant Plane card for non-trivial work.
-6. Check the Mission Ledger for new follow-ups, adjacent tasks, paused
+5. Check the Mission Ledger for new follow-ups, adjacent tasks, paused
    decisions, or bigger-goal links. Update it when needed. See
    [mission-ledger.md](mission-ledger.md). Search/open only the relevant project
    file unless doing a full ledger cleanup.
-7. Run the shared guard when code or workflow files changed.
-8. Report what changed, why, tests/guards run, files or commits touched, and
+6. Run the shared guard when code or workflow files changed.
+7. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-9. If Koda is unavailable, say so and use the fallback path.
+8. If Koda is unavailable, say so and use the fallback path.

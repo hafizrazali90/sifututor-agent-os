@@ -1,9 +1,9 @@
 # AGENTS.md - Sifututor Agent OS
 
 This file is the shared operating contract for the **Sifututor Agent OS**:
-the operating layer that helps Hafiz, Claude, Codex, Koda, GitHub, Plane,
-Planner, and project tools plan, build, verify, remember, and ship work without
-losing context.
+the operating layer that helps Hafiz, Claude, Codex, Koda, GitHub, Planner,
+Mission Ledger, and project tools plan, build, verify, remember, and ship work
+without losing context.
 
 Claude Code also reads `CLAUDE.md`; Codex reads this file first.
 Project-specific rules live in each sub-project `AGENTS.md`.
@@ -353,17 +353,23 @@ For non-trivial tasks:
 
 Do not store secrets, credentials, raw tokens, or ephemeral state.
 
-## Plane Mission Board
+## Mission And Status Tracking
 
-Plane is Hafiz's human mission board. For non-trivial work, agents should check
-or maintain the relevant Plane card so Hafiz can see the goal, sub-goals,
-current step, next action, owner, blockers, and evidence without reading the
-chat transcript.
+Plane is exception-only. Do not use Plane as the default Sifututor Agent OS
+mission board.
 
-Follow `docs/agent-playbooks/plane.md` before creating or updating Plane items.
-Agents may auto-update factual progress, but must ask Hafiz before changing
-scope, priority, owner, roadmap direction, production state, or creating major
-new work.
+Use these sources instead:
+
+- GitHub issues for execution-ready coding work.
+- Mission Ledger for bigger goals, adjacent ideas, paused decisions, and
+  important follow-ups that are not ready for GitHub.
+- Active task files where a project already uses `.claude/tasks/active.json`.
+- Final close-out and save-session reports for current status, evidence, and
+  next action.
+- Koda for durable lessons, preferences, and corrections.
+
+Do not create or update Plane cards unless Hafiz explicitly asks in the current
+session.
 
 ## Microsoft Teams Planner Intake
 
@@ -376,8 +382,9 @@ reports, or staff-reported bugs.
 
 Planner is not the engineering source of truth. After reading a relevant
 Planner card, route confirmed engineering work through the normal workflow:
-GitHub issue for coding work, Plane for Hafiz-visible mission status, active
-task state where the project uses it, and the usual verify/QA/review gates.
+GitHub issue for coding work, Mission Ledger for bigger/future follow-ups,
+active task state where the project uses it, and the usual verify/QA/review
+gates.
 Do not change Planner card state, assignment, priority, or content unless Hafiz
 explicitly asks in the current session.
 
@@ -418,7 +425,7 @@ For Claude-to-Codex workflow parity, use the shared playbooks in
 | Run Gate 2A / verify | `docs/agent-playbooks/verify.md` |
 | Run QA or regression checks | `docs/agent-playbooks/qa.md` |
 | Monitor production logs | `docs/agent-playbooks/monitor-production-logs.md` |
-| Maintain Plane mission board | `docs/agent-playbooks/plane.md` |
+| Capture bigger goals/follow-ups | `docs/agent-playbooks/mission-ledger.md` |
 | Prepare a commit | `docs/agent-playbooks/commit.md` |
 | Save/handoff session knowledge | `docs/agent-playbooks/save-session.md` |
 

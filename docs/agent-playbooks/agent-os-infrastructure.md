@@ -21,7 +21,7 @@ The Sifututor Agent OS has these layers:
 | Hook / dispatcher | The automatic layer that gives Codex startup context, prompt routing hints, and tool guardrails. | `.codex/config.toml`, `scripts/agent-checks/codex-lifecycle-hook.py`, `agent-os-hook-dispatcher.md` |
 | Guard script | A local check that prevents unsafe or invalid actions. | `scripts/agent-checks/*` |
 | Memory | Durable lessons, corrections, and preferences. | Koda through `scripts/agent-checks/koda` |
-| State systems | Places that track work status and evidence. | GitHub, Plane, Planner, `.claude/tasks`, Mission Ledger |
+| State systems | Places that track work status and evidence. | GitHub, Planner, `.claude/tasks`, Mission Ledger |
 | Evidence system | Rules for proving work like a developer/tester would. | `verify.md`, `qa.md`, `agent-os-evidence-model.md` |
 | Install/check system | The portable baseline for applying and checking Agent OS files. | `agent-os-install-manifest.json`, `agent-os-health.sh` |
 
@@ -49,7 +49,8 @@ Skills choose the job mode.
 Playbooks explain the job.
 Guards stop dangerous actions.
 Koda remembers durable lessons.
-GitHub/Plane/Planner track different kinds of work.
+GitHub, Planner, Mission Ledger, active task files, and final close-outs track
+different kinds of work.
 ```
 
 ## Core Terms
@@ -134,9 +135,8 @@ A place that owns a specific kind of work state:
 | System | Owns |
 | --- | --- |
 | GitHub | Engineering execution issues, PRs, code work. |
-| Plane | Hafiz-visible mission status and broader progress. |
 | Planner | Staff-reported intake context, not engineering source of truth. |
-| Mission Ledger | Future/paused/contextual work not ready for GitHub or Plane. |
+| Mission Ledger | Future/paused/contextual work not ready for GitHub. |
 | `.claude/tasks` | Active task state for projects that use task files. |
 | Koda | Durable lessons and preferences. |
 | Git | Local and remote code history. |
@@ -284,7 +284,6 @@ Before relying on a tool, the agent should know whether it is available:
 - terminal commands
 - Koda
 - GitHub
-- Plane
 - Planner
 - Google Drive
 - production logs
@@ -332,7 +331,8 @@ This document is a map. It does not replace:
 - `docs/agent-playbooks/*.md` for detailed workflows,
 - `scripts/agent-checks/*` for executable checks,
 - Koda for durable memory,
-- GitHub, Plane, Planner, or Mission Ledger for their own state.
+- GitHub, Planner, Mission Ledger, active task files, or final close-outs for
+  their own state.
 
 ## Reading Path For Hafiz
 

@@ -86,7 +86,7 @@ CASES = [
         "prompt": "A staff member says the modal does not open.",
         "skill": "$diagnose",
         "reason_contains": "reported operational context",
-        "actions_contain": ["reported symptom", "reproduce or inspect", "normal GitHub/Plane/task workflow"],
+        "actions_contain": ["reported symptom", "reproduce or inspect", "normal GitHub/task workflow"],
         "why": "Staff-reported symptoms need diagnosis before code changes.",
     },
     {

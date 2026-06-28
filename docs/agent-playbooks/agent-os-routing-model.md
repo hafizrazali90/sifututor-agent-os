@@ -11,6 +11,150 @@ The purpose is to avoid two bad extremes:
 - too heavy: discussion triggers implementation or commit machinery
 - too loose: risky work skips diagnosis, approval, evidence, or review
 
+## Best-Practice Baseline
+
+Treat routing as **policy-based orchestration**, not just keyword
+classification.
+
+Plain meaning:
+
+```text
+The router decides the safest useful work mode first.
+Only after that should the agent choose tools.
+```
+
+This matches common patterns from reputable agent frameworks:
+
+- LangChain / LangGraph use human-in-the-loop middleware and interrupts to
+  pause before sensitive tool calls, then resume after a human decision such as
+  approve, edit, reject, or respond.
+- OpenAI Agents SDK separates agents, tools, handoffs, guardrails, tracing, and
+  stateful runs so behavior can be controlled and inspected instead of hidden
+  inside one free-form prompt.
+- Microsoft Agent Framework describes production agents as needing
+  orchestration, durability, restartability, observability, governance,
+  human-in-the-loop control, and provider flexibility.
+- AutoGen uses team orchestration and user-proxy feedback. Its human-in-the-loop
+  model reinforces that human input should happen at meaningful control points,
+  not as constant micro-approval.
+
+Sifututor adopts this principle:
+
+```text
+The Agent OS should understand Hafiz's intent, choose the lightest safe
+workflow, use tools only when the route needs them, pause for human approval at
+meaningful risk points, and record enough state/evidence so the work can resume
+or be audited later.
+```
+
+Non-technical version:
+
+```text
+First decide whether we are thinking, checking, building, testing, or shipping.
+Then use the tools that fit that mode.
+Stop before dangerous actions.
+Leave a clear trail.
+```
+
+Useful references:
+
+- LangChain human-in-the-loop:
+  <https://docs.langchain.com/oss/python/langchain/human-in-the-loop>
+- LangGraph interrupts:
+  <https://docs.langchain.com/oss/python/langgraph/interrupts>
+- OpenAI Agents SDK guardrails:
+  <https://openai.github.io/openai-agents-python/guardrails/>
+- OpenAI Agents SDK tracing:
+  <https://openai.github.io/openai-agents-python/tracing/>
+- Microsoft Agent Framework:
+  <https://github.com/microsoft/agent-framework>
+- AutoGen human-in-the-loop:
+  <https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/human-in-the-loop.html>
+
+## Routing Decision Tree
+
+Use this quick tree before choosing tools or editing files:
+
+1. **Is the request forbidden or unsafe?**
+   If it asks to read or modify `.env*`, secrets, raw tokens, or `live/`, stop
+   and explain the boundary.
+2. **Is it a critical lane?**
+   If it touches auth, payment, invoice, commission, migration, deployment, or
+   mobile API contracts, do read-only diagnosis first and wait for approval
+   before implementation.
+3. **Is Hafiz asking to think, understand, compare, or decide?**
+   Stay in discussion mode. Explain options, recommend softly, and do not edit
+   unless Hafiz asks to document the decision.
+4. **Is Hafiz asking for product/design/architecture direction?**
+   Use product-design/planning mode. Keep a living draft and discuss one
+   decision at a time before implementation.
+5. **Is Hafiz asking to check, prove, review, QA, or diagnose?**
+   Use the evidence route first. Read and test before changing code unless the
+   fix is already clearly approved and low-risk.
+6. **Is Hafiz asking to implement a scoped change?**
+   Use the normal build route. Create or link the engineering issue when
+   needed, implement in safe slices, verify, QA, review, then stop before commit
+   unless commit was approved.
+7. **Is Hafiz asking to commit, push, open PR, merge, deploy, or release?**
+   Treat it as an outbound action. Inventory status, run the required guards,
+   and require the correct explicit approval for that boundary.
+8. **Is Hafiz using a short command like `go next`, `proceed`, or `approve`?**
+   Follow the last clear recommendation or exact approval request. If the last
+   step is missing, stale, ambiguous, or risky, ask a short clarification.
+
+Plain version:
+
+```text
+Unsafe? Stop.
+Critical? Diagnose first.
+Thinking? Discuss.
+Designing? Draft and decide.
+Checking? Gather evidence.
+Building? Implement and verify.
+Shipping? Guard and ask approval.
+Short command? Follow the last clear step.
+```
+
+## Human Decision Types
+
+When the router pauses for Hafiz, it should be clear what kind of decision is
+needed. Use these decision types:
+
+| Decision type | Meaning | Example |
+| --- | --- | --- |
+| approve | Hafiz accepts the proposed action or bundle. | `Approve commit+push for these files?` |
+| edit | Hafiz wants the agent to change the plan first. | `Use GitHub issue, not Plane, for this one.` |
+| reject | Hafiz does not want the proposed action. | `Do not deploy yet.` |
+| explain | Hafiz wants more understanding before deciding. | `Why do we need this test?` |
+| continue until boundary | Hafiz lets the agent continue through a safe packet. | `Continue until PR opened, but stop before merge.` |
+
+The agent should avoid vague approval questions. Ask for a named action and a
+boundary, such as "approve docs edit + checks" or "approve commit+push for
+these three files."
+
+## Route Confidence
+
+Most routing should be decisive. Ask Hafiz only when the route changes the risk
+or when intent is genuinely unclear.
+
+Use this behavior:
+
+- **High confidence**: act on the route and explain the practical meaning.
+- **Medium confidence**: state the assumed route and continue only if the risk
+  is low, such as docs or discussion.
+- **Low confidence**: ask one short clarification before editing, committing,
+  pushing, deploying, or touching critical domains.
+
+Examples:
+
+| Situation | Router behavior |
+| --- | --- |
+| Hafiz says `go next` after the agent recommended reviewing Routing. | Continue Routing review. |
+| Hafiz says `go next` after a long pause with dirty repos. | Run reconciliation audit first. |
+| Hafiz says `approve` after the agent asked only for commit approval. | Commit only, not push. |
+| Hafiz says `approve` after the agent asked for commit+push with exact files. | Commit and push that exact bundle. |
+| Hafiz asks "why are we doing this?" during implementation. | Stop building and return to explanation/discussion. |
+
 ## Source Inputs
 
 Route classification should use these signals in order:

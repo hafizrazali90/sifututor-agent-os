@@ -9,6 +9,7 @@ Use these when the user asks for:
 
 - Sifututor Agent OS overview: [agent-os.md](agent-os.md)
 - Agent OS infrastructure map: [agent-os-infrastructure.md](agent-os-infrastructure.md)
+- Agent OS Claude/Codex parity contract: [agent-os-parity-contract.md](agent-os-parity-contract.md)
 - Agent OS skill registry: [agent-os-skill-registry.md](agent-os-skill-registry.md)
 - Agent OS hook and dispatcher map: [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md)
 - fresh Agent OS session startup: [agent-os-quick-start.md](agent-os-quick-start.md)
@@ -47,7 +48,7 @@ Use these when the user asks for:
 - multiple fixes in one chat or release inventory: [session-release-ledger.md](session-release-ledger.md)
 - bigger goals, child tasks, adjacent ideas, or remembered follow-ups: [mission-ledger.md](mission-ledger.md)
 - quick workflow health check: [quick-check.md](quick-check.md)
-- Plane mission-board updates: [plane.md](plane.md)
+- Plane exception-only legacy reference: [plane.md](plane.md)
 - switching between Claude and Codex: [switching-claude-codex.md](switching-claude-codex.md)
 - checking workspace parity: [quick-check.md](quick-check.md)
 - reviewing current active tasks: [active-tasks.md](active-tasks.md)
@@ -83,7 +84,7 @@ Use these when the user asks for:
 | Codex | `$product-design` | [product-design.md](product-design.md) |
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
-| Claude/Codex | Plane create/update/review | [plane.md](plane.md) |
+| Claude/Codex | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
 
 ## Codex Hook Layer
 
@@ -238,7 +239,8 @@ after the config changes. That is expected for local hook safety.
 5. If the project has `TESTING.md`, read it and apply
    [test-coverage.md](test-coverage.md) before implementation, verify, QA,
    review, and commit.
-6. Check or maintain the relevant Plane mission-board item for non-trivial work.
+6. Check the Mission Ledger only when the work belongs to a bigger goal,
+   paused decision, adjacent idea, or remembered follow-up.
 7. Use the specific playbook for the workflow action.
 8. At the end of meaningful work, use Claude `/save-session`, Codex
    `$save-session`, or the natural-language request "save session"; all three

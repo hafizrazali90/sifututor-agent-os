@@ -210,3 +210,8 @@ Run Agent OS health after registry changes.
 
 For the hook layer that suggests these skills, read
 [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md).
+
+For Claude/Codex command parity, read
+[agent-os-parity-contract.md](agent-os-parity-contract.md). The registry says
+what skills exist; the parity contract says which behavior must stay identical
+across agents even when the command names differ.

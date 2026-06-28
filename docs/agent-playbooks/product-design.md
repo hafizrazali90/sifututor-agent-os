@@ -111,7 +111,9 @@ Before producing artifacts:
 8. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or staff-reported
    operational work, read the relevant Microsoft Teams Planner card as intake
    context when available.
-9. Check Plane for related mission-board context before creating major new work.
+9. Check the Mission Ledger and relevant GitHub issues for related context
+   before creating major new work. Use Plane only if Hafiz explicitly asks in
+   the current session.
 
 If the current design conflicts with `AGENTS.md`, `CLAUDE.md`, Koda, existing
 docs, or production facts, stop and explain the conflict before writing a spec.
@@ -328,7 +330,8 @@ Before coding starts:
 
 - Confirm or create the required GitHub issue according to the target project's
   `AGENTS.md`.
-- Create/update Plane only with Hafiz approval for major new work.
+- Capture bigger/future follow-ups in the Mission Ledger when they are not
+  ready for GitHub or implementation.
 - Create or update `.claude/tasks/active.json` only when the project workflow
   expects a routed task.
 - For critical lanes, ask for explicit Phase B approval.

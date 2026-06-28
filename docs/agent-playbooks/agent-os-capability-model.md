@@ -66,7 +66,7 @@ For a normal Sifututor umbrella Codex session:
 | Git push | `blocked` | Requires explicit current-session approval. |
 | Koda | `available` or `fallback` | Codex uses CLI-first; Claude may use MCP-first when stable. |
 | GitHub | `unknown` | Check session tooling before claiming. |
-| Plane | `unknown` | Check session tooling before claiming. |
+| Plane | `exception-only` | Do not use by default; only if Hafiz explicitly asks in the current session. |
 | Planner | `unknown` | Read-only intake when connected and relevant. |
 | Google Drive | `unknown` | Check connector/tooling before claiming. |
 | Production logs | `unknown` | Must be explicitly connected and risk-reviewed. |
@@ -180,7 +180,6 @@ Staff should not by default:
 - merge
 - deploy
 - read secrets
-- change Plane priority/owner/roadmap
 - close engineering issues without evidence
 
 ## Current Decision

@@ -11,7 +11,6 @@ own a different kind of truth.
 Plain version:
 
 ```text
-Plane tells Hafiz what is happening.
 GitHub tells developers what to build.
 Planner tells us what staff reported.
 Active task files tell agents what to do next.
@@ -19,6 +18,7 @@ Git proves what changed.
 QA evidence proves whether it works.
 Koda remembers the lesson.
 Mission Ledger remembers the bigger goal and follow-up map.
+Chat/save-session tells Hafiz the current status and next action.
 ```
 
 No single tool should pretend to be all of these at once.
@@ -32,10 +32,9 @@ No single tool should pretend to be all of these at once.
 | Agent OS docs | workflow architecture, playbooks, durable operating models | current task status unless the doc is specifically a status report |
 | Project `AGENTS.md` / `CLAUDE.md` | project-specific rules and deep project context | live proof that the latest code works |
 | Koda | durable corrections, lessons, preferences, and non-obvious patterns | raw transcripts, temporary progress, secrets, current branch state |
-| Mission Ledger | bigger goals, child tasks, adjacent ideas, paused decisions, and follow-ups not ready for GitHub or Plane | exact implementation ticket state, production truth, raw lesson memory |
-| Plane | Hafiz-visible mission board: goal, status, owner, blocker, next action, evidence links | code diff, detailed implementation steps, test output archive |
+| Mission Ledger | bigger goals, child tasks, adjacent ideas, paused decisions, and follow-ups not ready for GitHub | exact implementation ticket state, production truth, raw lesson memory |
 | Microsoft Teams Planner | staff-reported intake and operational symptom context | engineering source of truth, final code status, production truth |
-| GitHub issue | developer execution ticket for code work | Hafiz's whole mission view, production smoke result unless linked |
+| GitHub issue | developer execution ticket for code work | whole roadmap, production smoke result unless linked |
 | `.claude/tasks/active.json` | active agent execution pointer for state-file projects | business priority, production truth, cross-session release summary |
 | Session Release Ledger | per-session map of fixes, commits, PRs, main state, live state | full project roadmap |
 | Git branch/commit | exact code/docs change and local history | whether the change is deployed or accepted by Hafiz |
@@ -79,8 +78,8 @@ For one normal coding task:
 ```text
 Planner or Hafiz report
 -> route task
--> Plane mission card
 -> GitHub issue when code work is needed
+-> Mission Ledger when there is a bigger/future follow-up
 -> active task file when the project uses one
 -> branch/implementation
 -> verify + QA evidence
@@ -94,7 +93,7 @@ Planner or Hafiz report
 ```
 
 Not every task uses every step. Documentation-only Agent OS work usually stays
-in docs, git, Koda, and the final close-out unless Hafiz asks for Plane/GitHub.
+in docs, git, Koda, and the final close-out unless Hafiz asks for GitHub.
 
 ## What Each State Means
 
@@ -122,12 +121,12 @@ Use the smallest update that preserves truth.
 | Event | Update |
 | --- | --- |
 | Staff reports issue | Read Planner as symptom context; do not treat it as verified root cause. |
-| Hafiz asks for meaningful work | Route the task and check Plane/active task state where relevant. |
+| Hafiz asks for meaningful work | Route the task and check GitHub, Mission Ledger, and active task state where relevant. |
 | Code work is needed | Create or link a GitHub issue unless unavailable or too ambiguous. |
 | Project has active task files | Read `.claude/tasks/active.json` and resume unless Hafiz starts new work. |
 | Work becomes multi-fix | Start or update the Session Release Ledger. |
-| Agent finishes a step | Update Plane or close-out with factual progress and next action. |
-| Commit created | Record commit SHA in Plane/task/session ledger when relevant. |
+| Agent finishes a step | Close out with factual progress and next action; update active task or Mission Ledger when relevant. |
+| Commit created | Record commit SHA in task/session ledger when relevant. |
 | Push/PR/merge/deploy requested | Inventory session fixes before acting. |
 | Production deploy done | Record deploy commit, smoke result, monitoring result, and remaining risk. |
 | Durable lesson found | Store concise Koda memory with project/domain/lifecycle/risk tags. |
@@ -140,7 +139,7 @@ When sources disagree, use this order:
 2. Hafiz's current explicit decision.
 3. Fresh verified evidence: git status, tests, browser/API checks, deploy SHA.
 4. Approved docs: `AGENTS.md`, project `AGENTS.md`, playbooks, `CLAUDE.md`.
-5. Current task systems: active task file, Plane, GitHub, Planner.
+5. Current task systems: active task file, GitHub, Planner, Mission Ledger.
 6. Koda and previous chat history.
 7. Agent assumptions.
 
@@ -154,19 +153,19 @@ live smoke evidence. I will treat it as staff-reported status, not shipped
 truth.
 ```
 
-## Plane, GitHub, Planner
+## GitHub, Planner, Mission Ledger
 
 Use them together, not interchangeably.
 
 | Tool | Best Use |
 | --- | --- |
 | Mission Ledger | "What bigger goal does this follow-up belong to, and what should we not forget?" |
-| Plane | "Where are we, what is next, who owns it?" |
 | GitHub issue | "What exact engineering task should a developer/agent implement?" |
 | Planner | "What did staff report or experience operationally?" |
 
 Mission Ledger is the map of remembered work. Planner is intake. GitHub is
-engineering execution. Plane is Hafiz's active mission board.
+engineering execution. Current status and next action belong in the chat,
+save-session report, active task state, or linked GitHub/PR evidence.
 
 ## Agent Close-Out Shape
 

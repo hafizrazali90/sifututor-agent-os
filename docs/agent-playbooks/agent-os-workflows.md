@@ -3,11 +3,41 @@
 Status: draft for internal Sifututor Agent OS use.
 
 Use this as the master workflow map. It connects the separate Agent OS
-playbooks into the day-to-day paths Hafiz, Codex, Claude, Koda, GitHub, Plane,
-Planner, and project tools should follow.
+playbooks into the day-to-day paths Hafiz, Codex, Claude, Koda, GitHub,
+Planner, Mission Ledger, and project tools should follow.
 
 Plain meaning: this file tells the agent what journey it is in, what proof is
 needed, what Hafiz owns, and where the result should be saved.
+
+## Best-Practice Baseline
+
+Use workflows as controlled paths, not as heavy ceremony.
+
+Research-backed agent systems such as LangGraph, LangChain human-in-the-loop,
+OpenAI Agents SDK, Microsoft Agent Framework, AutoGen, and CrewAI Flows all
+point to the same broad lesson: reliable agents need orchestration, state,
+approval points, observability, and tool policy. The model can reason inside a
+step, but the workflow should decide the shape of the journey.
+
+Sifututor's workflow baseline:
+
+```text
+intake -> route -> prepare context -> act in safe slice -> verify evidence
+-> review risk -> approval boundary -> save state -> next recommended action
+```
+
+Plain meaning:
+
+```text
+Understand the job, choose the right path, prepare properly, do one safe chunk,
+prove it works, check risk, ask approval only where it matters, then leave a
+clear trail for the next session.
+```
+
+Do not build the Sifututor Agent OS around one agent framework yet. Keep the
+portable layer in Markdown, scripts, hooks, skills, Koda, GitHub, Planner,
+Mission Ledger, and project docs. Add a framework runtime later only when a
+specific workflow needs durable execution beyond what the local tools provide.
 
 ## Related Playbooks
 
@@ -39,11 +69,11 @@ Every workflow should answer these questions before it is called done:
 | --- | --- |
 | When does it start? | What kind of user request or repo state triggered it? |
 | Who owns decisions? | What can the agent decide, and what must Hafiz decide? |
-| What tools/state systems are used? | Chat, docs, GitHub, Plane, Planner, Koda, tests, browser, server, or logs. |
+| What tools/state systems are used? | Chat, docs, GitHub, Planner, Koda, Mission Ledger, tests, browser, server, or logs. |
 | What evidence is required? | What proof shows the work is real and not just described? |
 | What approval is required? | What boundary needs explicit Hafiz approval? |
 | When does it exit? | What state means the workflow is finished or ready for the next workflow? |
-| What should be saved? | What goes to docs, Koda, GitHub, Plane, Planner, mission ledger, or final reply? |
+| What should be saved? | What goes to docs, Koda, GitHub, Planner, Mission Ledger, or final reply? |
 | What can go wrong? | The common failure mode the agent must watch for. |
 
 ## Universal Rules
@@ -66,7 +96,7 @@ Every workflow should answer these questions before it is called done:
 | Workflow | Lane | Use when |
 | --- | --- | --- |
 | Idea and discussion | Light | Hafiz wants to think, compare, understand, or decide. |
-| Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Plane mission, or production signal becomes work. |
+| Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Mission Ledger item, or production signal becomes work. |
 | Product design | Medium | A feature, redesign, workflow, PRD, UX spec, or build prompt is needed. |
 | Bugfix | Full or Critical | Something is broken and needs diagnosis, fix, proof, and close loop. |
 | Feature | Full or Critical | New behavior or a product workflow needs to be built. |
@@ -80,7 +110,7 @@ Every workflow should answer these questions before it is called done:
 | Release, deploy, and monitor | Critical | Merged work needs to reach live safely and be watched. |
 | Incident | Critical | Production is failing or may be affecting users/revenue. |
 | Memory, save-session, and handoff | Medium to Critical | Context must survive chat end, compaction, or agent switch. |
-| Mission ledger | Light to Medium | Important future work is not ready for GitHub, Plane, or active task. |
+| Mission ledger | Light to Medium | Important future work is not ready for GitHub or active task. |
 | Staff rollout | Medium | Agent OS is prepared for other staff or another LLM setup. |
 
 ## 1. Idea And Discussion Workflow
@@ -94,6 +124,42 @@ and keeping a living draft when Hafiz asked to document the discussion.
 
 Use chat, local docs, Koda, and lightweight repo search. Do not add commit,
 push, deploy, or QA ceremony unless the discussion turns into actual work.
+
+The practical job of this workflow is to protect Hafiz's thinking space. If
+Hafiz is still shaping the idea, the agent should help him see the problem,
+options, tradeoffs, and likely next move before trying to produce a final
+answer or implementation plan.
+
+Use this behavior:
+
+- explain the current understanding in plain language
+- ask a small number of useful questions only when needed
+- suggest options with tradeoffs instead of presenting one rigid answer
+- give a soft recommendation and explain why
+- wait for Hafiz's decision when the choice changes product direction, risk,
+  priority, UX, architecture, rollout, or approval boundaries
+- update a living draft when the discussion is meant to become durable
+- keep the next recommended action concrete so Hafiz does not have to ask
+  "what next?" repeatedly
+
+Do not:
+
+- turn a thinking question into coding
+- create issues, PRDs, commits, branches, or tickets just because the topic
+  sounds important
+- overload Hafiz with formal workflow labels when normal language is enough
+- hide behind process when a direct explanation would help more
+- ask for approval on every tiny substep inside a safe discussion/docs packet
+
+Scenario examples:
+
+| Hafiz says | Agent should do |
+| --- | --- |
+| `why are we doing this?` | Stop action and explain the reason, tradeoff, and practical value. |
+| `is this doable?` | Explain feasibility, constraints, risks, and the simplest first version. |
+| `what do you suggest and why?` | Give options, recommend one, and justify it plainly. |
+| `I don't like this discussion` | Reset the approach, restate the goal, and ask what decision style would help. |
+| `ok proceed` after a discussion decision | Document or perform the last agreed safe step, staying inside the stated boundary. |
 
 Evidence required:
 
@@ -115,8 +181,8 @@ Common failure: the agent turns thinking into implementation too early.
 
 ## 2. Work Intake Workflow
 
-Starts when work arrives from Hafiz chat, staff report, Planner, Plane, GitHub,
-production signal, Koda reminder, or mission-ledger item.
+Starts when work arrives from Hafiz chat, staff report, Planner, GitHub,
+production signal, Koda reminder, or Mission Ledger item.
 
 Hafiz owns scope, priority, and major planning decisions. The agent owns
 classifying the source, finding the real source of truth, and choosing the
@@ -127,13 +193,64 @@ Use:
 - [task-router.md](task-router.md) to classify the request.
 - Planner as staff-reported intake for SIMS/mobile/support work.
 - GitHub for execution-ready engineering tickets.
-- Plane for Hafiz-visible mission progress.
 - Mission Ledger for important but not-ready follow-ups.
 - Koda for durable lessons, not task tracking.
 
+The practical job of this workflow is to stop messy inputs from becoming messy
+engineering work. Intake should identify what was reported, what is actually
+known, what is still assumption, and where the work belongs next.
+
+Official principle:
+
+```text
+Staff and Planner reports are symptoms, not engineering truth.
+Hafiz requests are current direction.
+GitHub issues are engineering execution.
+Mission Ledger is for important later or bigger work.
+Koda is durable memory, not current task state.
+```
+
+Use this source split:
+
+| Source | Treat it as | First move |
+| --- | --- | --- |
+| Hafiz direct request | Current instruction or product direction | Route immediately, then decide whether to discuss, design, diagnose, or build. |
+| Staff report / Planner | Symptom, not proven root cause | Do quick read-only diagnosis before creating engineering work. |
+| GitHub issue | Execution-ready engineering ticket | Check scope, current branch/state, and whether the issue is still true. |
+| Koda memory | Historical lesson or preference | Verify against current files/state before acting. |
+| Production signal/log | Possible live issue | Use read-only evidence first; route critical domains through critical lane. |
+| Mission Ledger | Bigger goal or remembered follow-up | Promote to GitHub, PRD, QA plan, or Koda only when ready. |
+
+Intake outcomes:
+
+| Outcome | Use when |
+| --- | --- |
+| discuss | The request is still an idea, preference, architecture question, or tradeoff. |
+| diagnose | There is a symptom but not enough evidence for a fix. |
+| design | The work changes workflow, UX, product rules, or multi-module behavior. |
+| create/link GitHub issue | There is likely engineering work with a titleable scope. |
+| capture in Mission Ledger | The follow-up matters but is not ready for execution. |
+| store in Koda | The lesson/preference/correction should guide future agents. |
+| reject/close | The report is duplicate, not reproducible enough, out of scope, or intentionally not doing. |
+
+For coding work, prefer creating or linking a GitHub issue after quick
+diagnosis. Do not create an issue from a vague symptom if the agent has not yet
+identified the affected role, likely project/module, and one or two pieces of
+supporting evidence.
+
+Scenario examples:
+
+| Input | Agent should do |
+| --- | --- |
+| `Staff says invoice button does nothing` | Treat as symptom, check Planner/context if relevant, inspect route/code/browser evidence if safe, then create/link GitHub issue only if likely engineering work. |
+| `I want to redesign tutor requests` | Route to product design, inventory current behavior, discuss decisions before build. |
+| `Fix this known bug, issue #123` | Read the issue, verify current state, check active task/branch, then build if safe. |
+| `Remember later we need better QA for this` | Capture in Mission Ledger or Koda depending on whether it is a follow-up or durable lesson. |
+| `Production payment failed` | Critical lane: read-only diagnosis first, no code/data mutation before approval. |
+
 Evidence required:
 
-- Source identified: chat, Planner, GitHub, Plane, production, Koda, or ledger.
+- Source identified: chat, Planner, GitHub, production, Koda, or ledger.
 - Current state checked enough to avoid duplicate or stale work.
 - For outside intake such as staff reports, screenshots, Planner cards,
   WhatsApp notes, customer complaints, or vague symptoms, run a quick read-only
@@ -159,7 +276,6 @@ verify, QA, review, commit, release, save-session, or blocked/clarification.
 Save to:
 
 - GitHub issue for execution-ready coding work,
-- Plane for meaningful multi-step mission state,
 - mission ledger for future or adjacent work,
 - final response with the chosen next workflow.
 
@@ -261,8 +377,8 @@ clean or risks are accepted, and the next git/release state is explicit.
 
 Save to:
 
-- feature docs, TESTING.md, GitHub issue/PR, Plane, Koda for durable lessons,
-  and final close-out.
+- feature docs, TESTING.md, GitHub issue/PR, Mission Ledger for bigger
+  follow-ups, Koda for durable lessons, and final close-out.
 
 Common failure: implementing all backend or all UI first instead of proving one
 complete slice.
@@ -274,8 +390,7 @@ TUT, or operational problem.
 
 Hafiz owns priority and staff communication decisions. The agent owns reading
 Planner or the provided report as intake, proving whether the symptom is real,
-and converting confirmed engineering work into the normal GitHub/Plane/task
-flow.
+and converting confirmed engineering work into the normal GitHub/task flow.
 
 Use Planner as context, not the engineering source of truth. Do not modify
 Planner state, assignment, priority, or content unless Hafiz asks.
@@ -289,12 +404,13 @@ Evidence required:
 - Staff-facing release communication decision when behavior changes.
 
 Exit when the issue is disproven, routed to design, routed to bugfix, converted
-to GitHub/Plane, fixed and verified, or waiting for staff/Hafiz evidence.
+to GitHub, fixed and verified, captured in Mission Ledger, or waiting for
+staff/Hafiz evidence.
 
 Save to:
 
 - GitHub for confirmed coding work,
-- Plane for bigger operational goals,
+- Mission Ledger for bigger operational goals or future follow-ups,
 - Planner only when Hafiz explicitly asks,
 - Koda for durable staff-workflow lessons.
 
@@ -512,7 +628,7 @@ release due to risk/blocker.
 
 Save to:
 
-- release notes, PR/issue/Plane state, production smoke evidence, Koda for
+- release notes, PR/issue state, production smoke evidence, Koda for
   durable deploy lessons, Critical Save if session ends.
 
 Common failure: pushed or merged code is mistaken for live behavior.
@@ -543,7 +659,7 @@ Save to:
 
 - incident note/postmortem when material,
 - GitHub issue/PR,
-- Plane for active mission state,
+- Mission Ledger for follow-up prevention work,
 - Koda for durable root-cause and prevention lessons.
 
 Common failure: an incident is handled like a normal low-risk bugfix.
@@ -566,7 +682,7 @@ Evidence required:
 - Active task state when present.
 - What changed and what was checked.
 - Koda search/store result or honest failure/fallback.
-- Plane/mission-ledger state when relevant.
+- Mission Ledger state when relevant.
 - Remaining work and next recommended action.
 
 Exit when the next agent or future session can continue without guessing.

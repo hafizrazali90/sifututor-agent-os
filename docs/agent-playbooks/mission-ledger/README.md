@@ -2,7 +2,8 @@
 
 This folder is the place for work we must not forget.
 
-It is not a replacement for GitHub, Plane, Planner, Koda, or active task files.
+It is not a replacement for GitHub, Planner, Koda, PRDs, QA plans, or active
+task files.
 It connects them.
 
 Plain version:
@@ -30,7 +31,6 @@ turn into a full engineering ticket. This ledger keeps them visible.
 | --- | --- |
 | Current active implementation step | `.claude/tasks/active.json` where present |
 | Engineering ticket ready to build | GitHub issue |
-| Hafiz-visible mission board | Plane |
 | Staff-reported symptom | Microsoft Planner |
 | Durable lesson or correction | Koda |
 | Bigger goal, child task, adjacent idea, paused follow-up | Mission Ledger |
@@ -42,7 +42,8 @@ turn into a full engineering ticket. This ledger keeps them visible.
 3. Put tasks under a parent mission whenever possible.
 4. Use clear status words: `captured`, `triaged`, `active`, `promoted`,
    `paused`, `done`, `dropped`.
-5. When an item becomes build-ready, promote it to GitHub or Plane and link it.
+5. When an item becomes build-ready, promote it to GitHub, PRD, QA plan, or
+   Koda and link it.
 6. During `$save-session`, check this folder before closing the session.
 
 ## Fast Lookup
@@ -85,8 +86,8 @@ python3 scripts/agent-checks/mission-ledger-check.py
 - **Why it matters:** <plain-language reason>
 - **Source:** <chat/session/date/staff issue/PR>
 - **Next action:** <one concrete next step>
-- **Promote to:** <GitHub issue | Plane card | PRD | QA plan | Koda | none yet>
-- **Links:** <GitHub/Plane/PR/docs/evidence or none>
+- **Promote to:** <GitHub issue | PRD | QA plan | Koda | none yet>
+- **Links:** <GitHub/PR/docs/evidence or none>
 ```
 
 ## Current Project Files

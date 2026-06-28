@@ -9,15 +9,20 @@ classify, resume, or create work.
 2. Read the project `AGENTS.md`; if absent, read project `CLAUDE.md`.
 3. Search Koda memory for the task topic when available.
 4. Check workflow state before editing.
-5. If the project has `TESTING.md` and the task may change user-facing
+5. If the session is resuming after a long pause, compact, branch switch,
+   remote reconciliation, or possible outside edits, run a quick reconciliation
+   audit before continuing. For Agent OS discussion, keep it light: umbrella
+   repo status, recent commits, Koda/health state, and relevant docs. For
+   product work, audit only the selected repo before editing.
+6. If the project has `TESTING.md` and the task may change user-facing
    behavior, read it and identify the affected feature row before
    implementation. Use [test-coverage.md](test-coverage.md).
-6. If the active project is `sifu-tutor` and the task touches SIMS browser UI,
+7. If the active project is `sifu-tutor` and the task touches SIMS browser UI,
    UX design, page layout, React/Inertia components, staff-facing copy, or
    visual QA, read `sifu-tutor/docs/ui-ux/README.md` before routing the build or
    review. Then read the relevant files it points to plus the nearest
    `sifu-tutor/docs/features/<feature>/` docs.
-7. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
+8. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only
    when the design risk is real; small fixes stay on the normal route.
@@ -26,21 +31,22 @@ classify, resume, or create work.
    coding because Hafiz says "proceed" unless the current discussion already
    produced the module scope, user/system flow decisions, screen inventory,
    state coverage, evidence plan, and explicit implementation approval.
-8. For critical-lane work, cross-module workflows, or any task being handed
+9. For critical-lane work, cross-module workflows, or any task being handed
    from one AI/human developer to another, apply
    [ai-implementation-readiness.md](ai-implementation-readiness.md) before
    coding. If the plan/build prompt is missing real entry points, contract
    moments, retry/idempotency, realistic payloads, or exact evidence, close the
    documentation gap first.
-9. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
+10. For SIMS, tutor app, parent app, support-ticket, TREQ/TUT, or
    staff-reported operational issues, check Microsoft Teams Planner
    `Development & Support > Task Management Board` as intake/context before
    deciding scope. Treat Planner as staff-reported issue context, not the
    engineering source of truth. Do not modify Planner unless Hafiz explicitly
    asks in the current session.
-10. Check the relevant Plane mission-board item for non-trivial work. If no card
-   exists for meaningful work, ask Hafiz before creating a major new one.
-11. If the prompt sounds like a follow-up, adjacent task, paused question, or
+11. Do not check or create Plane cards by default. If mission-level context is
+   needed, use the Mission Ledger or the project active task state. Use Plane
+   only when Hafiz explicitly asks in the current session.
+12. If the prompt sounds like a follow-up, adjacent task, paused question, or
     part of a bigger goal, check the Mission Ledger before treating it as an
     isolated task. Use [mission-ledger.md](mission-ledger.md), but search first
     and read only the relevant project section.
@@ -58,7 +64,7 @@ current task, issue, mission status, evidence, and release state should be
 recorded.
 
 Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
-goal or should be captured for later but is not ready for GitHub or Plane yet.
+goal or should be captured for later but is not ready for GitHub yet.
 To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`
 and open only the relevant matching section.
 
@@ -80,7 +86,8 @@ Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
 
 1. Read `.claude/tasks/active.json`.
 2. If `activeTask` is set, read the referenced `taskFile`.
-3. Compare the active task to the relevant Plane card when one exists.
+3. Compare the active task to GitHub, Mission Ledger, or current chat context
+   when relevant.
 4. Resume the active task unless the user explicitly starts a new task.
 5. Report the current route and next unblocked step before editing.
 6. At the end of each completed step, state the recommended next unblocked
@@ -174,10 +181,10 @@ likely project/module, check whether it looks like real engineering work, and
 gather one or two pieces of non-destructive evidence. Stop before code edits,
 data mutation, commit, deploy, destructive action, or broad investigation.
 Convert confirmed or likely engineering work into the normal Sifututor
-workflow: create or link a GitHub issue for coding work, maintain Plane for
-Hafiz-visible mission status, read/update project active task state where
-applicable, and run the normal verify/QA/review path. Keep Planner read-only
-unless Hafiz explicitly asks for a Planner update.
+workflow: create or link a GitHub issue for coding work, capture bigger or
+future follow-ups in the Mission Ledger, read/update project active task state
+where applicable, and run the normal verify/QA/review path. Keep Planner
+read-only unless Hafiz explicitly asks for a Planner update.
 
 If there is no active task file, do not invent one unless the user asks to start
 a routed task. For simple tasks, state that no active task exists and proceed

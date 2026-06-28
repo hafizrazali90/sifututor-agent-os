@@ -7,7 +7,15 @@ import argparse
 import re
 
 
-ALLOWED_STATES = {"available", "fallback", "unknown", "not_connected", "blocked", "forbidden"}
+ALLOWED_STATES = {
+    "available",
+    "fallback",
+    "unknown",
+    "not_connected",
+    "blocked",
+    "exception_only",
+    "forbidden",
+}
 ACTIONABLE_STATES = {"available", "fallback"}
 OUTBOUND_TOOLS = {"git_push", "pull_request", "merge", "deploy"}
 CRITICAL_TOOLS = {"production_logs", "deploy", "payment_admin", "mobile_api_contract"}
@@ -19,7 +27,6 @@ STAFF_BLOCKED_TOOLS = {
     "deploy",
     "koda_write",
     "production_logs",
-    "plane_priority_update",
 }
 
 
@@ -49,6 +56,9 @@ def validate_capability_record(record: dict) -> list[str]:
 
     if state == "blocked" and approval != "explicit":
         errors.append("blocked capability needs explicit approval before use")
+
+    if state == "exception_only" and action in {"use", "write", "claim"} and approval != "explicit":
+        errors.append("exception-only capability needs explicit current-session request before use")
 
     if state == "forbidden" and action != "refuse":
         errors.append("forbidden capability must be refused, not worked around")
@@ -112,18 +122,18 @@ CASES = [
     },
     {
         "id": "CP-003",
-        "name": "Plane not connected uses report path",
+        "name": "Plane is exception-only by default",
         "record": {
             "name": "plane",
-            "state": "not_connected",
-            "action": "report",
+            "state": "exception_only",
+            "action": "skip",
             "approval": "not_needed",
             "safety": "safe",
             "checked": True,
             "reporting": "plain",
         },
         "should_pass": True,
-        "why": "If Plane is absent, the agent should say so and use a safe fallback.",
+        "why": "Plane is no longer part of the default Agent OS path.",
     },
     {
         "id": "CP-004",

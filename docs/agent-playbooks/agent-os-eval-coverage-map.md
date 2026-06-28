@@ -35,6 +35,7 @@ be automated next.
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009 | Storing unsafe, vague, unscoped, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013 | Claiming unverified tools, using blocked tools without approval, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
+| Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 
 ## Manual Scenario Coverage
 
@@ -43,11 +44,12 @@ These are important but not honest as simple router-classifier tests yet.
 | Area | Eval IDs | Why manual for now |
 | --- | --- | --- |
 | Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner; still needs full assistant response review for tone and layered explanations. |
-| Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Plane, Planner, Koda, or production/deploy evidence. |
+| Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Mission Ledger, Planner, Koda, or production/deploy evidence. |
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Partly covered by capability fixtures; still needs live session tool discovery for each connector. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Staff kit details | AO-073, AO-074 | Needs generated staff/developer onboarding artifacts, not only routing. |
+| Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity is executable. Full behavior comparison still needs adapter-aware checks that compare real Claude and Codex responses for approval gates, evidence standard, and close-out behavior. |
 
 ## Future Harness Targets
 
@@ -57,8 +59,10 @@ These are important but not honest as simple router-classifier tests yet.
    live-smoke-passed scenarios with external evidence links.
 3. Add richer Koda integration fixtures for live memory retrieval quality,
    duplicate detection, correction updates, and read-only memory audits.
-4. Add live tool-capability probes for GitHub, Plane, Planner, Google Drive,
-   and production-log availability when each connector has a stable safe check.
+4. Add live tool-capability probes for GitHub, Planner, Google Drive, and
+   production-log availability when each connector has a stable safe check.
+5. Extend the parity fixture from structural checks into behavior fixtures that
+   compare actual Claude and Codex responses against the same workflow prompts.
 
 ## Maintenance Rule
 

@@ -39,7 +39,7 @@ Use this ladder when deciding what to trust first.
 | 2 | Hafiz decision | Hafiz owns product direction, business rules, risk tolerance, and scope changes. |
 | 3 | Current verified evidence | Current code, tests, logs, command output, screenshots, browser evidence, and production-safe evidence prove what is happening now. |
 | 4 | Approved docs | `AGENTS.md`, project `AGENTS.md`, `CLAUDE.md`, and playbooks define workflow rules. |
-| 5 | Task systems | GitHub issues, Plane cards, Planner cards, and active task files show work state and intake context. Cross-check when they disagree. |
+| 5 | Task systems | GitHub issues, Planner cards, Mission Ledger items, and active task files show work state and intake context. Cross-check when they disagree. |
 | 6 | Memory and history | Koda, handoffs, snapshots, commit notes, and prior chat are useful leads, but must be checked against current state. |
 | 7 | Agent assumption | Weakest source. Verify it or label it clearly. |
 
@@ -52,7 +52,7 @@ change request or business-rule change instead of pretending it is already true.
 | Level | Meaning | Agent behavior |
 | --- | --- | --- |
 | `verified` | Checked against current source code, docs, command output, runtime evidence, or official sources. | Safe to act, subject to normal risk gates. |
-| `trusted` | Comes from approved docs, `AGENTS.md`, `CLAUDE.md`, GitHub, Plane, active task state, or Koda, but was not rechecked yet. | Use for low-risk work; verify before high-risk work. |
+| `trusted` | Comes from approved docs, `AGENTS.md`, `CLAUDE.md`, GitHub, Mission Ledger, active task state, or Koda, but was not rechecked yet. | Use for low-risk work; verify before high-risk work. |
 | `reported` | Comes from Hafiz, staff, support, Planner, customer report, or a screenshot. | Treat as symptom or requirement; investigate before code changes. |
 | `historical` | Comes from old Koda memories, handoffs, snapshots, commit notes, or prior chat summaries. | Useful lead only; check current files before relying. |
 | `unverified` | Model assumption, unclear source, stale internet claim, or unsourced statement. | Do not present as fact; verify or label clearly. |
@@ -66,7 +66,7 @@ change request or business-rule change instead of pretending it is already true.
 | Workflow rule | `AGENTS.md`, project `AGENTS.md`, playbooks | Hafiz approves; agents follow |
 | Past lesson | Koda, save-session, handoff, snapshot, commit note | agent verifies against current state before relying |
 | Staff-reported issue | Planner/support report, screenshot, reproduction steps | staff reports symptom; agent verifies cause |
-| Engineering task state | GitHub issue, Plane, active task file | task source plus agent cross-check |
+| Engineering task state | GitHub issue, active task file, PR | task source plus agent cross-check |
 | Production truth | logs, monitoring, production-safe evidence | production evidence; Hafiz approves risky action |
 | Test truth | command output, CI, screenshots, QA evidence | evidence determines result |
 | External best practice | official docs, reputable primary sources | source quality and current date |
@@ -86,7 +86,7 @@ Stop and report the conflict when:
 
 - user brief, `AGENTS.md`, and `CLAUDE.md` disagree
 - Koda memory disagrees with current repo files
-- active task state disagrees with GitHub or Plane
+- active task state disagrees with GitHub, PR, or current repo evidence
 - staff report disagrees with reproduction evidence
 - documentation disagrees with code behavior
 - external source disagrees with official docs
@@ -183,12 +183,12 @@ Agent action: explain that this is a business-rule change, not merely a bug.
 Because commissions are critical-lane work, diagnose impact first and ask for
 implementation approval before editing.
 
-### GitHub And Plane Disagree
+### GitHub And Mission Scope Disagree
 
-GitHub issue says "fix login validation message." Plane says "improve full
-login and onboarding experience."
+GitHub issue says "fix login validation message." A Mission Ledger item or old
+chat says "improve full login and onboarding experience."
 
-Classification: both are `trusted` task context, but their scope conflicts.
+Classification: both are useful context, but their scope conflicts.
 
 Agent action: keep the implementation scoped to the GitHub issue unless Hafiz
 approves expanding scope. Report the mismatch in plain language.

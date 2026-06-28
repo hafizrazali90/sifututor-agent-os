@@ -1,0 +1,154 @@
+# Agent OS Parity Contract
+
+Status: draft for Sifututor Agent OS.
+
+This contract explains how Claude, Codex, and future LLM agents should behave
+the same way inside the Sifututor Agent OS.
+
+Plain meaning: Claude and Codex may have different buttons, commands, hooks, or
+UI affordances, but Hafiz should be able to predict the same decision flow from
+both of them.
+
+## Core Principle
+
+The Agent OS does not require every agent to think identically.
+
+It requires every agent to follow the same:
+
+- source of truth,
+- routing decision,
+- approval boundary,
+- safety guardrail,
+- evidence standard,
+- state update,
+- handoff shape,
+- plain-language close-out.
+
+Different agents can expose different command shapes. For example, Claude may
+have four visible product-design commands while Codex uses one umbrella
+`$product-design` skill. That is acceptable only if the underlying phases,
+questions, decisions, evidence, and stopping points match.
+
+## What Must Be Identical
+
+| Area | Must match across agents |
+| --- | --- |
+| Source of truth | Read `AGENTS.md`, relevant project rules, Koda, active task state, and current files before acting. |
+| Routing | Classify the work into the same workflow: discussion, task-router, diagnose, product design, verify, QA, review, commit, save-session, handoff, or monitor. |
+| Approval gates | Stop at the same gates: commit, push, PR, merge, deploy, destructive action, production mutation, critical-lane implementation. |
+| Safety | Never read `.env*`, expose secrets, bypass hooks, or modify `live/`. |
+| Critical lanes | Payments, auth, invoices, commissions, migrations, mobile API contracts, and deploys start with read-only diagnosis unless Hafiz explicitly authorizes a different emergency path. |
+| Evidence | User-facing behavior needs human-journey evidence where feasible, not only code-level tests. |
+| State | Do not confuse local, committed, pushed, PR open, merged, deployed, and live-smoke-passed. |
+| Memory | Koda stores durable lessons and corrections, not noisy progress or secrets. |
+| Communication | Explain in natural language first; use formal labels only when they help audit, QA, commit, or handoff. |
+| Close-out | End meaningful work with what changed, how checked, what remains, and the recommended next step. |
+
+## What May Differ
+
+| Area | Allowed difference |
+| --- | --- |
+| Command name | Claude can use slash commands. Codex can use `$skill` wrappers. Future agents can use another adapter. |
+| Internal tool | One agent may use MCP; another may use CLI or local scripts. The result and evidence standard must match. |
+| UI | Claude, Codex, Cursor, Copilot, Gemini, or another tool can show different interfaces. |
+| Packaging | Claude may split a workflow into several commands while Codex exposes one umbrella skill. |
+| Automation strength | Hooks may differ by tool. Missing hooks must be compensated by shared scripts, playbooks, and explicit checks. |
+
+## Workflow Parity Matrix
+
+| Workflow | Claude adapter | Codex adapter | Shared source | Parity requirement |
+| --- | --- | --- | --- | --- |
+| Task Router | `/task-router` or project router | `$task-router` | `task-router.md` | Same route, context checks, approval boundary, next action. |
+| Diagnose | `/diagnose` | `$diagnose` | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
+| Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
+| Verify | `/verify` | `$verify` | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
+| QA | `/qa` | `$qa` | `qa.md` | Same human-journey and regression evidence standard. |
+| Review | `/review` | `$review` | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
+| Commit | `/commit` | `$commit` | `commit.md` | Same guard checks, exact file-list approval, local commit boundary. |
+| Save Session | `/save-session` | `$save-session` | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
+| Handoff | `/handoff` | `$handoff` | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
+| Snapshot | `/snapshot` | `$snapshot` | `snapshot.md` | Same pause/compact context capture. |
+| Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
+| Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
+
+## Product Design Special Case
+
+Claude currently exposes product design as four visible steps:
+
+```text
+/lite-prd -> /prd-clarifier -> /prd-to-ux -> /ux-to-prompts
+```
+
+Codex currently exposes the same route as one umbrella skill:
+
+```text
+$product-design
+```
+
+This is acceptable only if Codex clearly names the current phase in plain
+language:
+
+| Phase | Plain meaning | Claude command | Codex phase |
+| --- | --- | --- | --- |
+| Design brief | What are we trying to build and why? | `/lite-prd` | `$product-design` brief phase |
+| Clarify | What is still unclear or risky? | `/prd-clarifier` | `$product-design` clarification phase |
+| UX spec | How should the user experience work? | `/prd-to-ux` | `$product-design` UX phase |
+| Build prompts | How should implementation be handed to a builder agent? | `/ux-to-prompts` | `$product-design` build-prompt phase |
+
+If Hafiz wants more control later, create Codex aliases for these phases. The
+aliases should still read `product-design.md`; they should not become separate
+sources of truth.
+
+## Best-Practice Baseline From Research
+
+The external pattern is clear:
+
+- OpenAI Agents SDK separates agents, handoffs, guardrails, and tracing.
+- LangGraph separates durable orchestration, persistence, interrupts, and
+  human-in-the-loop pauses.
+- Claude Code separates instructions, skills, hooks, subagents, and memory.
+- AutoGen Magentic-One uses an orchestrator, task ledger, progress ledger, and
+  human oversight.
+- CrewAI separates autonomous crews from deterministic flows with state and
+  routing.
+
+Sifututor implication: parity should be tested at the workflow boundary, not by
+expecting every model/tool to expose identical UI.
+
+## Current Gap Map
+
+| Gap | Practical meaning | Recommended fix |
+| --- | --- | --- |
+| Parity contract was implied, not explicit | Hafiz had to infer whether Claude and Codex should behave the same. | Keep this contract as the single parity map. |
+| Product Design packaging differs | Claude shows four steps; Codex shows one umbrella skill, which can feel like less control. | Require Codex to name the current phase; optionally add Codex phase aliases later. |
+| Evals mostly test Codex routing | We can prove Codex hook behavior better than Claude/Codex parity. | Add a parity eval that checks every shared workflow has a Claude adapter, Codex adapter, shared playbook, and expected close-out. |
+| Hook behavior differs by tool | Claude and Codex lifecycle hooks are not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
+| Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
+| Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |
+
+## Parity Eval Requirements
+
+Add or maintain checks that prove:
+
+- every workflow in the skill registry has a shared playbook,
+- every shared playbook has a Claude adapter or stated exception,
+- every shared playbook has a Codex adapter or stated exception,
+- Product Design phase mapping remains documented,
+- commit/push/deploy gates are identical across adapters,
+- save-session produces the same durable state shape,
+- staff/Planner intake does not bypass GitHub/task workflow,
+- Plane remains exception-only unless Hafiz explicitly asks.
+
+## Decision Rule
+
+When Claude and Codex differ, ask this:
+
+```text
+Is this only a UI/tool difference, or does it change the decision, safety,
+evidence, approval, memory, or state behavior?
+```
+
+If it is only UI/tool difference, document it as an adapter difference.
+
+If it changes behavior, treat it as parity drift and fix the shared playbook,
+adapter wrapper, hook, eval, or Koda memory.

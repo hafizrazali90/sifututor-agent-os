@@ -211,6 +211,141 @@ Sifututor implication:
 - Keep the portable layer as Markdown, scripts, hooks, and small skills.
 - Add framework-specific automation later only where it clearly saves time.
 
+### Workflow Orchestration For Agentic Development
+
+Sources:
+
+- LangGraph overview:
+  https://docs.langchain.com/oss/python/langgraph/overview
+- LangChain human-in-the-loop middleware:
+  https://docs.langchain.com/oss/python/langchain/human-in-the-loop
+- OpenAI Agents SDK guardrails:
+  https://openai.github.io/openai-agents-python/guardrails/
+- OpenAI Agents SDK tracing:
+  https://openai.github.io/openai-agents-python/tracing/
+- Microsoft Agent Framework:
+  https://github.com/microsoft/agent-framework
+- AutoGen Magentic-One:
+  https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html
+- CrewAI Flows:
+  https://docs.crewai.com/en/concepts/flows
+
+Findings:
+
+- Reputable systems separate **workflow orchestration** from free-form model
+  reasoning. The LLM decides inside a controlled path; it does not invent the
+  whole operating process every turn.
+- LangGraph treats durable execution, persistence, human-in-the-loop, memory,
+  and observability as core infrastructure for long-running agents.
+- LangChain's human-in-the-loop middleware pauses sensitive tool calls based on
+  policy and supports decision types such as approve, edit, reject, and
+  respond. It also requires saved state so the workflow can resume safely.
+- OpenAI Agents SDK separates guardrails and tracing from agent prompts. This
+  supports the idea that workflow safety and evidence should be observable, not
+  hidden inside the chat.
+- Microsoft Agent Framework emphasizes orchestration, multi-agent workflows,
+  deployment, and provider flexibility. This supports keeping Sifututor Agent
+  OS LLM-agnostic.
+- AutoGen's Magentic-One pattern uses an orchestrator to plan, delegate,
+  monitor progress, and revise plans. This supports having a router/workflow
+  layer before tool use.
+- CrewAI Flows separate deterministic workflow control from autonomous agents.
+  This supports using predictable process for intake, approval, verification,
+  and release while still letting agents reason inside steps.
+
+Sifututor implication:
+
+- The Agent OS should not be "one agent can do anything." It should be:
+  "one agent can do many things through the right workflow, with the right
+  approval and evidence."
+
+### Cross-Agent Workflow Parity
+
+Sources:
+
+- OpenAI Agents SDK agents:
+  https://openai.github.io/openai-agents-python/agents/
+- OpenAI Agents SDK handoffs:
+  https://openai.github.io/openai-agents-python/handoffs/
+- OpenAI Agents SDK guardrails:
+  https://openai.github.io/openai-agents-python/guardrails/
+- OpenAI Agents SDK tracing:
+  https://openai.github.io/openai-agents-python/tracing/
+- LangGraph overview:
+  https://docs.langchain.com/oss/python/langgraph/overview
+- LangGraph durable execution:
+  https://docs.langchain.com/oss/python/langgraph/durable-execution
+- LangGraph persistence:
+  https://docs.langchain.com/oss/python/langgraph/persistence
+- Claude Code skills:
+  https://docs.anthropic.com/en/docs/claude-code/skills
+- Claude Code hooks:
+  https://docs.anthropic.com/en/docs/claude-code/hooks
+- Claude Code subagents:
+  https://docs.anthropic.com/en/docs/claude-code/sub-agents
+- Microsoft Agent Framework:
+  https://github.com/microsoft/agent-framework
+- AutoGen Magentic-One:
+  https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html
+- AutoGen human-in-the-loop:
+  https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/human-in-the-loop.html
+- CrewAI Flows:
+  https://docs.crewai.com/en/concepts/flows
+
+Findings:
+
+- Reputable agent systems separate the portable workflow from the specific
+  agent implementation.
+- Handoffs, guardrails, tracing, state, and human approval are treated as
+  infrastructure, not as optional chat style.
+- Durable systems keep state outside the model's temporary context so another
+  agent or a future session can resume safely.
+- Human-in-the-loop controls usually pause at sensitive actions, not at every
+  small step.
+- Multi-agent systems often use an orchestrator/router pattern so agents do
+  not invent the process from scratch on every request.
+- Tool-specific skills and hooks are useful adapter layers, but they should not
+  become separate sources of truth.
+
+Sifututor implication:
+
+- Claude and Codex do not need identical command names, but they must follow
+  the same workflow contract.
+- The shared playbook should define the behavior; Claude slash commands and
+  Codex `$skill` wrappers are adapters.
+- Product Design can be one Codex skill and four Claude commands only if both
+  expose the same phases, decisions, and stopping points.
+- Parity needs its own eval coverage, because proving Codex routing is not the
+  same as proving Claude/Codex behavior stays aligned.
+- Keep the current Agent OS portable and model-agnostic. Build future adapters
+  for Cursor, Copilot, Gemini, or staff LLMs from the same contract instead of
+  making a separate workflow for every tool.
+- Keep workflows explicit and inspectable. Each workflow should define:
+  start condition, owner, tools, state, evidence, approval boundary, exit
+  condition, save location, and common failure.
+- Use deterministic rules for safety and state transitions. Let the model
+  reason inside the workflow, not override the workflow.
+- Human approval should happen at meaningful risk points, not every tiny step.
+- Every workflow should be resumable after pause, compaction, branch switch, or
+  handoff. Resume should start by checking state, not trusting old chat.
+- Use framework-specific orchestration later only if the Markdown/scripts/skills
+  baseline proves too manual.
+
+Workflow design baseline for Sifututor:
+
+```text
+intake -> route -> prepare context -> act in safe slice -> verify evidence
+-> review risk -> approval boundary -> save state -> next recommended action
+```
+
+Non-technical version:
+
+```text
+Understand the job, choose the right path, prepare properly, do one safe chunk,
+prove it works, check risk, ask approval only where it matters, then leave a
+clear trail for the next session.
+```
+
 ### Memory Architecture For Coding Agents
 
 Sources:
@@ -354,7 +489,8 @@ Use a layered architecture:
 
 7. **Tool connectors**
    - GitHub for engineering source of truth
-   - Plane for Hafiz-visible mission status
+   - Mission Ledger for bigger/future follow-ups inside the default Agent OS
+   - Plane only when Hafiz explicitly asks for it in the current session
    - Planner for staff-reported intake
    - Google Drive for docs when explicitly needed
    - optional MCP connectors by capability profile

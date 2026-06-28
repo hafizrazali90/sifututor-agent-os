@@ -735,7 +735,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             [
                 "Treat this as a reported symptom, not verified root cause.",
                 "Check Planner or available staff-reported context when relevant, then reproduce or inspect before editing.",
-                "Convert confirmed engineering work into the normal GitHub/Plane/task workflow.",
+                "Convert confirmed engineering work into the normal GitHub/task workflow.",
             ],
             "Prompt starts from staff or Planner-reported operational context.",
         )
