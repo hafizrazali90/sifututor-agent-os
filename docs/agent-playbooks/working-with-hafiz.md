@@ -254,6 +254,7 @@ Push approval requires:
 - committed SHA
 - branch status
 - remote target
+- Push Package Summary in human-first language
 
 Combined commit+push approval requires:
 
@@ -262,9 +263,75 @@ Combined commit+push approval requires:
 - branch
 - remote target
 - checks already run or about to run
+- Push Package Summary in human-first language
 
 If the agent asks only for commit approval, `approve` means commit only.
 If the agent asks clearly for commit+push approval, `approve` means do both.
+
+## Push Package Summary
+
+Before asking Hafiz to push a local batch to GitHub, explain the batch as a
+useful package, not as a list of developer-only commit labels.
+
+Use three layers.
+
+### 1. Human Label
+
+Name what the batch improves for Hafiz, staff, users, or future agents.
+
+Good:
+
+```text
+Package label: Make long Agent OS sessions easier to continue and review.
+```
+
+Avoid:
+
+```text
+Package label: session-map lifecycle + close-out wording batch.
+```
+
+The second label may be technically accurate, but Hafiz has to decode why it
+matters.
+
+### 2. English Implementation Story
+
+Explain how the work changes behavior in normal language.
+
+Good:
+
+```text
+What this means for you: when a session gets long, the agent should know the
+main goal, what was decided, what is still waiting, and what to recommend next.
+You should not need to reconstruct the whole story from memory.
+```
+
+If the batch includes logic, hooks, checks, automation, API behavior, data
+flow, or code behavior, add the technical explanation too, but keep it readable.
+
+Good:
+
+```text
+Technical detail in normal language: the resume hook now treats prompts such as
+"continue" and "go next" as a signal to read the active Session Map, check Git
+state, and summarize the current goal before doing broad exploration.
+```
+
+This is still technical, but Hafiz can understand the logic without reading the
+script.
+
+### 3. Technical Audit Trail
+
+After the human explanation, provide the exact technical record:
+
+- commit list
+- changed files or areas
+- branch and remote target
+- checks run
+- what is not included yet
+- whether the batch is local-only, pushed, PR open, merged, deployed, or live
+
+The agent should not ask for push approval until this summary is clear.
 
 ## Safe One-Approval Bundles
 

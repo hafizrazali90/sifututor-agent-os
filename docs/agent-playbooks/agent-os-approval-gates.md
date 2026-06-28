@@ -173,9 +173,9 @@ Allowed bundles:
 | Bundle | Requires |
 | --- | --- |
 | stage + commit | Exact file list and commit message. |
-| commit + push | Exact file list, commit message, branch, remote target, and checks. |
+| commit + push | Exact file list, commit message, branch, remote target, checks, and a human-first Push Package Summary. |
 | commit + close issue | Issue number and completion evidence. |
-| push + close issue | Commit already made, exact branch/remote, and issue clearly complete. |
+| push + close issue | Commit already made, exact branch/remote, human-first Push Package Summary, and issue clearly complete. |
 | docs edit + checks | Exact docs scope and non-destructive checks. |
 | verify + QA | Exact non-destructive commands or safe check scope. |
 

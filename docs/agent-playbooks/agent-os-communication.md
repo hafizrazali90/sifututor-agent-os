@@ -123,6 +123,31 @@ The agent should not force all three layers when the task is simple. Use the
 extra layer when it helps Hafiz learn or when the explanation would otherwise
 feel too dense.
 
+When the change involves logic, routing, hooks, checks, automation, API
+contracts, data flow, or code behavior, include the technical explanation too.
+Do not hide the technical part; translate it.
+
+Good pattern:
+
+```text
+What this means for you: the agent will no longer push a half-finished docs
+batch just because some commits already exist locally.
+
+Technical detail in normal language: before pushing, the agent compares local
+commits against GitHub, checks whether any docs or workflow rules are still
+unfinished, runs the required Agent OS checks, and then asks for one exact push
+approval with the branch and remote target named.
+```
+
+Bad pattern:
+
+```text
+Updated push workflow.
+```
+
+That is too thin. It does not explain the behavior, the logic, or the practical
+effect.
+
 ## Close-Out Shape
 
 For meaningful work, close out with the information Hafiz needs to continue.
