@@ -25,6 +25,11 @@ Use the Evidence Gap Stop Rules in
 missing. Plain meaning: missing proof must be reported as a named gap, not
 hidden inside "ready" or pushed onto Hafiz as a vague manual check.
 
+Use [related-impact-audit.md](related-impact-audit.md) for bugfix, hotfix, and
+user-facing small-change verification. Plain meaning: proving the exact fix is
+not enough if the same root-cause pattern or adjacent regression risk is obvious
+and unchecked.
+
 ## Rules
 
 - Run verification in the project directory, not the umbrella root.
@@ -54,6 +59,9 @@ hidden inside "ready" or pushed onto Hafiz as a vague manual check.
 - For user-facing feature, bugfix, hotfix, or small-change work, verify is not
   complete until the permanent E2E regression decision is recorded: added,
   updated, or not feasible with a concrete blocker and follow-up.
+- For bugfix/hotfix work, verify must state the related-impact audit strength
+  used, what was checked, and whether any related finding was fixed, excluded,
+  or needs Hafiz's decision.
 - For any staff/admin/parent/tutor/student/customer workflow, the expected
   outcome is a permanent E2E test file, not only an E2E "decision". Treat
   missing E2E as a verify failure unless the exact workflow is not safely
@@ -96,6 +104,7 @@ Gate 2A:
 - TESTING.md row checked: yes/no/not applicable
 - permanent E2E regression: added/updated/not feasible/not user-facing
 - changed user workflows and their permanent E2E files: <list or explicit exception>
+- related impact: <local related check | same-pattern sweep | critical impact audit; checked/found/fixed/follow-up>
 - SIMS UI/UX docs checked: <paths or not applicable>
 - baseline failures: none | listed
 - task-caused failures: none | listed

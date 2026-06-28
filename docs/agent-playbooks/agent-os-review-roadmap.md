@@ -103,6 +103,8 @@ Use this as the master tracker while reviewing the architecture.
 | 13 | Implementation Readiness And Build Handoff Quality | `ai-implementation-readiness.md`, `product-design.md`, `agent-os-workflows.md` | readiness/product/workflow docs, evals | Draft accepted | build-ready brief standard |
 | 14 | Enforcement And Drift Detection | `agent-os-hook-dispatcher.md`, `agent-os-skill-registry.md`, `agent-os-parity-contract.md`, health/eval scripts | enforcement docs, infrastructure, hook/parity docs, evals | Draft accepted | enforcement ladder and drift map |
 | 15 | Agent OS Improvement Loop | `agent-os-enforcement-drift.md`, `agent-os-memory.md`, `agent-os-skill-registry.md`, evals, Koda corrections | `agent-os-improvement-loop.md`, workflow-improvement skill, task-router, workflow map, evals | Draft accepted for Track A | controlled self-learning workflow |
+| 16 | Project Related-Impact Audit | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, Koda bug-pattern memories | `related-impact-audit.md`, diagnose/verify/QA/review/workflow docs, evals | Draft accepted for Track B | daily bugfix related-impact standard |
+| 17 | Push / PR / Release Lifecycle | `commit.md`, `review.md`, `agent-os-state-model.md`, session ledger, GitHub/PR workflow docs | push/PR/release docs, state/eval docs, close-out examples | Recommended next | outbound state path |
 
 ## Touch Map
 
@@ -129,6 +131,7 @@ Use this to avoid scattering changes across the wrong files.
 | Agent OS self-improvement and workflow cleanup | `agent-os-improvement-loop.md` | task router, skill registry, workflow map, evals, Koda, Session Map |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
+| Related issue and regression impact after fixes | `related-impact-audit.md` | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, evals |
 | Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |
 | Staff rollout readiness | `agent-os-rollout-readiness.md` | `agent-os-installation.md`, `agent-os-staff-quick-start.md`, install manifest, health check, evals |
 | Context accuracy | `context-authority.md` | task router, evals |
@@ -605,9 +608,10 @@ A review area is not done until all of these are true:
 
 ## Immediate Next Review
 
-Continue with section 9: **Verification, QA, And Evidence**.
+Continue with section 17: **Push / PR / Release Lifecycle**.
 
-Reason: we have drafted the personal working model, intent routing, approval
-gates, communication style, context authority, memory system, and capability
-model, and workflow lanes. The next friction point is deciding how much proof
-is enough for each type of work.
+Reason: the Agent OS now has stronger commit, evidence, state, self-improvement,
+and related-impact rules. The next weak point is the outward path after local
+commits: push, PR, merge, deploy, live check, and how agents explain the
+highest proven state without making Hafiz ask what is actually on GitHub or
+live.

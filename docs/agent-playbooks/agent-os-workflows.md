@@ -138,6 +138,7 @@ Every workflow should answer these questions before it is called done:
 | Agent OS improvement loop | Medium | Hafiz wants the Agent OS itself to learn, fix workflow behavior, update skills/playbooks/evals consistently, or make future agents handle something better. |
 | Enforcement and drift detection | Medium | Agent OS rules need stronger enforcement, hooks/skills/evals need alignment, or Claude/Codex behavior diverges. |
 | Bugfix | Full or Critical | Something is broken and needs diagnosis, fix, proof, and close loop. |
+| Related impact audit | Full or Critical | A product fix needs same-pattern search, adjacent regression review, or scope-boundary tracking. |
 | Feature | Full or Critical | New behavior or a product workflow needs to be built. |
 | Staff issue | Full or Critical | Staff report a SIMS/mobile/support problem through Planner or chat. |
 | Critical lane | Critical | Auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract is involved. |
@@ -606,6 +607,10 @@ Use [diagnose.md](diagnose.md), then build only after the scope and approval
 are clear. If the bug touches a critical domain, route through the Critical Lane
 workflow first.
 
+Use [related-impact-audit.md](related-impact-audit.md) throughout bugfix work.
+Plain meaning: every bugfix gets a local related check, reusable root causes get
+a same-pattern sweep, and critical lanes get a critical impact audit.
+
 Simple version:
 
 ```text
@@ -620,6 +625,7 @@ Evidence required:
 - Symptom and affected user journey described in plain language.
 - Reproduction or best available evidence.
 - Root cause or most likely cause.
+- Related-impact audit strength and result.
 - Focused test that fails before or would have caught the bug, where feasible.
 - Permanent E2E regression decision for user-facing workflows.
 - Agent-run human-journey proof when safe.
@@ -629,6 +635,21 @@ Scenario:
 | Staff says | Agent should do |
 | --- | --- |
 | `The invoice button does nothing` | Treat this as a symptom first. Identify the page, role, and expected action; check current code/browser/API/log evidence where safe; explain the likely cause and planned fix in English; fix the smallest cause; add or update a regression test; run focused checks; use browser or Playwright proof when feasible; then report what changed, what was checked, what remains, and the recommended next action. |
+
+Related-impact default:
+
+```text
+Every bugfix gets at least a local related check.
+Reusable root causes get a same-pattern sweep.
+Critical lanes get a critical impact audit.
+```
+
+Scope boundary:
+
+```text
+Find related risks proactively. Fix only clearly in-scope related issues. Ask
+or track anything that expands scope.
+```
 
 What done means examples:
 

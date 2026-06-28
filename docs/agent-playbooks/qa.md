@@ -24,6 +24,10 @@ available evidence is weaker than the workflow normally requires. Plain
 meaning: QA may say "tested this part, still missing this proof"; it must not
 turn missing proof into a generic "please check" note.
 
+Use [related-impact-audit.md](related-impact-audit.md) for bugfix and hotfix QA
+so the check includes related behavior and regression risk, not only the exact
+reported symptom.
+
 ## Pick The QA Tier
 
 | Route | QA expectation |
@@ -91,6 +95,8 @@ For bugfix and hotfix tasks, state:
 2. the test or check that fails before the fix or directly covers the old bug
 3. the command proving it now passes
 4. any related behavior that was smoke-checked
+5. the related-impact audit strength and result from
+   [related-impact-audit.md](related-impact-audit.md)
 
 If no automated regression test is feasible, say why and provide the strongest
 manual or browser evidence available. Do not pretend manual evidence is the same
@@ -131,6 +137,9 @@ Highest proven state:
 
 Regression coverage:
 - <covered | not feasible, reason>
+
+Related impact:
+- <strength, checked, found, fixed now, follow-up>
 
 Permanent E2E:
 - <added/updated file path | not added, reason and follow-up fixture/test>

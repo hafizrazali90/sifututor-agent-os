@@ -12,6 +12,11 @@ whether the agent gathered enough proof before handing work to Hafiz or staff.
 Use its Proof Standard to separate code proof, journey proof, and release proof
 before allowing the next state to be described as ready.
 
+Use [related-impact-audit.md](related-impact-audit.md) for bugfix, hotfix, and
+user-facing small-change review. Plain meaning: review should check whether the
+agent looked for obvious same-pattern bugs, adjacent regression risk, and scope
+expansion before saving or sending work outward.
+
 ## Review And Risk Checkpoint
 
 Review is the agent's second-brain check before work is saved or sent outward.
@@ -31,6 +36,7 @@ asks whether work is safe to approve.
 | --- | --- | --- |
 | Scope creep | Did the agent change files, behavior, copy, dependencies, or cleanup outside the approved task? | Unapproved adjacent work is included or the review cannot explain why each changed file belongs. |
 | Evidence gap | Does the evidence match the work type and state being claimed? | Required tests, browser/mobile proof, permanent E2E decision, or live smoke are missing without a valid named exception. |
+| Related impact | Did the fix include the right local related check, same-pattern sweep, or critical impact audit? | The same root-cause pattern or adjacent regression risk is obvious but uninspected, or related findings were silently fixed outside scope. |
 | State confusion | Is the work only changed locally, committed, pushed, PR-open, merged, deployed, live checked, or accepted? | The report implies a higher state than Git/PR/deploy/QA evidence proves. |
 | Critical-lane boundary | Did auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract behavior change? | Read-only diagnosis, approval, reviewer, or safe evidence is missing. |
 | Release communication | Do staff/users need changelog, help text, What's New, or operational notice? | A relevant staff-facing change has no release communication and no reason it is unnecessary. |
@@ -102,17 +108,22 @@ production state changes still require explicit current-session approval.
    For any staff/admin/parent/tutor/student/customer workflow, treat missing
    permanent E2E coverage as a blocking review finding unless the workflow is
    explicitly not safely automatable.
-8. For staff-facing feature, bugfix, hotfix, or small-change work, treat
+8. For bugfix, hotfix, or user-facing small-change work, treat missing
+   related-impact audit as a review finding. Use
+   [related-impact-audit.md](related-impact-audit.md) to decide whether the work
+   needed only a local related check, a same-pattern sweep, or a critical
+   impact audit.
+9. For staff-facing feature, bugfix, hotfix, or small-change work, treat
    missing release communication as a review finding when relevant. Check for a
    `CHANGELOG.md` entry, affected module help updates, and a What's New release
    entry or seed script. If any item is intentionally not needed, the PR or
    final answer must say why.
-9. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
+10. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
-10. Run the Review And Risk Checkpoint before saying the work is safe for the
+11. Run the Review And Risk Checkpoint before saying the work is safe for the
     next state.
-11. Report findings by severity with file and line references where possible.
+12. Report findings by severity with file and line references where possible.
 
 ## PR Chat Output Shape
 
@@ -166,6 +177,9 @@ Changed workflow E2E map:
 
 Release communication:
 - <CHANGELOG/help/What's New current | missing finding | not relevant with reason>
+
+Related impact:
+- <current | missing finding | not applicable, with reason>
 
 Session release ledger:
 - <not applicable | current | missing finding>

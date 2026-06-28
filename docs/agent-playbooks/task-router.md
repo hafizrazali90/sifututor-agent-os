@@ -163,8 +163,8 @@ Common route shapes:
 | Route | Use for | Core path |
 | --- | --- | --- |
 | `feature` | New user-facing behavior | plan -> build -> generate_tests -> e2e_regression -> qa_full -> verify -> review -> commit |
-| `bugfix` | Non-emergency defect | describe -> fix -> regression_test -> e2e_regression -> defect_analysis -> verify -> qa -> review -> commit |
-| `hotfix` | Production or staging breakage | describe -> fix -> regression_test -> e2e_regression -> verify -> qa -> review -> commit |
+| `bugfix` | Non-emergency defect | describe -> diagnose -> related_impact_audit -> fix -> regression_test -> e2e_regression -> verify -> qa -> review -> commit |
+| `hotfix` | Production or staging breakage | describe -> diagnose -> related_impact_audit -> fix -> regression_test -> e2e_regression -> verify -> qa -> review -> commit |
 | `small-change` | Copy, label, config, minor UI | describe -> fix -> e2e_regression_if_user_facing -> verify -> qa -> commit |
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
@@ -209,6 +209,22 @@ verification as a substitute when the workflow can be automated safely.
 Before push, PR, merge, or deploy, report the permanent E2E file covering each
 changed user workflow. If one is missing, the route is not ready; add the E2E
 or record an explicit exception with the blocker and follow-up fixture/test.
+
+## Related Impact Audit Step
+
+For `bugfix`, `hotfix`, and user-facing `small-change` routes, use
+[related-impact-audit.md](related-impact-audit.md).
+
+Default:
+
+- every bugfix gets a local related check
+- reusable root causes get a same-pattern sweep
+- critical lanes get a critical impact audit
+
+The related-impact audit does not automatically expand implementation scope.
+Fix clearly in-scope related issues; ask Hafiz or track follow-up work when the
+related finding changes business behavior, crosses modules/apps, touches a
+critical lane, or becomes a redesign.
 
 ## Staff Issue Intake
 

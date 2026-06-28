@@ -40,6 +40,7 @@ Use these when the user asks for:
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)
 - QA or regression evidence: [qa.md](qa.md)
+- related-impact audits after bugfixes: [related-impact-audit.md](related-impact-audit.md)
 - test coverage manifest enforcement: [test-coverage.md](test-coverage.md)
 - staging and committing: [commit.md](commit.md)
 - saving knowledge at the end of work: [save-session.md](save-session.md)
