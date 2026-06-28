@@ -666,7 +666,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         )
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|diagnose|review|quick-check|product-design)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design)\b",
         normalized,
     )
     if direct_skill:
@@ -738,6 +738,29 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Convert confirmed engineering work into the normal GitHub/task workflow.",
             ],
             "Prompt starts from staff or Planner-reported operational context.",
+        )
+
+    if any(
+        word in normalized
+        for word in (
+            "session map",
+            "session-map",
+            "mindmap",
+            "mind map",
+            "progress board",
+            "return path",
+            "side path",
+            "side paths",
+        )
+    ):
+        return (
+            "$session-map",
+            [
+                "Use $session-map to create, update, or inspect the live Session Map.",
+                "Keep the Human Snapshot readable first, then update structured agent context as needed.",
+                "Do not promote local session maps into committed docs unless Hafiz explicitly approves.",
+            ],
+            "Prompt is asking for live session tracking.",
         )
 
     if discussion_prompt(normalized):
@@ -1070,7 +1093,7 @@ def main() -> int:
                     "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
                     "Standing task access: when Hafiz asks Codex to finish a task end-to-end, use the narrowest required local agent-access files/tools without asking another permission question; never print secrets, read repo .env*, or use unrelated access.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
-                    "Available skills: $task-router, $product-design, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $diagnose, $review.",
+                    "Available skills: $task-router, $product-design, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $session-map, $diagnose, $review.",
                     "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
                 ]
             ),
@@ -1093,7 +1116,7 @@ def main() -> int:
                 "Check whether any follow-up, adjacent task, paused decision, or bigger-goal link should be captured in the Mission Ledger; search/open only the relevant project file.",
             ]
         action_text = "\n".join(f"- {action}" for action in actions)
-        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$review", "$commit"}
+        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$review", "$commit", "$session-map"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""
         memory_section = memory_text or "\n".join(
             [

@@ -22,6 +22,7 @@ SKILLS=(
   save-session
   handoff
   snapshot
+  session-map
   diagnose
   review
   quick-check

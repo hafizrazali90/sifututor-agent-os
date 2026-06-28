@@ -93,6 +93,13 @@ WORKFLOWS = [
         "claude_aliases": ["/snapshot"],
     },
     {
+        "name": "Session Map",
+        "playbook": "session-map.md",
+        "codex_skill": "session-map",
+        "codex_alias": "$session-map",
+        "claude_aliases": ["/session-map"],
+    },
+    {
         "name": "Quick Check",
         "playbook": "quick-check.md",
         "codex_skill": "quick-check",
@@ -161,6 +168,11 @@ BEHAVIOR_FIXTURES = [
         "id": "BP-008",
         "scenario": "Plane status without explicit Plane request",
         "snippets": ["Do not use Plane by default", "Mission Ledger", "close-out"],
+    },
+    {
+        "id": "BP-009",
+        "scenario": "multiple goals or side paths",
+        "snippets": ["Session Map", "main goal", "return path"],
     },
 ]
 

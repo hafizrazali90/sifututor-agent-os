@@ -95,6 +95,7 @@ skill.
 | `$save-session` | Save Session | Ending meaningful work, preserving durable lessons, or preparing future continuation. | `.agents/skills/save-session/SKILL.md` | `docs/agent-playbooks/save-session.md` | `/save-session` | Vague memory dumps or storing secrets/raw payloads. |
 | `$handoff` | Handoff | Passing work to Claude, another Codex session, or a human. | `.agents/skills/handoff/SKILL.md` | `docs/agent-playbooks/handoff.md` | `/handoff` | Full session close-out when save-session is needed. |
 | `$snapshot` | Snapshot | Freezing current context before compaction, interruption, or pause. | `.agents/skills/snapshot/SKILL.md` | `docs/agent-playbooks/snapshot.md` | `/snapshot` | Marking work complete. |
+| `$session-map` | Session Map | Creating, updating, inspecting, or closing a live session map for multi-goal, parallel, or confusing sessions. | `.agents/skills/session-map/SKILL.md` | `docs/agent-playbooks/session-map.md` | `/session-map` or "update the session map" | Replacing GitHub issues, Mission Ledger, Koda, Session Release Ledger, or save-session. |
 | `$quick-check` | Quick Check | Checking whether the Sifututor workflow system is healthy before starting work. | `.agents/skills/quick-check/SKILL.md` | `docs/agent-playbooks/quick-check.md` | `/quick-check` or doctor script | Deep QA or implementation verification. |
 | `$monitor-production-logs` | Monitor Production Logs | Read-only post-deploy monitoring, Sentry/BetterStack checks, or production log watch. | `.agents/skills/monitor-production-logs/SKILL.md` | `docs/agent-playbooks/monitor-production-logs.md` | `/monitor-production-logs` | Deploying, migrating, editing production, or reading secrets. |
 
@@ -137,6 +138,16 @@ $product-design
 -> implementation approval
 ```
 
+Session map update:
+
+```text
+$session-map
+-> update Human Snapshot
+-> update mindmap/progress/side paths/decisions as needed
+-> preserve continuation prompt
+-> promote durable items to Koda, GitHub, Mission Ledger, or save-session only when appropriate
+```
+
 Commit request:
 
 ```text
@@ -166,6 +177,7 @@ Always separate these:
 | Push vs deploy | Pushed or merged code is not automatically live. |
 | Planner vs GitHub | Planner is intake context; GitHub owns engineering execution. |
 | Koda vs task tracker | Koda remembers lessons; it does not own active task status. |
+| Session Map vs memory | Session Map tracks one live session; Koda stores durable lessons. |
 
 ## What A Skill Must Not Hide
 

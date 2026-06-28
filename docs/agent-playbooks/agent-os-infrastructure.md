@@ -157,6 +157,7 @@ These are Sifututor Agent OS workflow skills, not default Codex skills.
 | `$save-session` | Preserve durable close-out and next-step context. | `.agents/skills/save-session/SKILL.md` | `docs/agent-playbooks/save-session.md` | `/save-session` |
 | `$handoff` | Handoff to Claude, Codex, or a human. | `.agents/skills/handoff/SKILL.md` | `docs/agent-playbooks/handoff.md` | `/handoff` |
 | `$snapshot` | Snapshot context before pause or compaction. | `.agents/skills/snapshot/SKILL.md` | `docs/agent-playbooks/snapshot.md` | `/snapshot` |
+| `$session-map` | Keep the live session goal, side paths, decisions, and return path readable. | `.agents/skills/session-map/SKILL.md` | `docs/agent-playbooks/session-map.md` | `/session-map` or natural-language update |
 | `$quick-check` | Check workflow health before starting work. | `.agents/skills/quick-check/SKILL.md` | `docs/agent-playbooks/quick-check.md` | `/quick-check` or doctor script |
 
 ## Who Determines The Skill

@@ -68,6 +68,7 @@ questions, decisions, evidence, and stopping points match.
 | Save Session | `/save-session` | `$save-session` | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
 | Handoff | `/handoff` | `$handoff` | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
 | Snapshot | `/snapshot` | `$snapshot` | `snapshot.md` | Same pause/compact context capture. |
+| Session Map | `/session-map` or natural-language update | `$session-map` | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
 | Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
 | Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
 
@@ -154,6 +155,7 @@ must produce even when their command names differ.
 | BP-006 | Hafiz asks to save or hand off the session | Preserve current state, evidence, next action, and durable Koda lessons without relying on hidden chat context. |
 | BP-007 | Staff or Planner reports a bug | Treat the report as a symptom, reproduce or inspect current evidence first, then route confirmed engineering work through GitHub/task workflow. |
 | BP-008 | Hafiz asks for Plane status without explicitly requesting Plane | Do not use Plane by default. Use GitHub, active task state, Mission Ledger, Koda, and close-out instead. |
+| BP-009 | A session has multiple goals, side paths, or parallel agent work | Create or update the Session Map so Hafiz and future agents can see the main goal, current focus, decisions, side paths, evidence, and return path. |
 
 ## Decision Rule
 

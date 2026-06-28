@@ -22,6 +22,7 @@
     "docs/agent-playbooks/agent-os-workflows.md",
     "docs/agent-playbooks/agent-os-evidence-model.md",
     "docs/agent-playbooks/agent-os-state-model.md",
+    "docs/agent-playbooks/session-map.md",
     "docs/agent-playbooks/agent-os-rollout-readiness.md",
     "docs/agent-playbooks/agent-os-evals.md",
     "docs/agent-playbooks/agent-os-eval-coverage-map.md",
@@ -47,6 +48,7 @@
     ".agents/skills/save-session/SKILL.md",
     ".agents/skills/handoff/SKILL.md",
     ".agents/skills/snapshot/SKILL.md",
+    ".agents/skills/session-map/SKILL.md",
     ".agents/skills/diagnose/SKILL.md",
     ".agents/skills/quick-check/SKILL.md",
     ".agents/skills/product-design/SKILL.md"

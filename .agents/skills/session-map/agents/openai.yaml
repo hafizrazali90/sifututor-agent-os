@@ -1,0 +1,7 @@
+interface:
+  display_name: "Session Map"
+  short_description: "Track the live goal, side paths, and next step"
+  default_prompt: "Use $session-map to update the current Sifututor session map."
+
+policy:
+  allow_implicit_invocation: true

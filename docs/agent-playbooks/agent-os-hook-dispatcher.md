@@ -139,6 +139,7 @@ Use this mental model:
 | Save session, wrap up, finish session | `$save-session` |
 | Handoff to Claude, Codex, or human | `$handoff` |
 | Snapshot, pause, compact/context save | `$snapshot` |
+| Session map, mindmap, progress board, return path | `$session-map` |
 | Push, deploy, merge, PR | `$review` first, then explicit approval |
 | Brainstorm, PRD, UX spec, build prompts, major redesign | `$product-design` |
 
@@ -186,6 +187,7 @@ The hook may:
 - inject Koda memories,
 - check Koda health,
 - remind Codex about save-session,
+- remind Codex about session-map,
 - block unsafe Bash patterns through guard scripts.
 
 The hook must not:

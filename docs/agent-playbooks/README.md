@@ -79,6 +79,7 @@ Use these when the user asks for:
 | Codex | `$handoff` | [handoff.md](handoff.md) |
 | Claude Code | `/snapshot` | [snapshot.md](snapshot.md) |
 | Codex | `$snapshot` | [snapshot.md](snapshot.md) |
+| Claude/Codex | `/session-map`, `$session-map`, or "update the session map" | [session-map.md](session-map.md) |
 | Claude Code | `/diagnose` | [diagnose.md](diagnose.md) |
 | Codex | `$diagnose` | [diagnose.md](diagnose.md) |
 | Claude Code | `/review` | [review.md](review.md) |
@@ -137,6 +138,7 @@ before Codex answers.
 | save session, wrap up, finish session | `$save-session` |
 | handoff to Claude/Codex/human | `$handoff` |
 | snapshot, pause, compact/context save | `$snapshot` |
+| session map, mindmap, progress board, return path | `$session-map` |
 | push, deploy, merge, PR | `$review` first, then explicit approval |
 | brainstorm, PRD, UX spec, build prompts, major redesign | `$product-design` |
 
