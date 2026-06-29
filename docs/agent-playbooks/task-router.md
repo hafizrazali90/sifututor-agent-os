@@ -72,6 +72,14 @@ Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
 
+Use [agent-os-capability-model.md](agent-os-capability-model.md) when deciding
+what tools the agent should use for current evidence. Plain meaning: after the
+route is clear, the agent should choose the narrowest safe tool path itself for
+ordinary read-only checks instead of asking Hafiz to name the tool. Ask only
+when the tool choice changes product direction, crosses an approval gate,
+requires unavailable/broad access, or the target project/account/environment is
+unclear.
+
 Use the State Ownership Rule in
 [agent-os-state-model.md](agent-os-state-model.md) before trusting or updating
 task state. Plain meaning: Planner is staff intake, GitHub is engineering

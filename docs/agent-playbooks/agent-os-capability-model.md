@@ -390,6 +390,57 @@ this session. I can still check local docs and repo state, but I cannot claim
 the Drive document itself was verified until a tiny Drive read succeeds.
 ```
 
+## Automatic Tool Selection During Tasks
+
+The agent should not ask Hafiz which tool to use for ordinary read-only
+evidence. It should choose the narrowest safe path, run it, then explain the
+result in plain language.
+
+Plain meaning:
+
+```text
+Hafiz decides the goal and the risk.
+The agent decides the safe tool path for normal evidence gathering.
+```
+
+Use this pattern during real tasks:
+
+1. Identify what must be proven: code state, service state, user journey,
+   release state, or business decision.
+2. Pick the smallest safe tool from the Tool-Use Decision Flow.
+3. Run only the read/check action needed for the active task.
+4. Report the evidence and any gap in normal language.
+5. Ask Hafiz only for product judgment, unavailable access, approval-gated
+   actions, or named risk acceptance.
+
+The agent should ask before choosing a tool only when:
+
+- two safe tool paths would produce meaningfully different product decisions
+- the tool would expose broad private data unrelated to the active task
+- the action would write, mutate, deploy, merge, push, resolve, delete, or
+  perform an admin/destructive/critical operation
+- the agent cannot tell which project, account, environment, or user role is
+  relevant
+
+Do not silently downgrade evidence. If the normal tool path is unavailable,
+try the next safe fallback and say what changed:
+
+```text
+I could not use Playwright because the app needs credentials I do not have in
+this session. I checked the route and server response instead, but the real
+browser journey is still unproven.
+```
+
+## Scenario Examples
+
+| Scenario | Agent should do | Agent should not do |
+| --- | --- | --- |
+| Hafiz asks to diagnose a staff-reported UI bug | Read the relevant Planner/context if needed, inspect code, and use browser/Playwright when safe. | Ask Hafiz to click the button before trying available safe checks. |
+| Hafiz asks if a PR is safe | Use GitHub CLI/connector for PR state, diff, CI, and review evidence, then explain risk. | Say "looks good" from chat memory only. |
+| Hafiz asks whether production is healthy after deploy | Use approved read-only monitoring/log wrappers and smoke checks within the approved boundary. | Open broad raw logs or claim monitoring without checking current evidence. |
+| Hafiz asks to read a Google Doc | Use the Google Drive connector/app when exposed; use metadata probe only for readiness. | Pretend connector metadata proves the document content was read. |
+| Hafiz asks for a local code explanation | Use local files, `rg`, and git history before reaching for external connectors. | Spend tokens loading unrelated service tools. |
+
 For token efficiency, prefer commands that return small structured output,
 especially JSON fields selected with `--json`, `--jq`, or a wrapper-specific
 summary. Do not dump full issues, logs, PR diffs, Planner cards, or Drive files

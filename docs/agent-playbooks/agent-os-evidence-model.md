@@ -126,6 +126,12 @@ Can I safely check this myself with the tools I have?
 
 If yes, the agent should do it.
 
+Use [agent-os-capability-model.md](agent-os-capability-model.md) to choose the
+tool path. Plain meaning: Hafiz should not need to tell the agent "use the
+browser", "check GitHub", "read monitoring", or "use Planner" when that safe
+read-only check is clearly needed for the active task. The agent should choose
+the narrowest safe tool, gather the evidence, and report what it proves.
+
 Examples:
 
 - If a button was fixed, the agent should open the page with Playwright or a
