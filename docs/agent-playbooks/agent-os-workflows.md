@@ -127,6 +127,41 @@ Every workflow should answer these questions before it is called done:
 - Never commit, push, merge, open a PR, deploy, or run destructive actions
   without the approval required by [agent-os-approval-gates.md](agent-os-approval-gates.md).
 
+## Scenario Example Quality Standard
+
+Scenario examples are not decoration. They are small training cases for future
+agents.
+
+Plain meaning:
+
+```text
+An example is useful only if Hafiz can understand the situation quickly and the
+agent can see what to do next without guessing.
+```
+
+Good examples should include:
+
+- a real trigger, such as what Hafiz, staff, GitHub, Koda, monitoring, or
+  another agent might say,
+- the first move the agent should make,
+- the evidence or source of truth the agent should check,
+- the stop point or approval boundary,
+- the main thing the agent must not do.
+
+Use natural language first. Technical workflow terms are allowed when helpful,
+but translate the practical meaning in the same row or nearby text.
+
+For example:
+
+| Weak example | Better example |
+| --- | --- |
+| `Staff bug` -> `fix it` | `Staff says a SIMS button does nothing` -> treat as a symptom, identify role/page/action, check current evidence, then route to bugfix only if it looks like engineering work. |
+| `Deploy` -> `run deploy` | `Deploy to production` -> identify source commit, check preflight/rollback needs, require explicit production approval, smoke the changed workflow, then monitor logs. |
+
+When reviewing this file, check quality as well as presence. A section passes
+the structural runner when examples exist, but it is only useful when the
+examples answer: "what should the agent do in this real situation?"
+
 ## Workflow Index
 
 | Workflow | Lane | Use when |
