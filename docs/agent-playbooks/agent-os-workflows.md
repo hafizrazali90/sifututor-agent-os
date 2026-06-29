@@ -638,6 +638,17 @@ Scenario:
 | --- | --- |
 | `The invoice button does nothing` | Treat this as a symptom first. Identify the page, role, and expected action; check current code/browser/API/log evidence where safe; explain the likely cause and planned fix in English; fix the smallest cause; add or update a regression test; run focused checks; use browser or Playwright proof when feasible; then report what changed, what was checked, what remains, and the recommended next action. |
 
+Bugfix scenario matrix:
+
+| Scenario | Preparation | Core path | Evidence | Stop point |
+| --- | --- | --- | --- | --- |
+| Tiny obvious bug, typo, or copy-only issue | Quick Brief. | Explain the small change, edit the narrow file, run the smallest useful check. | Diff/readback or focused command. E2E only when user-facing behavior changed. | Commit if approved; push only if separately approved. |
+| Staff-reported UI bug | Quick diagnosis first, then Quick Brief or Product Shape depending on ambiguity. | Treat report as symptom, reproduce or inspect, identify affected role/page/action, fix smallest cause, related-impact local check, E2E decision, QA/review. | Focused code test where useful, browser/Playwright or screenshot evidence when feasible, permanent E2E file or named exception. | Usually commit-ready after verify/QA/review; push/PR only with approval. |
+| Backend/API bug with no visible workflow | Quick Brief or Product Shape if contract impact is unclear. | Diagnose request/response/service path, fix exact rule, related-impact local check or same-pattern sweep. | Unit/feature/API tests, contract evidence, consumer compatibility note. | Commit-ready after verify/review. |
+| Reusable root-cause bug | Product Shape for scope and related findings. | Diagnose root pattern, run same-pattern sweep, fix in-scope occurrences, track out-of-scope findings. | Regression test for original bug and pattern, related-impact report. | Stop before broad refactor or cross-module expansion unless Hafiz approves. |
+| Critical invoice/payment/auth/commission/migration/mobile API bug | Build-Ready Pack, but Phase A is read-only diagnosis first. | Diagnose safely, name impact/risk, recommend fix path, wait for implementation approval, then implement in a controlled slice. | Critical impact audit, negative tests, idempotency/retry/state evidence, human-journey/API proof, release risk notes. | Diagnosis first unless implementation boundary is explicitly approved; deploy/live remain separate approvals. |
+| Production incident | Incident workflow, not ordinary bugfix first. | Protect users, triage read-only, identify severity, mitigation, rollback/fix-forward options, then implement only after required approval. | Monitoring/log evidence, smoke/live-check after release, postmortem or durable lesson when material. | Stop at the approved incident boundary: triage, fix, deploy, monitor, or postmortem. |
+
 Related-impact default:
 
 ```text
@@ -749,6 +760,17 @@ Evidence required:
 - Permanent E2E coverage for changed user workflows by default.
 - QA or browser/mobile/API smoke for the real journey.
 - Release communication decision for staff-facing changes.
+
+Feature scenario matrix:
+
+| Scenario | Preparation | Core path | Evidence | Stop point |
+| --- | --- | --- | --- | --- |
+| Tiny feature or field/copy addition | Quick Brief. | Explain what changes and what stays out of scope, implement the narrow slice, run focused checks. | Diff/readback, focused tests when behavior changed, E2E decision if user-facing. | Commit if approved; push/PR only if separately approved. |
+| Small feature slice with clear behavior | Product Shape when choices or user impact exist. | Confirm acceptance rules, build one vertical slice, add/update tests, verify and QA the changed journey. | Unit/feature/API test plus browser/mobile/API journey evidence where relevant. | Commit or PR-ready after review, depending on approved boundary. |
+| Bigger feature or changed workflow | Product Shape first, then Build-Ready Pack before coding. | PRD/UX/contract as needed, split into vertical slices, build slice-by-slice, verify each accepted behavior. | Tests at the right layer, permanent E2E for changed user workflows, QA evidence, release communication decision. | Usually Build-Ready Pack or first slice only; continue only within approved boundary. |
+| Cross-module, mobile/API, invoice/payment/auth, or migration feature | Build-Ready Pack and critical-lane rules where relevant. | Map roles, state transitions, contracts, idempotency/retry, backwards compatibility, rollback, tests, and approval gates before coding. | Negative and production-shaped tests, API/mobile compatibility, human-journey proof, critical review. | Stop before implementation, deploy, data mutation, or critical-lane widening unless approved. |
+| Feature handed to another agent/dev | Build-Ready Pack. | Provide goal, scope, pre-read files, entry points, business rules, out-of-scope list, test plan, evidence, pause conditions, final report shape. | Handoff can be checked against implementation-readiness requirements; receiver must re-verify current files before editing. | Handoff-ready, not implemented, unless implementation is also approved. |
+| Feature discovered while fixing another issue | Usually Mission Ledger or GitHub follow-up first. | Report the finding and compare it to the current scope. | Clear reason why it is in scope, or a follow-up record if not. | Do not silently add it to the current fix/PR. |
 
 Exit when all accepted slices are implemented, evidence is gathered, review is
 clean or risks are accepted, and the next git/release state is explicit.
