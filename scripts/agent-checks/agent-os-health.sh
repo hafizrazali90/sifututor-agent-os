@@ -97,6 +97,7 @@ check_file "Agent OS session map HTML" "$ROOT/scripts/agent-checks/session-map-h
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
 check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
 check_file "Agent OS capability probe" "$ROOT/scripts/agent-checks/agent-os-capability-probe.py"
+check_file "Agent OS Google Drive probe" "$ROOT/scripts/agent-checks/agent-os-google-drive-probe.py"
 check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-probe.py"
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
@@ -280,7 +281,7 @@ echo "- koda: available through CLI if direct health passed; chat MCP wrapper is
 echo "- github: check on demand with scripts/agent-checks/agent-os-github-probe.py before claiming read access"
 echo "- plane: exception-only; do not use unless Hafiz explicitly asks in the current session"
 echo "- planner: check on demand with scripts/agent-checks/agent-os-planner-probe.py before claiming read access"
-echo "- google_drive: unknown unless a session-specific tool is connected"
+echo "- google_drive: check connector readiness with scripts/agent-checks/agent-os-google-drive-probe.py; live read still needs exposed connector tools"
 echo "- production_logs: unknown unless a session-specific tool is connected"
 echo "- deploy: blocked or not_connected by default; explicit approval required"
 

@@ -72,6 +72,17 @@ Plain meaning: this checks Microsoft Graph login, the staff intake team, the
 Planner board, and task metadata visibility. It does not print card content,
 post to Teams, edit Planner cards, or change anything.
 
+To check Google Drive connector readiness:
+
+```bash
+scripts/agent-checks/agent-os-google-drive-probe.py
+```
+
+Plain meaning: this checks whether the Google Drive connector metadata and
+small read tools are installed. It does not read Drive files by itself. When
+the connector tools are available in a chat, use a tiny search, folder listing,
+or file metadata read before fetching any file contents.
+
 ## Check A Product Repo
 
 From the umbrella root:

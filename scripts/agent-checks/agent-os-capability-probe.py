@@ -124,7 +124,12 @@ def build_report() -> list[dict[str, str]]:
         check_koda(),
         check_local_wrappers(),
         check_local_command("github", "gh"),
-        check_local_command("google_drive", "gdrive"),
+        record(
+            "google_drive",
+            "unknown",
+            "requires Google Drive connector or scoped Drive wrapper probe",
+            "run scripts/agent-checks/agent-os-google-drive-probe.py before claiming Drive read access",
+        ),
         record(
             "planner",
             "unknown",

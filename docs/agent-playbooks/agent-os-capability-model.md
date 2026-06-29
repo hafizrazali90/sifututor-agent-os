@@ -240,6 +240,19 @@ Support` group, finds the `Task Management Board` plan, and reads task
 metadata without printing task titles, descriptions, assignees, card content,
 tokens, or secrets.
 
+For Google Drive connector readiness, use:
+
+```bash
+scripts/agent-checks/agent-os-google-drive-probe.py
+```
+
+This checks whether the Codex Google Drive connector metadata is installed and
+whether low-noise read tools such as search, folder listing, and file metadata
+are available. It does not claim live Drive access by itself because local
+scripts cannot invoke the chat connector. When the Google Drive app tools are
+exposed in a session, verify live access with a tiny search/list/metadata read
+before fetching file contents.
+
 ## Connector Path Strategy
 
 Use the lowest-noise path that can prove the current task.
@@ -284,6 +297,12 @@ Research basis:
   tasks for a plan with `Tasks.Read.All` application permission
   ([list plans](https://learn.microsoft.com/en-us/graph/api/plannergroup-list-plans?view=graph-rest-1.0),
   [list tasks](https://learn.microsoft.com/en-us/graph/api/plannerplan-list-tasks?view=graph-rest-1.0)).
+- Google Drive API supports partial responses through the `fields` parameter
+  and file listing through `files.list`; use small metadata reads before
+  fetching document contents
+  ([performance guide](https://developers.google.com/workspace/drive/api/guides/performance),
+  [files.list](https://developers.google.com/drive/api/reference/rest/v3/files/list),
+  [files.get](https://developers.google.com/drive/api/reference/rest/v3/files/get)).
 
 Run the local fixture runner when changing capability rules:
 
