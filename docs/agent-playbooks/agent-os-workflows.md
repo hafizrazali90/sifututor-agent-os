@@ -913,6 +913,18 @@ Save to:
 
 Common failure: unit tests pass but the user journey is still untested.
 
+Verification scenario matrix:
+
+| Scenario | What verify should prove | Enough evidence | Not enough |
+| --- | --- | --- | --- |
+| Docs or Agent OS workflow change | The written rule, link, or workflow wiring is coherent and not broken. | Diff/readback, link/path check where relevant, Agent OS eval/health checks for workflow behavior. | Saying the wording looks fine without running the related workflow checks. |
+| Backend rule or calculation | The rule behaves correctly in the engine. | Focused unit/service/feature test, edge case for business/data risk, baseline failure separated if present. | UI smoke only, or tests that do not cover the changed rule. |
+| API contract | The endpoint, permission, response shape, and error path still match consumers. | API/contract test or curl/client evidence, permission/error check, paired frontend/mobile evidence when affected. | A controller/unit test that never checks the real response shape. |
+| Browser UI workflow | A real staff/admin/parent/tutor/student/customer action works. | Focused code test where useful plus Playwright/browser proof, screenshot when helpful, permanent E2E file or named exception. | Unit tests only, or asking Hafiz to click it when the agent can safely check. |
+| Mobile workflow | The changed mobile screen or native behavior works for the user path. | Unit/screen tests, lint/type/build checks, simulator/device smoke when practical for real journey/native behavior. | Snapshot/unit proof only when the issue is an interactive mobile journey. |
+| Critical lane | The safe diagnosis and approved implementation behave without hidden money/data/security risk. | Read-only diagnosis first, approved implementation boundary, negative tests, idempotency/retry/state evidence, safe staging or API proof. | Green happy-path tests with no critical risk evidence. |
+| Deploy/release check | The claimed environment actually has the right version and changed behavior. | Deployed SHA/version, target-environment smoke of changed workflow when safe, logs/monitoring check. | Local tests or route availability while claiming staging/production is ready. |
+
 ## 10. QA Workflow
 
 Starts after verification or when the task needs user-role, browser/mobile,
@@ -942,6 +954,17 @@ Save to:
 
 Common failure: "manual QA needed" becomes a shortcut for checks the agent
 could have done itself.
+
+QA scenario matrix:
+
+| Scenario | What QA should test like a human | Enough evidence | When to ask Hafiz/staff |
+| --- | --- | --- | --- |
+| Docs or Agent OS change | The instruction is understandable and points to the right source. | Readback, generated dashboard/render if relevant, health/eval output. | Tone, wording preference, or strategic direction. |
+| Backend/API behavior | The system response matches the expected business rule and consumer need. | API/client smoke, response/error evidence, safe state read when useful. | Business rule acceptance or unavailable representative data. |
+| Staff-facing browser bug | The exact staff journey that failed now works and old failure is blocked. | Setup/action/expected/failure shape, browser/Playwright or screenshot proof, regression/E2E coverage. | Staff acceptance, subjective workflow fit, or credentials/data the agent lacks. |
+| New user-facing feature | Happy path, key roles/states, important edge cases, empty/loading/error states, and release communication. | Permanent E2E or named exception, browser/mobile/API smoke, TESTING.md row where present, screenshots when useful. | Product fit, wording, operational rollout, or risk acceptance. |
+| Mobile app change | The screen flow, API state, and native behavior behave for a real tutor/parent path. | Screen/unit tests, simulator/device smoke when practical, build/lint/type evidence. | Physical device/account limitations or subjective UX acceptance. |
+| Critical lane or incident | The safe workflow, fallback, logs, and post-change monitoring support the claimed state. | Staging/API proof, negative cases, read-only logs/monitoring, smoke after deploy if approved. | Final risk acceptance, production mutation, rollback, or destructive/manual business decision. |
 
 ## 11. Review Workflow
 
@@ -981,6 +1004,17 @@ Save to:
 
 Common failure: review reads the code but does not translate risk into product
 meaning for Hafiz.
+
+Review scenario matrix:
+
+| Scenario | Review should challenge | Blocks the next state when |
+| --- | --- | --- |
+| Before local commit | Scope, changed files, evidence, guard result, commit message, and whether the claimed proof matches the work type. | File list is unclear, guard/check failed, required evidence is missing, or unrelated changes are staged. |
+| Before push or PR | Everything needed for other agents/CI/reviewers to trust the change. | Local state is dirty/confusing, verify/QA is incomplete, Session Release Ledger is stale for multi-fix work, or E2E/release communication gaps are hidden. |
+| Before merge | PR state, CI, review comments, evidence gaps, release communication, and whether the branch is safe to integrate. | CI/review is unresolved, critical-lane approval is missing, product decision is unresolved, or the PR claims more than evidence proves. |
+| Before deploy | Source commit, target environment, rollback/mitigation, critical-lane risk, smoke plan, and monitoring plan. | Deploy approval is missing, smoke/monitoring cannot be run safely, or the change touches production-sensitive behavior without the right review. |
+| Before saying live/done | Release proof and acceptance proof. | There is no deployed version evidence, changed workflow was not live-smoked, monitoring was not checked, or Hafiz still needs to accept business/product risk. |
+| PR/chat review for Hafiz | Product meaning, before/after behavior, risks, evidence, and decision point in natural language. | Hafiz would need to read the code diff to understand the decision, or the agent hides a blocker in a summary. |
 
 ## 12. Commit, Push, And PR Workflow
 
