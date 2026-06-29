@@ -164,6 +164,48 @@ must produce even when their command names differ.
 | BP-009 | A session has multiple goals, side paths, or parallel agent work | Create or update the Session Map so Hafiz and future agents can see the main goal, current focus, decisions, side paths, evidence, and return path. |
 | BP-010 | Hafiz asks to improve the workflow or make future agents handle a mistake better | Use the Agent OS Improvement Loop: classify the mistake, choose the owning source of truth, check connected docs/skills/hooks/evals/Koda/Session Map, update the smallest coherent set, and do not silently self-rewrite. |
 
+## Behavior Parity Review Standard
+
+Use this when comparing Claude, Codex, or another LLM on the same prompt.
+
+Plain meaning:
+
+```text
+Different wording is fine. Different workflow behavior is not fine.
+```
+
+Compare the answer against these behavior points:
+
+| Behavior point | What must match |
+| --- | --- |
+| Route | Both agents choose the same workflow or explain why the route changed. |
+| First move | Both agents start with the same kind of action: discuss, diagnose, design, verify, QA, review, commit, save, or stop. |
+| Approval boundary | Both agents stop at the same commit, push, PR, merge, deploy, production, destructive, or critical-lane gate. |
+| Evidence standard | Both agents ask for or gather the same level of proof for the claimed state. |
+| State language | Both agents distinguish local, committed, pushed, PR open, merged, deployed, live checked, and accepted / closed. |
+| Memory and task routing | Both agents store durable lessons in Koda, current session story in the Session Map, and execution work in GitHub/task state where appropriate. |
+| Close-out | Both agents explain what changed, how checked, what remains, and the recommended next step in plain language. |
+
+Allowed adapter differences:
+
+- command name, such as `/verify` versus `$verify`,
+- UI wording or button labels,
+- MCP versus CLI tool access,
+- one umbrella skill versus several phase-specific commands,
+- different internal implementation as long as the shared behavior is preserved.
+
+Parity drift:
+
+```text
+If one agent would proceed and the other would stop, if one asks Hafiz to test
+what it can safely test, if one treats local work as pushed/live, or if one
+crosses a harder approval gate, that is behavior drift.
+```
+
+When behavior drift is found, update the shared source first: playbook, parity
+contract, skill registry, adapter wrapper, hook/fixture, or Koda correction.
+Do not patch only one agent unless the difference is truly adapter-specific.
+
 ## Decision Rule
 
 When Claude and Codex differ, ask this:

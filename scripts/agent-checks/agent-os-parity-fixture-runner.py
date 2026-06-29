@@ -135,6 +135,21 @@ REQUIRED_CONTRACT_PHRASES = [
 ]
 
 
+REQUIRED_REVIEW_STANDARD_PHRASES = [
+    "Behavior Parity Review Standard",
+    "Different wording is fine. Different workflow behavior is not fine.",
+    "Route",
+    "First move",
+    "Approval boundary",
+    "Evidence standard",
+    "State language",
+    "Memory and task routing",
+    "Close-out",
+    "Allowed adapter differences",
+    "Parity drift",
+]
+
+
 BEHAVIOR_FIXTURES = [
     {
         "id": "BP-001",
@@ -266,6 +281,10 @@ def check_supporting_docs(texts: dict[str, str]) -> list[str]:
     for phrase in REQUIRED_CONTRACT_PHRASES:
         if not contains(parity_text, phrase):
             errors.append(f"parity contract missing required behavior phrase: {phrase}")
+
+    for phrase in REQUIRED_REVIEW_STANDARD_PHRASES:
+        if not contains(parity_text, phrase):
+            errors.append(f"parity contract missing review standard phrase: {phrase}")
 
     for eval_id in ("AO-082", "AO-083", "AO-084"):
         if eval_id not in texts["evals"]:
