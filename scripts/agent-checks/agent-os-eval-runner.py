@@ -270,11 +270,11 @@ CASES = [
     },
     {
         "id": "AO-071",
-        "prompt": "A staff member wants to install Agent OS and get all tools.",
+        "prompt": "A developer staff member wants to install Agent OS and get all tools.",
         "skill": "$task-router",
-        "reason_contains": "staff Agent OS rollout",
-        "actions_contain": ["staff-safe kit", "do not grant production", "Hafiz approves"],
-        "why": "Staff rollout is meaningful work and should route before action.",
+        "reason_contains": "developer-staff Agent OS rollout",
+        "actions_contain": ["developer staff", "do not grant production", "Hafiz approves"],
+        "why": "Developer staff rollout is meaningful work and should route before action.",
     },
     {
         "id": "AO-072",

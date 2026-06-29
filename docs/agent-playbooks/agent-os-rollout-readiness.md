@@ -1,19 +1,20 @@
 # Agent OS Rollout Readiness
 
 Use this document when deciding whether the Sifututor Agent OS is ready for
-internal use, project installation, or staff rollout.
+internal use, project installation, or developer-staff rollout.
 
 ## Core Idea
 
-Build for Hafiz and the engineering workflow first. Roll out to staff only
-after the internal system is boring, understandable, and safe.
+Build for Hafiz and the engineering workflow first. Roll out Agent OS only to
+developer staff who work in code/project repos. Ordinary non-developer staff
+continue using Microsoft Teams Planner for issue intake.
 
 Plain version:
 
 ```text
 First make the Agent OS reliable for us.
-Then package the smallest safe version for staff.
-Then add tools only when a person needs them and the access can be checked.
+Then package it for developer staff working on other projects.
+Ordinary staff keep reporting through Teams Planner.
 ```
 
 ## Readiness Ladder
@@ -24,11 +25,12 @@ Then add tools only when a person needs them and the access can be checked.
 | 1 | Internal Agent OS | Hafiz + Codex + Claude | Run Sifututor work with shared rules, memory, checks, and close-out. |
 | 2 | Project Baseline | Product repos | Install common files, task state, hooks, and guard scripts. |
 | 2A | Project Profile Verified | Product repos | Document repo-specific commands, evidence, deploy path, critical lanes, and "done" meaning. |
-| 3 | Staff-Safe Kit | Staff using any LLM | Report bugs, run QA, draft docs, and prepare handoffs safely. |
-| 4 | Approved Builder Kit | Trusted dev/agent users | Make scoped code changes with repo access and normal approval gates. |
+| 3 | Planner Intake Only | Non-developer staff | Report issues through Teams Planner. They do not install or use Agent OS by default. |
+| 4 | Developer Staff Kit | Developer staff / trusted dev-agent users | Make scoped code changes with repo access and normal approval gates. |
 | 5 | Advanced Operations | Explicitly approved people only | Production, deploy, payment, auth, invoice, commission, migration, or mobile API contract work. |
 
-Do not jump from Level 1 to Level 5. Most staff should start at Level 3.
+Do not jump from Level 1 to Level 5. Non-developer staff stay at Level 3
+Planner intake unless Hafiz explicitly changes the operating model.
 
 ## Minimum Internal Kit
 
@@ -56,7 +58,7 @@ If these are unclear or failing, staff rollout should pause.
 
 ## Project Adoption Rule
 
-Before using a product repo for staff-safe or builder rollout, run the
+Before using a product repo for developer-staff rollout, run the
 [project-adoption.md](project-adoption.md) workflow.
 
 Project Baseline means the files and hooks exist. Project Profile Verified
@@ -69,58 +71,42 @@ means the local repo is understandable enough for a future agent:
 - human-journey evidence expectations are clear
 - "done" is defined for that repo
 
-Do not skip from Project Baseline to staff or builder rollout. A repo can pass
+Do not skip from Project Baseline to developer-staff rollout. A repo can pass
 the installer and still be confusing for real work.
 
-## Staff-Safe Kit
+## Non-Developer Staff Intake
 
-The staff-safe kit should help staff report, verify, document, and hand off work
-without giving risky permissions by default.
+Non-developer staff use Microsoft Teams Planner only.
+
+Use Planner for:
+
+- bug reports
+- screenshots
+- reproduction notes
+- operational context
+- support/task intake
+
+They should not install Agent OS, use repo-connected LLM tooling, receive Koda
+write access, or get production/deploy/secret access by default.
+
+Planner is intake, not engineering truth. The agent or developer staff still
+verify the report through the normal workflow before coding.
+
+## Developer Staff Kit
+
+Give this only to developer staff who need to work in another project repo.
 
 Include:
 
-- `AGENTS.md` or a staff-facing summary of it
-- project `AGENTS.md`
-- project `CLAUDE.md` or equivalent reference
-- staff quick start
-- QA and evidence playbooks
-- bug report / reproduction template
-- close-out template
-- local memory fallback
-- dry-run install/check commands
-
-Allow by default:
-
-- read docs and source code
-- write notes, QA reports, screenshots, and draft docs
-- run safe local checks when trained
-- prepare reproduction steps and handoff notes
-
-Do not allow by default:
-
-- `.env*` reads
-- `live/` edits
-- production data changes
-- deploys
-- force pushes
-- hook bypass
-- payment/auth/invoice/commission/migration/mobile API contract changes
-- Koda write access unless approved
-
-## Builder Kit
-
-Give this only to trusted users who need to make code changes.
-
-Add:
-
 - repo write access
 - issue/task routing
+- local project profile from [project-adoption.md](project-adoption.md)
 - branch and commit rules
 - verify/QA/review path
 - exact file-list approval before commit
 - explicit approval before push, PR, merge, deploy, or critical implementation
 
-Builder access is still not production access.
+Developer Staff Kit access is still not production access.
 
 ## Advanced Operations Kit
 
@@ -172,9 +158,9 @@ Recommended order:
 4. Install/check the baseline in dry-run mode.
 5. Apply only missing safe baseline files if needed.
 6. Run one real internal task through the system.
-7. Create staff-safe templates.
-8. Pilot with one trusted staff member on reporting or QA only.
-9. Expand to builder access only after evidence shows the workflow is working.
+7. Confirm ordinary staff continue using Teams Planner for reports.
+8. Pilot with one developer staff member on a low-risk project repo.
+9. Expand developer staff access only after evidence shows the workflow is working.
 
 ## What Not To Roll Out Yet
 
@@ -191,7 +177,7 @@ Do not roll out these by default:
 
 ## Acceptance Criteria
 
-The rollout is ready when a new staff member can:
+Developer-staff rollout is ready when a trusted developer staff member can:
 
 1. understand the working agreement without reading the whole repo
 2. ask the agent for the right kind of help
@@ -199,7 +185,7 @@ The rollout is ready when a new staff member can:
 4. produce a useful bug report, QA note, or handoff
 5. end with clear status, evidence, next action, and decision needed
 
-The builder rollout is ready only when a trusted dev/agent user can:
+The developer-staff builder rollout is ready only when a trusted dev/agent user can:
 
 1. route a task correctly
 2. make a scoped change

@@ -795,17 +795,31 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt relies on Koda or historical context and needs current-state verification.",
         )
 
+    if "staff" in normalized and "planner" in normalized and any(
+        word in normalized for word in ("only", "not llm", "no llm", "not agent os", "teams")
+    ):
+        return (
+            "$task-router",
+            [
+                "Treat this as an Agent OS rollout correction: ordinary non-developer staff use Teams Planner only.",
+                "Agent OS rollout is for developer staff working in project repos.",
+                "Update rollout docs, evals, and memory if durable wording currently mixes those groups.",
+            ],
+            "Prompt corrects staff rollout scope and Planner intake ownership.",
+        )
+
     if "staff" in normalized and any(
         word in normalized for word in ("install", "tools", "llm", "capability", "access", "payment", "auth", "deploy")
     ):
         return (
             "$task-router",
             [
-                "Start with the staff-safe kit and least-privilege access.",
+                "Confirm whether this is developer staff or ordinary non-developer staff, then apply least-privilege access.",
+                "Ordinary staff use Teams Planner only; developer staff may use the Developer Staff Kit after project adoption.",
                 "Do not grant production, deploy, secret, Koda write, or critical-lane access by default.",
                 "Escalate only after Hafiz approves scoped capability, evidence expectations, and review gates.",
             ],
-            "Prompt is about staff Agent OS rollout or capability access.",
+            "Prompt is about developer-staff Agent OS rollout or capability access.",
         )
 
     if ("planner" in normalized or "staff member" in normalized or "staff says" in normalized) and not any(

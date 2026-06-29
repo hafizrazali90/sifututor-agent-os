@@ -1,34 +1,43 @@
-# Agent OS Staff Quick Start
+# Agent OS Developer Staff Quick Start
 
-Use this guide when a Sifututor staff member wants to use the Agent OS with
-Codex, Claude, GitHub Copilot, Cursor, Gemini, or another LLM-assisted coding
-tool.
+Use this guide when a Sifututor developer staff member wants to use the Agent
+OS with Codex, Claude, GitHub Copilot, Cursor, Gemini, or another LLM-assisted
+coding tool.
 
-The goal is not to give every staff member every tool. The goal is to give each
-person a safe starting setup that helps them report, investigate, document,
-verify, or build work without touching production or secrets.
+Ordinary non-developer staff do not use this guide. They report issues through
+Microsoft Teams Planner. Agent OS is for Hafiz and developer staff who work in
+project repos.
+
+The goal is not to give every developer staff member every tool. The goal is to
+give each developer a safe starting setup that helps them investigate,
+document, verify, or build work without touching production or secrets.
 
 Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) to decide
-which readiness level a staff member should receive. Most staff start with the
-staff-safe kit, not builder or production access.
+which readiness level a developer staff member should receive. Non-developer
+staff stay in Teams Planner intake.
 
 ## First Rule
 
 Start with the smallest safe capability.
 
-Staff should not get production, deploy, payment, auth, database, or secret
-access by default. Add those only when Hafiz explicitly approves the need and
-the access can be audited.
+Developer staff should not get production, deploy, payment, auth, database, or
+secret access by default. Add those only when Hafiz explicitly approves the
+need and the access can be audited.
 
 ## Which Path To Use
 
-| Staff need | Recommended path | What they can do first |
+| Developer staff need | Recommended path | What they can do first |
 | --- | --- | --- |
-| Report bugs or support issues | Any LLM plus the working agreement | Write clear bug reports and reproduction notes |
 | QA or regression checks | Codex or Claude with project docs | Run guided checks and produce evidence |
 | Developer work | Codex or Claude with repo access | Make small scoped changes after issue/task routing |
 | Product/design thinking | Codex, Claude, or chat LLM | Draft PRDs, UX notes, and build prompts |
-| Non-technical operations | Chat LLM plus docs only | Summarize issues and prepare handoff notes |
+
+Non-developer staff path:
+
+```text
+Use Teams Planner only. The developer or agent reads the Planner report later
+as intake/context, then verifies it before coding.
+```
 
 ## Install Or Check A Project
 
@@ -58,8 +67,8 @@ baseline rules by hand if the manifest or installer can check them.
 
 ### Codex
 
-Use Codex when the staff member needs code reading, implementation help, local
-checks, or Git-aware work.
+Use Codex when the developer staff member needs code reading, implementation
+help, local checks, or Git-aware work.
 
 First commands:
 
@@ -74,8 +83,8 @@ before commit, push, PR, merge, deploy, or critical implementation.
 
 ### Claude Code
 
-Use Claude Code when the staff member benefits from Claude skills, review, QA,
-or broader reasoning over project files.
+Use Claude Code when the developer staff member benefits from Claude skills,
+review, QA, or broader reasoning over project files.
 
 First commands:
 
@@ -102,8 +111,8 @@ Give the tool these files as the starting context:
 - the relevant workflow playbook, such as [diagnose.md](diagnose.md),
   [qa.md](qa.md), [review.md](review.md), or [product-design.md](product-design.md)
 
-If the tool cannot run guard scripts, the staff member must run the commands
-manually and paste the result into the tool.
+If the tool cannot run guard scripts, the developer staff member must run the
+commands manually and paste the result into the tool.
 
 ## Safe Default Permissions
 
@@ -141,7 +150,7 @@ Never allowed by default:
 Koda is preferred for Hafiz and approved engineering agents because it gives
 durable cross-session memory.
 
-Staff without Koda should use a local memory fallback:
+Developer staff without Koda should use a local memory fallback:
 
 - keep short notes in a project handoff doc
 - save only durable lessons, not raw transcripts
@@ -180,7 +189,7 @@ From the product repo, run:
 If any check fails, do not continue into implementation. Fix the baseline first
 or ask Hafiz/engineering lead for help.
 
-## How Staff Should Ask The Agent
+## How Developer Staff Should Ask The Agent
 
 Good prompts:
 
@@ -219,14 +228,14 @@ Escalate to Hafiz or an engineering lead when:
 
 - the task involves production, secrets, deploy, payments, auth, invoices,
   commissions, migrations, or mobile API contracts
-- the agent asks for access the staff member does not understand
+- the agent asks for access the developer staff member does not understand
 - the checks fail and the reason is unclear
 - the staff report and reproduction evidence disagree
 - the change would affect customers, billing, tutors, parents, or staff workflow
 
 ## Close-Out Shape
 
-Every staff-assisted session should end with:
+Every developer-staff-assisted session should end with:
 
 ```text
 Status: done / partly done / blocked

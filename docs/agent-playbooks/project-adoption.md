@@ -57,11 +57,11 @@ Start this workflow when Hafiz asks:
 - whether a repo is Agent OS-ready
 - to install, roll out, or adopt Agent OS in a product repo
 - to make Claude/Codex/another LLM work consistently in a repo
-- to prepare a repo for staff, trusted developers, or agents
+- to prepare a repo for developer staff, trusted developers, or agents
 - why a product repo behaves differently from the umbrella Agent OS
 
-Also use it before broad staff rollout. A staff-safe kit is weaker if the
-underlying product repo does not have a clear local profile.
+Also use it before developer-staff rollout. Ordinary non-developer staff use
+Teams Planner as intake; they do not install or operate Agent OS by default.
 
 ## What To Read First
 
@@ -95,12 +95,11 @@ Use these states when reporting readiness:
 | Profile drafted | The local project profile exists, but some facts still need verification. |
 | Profile verified | The local profile matches current docs/files and safe checks. |
 | Ready for internal agent use | Hafiz, Codex, Claude, or trusted technical users can work with the repo using normal Agent OS rules. |
-| Ready for staff-safe use | Non-developer staff can report, QA, or document safely without risky tool access. |
-| Ready for builder use | Trusted builders can make scoped code changes with normal evidence and approval gates. |
+| Ready for developer staff use | Trusted developer staff can make scoped repo changes with normal evidence and approval gates. |
 
-Do not call a repo ready for staff or builder use just because the installer
+Do not call a repo ready for developer staff use just because the installer
 passes. The installer checks files. The adoption profile checks whether a
-future agent understands the product repo.
+future agent or developer understands the product repo.
 
 ## Local Project Profile
 
@@ -206,21 +205,14 @@ Minimum evidence for `Profile verified`:
 - test/build/E2E commands are verified from docs or actual safe command output
 - critical lanes and forbidden paths are explicit
 
-Minimum evidence for `Ready for staff-safe use`:
-
-- profile verified
-- staff-safe allowed and forbidden actions are clear
-- staff can report bugs, QA, or document without production/write/secret/Koda
-  write access by default
-- escalation path to Hafiz or technical owner is clear
-
-Minimum evidence for `Ready for builder use`:
+Minimum evidence for `Ready for developer staff use`:
 
 - profile verified
 - GitHub/task routing is clear
 - verify/QA/review/commit path is clear
 - permanent E2E or human-journey expectation is clear
 - commit/push/PR/deploy boundaries are clear
+- ordinary staff intake stays in Teams Planner
 
 ## Approval Boundaries
 
@@ -232,7 +224,7 @@ Ask Hafiz before:
 - applying generated files
 - changing a product repo's `AGENTS.md` or `CLAUDE.md`
 - changing project test/build/deploy scripts
-- granting tool access to staff or builders
+- granting tool access to developer staff or builders
 - adding Koda write access for a new user or agent
 - push, PR, merge, deploy, production action, data mutation, destructive
   action, or critical-lane implementation
@@ -264,7 +256,7 @@ Do not save:
 | Saying a repo is ready because files exist | Separate baseline files from verified project understanding. |
 | Guessing test/build/deploy commands | Verify from docs or safe command output; otherwise name the gap. |
 | Weakening root rules in a project | Stop. Local rules can be stricter, not weaker. |
-| Starting staff rollout before profile verification | Recommend project adoption first, then staff-safe kit. |
+| Starting developer-staff rollout before profile verification | Recommend project adoption first, then developer staff kit. |
 | Treating all products the same | Keep the shared workflow same, but map local commands, evidence, and critical lanes per repo. |
 
 ## Close-Out Shape

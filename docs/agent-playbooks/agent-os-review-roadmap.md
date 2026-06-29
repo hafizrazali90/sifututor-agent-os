@@ -98,7 +98,7 @@ Use this as the master tracker while reviewing the architecture.
 | 8 | Workflows And Lanes | all core playbooks and skills | `agent-os-workflow-lanes.md`, `task-router.md`, evals | Draft accepted | lane intensity model |
 | 9 | Verification And Evidence | `verify.md`, `qa.md`, `test-coverage.md`, past QA docs | `agent-os-evidence-model.md`, verify/QA/test-coverage/review docs, evals | Draft accepted | agent-as-tester evidence model |
 | 10 | GitHub/Plane/Planner/Task State | `task-router.md`, `plane.md`, session ledger, active-task docs | `agent-os-state-model.md`, task/router/Plane/save-session/ledger docs, evals | Draft accepted | state source map |
-| 11 | Staff Rollout Readiness | install docs, staff quick start, research note | `agent-os-rollout-readiness.md`, installer manifest, staff docs, evals | Draft accepted | readiness ladder |
+| 11 | Developer Staff Rollout Readiness | install docs, developer staff quick start, research note | `agent-os-rollout-readiness.md`, installer manifest, developer staff docs, evals | Draft accepted | readiness ladder |
 | 12 | Save Session And Handoff Quality | `save-session.md`, `handoff.md`, `snapshot.md`, `session-map.md` | save-session/handoff/snapshot docs, workflow docs, evals | Draft accepted | continuation pack standard |
 | 13 | Implementation Readiness And Build Handoff Quality | `ai-implementation-readiness.md`, `product-design.md`, `agent-os-workflows.md` | readiness/product/workflow docs, evals | Draft accepted | build-ready brief standard |
 | 14 | Enforcement And Drift Detection | `agent-os-hook-dispatcher.md`, `agent-os-skill-registry.md`, `agent-os-parity-contract.md`, health/eval scripts | enforcement docs, infrastructure, hook/parity docs, evals | Draft accepted | enforcement ladder and drift map |
@@ -136,7 +136,7 @@ Use this to avoid scattering changes across the wrong files.
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
 | Related issue and regression impact after fixes | `related-impact-audit.md` | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, evals |
 | Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |
-| Staff rollout readiness | `agent-os-rollout-readiness.md` | `agent-os-installation.md`, `agent-os-staff-quick-start.md`, install manifest, health check, evals |
+| Developer staff rollout readiness | `agent-os-rollout-readiness.md` | `agent-os-installation.md`, `agent-os-staff-quick-start.md`, install manifest, health check, evals |
 | Project adoption by product repo | `project-adoption.md` | install docs, rollout readiness, product `AGENTS.md`, product `CLAUDE.md`, workflow doctor, evals |
 | Context accuracy | `context-authority.md` | task router, evals |
 | Capability/connected tools | `capabilities.example.json`, `agent-os-health.sh` | installer, quick-check |
@@ -167,7 +167,7 @@ created.
 | 2026-06-29 | Verification, QA, and Evidence accepts the Proof Standard. | Hafiz needs the agent to distinguish code proof, journey proof, and release proof so "tests passed" is not mistaken for "users can do it" or "it is live." | Use `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `review.md`, and workflow close-outs to report the highest proven state. |
 | 2026-06-05 | GitHub/Plane/Planner/Task State review accepts the State Model. | Hafiz needs agents to stop using vague "done" language when work may only be local, pushed, PR-open, merged, deployed, or live-smoke-passed. Each tool should own a specific kind of truth. | Use `agent-os-state-model.md` as the source for state language and source-of-truth ownership. |
 | 2026-06-29 | Task State and Work Tracking accepts the State Ownership Rule. | Hafiz needs agents to use the right source for the right question instead of treating Planner, Koda, chat, GitHub, git, deploy records, and QA evidence as interchangeable truth. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` before trusting or updating task state. |
-| 2026-06-05 | Staff Rollout Readiness review accepts the readiness ladder: internal Agent OS, project baseline, staff-safe kit, approved builder kit, advanced operations. | Staff rollout should not mean giving every person every tool. The safe path is internal-first, then staff reporting/QA/docs, then code builder access only for trusted users, and advanced operations only by explicit approval. | Use `agent-os-rollout-readiness.md` before installing or expanding staff capabilities. |
+| 2026-06-05 | Staff Rollout Readiness review accepted an early readiness ladder, later corrected on 2026-06-29. | The early draft mixed ordinary staff intake with developer-staff Agent OS rollout. | Superseded by the 2026-06-29 correction: ordinary staff use Teams Planner only; Agent OS rollout is for developer staff. |
 | 2026-06-29 | Work Intake and Task State review accepts quick diagnosis before GitHub issue creation or implementation. | Hafiz wants traceability without noise: agents should not create GitHub issues from vague symptoms too early, but should not start real coding work with no trace. | Use `agent-os-state-model.md`, `task-router.md`, and `agent-os-workflows.md` for intake routing. |
 | 2026-06-29 | Review and Risk Before Commit/Push accepts a risk checkpoint before outward state changes. | Hafiz needs the agent to catch scope creep, missing evidence, state confusion, critical-lane gaps, release communication gaps, multi-fix confusion, and product/business risk before commit, push, PR, merge, or deploy. | Use `review.md`, `commit.md`, and `agent-os-workflows.md` before saying the next state is safe. |
 | 2026-06-29 | Save Session and Handoff Quality accepts the Continuation Pack standard. | Hafiz needs long sessions, compacted context, and agent-to-agent handoffs to resume from the main goal, current focus, highest proven state, evidence, boundaries, and next action instead of forcing the next agent to rediscover everything. | Use `save-session.md`, `handoff.md`, `snapshot.md`, and Session Maps when sessions need continuity. |
@@ -176,7 +176,8 @@ created.
 | 2026-06-29 | Push / PR / Release Lifecycle accepts PR-ready automation. | Hafiz approves PR open and CI pass most of the time, so agents should bundle mechanical GitHub work after one clear boundary instead of asking for every micro-step. Authority decisions such as merge, deploy, production, destructive actions, and critical lanes still need the approved stop point. | Use `push-pr-ci-automation.md`, `workflow-efficiency-audit.md`, and approval-gate evals before automating outbound workflow steps. |
 | 2026-06-29 | Release / Deploy / Live Monitoring accepts the post-merge state ladder. | Hafiz needs agents to stop treating merged, deployed, smoke checked, monitored, and accepted as the same thing. Agents should automate preflight, safe smoke, read-only monitoring, and release reports inside an approved boundary, while production deploy, rollback, destructive actions, critical-lane widening, and business acceptance remain explicit. | Use `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, and release-state evals before saying work is live or healthy. |
 | 2026-06-29 | Incident Workflow accepts the protection-first path. | Production incidents should not be handled like ordinary bugfixes. Agents must triage read-only first, name impact/severity, recommend mitigation, pause for production/critical authority decisions, prove stability after fix or rollback, and save a postmortem/lesson when material. | Use `incident-workflow.md`, `monitor-production-logs.md`, and incident evals before coding or closing serious production issues. |
-| 2026-06-29 | Project Adoption accepts shared core plus local project profile. | The umbrella Agent OS should stay portable, but each product repo needs a small verified adapter for commands, evidence, deploy path, critical lanes, and what done means. Installer pass is only baseline, not full readiness. | Use `project-adoption.md` before staff-safe or builder rollout in product repos. |
+| 2026-06-29 | Project Adoption accepts shared core plus local project profile. | The umbrella Agent OS should stay portable, but each product repo needs a small verified adapter for commands, evidence, deploy path, critical lanes, and what done means. Installer pass is only baseline, not full readiness. | Use `project-adoption.md` before developer-staff rollout in product repos. |
+| 2026-06-29 | Ordinary staff use Teams Planner only; Agent OS rollout is for developer staff. | Hafiz clarified that non-developer staff should not use Agent OS or LLM workflow kits directly. They report through Teams Planner. The OS is for developer staff working on other projects. | Update rollout docs, evals, and future discussion wording to say developer staff rollout. |
 
 ### Core Operating Layer
 
@@ -264,24 +265,25 @@ Known issue:
 Practical meaning: Koda is part of the OS, but the save path still needs a
 reliability review.
 
-### Staff Rollout Pieces
+### Developer Staff Rollout Pieces
 
 Already present:
 
 - install manifest
 - installer/checker
 - installation guide
-- staff quick start
+- developer staff quick start
 
 Current decision:
 
-- staff rollout follows the readiness ladder in
+- developer staff rollout follows the readiness ladder in
   [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md)
 - keep expanding internal reliability first
-- start staff later with the staff-safe kit, not full tool access
+- ordinary staff stay in Teams Planner
+- start developer staff later with the developer staff kit, not full tool access
 
 Practical meaning: we have early distribution assets and a rollout model, but
-real staff rollout should wait for a pilot plan and templates.
+developer-staff rollout should wait for a pilot plan and templates.
 
 ## Review Order
 
@@ -498,27 +500,27 @@ Output:
 - source-of-truth map for task state
 - decide when automatic issue creation is helpful versus noisy
 
-### 11. Staff Rollout Readiness
+### 11. Developer Staff Rollout Readiness
 
-Question: when is the Agent OS good enough to distribute?
+Question: when is the Agent OS good enough to distribute to developer staff?
 
 This has a draft decision now. Use
 [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) as the source
-before expanding staff access.
+before expanding developer-staff access.
 
 Review:
 
 - installer
-- staff quick start
+- developer staff quick start
 - templates
-- staff permission profiles
+- developer staff permission profiles
 - local memory fallback
 - tool-specific shims
-- examples for support, QA, developer, and product/design staff
+- examples for developer, QA, and product/design developer staff
 
 Output:
 
-- staff rollout plan
+- developer staff rollout plan
 - starter-kit templates
 - onboarding checklist
 

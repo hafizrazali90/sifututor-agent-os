@@ -152,7 +152,7 @@ Every workflow should answer these questions before it is called done:
 | Project adoption | Medium | A product repo needs the shared Agent OS adapted to its local commands, evidence, risks, and done state. |
 | Memory, save-session, and handoff | Medium to Critical | Context must survive chat end, compaction, or agent switch. |
 | Mission ledger | Light to Medium | Important future work is not ready for GitHub or active task. |
-| Staff rollout | Medium | Agent OS is prepared for other staff or another LLM setup. |
+| Developer staff rollout | Medium | Agent OS is prepared for developer staff or another LLM setup. |
 
 ## 1. Idea And Discussion Workflow
 
@@ -1225,14 +1225,18 @@ Save to:
 Common failure: the ledger becomes a second GitHub issue tracker instead of a
 parking lot for contextual future work.
 
-## 17. Staff Rollout Workflow
+## 17. Developer Staff Rollout Workflow
 
-Starts when Agent OS is ready to be distributed to staff, another LLM, another
-machine, or another project.
+Starts when Agent OS is ready to be distributed to developer staff, another LLM,
+another machine, or another project.
 
-Hafiz owns rollout scope, staff permissions, training direction, and who gets
-what capability. The agent owns making installation, rules, checks, and support
-paths clear enough that staff can use the system safely.
+Hafiz owns rollout scope, developer-staff permissions, training direction, and
+who gets what capability. The agent owns making installation, rules, checks,
+and support paths clear enough that developer staff can use the system safely.
+
+Ordinary non-developer staff do not use Agent OS by default. They use Microsoft
+Teams Planner for bug reports, screenshots, reproduction notes, and support
+context.
 
 Use install docs, rollout readiness, capability model, approval gates, and
 health checks.
@@ -1242,7 +1246,7 @@ Evidence required:
 - Target user group and allowed tools/capabilities.
 - Installation path tested.
 - Health check passes.
-- Staff-safe boundaries documented.
+- Developer-staff boundaries documented.
 - Training checklist and support escalation path exist.
 - Pilot feedback loop defined before broad rollout.
 
@@ -1251,11 +1255,12 @@ may ask the agent to do, and know when to escalate to Hafiz or technical owner.
 
 Save to:
 
-- onboarding docs, install manifest, staff quick start, support FAQ, Koda for
+- onboarding docs, install manifest, developer staff quick start, support FAQ, Koda for
   rollout lessons, mission ledger for future improvements.
 
-Common failure: staff receive powerful tools without clear capability limits,
-or they receive too much process and stop using the system.
+Common failure: ordinary staff are accidentally pulled into Agent OS instead of
+Teams Planner, or developer staff receive powerful tools without clear
+capability limits.
 
 ## Recommended Use
 

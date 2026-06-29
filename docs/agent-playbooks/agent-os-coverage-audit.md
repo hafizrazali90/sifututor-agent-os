@@ -92,7 +92,7 @@ We have tested the guardrails more deeply than we have designed the workflows.
 | Multi-Agent Workflow | Decide when Codex, Claude, subagents, or humans should do each role. | switching docs, handoff, snapshot, save-session, templates. | Medium | Handoffs lose context or duplicate work. | Define Codex-Claude-human collaboration map by workflow. |
 | State Management | Track local, pushed, PR open, merged, deployed, live smoke passed. | `agent-os-state-model.md`, state fixtures, session ledger, mission ledger. | Medium | "Done" means different things in different tools. | Add repo-state fixtures and source-of-truth ownership examples. |
 | Project Adoption | Apply Agent OS to each product repo without breaking local conventions. | `project-adoption.md`, install guide, install manifest, project `AGENTS.md`, project `CLAUDE.md`, active task docs. | Medium but newly added | Umbrella rules exist but product teams do not follow them consistently. | Audit each product profile: sifu-tutor, ripple-suite, tutor app, parent app, LLS. |
-| Staff Rollout | Let staff use the OS safely with limited capability. | staff quick start, rollout readiness, install docs. | Shallow to medium | Staff get too much access or too much process and stop using it. | Create staff pilot plan, roles, permission profiles, training checklist. |
+| Developer Staff Rollout | Let developer staff use the OS safely with limited capability. Non-developer staff stay in Teams Planner. | developer staff quick start, rollout readiness, install docs. | Shallow to medium | Ordinary staff get pulled into tools they should not use, or developer staff get too much access without guardrails. | Create developer-staff pilot plan, roles, permission profiles, training checklist. |
 | Governance | Decide how Agent OS itself changes over time. | review roadmap, mission ledger, commits, Koda. | Shallow | Rules are changed in many chats/files without versioning or review. | Add Agent OS change-control workflow and changelog/versioning standard. |
 | Evaluation Harness | Prove Agent OS behavior with repeatable checks. | eval runner, response/state/Koda/capability/conversation fixtures, health. | Deep for local fixtures; medium for real-world traces. | Docs say one thing but hooks/agents behave differently. | Add repo-state fixtures, richer response fixtures, and eventually trace-based evals. |
 
@@ -172,8 +172,8 @@ Do not continue randomly. Review in this order:
 7. **Project Adoption**
    - Audit product repos one by one.
 
-8. **Staff Rollout Pilot**
-   - Create staff-safe pilot plan only after internal workflows are stable.
+8. **Developer Staff Rollout Pilot**
+   - Create developer-staff pilot plan only after internal workflows and project adoption are stable.
 
 9. **Governance And Versioning**
    - Decide how Agent OS changes are proposed, reviewed, committed, and
