@@ -168,6 +168,7 @@ When adding or changing a harness case:
 ```bash
 scripts/agent-checks/agent-os-eval-runner.py --self-test
 scripts/agent-checks/agent-os-response-shape-runner.py
+scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
 scripts/agent-checks/agent-os-health.sh
 scripts/agent-checks/workflow-doctor.sh
@@ -196,4 +197,3 @@ After changing the harness, report:
 - what is still only manual/future harness
 - whether the change is local, committed, pushed, or adopted
 - the next recommended action
-

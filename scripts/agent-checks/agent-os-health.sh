@@ -90,6 +90,7 @@ check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-inst
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
+check_file "Agent OS workflow examples" "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py"
 check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
 check_file "Agent OS session map check" "$ROOT/scripts/agent-checks/session-map-check.py"
 check_file "Agent OS session map HTML" "$ROOT/scripts/agent-checks/session-map-html.py"
@@ -128,6 +129,16 @@ else
   sed -n '1,8p' /tmp/agent-os-response-shape.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-response-shape.out /tmp/agent-os-response-shape.err
+
+if "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py" >/tmp/agent-os-workflow-examples.out 2>/tmp/agent-os-workflow-examples.err; then
+  workflow_example_summary="$(tail -1 /tmp/agent-os-workflow-examples.out 2>/dev/null || true)"
+  pass "Agent OS workflow examples" "${workflow_example_summary:-passed}"
+else
+  fail "Agent OS workflow examples" "workflow example runner failed"
+  sed -n '1,12p' /tmp/agent-os-workflow-examples.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-workflow-examples.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-workflow-examples.out /tmp/agent-os-workflow-examples.err
 
 if "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py" >/tmp/agent-os-state-fixtures.out 2>/tmp/agent-os-state-fixtures.err; then
   state_fixture_summary="$(tail -1 /tmp/agent-os-state-fixtures.out 2>/dev/null || true)"

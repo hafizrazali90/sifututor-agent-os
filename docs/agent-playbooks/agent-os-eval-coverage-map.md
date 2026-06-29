@@ -39,6 +39,7 @@ be automated next.
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013 | Claiming unverified tools, using blocked tools without approval, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
+| Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
 
 ## Manual Scenario Coverage
 
@@ -57,7 +58,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Related impact audit | AO-112, AO-113, AO-114 | Needs the actual root cause, related code surface, risk lane, and scope boundary. A simple router fixture cannot prove whether the related search was sufficient. |
 | Bugfix and feature scenario quality | AO-133, AO-134 | Needs real task context, risk lane, user impact, product surface, and available evidence. A simple router fixture cannot honestly decide whether the agent chose the right workflow weight. |
 | Verify, QA, and review scenario quality | AO-135, AO-136, AO-137 | Needs real work type, changed surface, available tools/data, evidence already gathered, release state, and next-state boundary. A simple router fixture cannot honestly prove whether the agent gathered enough proof for the claimed state. |
-| Master workflow example coverage | AO-138 | Needs a structural scan of `agent-os-workflows.md` plus human review of whether each example is useful, not just present. A simple router fixture cannot judge example quality across every workflow. |
+| Master workflow example quality | AO-138 | Structural presence is checked by the workflow example runner. Human/agent review is still needed to judge whether each example is useful, natural, and accurate for the workflow. |
 | Session Map lifecycle | AO-106 | Needs real parallel sessions, side paths, compaction, branch state, and handoff context. A simple fixture can catch obvious over-creation, but not whether two maps should be merged, parked, or split. |
 | Developer staff rollout details | AO-073, AO-074 | Needs generated developer-staff onboarding artifacts, and must preserve the rule that ordinary staff use Teams Planner only. |
 | Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity is executable. Full behavior comparison still needs adapter-aware checks that compare real Claude and Codex responses for approval gates, evidence standard, and close-out behavior. |
