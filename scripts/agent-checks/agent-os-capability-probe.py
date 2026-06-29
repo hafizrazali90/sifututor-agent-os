@@ -110,7 +110,10 @@ def check_local_wrappers() -> dict[str, str]:
 def check_local_command(name: str, command: str) -> dict[str, str]:
     result = run_command(["bash", "-lc", f"command -v {command}"], timeout=5)
     if result.returncode == 0:
-        return record(name, "unknown", f"local command found: {result.stdout.strip()}", "connector/login still needs a safe probe")
+        note = "connector/login still needs a safe probe"
+        if name == "github":
+            note = "run scripts/agent-checks/agent-os-github-probe.py before claiming GitHub read access"
+        return record(name, "unknown", f"local command found: {result.stdout.strip()}", note)
     return record(name, "unknown", f"local command not found: {command}", "session connector may still exist")
 
 

@@ -217,6 +217,58 @@ external GitHub, Planner, Google Drive, production logs, or deploy services.
 Those still need task-relevant connector probes or approved read-only wrappers
 before being reported as live evidence.
 
+For GitHub read capability, use:
+
+```bash
+scripts/agent-checks/agent-os-github-probe.py
+```
+
+This performs a tiny read-only GitHub CLI probe: `gh auth status` and
+`gh repo view --json ...`. It reports whether GitHub is available for current
+repo metadata reads without printing tokens and without creating, editing,
+pushing, opening PRs, merging, or changing anything.
+
+## Connector Path Strategy
+
+Use the lowest-noise path that can prove the current task.
+
+| Path | Best for | Tradeoff |
+| --- | --- | --- |
+| CLI wrapper | Fast repeatable probes, compact JSON, local health checks, scripts, CI-like checks. | Requires local CLI/auth and a maintained wrapper. |
+| MCP / connector | Rich agent interaction across services, discovery, multi-step reads, UI-independent workflows. | Can expose a larger tool surface and more context unless narrowed. |
+| Direct API | Stable automation behind a wrapper when CLI/MCP is unavailable or too broad. | Requires explicit credential handling and careful output sanitization. |
+
+Default:
+
+```text
+CLI wrapper first for probes.
+MCP/connector when the agent needs richer read-only interaction.
+Direct API only inside a narrow wrapper when it is the cleanest safe path.
+```
+
+For token efficiency, prefer commands that return small structured output,
+especially JSON fields selected with `--json`, `--jq`, or a wrapper-specific
+summary. Do not dump full issues, logs, PR diffs, Planner cards, or Drive files
+unless the active task needs that detail.
+
+Research basis:
+
+- GitHub CLI `gh auth status`
+  ([manual](https://cli.github.com/manual/gh_auth_status)) reports active
+  account and authentication state.
+- GitHub CLI `gh repo view`
+  ([manual](https://cli.github.com/manual/gh_repo_view)) supports
+  current-directory repo detection. GitHub CLI formatting supports selected
+  JSON fields through `--json` and `--jq`
+  ([manual](https://cli.github.com/manual/gh_help_formatting)).
+- GitHub MCP Server supports narrowing exposed capabilities with toolsets and
+  tools, and read-only mode skips write tools
+  ([README](https://github.com/github/github-mcp-server),
+  [configuration](https://github.com/github/github-mcp-server/blob/main/docs/server-configuration.md)).
+- MCP tools are model-controlled and discoverable, so tool exposure should stay
+  clear, narrow, and human-governed for safety
+  ([MCP tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)).
+
 Run the local fixture runner when changing capability rules:
 
 ```bash

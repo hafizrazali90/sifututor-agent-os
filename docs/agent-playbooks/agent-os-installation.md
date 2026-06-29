@@ -53,6 +53,15 @@ scripts/agent-checks/agent-os-capability-probe.py
 Plain meaning: this tells the agent what is available, unknown, blocked, or
 forbidden on the current machine before it claims tool access.
 
+To verify GitHub read access for the current repo:
+
+```bash
+scripts/agent-checks/agent-os-github-probe.py
+```
+
+Plain meaning: this checks the GitHub CLI login and reads tiny repo metadata.
+It does not push, create PRs, edit issues, merge, or change anything.
+
 ## Check A Product Repo
 
 From the umbrella root:

@@ -38,6 +38,7 @@ be automated next.
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009, KO-010, KO-011, KO-012, KO-013, KO-014, KO-015 | Storing unsafe, vague, unscoped, duplicate, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy; using wrong correction source; mutating Koda during bulk cleanup before a read-only audit. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013, CP-014, CP-015, CP-016, CP-017 | Claiming unverified tools, using blocked tools without approval, asking again for task-relevant approved auto-read evidence, using auto-read as broad/unrelated access, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Capability probe | Local capability report | Claiming local filesystem, git, Koda, agent-access wrapper, commit, push, deploy, secret, or live-write capability without checking current-session state first. Checked by `scripts/agent-checks/agent-os-capability-probe.py` and health. |
+| GitHub probe | GitHub CLI read probe | Claiming GitHub repo metadata access without checking `gh` auth and a tiny read-only repo metadata call first. Checked on demand by `scripts/agent-checks/agent-os-github-probe.py`; health checks file presence only to stay fast. |
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
@@ -51,7 +52,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner, including practical meaning, state, next action, decision needed, and formal-label translation. Full tone judgment still needs human review. |
 | Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Mission Ledger, Planner, Koda, or production/deploy evidence. AO-098 documents the shared stale-context behavior; richer automation needs repo-state fixtures. |
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
-| Capability inventory | AO-047, AO-048, AO-049, AO-050 | Local capability state is covered by the capability probe and capability fixtures; still needs live session tool discovery for each connector. |
+| Capability inventory | AO-047, AO-048, AO-049, AO-050 | Local capability state is covered by the capability probe and capability fixtures. GitHub read capability is covered by an on-demand `gh` probe. Planner, Google Drive, and production-log live discovery still need connector-specific probes. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Build handoff quality | AO-104 | Needs real feature/bug context, codebase entry points, risks, and evidence plan. A simple router fixture cannot prove a build-ready brief is complete. |
 | Enforcement layer choice | AO-105 | Needs the specific rule, repeated-failure history, danger level, and automation feasibility. A simple router fixture cannot honestly choose the best enforcement strength. |
@@ -77,8 +78,8 @@ These are important but not honest as simple router-classifier tests yet.
 
 1. Add live Koda retrieval quality fixtures only when a stable non-polluting
    live-read harness exists.
-2. Add connector-specific live read probes for GitHub, Planner, Google Drive,
-   and production-log availability when each connector has a stable safe check.
+2. Add connector-specific live read probes for Planner, Google Drive, and
+   production-log availability when each connector has a stable safe check.
 3. Extend the parity fixture from structural checks into behavior fixtures that
    compare actual Claude and Codex responses against the same workflow prompts.
 
