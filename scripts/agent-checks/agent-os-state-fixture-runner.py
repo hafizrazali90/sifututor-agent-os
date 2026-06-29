@@ -124,6 +124,50 @@ CASES = [
         "should_pass": False,
         "why": "Pushed does not imply merged or live.",
     },
+    {
+        "id": "ST-011",
+        "name": "pr open with evidence",
+        "text": (
+            "Status: pr open. PR #42 is open at https://github.com/sifututor/app/pull/42 "
+            "for commit abc123. CI is pending, so it is not merged, not deployed, "
+            "and not live smoke passed. Recommended next: wait for CI and review."
+        ),
+        "expected_state": "pr open",
+        "required_snippets": ("PR #42", "https://github.com", "commit abc123", "CI"),
+        "should_pass": True,
+        "why": "PR-open claims should include enough evidence to find the PR and source commit.",
+    },
+    {
+        "id": "ST-012",
+        "name": "pr open without evidence",
+        "text": "Status: pr open. The work is ready for review.",
+        "expected_state": "pr open",
+        "required_snippets": ("PR #", "https://github.com", "commit"),
+        "should_pass": False,
+        "why": "PR-open claims are weak without a PR number/link and source commit.",
+    },
+    {
+        "id": "ST-013",
+        "name": "deployed with source evidence",
+        "text": (
+            "Status: deployed. Release 2026-06-29.1 deployed commit abc123 to staging. "
+            "The deployment record is https://deploy.example/releases/2026-06-29.1. "
+            "It is not live smoke passed yet. Recommended next: run staging smoke."
+        ),
+        "expected_state": "deployed",
+        "required_snippets": ("Release 2026-06-29.1", "commit abc123", "https://deploy.example"),
+        "should_pass": True,
+        "why": "Deploy claims should name the target release/source evidence and avoid implying smoke proof.",
+    },
+    {
+        "id": "ST-014",
+        "name": "deployed without source evidence",
+        "text": "Status: deployed. The app is updated and should be fine.",
+        "expected_state": "deployed",
+        "required_snippets": ("Release", "commit"),
+        "should_pass": False,
+        "why": "Deploy claims need source/release evidence before the agent can call them deployed.",
+    },
 ]
 
 
@@ -133,6 +177,10 @@ def normalize(value: str) -> str:
 
 def has_negated_phrase(text: str, phrase: str) -> bool:
     return bool(re.search(rf"\bnot(?:\s+\w+){{0,3}}\s+{re.escape(phrase)}\b", text))
+
+
+def contains_text(text: str, snippet: str) -> bool:
+    return normalize(snippet) in text
 
 
 def observed_states(text: str) -> list[str]:
@@ -153,6 +201,10 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
         errors.append("unexpected explicit state: " + ", ".join(states))
     else:
         errors.append("missing explicit target state")
+
+    for snippet in case.get("required_snippets", ()):
+        if not contains_text(normalized, snippet):
+            errors.append(f"missing required evidence snippet: {snippet}")
 
     if "done." in normalized and not states:
         errors.append("uses vague done without target state")
