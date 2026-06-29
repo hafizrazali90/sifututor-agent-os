@@ -176,9 +176,17 @@ is needed for the active task. Examples:
 - scoped server access when a deploy/preflight task already requires it
 - backup access when a production release playbook requires a pre-deploy backup
 
+Plain rule:
+
+```text
+Auto-read by default when it helps accuracy.
+Limit by scope and safety, not by unnecessary permission prompts.
+```
+
 Standing access approval is not blanket access. The agent must still:
 
 - use the narrowest relevant access file or tool
+- explain the evidence source used when it affects the recommendation
 - keep secrets out of chat, docs, screenshots, logs, commits, and Koda
 - avoid repository `.env*` files and `live/`
 - avoid unrelated credentials or systems

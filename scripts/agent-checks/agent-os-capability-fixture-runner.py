@@ -44,6 +44,8 @@ def validate_capability_record(record: dict) -> list[str]:
     reporting = normalize(record.get("reporting"))
     actor = normalize(record.get("actor") or "agent")
     tier = normalize(record.get("tier"))
+    scope = normalize(record.get("scope") or "task_scoped")
+    task_relevant = bool(record.get("task_relevant", True))
     checked = bool(record.get("checked"))
 
     if state not in ALLOWED_STATES:
@@ -62,7 +64,11 @@ def validate_capability_record(record: dict) -> list[str]:
         errors.append("exception-only capability needs explicit current-session request before use")
 
     if tier == "auto_read" and state in ACTIONABLE_STATES:
-        if action in {"ask_permission", "skip"}:
+        if not task_relevant and action in {"use", "read", "scan"}:
+            errors.append("auto-read capability must stay relevant to the active task")
+        if scope in {"broad", "unrelated", "unbounded"}:
+            errors.append("auto-read capability must stay narrowly scoped")
+        if task_relevant and action in {"ask_permission", "skip"}:
             errors.append("auto-read capability should be used proactively when task-relevant")
         if action == "use" and approval in {"requested", "explicit"}:
             errors.append("auto-read capability should not need extra approval when task-relevant")
@@ -307,6 +313,8 @@ CASES = [
             "approval": "not_needed",
             "safety": "safe",
             "tier": "auto_read",
+            "scope": "task_scoped",
+            "task_relevant": True,
             "checked": True,
             "reporting": "plain",
         },
@@ -323,11 +331,49 @@ CASES = [
             "approval": "requested",
             "safety": "safe",
             "tier": "auto_read",
+            "scope": "task_scoped",
+            "task_relevant": True,
             "checked": True,
             "reporting": "plain",
         },
         "should_pass": False,
         "why": "Extra permission questions for task-relevant auto-read access create the back-and-forth Hafiz wants to remove.",
+    },
+    {
+        "id": "CP-016",
+        "name": "auto-read unrelated access rejected",
+        "record": {
+            "name": "monitoring_readonly",
+            "state": "available",
+            "action": "use",
+            "approval": "not_needed",
+            "safety": "safe",
+            "tier": "auto_read",
+            "scope": "task_scoped",
+            "task_relevant": False,
+            "checked": True,
+            "reporting": "plain",
+        },
+        "should_pass": False,
+        "why": "Auto-read removes repeated permission prompts, but it is not permission to inspect unrelated systems.",
+    },
+    {
+        "id": "CP-017",
+        "name": "auto-read broad scan rejected",
+        "record": {
+            "name": "server_ssh",
+            "state": "available",
+            "action": "scan",
+            "approval": "not_needed",
+            "safety": "safe",
+            "tier": "auto_read",
+            "scope": "broad",
+            "task_relevant": True,
+            "checked": True,
+            "reporting": "plain",
+        },
+        "should_pass": False,
+        "why": "Read-only access should be narrow and task-scoped, not a broad exploration pass.",
     },
 ]
 

@@ -60,6 +60,59 @@ check silently. The limit is scope: use the narrowest relevant read-only source,
 never expose secrets, and stop before writes, deploys, mutation, destructive
 actions, or critical-lane implementation.
 
+## Auto-Read Scope Rule
+
+Use approved read-only access by default when it helps accuracy.
+
+Plain meaning:
+
+```text
+Do not ask Hafiz to say "yes, read it" again when the read is already approved,
+safe, and needed for the active task.
+
+The boundary is relevance and safety, not another permission prompt.
+```
+
+For diagnosis, planning, verify, QA, review, monitoring, smoke checks, and
+release evidence, agents should proactively use the narrowest relevant
+approved read-only lane or connected read-only tool.
+
+Allowed:
+
+- read current repo state, logs, monitoring, Planner intake, GitHub state, Koda,
+  or access-wrapper output when that evidence is needed for the active task
+- use `agent-access-map.md` and `scripts/agent-access/*` wrappers to check
+  approved read-only lanes
+- summarize the result without exposing secrets or unrelated private data
+
+Not allowed:
+
+- read repository `.env*`, production secrets, or unrelated credential files
+- browse broad systems just because access exists
+- inspect unrelated users, staff data, projects, tickets, logs, or services
+- mutate data, deploy, restart services, resolve alerts, update Planner/GitHub,
+  or write to external systems without the proper approval gate
+- treat a read-only finding as approval to implement critical-lane changes
+
+Good:
+
+```text
+This looks like a production login issue, so I will check the scoped read-only
+monitoring and recent deploy evidence before recommending a fix.
+```
+
+Bad:
+
+```text
+Should I check the approved read-only monitoring first?
+```
+
+Also bad:
+
+```text
+I have read-only server access, so I scanned everything on the box.
+```
+
 ## Default Internal Manifest
 
 For a normal Sifututor umbrella Codex session:
