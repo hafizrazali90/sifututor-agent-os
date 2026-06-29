@@ -149,6 +149,7 @@ Every workflow should answer these questions before it is called done:
 | Commit, push, and PR | Medium to Full | Work is ready to save in git and optionally sync outward. |
 | Release, deploy, and monitor | Critical | Merged work needs to reach live safely and be watched. |
 | Incident | Critical | Production is failing or may be affecting users/revenue. |
+| Project adoption | Medium | A product repo needs the shared Agent OS adapted to its local commands, evidence, risks, and done state. |
 | Memory, save-session, and handoff | Medium to Critical | Context must survive chat end, compaction, or agent switch. |
 | Mission ledger | Light to Medium | Important future work is not ready for GitHub or active task. |
 | Staff rollout | Medium | Agent OS is prepared for other staff or another LLM setup. |
@@ -1106,6 +1107,50 @@ Save to:
 - Koda for durable root-cause and prevention lessons.
 
 Common failure: an incident is handled like a normal low-risk bugfix.
+
+## 14A. Project Adoption Workflow
+
+Starts when Hafiz wants Agent OS applied to a product repo, asks whether a repo
+is Agent OS-ready, prepares a repo for Claude/Codex/another LLM, or wants staff
+or trusted builders to use a product repo safely.
+
+Hafiz owns rollout priority, who gets access, and which gaps are acceptable.
+The agent owns reading the current repo docs, running safe dry-run checks,
+drafting the local project profile, and naming unknowns instead of guessing.
+
+Use [project-adoption.md](project-adoption.md), install docs, rollout
+readiness, capability model, evidence model, and approval gates.
+
+Plain meaning:
+
+```text
+Keep one shared Agent OS, then give each product repo a small adapter that says
+how this repo builds, tests, deploys, proves user journeys, and defines done.
+```
+
+Evidence required:
+
+- Root `AGENTS.md` and target project `AGENTS.md` read.
+- Target `CLAUDE.md` or equivalent reference checked.
+- Active task state checked when present.
+- `TESTING.md`, deploy docs, QA/E2E docs, and project-specific commands checked
+  when present.
+- Installer dry-run run from the umbrella root.
+- Local project profile drafted or verified with unknowns named.
+
+Exit when the repo state is reported as not adopted, baseline present, profile
+drafted, profile verified, ready for internal agent use, ready for staff-safe
+use, or ready for builder use.
+
+Save to:
+
+- product `AGENTS.md` or linked project profile,
+- Session Map for current adoption progress,
+- Koda for durable lessons,
+- Mission Ledger for important future adoption gaps.
+
+Common failure: treating file installation as the same thing as a verified
+project workflow.
 
 ## 15. Memory, Save-Session, And Handoff Workflow
 

@@ -7,6 +7,10 @@ Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) before
 deciding whether the target should receive the internal kit, staff-safe kit,
 builder kit, or advanced operations access.
 
+Use [project-adoption.md](project-adoption.md) when the question is not only
+"are files present?" but "can a future agent actually work in this product repo
+without guessing?"
+
 The installer is deliberately boring:
 
 - dry-run by default
@@ -66,6 +70,27 @@ Apply mode creates missing baseline files only:
 - `.claude/tasks/archive/.gitkeep`
 
 If any of those files already exist, the installer leaves them alone.
+
+## Draft The Local Project Profile
+
+After the dry-run check, do not call the repo fully adopted yet. Fill the local
+project profile from [project-adoption.md](project-adoption.md):
+
+- purpose and primary users
+- stack/runtime
+- source docs
+- install, test, build, E2E, and deploy commands
+- critical lanes
+- safe access lanes
+- human-journey evidence expectations
+- what "done" means in that repo
+
+Plain meaning:
+
+```text
+The installer proves the basic files exist. The project profile proves the
+agent understands how this repo actually works.
+```
 
 ## Verify After Install
 

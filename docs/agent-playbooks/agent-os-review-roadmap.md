@@ -107,6 +107,7 @@ Use this as the master tracker while reviewing the architecture.
 | 17 | Push / PR / Release Lifecycle | `commit.md`, `review.md`, `agent-os-state-model.md`, session ledger, GitHub/PR workflow docs | `push-pr-ci-automation.md`, `workflow-efficiency-audit.md`, approval/workflow/eval docs | Draft accepted | PR-ready boundary and workflow efficiency audit |
 | 18 | Release / Deploy / Live Monitoring | `monitor-production-logs.md`, `agent-os-evidence-model.md`, `agent-os-state-model.md`, project deploy docs | `release-deploy-live-monitoring.md`, approval/workflow/eval docs | Draft accepted | post-merge state ladder and production-monitored boundary |
 | 19 | Incident Workflow | `monitor-production-logs.md`, `agent-os-evidence-model.md`, `related-impact-audit.md`, critical-lane rules | `incident-workflow.md`, workflow/eval/docs | Draft accepted | protection-first incident path and postmortem standard |
+| 20 | Project Adoption | install docs, rollout readiness, product `AGENTS.md`/`CLAUDE.md`, workflow doctor | `project-adoption.md`, install/readiness/workflow docs, health/manifest/evals | Draft accepted | shared core plus local project profile |
 
 ## Touch Map
 
@@ -136,6 +137,7 @@ Use this to avoid scattering changes across the wrong files.
 | Related issue and regression impact after fixes | `related-impact-audit.md` | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, evals |
 | Task and release state | `agent-os-state-model.md` | `task-router.md`, `plane.md`, `session-release-ledger.md`, `save-session.md`, evals |
 | Staff rollout readiness | `agent-os-rollout-readiness.md` | `agent-os-installation.md`, `agent-os-staff-quick-start.md`, install manifest, health check, evals |
+| Project adoption by product repo | `project-adoption.md` | install docs, rollout readiness, product `AGENTS.md`, product `CLAUDE.md`, workflow doctor, evals |
 | Context accuracy | `context-authority.md` | task router, evals |
 | Capability/connected tools | `capabilities.example.json`, `agent-os-health.sh` | installer, quick-check |
 | Staff install | `agent-os-installation.md`, install manifest | staff quick start, installer |
@@ -174,6 +176,7 @@ created.
 | 2026-06-29 | Push / PR / Release Lifecycle accepts PR-ready automation. | Hafiz approves PR open and CI pass most of the time, so agents should bundle mechanical GitHub work after one clear boundary instead of asking for every micro-step. Authority decisions such as merge, deploy, production, destructive actions, and critical lanes still need the approved stop point. | Use `push-pr-ci-automation.md`, `workflow-efficiency-audit.md`, and approval-gate evals before automating outbound workflow steps. |
 | 2026-06-29 | Release / Deploy / Live Monitoring accepts the post-merge state ladder. | Hafiz needs agents to stop treating merged, deployed, smoke checked, monitored, and accepted as the same thing. Agents should automate preflight, safe smoke, read-only monitoring, and release reports inside an approved boundary, while production deploy, rollback, destructive actions, critical-lane widening, and business acceptance remain explicit. | Use `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, and release-state evals before saying work is live or healthy. |
 | 2026-06-29 | Incident Workflow accepts the protection-first path. | Production incidents should not be handled like ordinary bugfixes. Agents must triage read-only first, name impact/severity, recommend mitigation, pause for production/critical authority decisions, prove stability after fix or rollback, and save a postmortem/lesson when material. | Use `incident-workflow.md`, `monitor-production-logs.md`, and incident evals before coding or closing serious production issues. |
+| 2026-06-29 | Project Adoption accepts shared core plus local project profile. | The umbrella Agent OS should stay portable, but each product repo needs a small verified adapter for commands, evidence, deploy path, critical lanes, and what done means. Installer pass is only baseline, not full readiness. | Use `project-adoption.md` before staff-safe or builder rollout in product repos. |
 
 ### Core Operating Layer
 

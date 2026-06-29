@@ -23,6 +23,7 @@ Then add tools only when a person needs them and the access can be checked.
 | 0 | Research / draft | Hafiz + agent | Discuss, design, and document the operating model. |
 | 1 | Internal Agent OS | Hafiz + Codex + Claude | Run Sifututor work with shared rules, memory, checks, and close-out. |
 | 2 | Project Baseline | Product repos | Install common files, task state, hooks, and guard scripts. |
+| 2A | Project Profile Verified | Product repos | Document repo-specific commands, evidence, deploy path, critical lanes, and "done" meaning. |
 | 3 | Staff-Safe Kit | Staff using any LLM | Report bugs, run QA, draft docs, and prepare handoffs safely. |
 | 4 | Approved Builder Kit | Trusted dev/agent users | Make scoped code changes with repo access and normal approval gates. |
 | 5 | Advanced Operations | Explicitly approved people only | Production, deploy, payment, auth, invoice, commission, migration, or mobile API contract work. |
@@ -52,6 +53,24 @@ This is the minimum we should keep working for Hafiz before expanding rollout:
 - installer dry-run
 
 If these are unclear or failing, staff rollout should pause.
+
+## Project Adoption Rule
+
+Before using a product repo for staff-safe or builder rollout, run the
+[project-adoption.md](project-adoption.md) workflow.
+
+Project Baseline means the files and hooks exist. Project Profile Verified
+means the local repo is understandable enough for a future agent:
+
+- project purpose and users are clear
+- source docs are known
+- install/test/build/E2E/deploy commands are mapped or gaps are named
+- critical lanes are explicit
+- human-journey evidence expectations are clear
+- "done" is defined for that repo
+
+Do not skip from Project Baseline to staff or builder rollout. A repo can pass
+the installer and still be confusing for real work.
 
 ## Staff-Safe Kit
 

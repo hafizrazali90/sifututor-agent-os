@@ -62,6 +62,7 @@ check_file "Agent OS approval gates" "$ROOT/docs/agent-playbooks/agent-os-approv
 check_file "push PR CI automation" "$ROOT/docs/agent-playbooks/push-pr-ci-automation.md"
 check_file "release deploy live monitoring" "$ROOT/docs/agent-playbooks/release-deploy-live-monitoring.md"
 check_file "incident workflow" "$ROOT/docs/agent-playbooks/incident-workflow.md"
+check_file "project adoption" "$ROOT/docs/agent-playbooks/project-adoption.md"
 check_file "workflow efficiency audit" "$ROOT/docs/agent-playbooks/workflow-efficiency-audit.md"
 check_file "Agent OS communication" "$ROOT/docs/agent-playbooks/agent-os-communication.md"
 check_file "internal build plan" "$ROOT/docs/agent-playbooks/agent-os-internal-build-plan.md"

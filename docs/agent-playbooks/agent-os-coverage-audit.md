@@ -52,9 +52,8 @@ The Agent OS is still weak in these areas:
 
 - workflow examples and real-world transition coverage
 - work intake across Hafiz chat, Planner, Plane, GitHub, staff reports, and production signals
-- project adoption by product repo
 - release/deploy/monitoring path
-- incident workflow
+- project adoption by product repo
 - staff rollout pilot
 - governance and versioning of Agent OS changes
 
@@ -92,7 +91,7 @@ We have tested the guardrails more deeply than we have designed the workflows.
 | Incident Workflow | Triage production problems, mitigate, communicate, fix, monitor, postmortem. | Critical lane, monitor-production-logs, evidence model. | Missing to shallow | Production issues are handled like normal bugfixes. | Create incident workflow and postmortem template. |
 | Multi-Agent Workflow | Decide when Codex, Claude, subagents, or humans should do each role. | switching docs, handoff, snapshot, save-session, templates. | Medium | Handoffs lose context or duplicate work. | Define Codex-Claude-human collaboration map by workflow. |
 | State Management | Track local, pushed, PR open, merged, deployed, live smoke passed. | `agent-os-state-model.md`, state fixtures, session ledger, mission ledger. | Medium | "Done" means different things in different tools. | Add repo-state fixtures and source-of-truth ownership examples. |
-| Project Adoption | Apply Agent OS to each product repo without breaking local conventions. | install guide, install manifest, project `AGENTS.md`, active task docs. | Shallow | Umbrella rules exist but product teams do not follow them consistently. | Audit each product: sifu-tutor, ripple-suite, tutor app, parent app, LLS. |
+| Project Adoption | Apply Agent OS to each product repo without breaking local conventions. | `project-adoption.md`, install guide, install manifest, project `AGENTS.md`, project `CLAUDE.md`, active task docs. | Medium but newly added | Umbrella rules exist but product teams do not follow them consistently. | Audit each product profile: sifu-tutor, ripple-suite, tutor app, parent app, LLS. |
 | Staff Rollout | Let staff use the OS safely with limited capability. | staff quick start, rollout readiness, install docs. | Shallow to medium | Staff get too much access or too much process and stop using it. | Create staff pilot plan, roles, permission profiles, training checklist. |
 | Governance | Decide how Agent OS itself changes over time. | review roadmap, mission ledger, commits, Koda. | Shallow | Rules are changed in many chats/files without versioning or review. | Add Agent OS change-control workflow and changelog/versioning standard. |
 | Evaluation Harness | Prove Agent OS behavior with repeatable checks. | eval runner, response/state/Koda/capability/conversation fixtures, health. | Deep for local fixtures; medium for real-world traces. | Docs say one thing but hooks/agents behave differently. | Add repo-state fixtures, richer response fixtures, and eventually trace-based evals. |

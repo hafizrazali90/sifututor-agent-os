@@ -16,6 +16,7 @@
     "docs/agent-playbooks/push-pr-ci-automation.md",
     "docs/agent-playbooks/release-deploy-live-monitoring.md",
     "docs/agent-playbooks/incident-workflow.md",
+    "docs/agent-playbooks/project-adoption.md",
     "docs/agent-playbooks/workflow-efficiency-audit.md",
     "docs/agent-playbooks/agent-os-communication.md",
     "docs/agent-playbooks/context-authority.md",
