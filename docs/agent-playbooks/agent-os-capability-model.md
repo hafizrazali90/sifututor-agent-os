@@ -210,6 +210,38 @@ deploy tooling", it should check what is actually available, unknown, blocked,
 or forbidden in this session.
 ```
 
+A probe is a small, safe test that answers: "Is this tool actually ready for
+this task right now?"
+
+Non-technical mental model:
+
+```text
+A probe checks whether the key works before the agent promises to open the
+door. It does not mean the agent has already walked into the room and finished
+the job.
+```
+
+Use probes to reduce guessing and back-and-forth:
+
+- before claiming a connector, CLI, wrapper, or approved read lane is working
+- before saying a tool is unavailable, especially when a fallback may exist
+- after a connector/MCP/API error, to separate "tool not connected" from
+  "task itself failed"
+- before starting evidence-heavy work that depends on GitHub, Planner, Drive,
+  Koda, monitoring, or other connected services
+
+Do not use probes as permission to do the real work. A probe may prove
+readiness, but it does not approve push, PR, merge, deploy, destructive action,
+critical-lane implementation, or business acceptance.
+
+When reporting a probe to Hafiz, use practical wording:
+
+```text
+I checked whether the tool is ready. GitHub read access is available, so I can
+use it for repo/PR evidence. That only proves access; it does not mean anything
+has been pushed or approved.
+```
+
 The first probe is local and non-mutating. It checks workspace write access,
 local git state, direct Koda health, local agent-access wrapper presence, and
 static boundaries such as commit/push/deploy/secrets/live. It does not call
