@@ -191,6 +191,12 @@ deploy, safe smoke checks, read-only monitoring, and final release reporting,
 but it stops before rollback, new fixes, destructive action, critical-lane
 widening, or business risk acceptance unless those were explicitly included.
 
+For incidents, use [`incident-workflow.md`](incident-workflow.md). Plain
+meaning: production/staging breakage, serious monitoring regressions, or blocked
+users require protection-first triage, severity/impact, mitigation choices,
+explicit authority decisions, post-fix monitoring, and a durable lesson when
+material.
+
 ## Skill Boundaries
 
 Always separate these:

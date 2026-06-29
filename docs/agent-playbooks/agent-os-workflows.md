@@ -1080,6 +1080,12 @@ production mutation approval. The agent owns read-only triage, impact
 assessment, safest mitigation options, implementation only after approval, and
 post-fix monitoring.
 
+Use [incident-workflow.md](incident-workflow.md). Plain meaning: incidents are
+protection-first work. The agent should triage with safe read-only evidence,
+name impact and severity, recommend mitigation options, then stop for Hafiz
+before production deploy, rollback, destructive action, data mutation,
+critical-lane widening, or business communication decisions.
+
 Evidence required:
 
 - What happened and who is affected.

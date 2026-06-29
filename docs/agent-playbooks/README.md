@@ -34,6 +34,7 @@ Use these when the user asks for:
 - Agent OS approval gates: [agent-os-approval-gates.md](agent-os-approval-gates.md)
 - Agent OS push, PR, CI, and merge automation: [push-pr-ci-automation.md](push-pr-ci-automation.md)
 - Agent OS release, deploy, live smoke, and monitoring: [release-deploy-live-monitoring.md](release-deploy-live-monitoring.md)
+- Agent OS incident workflow: [incident-workflow.md](incident-workflow.md)
 - Agent OS workflow efficiency audit: [workflow-efficiency-audit.md](workflow-efficiency-audit.md)
 - Agent OS communication and close-out: [agent-os-communication.md](agent-os-communication.md)
 - working with Hafiz: [working-with-hafiz.md](working-with-hafiz.md)
