@@ -178,6 +178,7 @@ Read these as the core internal kit:
 | Tools and capability | [agent-os-capability-model.md](agent-os-capability-model.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
+| Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
 | Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
 | Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
 | Bigger goals and remembered follow-ups | [mission-ledger.md](mission-ledger.md), [mission-ledger/README.md](mission-ledger/README.md) |

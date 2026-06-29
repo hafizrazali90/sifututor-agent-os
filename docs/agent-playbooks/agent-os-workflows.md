@@ -150,6 +150,7 @@ Every workflow should answer these questions before it is called done:
 | Release, deploy, and monitor | Critical | Merged work needs to reach live safely and be watched. |
 | Incident | Critical | Production is failing or may be affecting users/revenue. |
 | Project adoption | Medium | A product repo needs the shared Agent OS adapted to its local commands, evidence, risks, and done state. |
+| Governance and versioning | Medium | Agent OS changes need source ownership, checks, memory, commit state, and version clarity. |
 | Memory, save-session, and handoff | Medium to Critical | Context must survive chat end, compaction, or agent switch. |
 | Mission ledger | Light to Medium | Important future work is not ready for GitHub or active task. |
 | Developer staff rollout | Medium | Agent OS is prepared for developer staff or another LLM setup. |
@@ -1151,6 +1152,40 @@ Save to:
 
 Common failure: treating file installation as the same thing as a verified
 project workflow.
+
+## 14B. Governance And Versioning Workflow
+
+Starts when Hafiz changes how the Agent OS itself should work, when an agent
+adds a new playbook/skill/hook/eval, or when a correction needs to become a
+durable rule.
+
+Hafiz owns the operating preference and risk tolerance. The agent owns choosing
+the source of truth, checking connected files, running the right checks, saving
+Koda only when useful, and reporting the highest proven Git state.
+
+Use [agent-os-governance.md](agent-os-governance.md).
+
+Plain meaning:
+
+```text
+This is the workflow for changing the workflow system.
+```
+
+Evidence required:
+
+- Change type named.
+- Source of truth selected.
+- Connected files checked.
+- Required checks run for the changed layer.
+- Koda stored, updated, or intentionally skipped.
+- Git state reported as discussed, changed locally, committed locally, pushed,
+  or adopted.
+
+Exit when the Agent OS change is only discussed, changed locally, committed,
+pushed, or parked with a clear return path.
+
+Common failure: treating a local dirty docs change as if future agents already
+have the new rule.
 
 ## 15. Memory, Save-Session, And Handoff Workflow
 

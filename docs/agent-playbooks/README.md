@@ -21,6 +21,7 @@ Use these when the user asks for:
 - Agent OS tool and capability model: [agent-os-capability-model.md](agent-os-capability-model.md)
 - Agent OS workflow lanes: [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)
 - Agent OS master workflows: [agent-os-workflows.md](agent-os-workflows.md)
+- Agent OS governance and versioning: [agent-os-governance.md](agent-os-governance.md)
 - Agent OS improvement loop: [agent-os-improvement-loop.md](agent-os-improvement-loop.md)
 - Agent OS evidence model: [agent-os-evidence-model.md](agent-os-evidence-model.md)
 - Agent OS state model: [agent-os-state-model.md](agent-os-state-model.md)

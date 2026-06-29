@@ -108,6 +108,7 @@ Use this as the master tracker while reviewing the architecture.
 | 18 | Release / Deploy / Live Monitoring | `monitor-production-logs.md`, `agent-os-evidence-model.md`, `agent-os-state-model.md`, project deploy docs | `release-deploy-live-monitoring.md`, approval/workflow/eval docs | Draft accepted | post-merge state ladder and production-monitored boundary |
 | 19 | Incident Workflow | `monitor-production-logs.md`, `agent-os-evidence-model.md`, `related-impact-audit.md`, critical-lane rules | `incident-workflow.md`, workflow/eval/docs | Draft accepted | protection-first incident path and postmortem standard |
 | 20 | Project Adoption | install docs, rollout readiness, product `AGENTS.md`/`CLAUDE.md`, workflow doctor | `project-adoption.md`, install/readiness/workflow docs, health/manifest/evals | Draft accepted | shared core plus local project profile |
+| 21 | Governance and Versioning | review roadmap, research update procedure, improvement loop, evals, health/manifest | `agent-os-governance.md`, workflow/docs/evals/health/manifest | Draft accepted | Agent OS change-control workflow |
 
 ## Touch Map
 
@@ -132,6 +133,7 @@ Use this to avoid scattering changes across the wrong files.
 | Tool and capability model | `agent-os-capability-model.md` | `capabilities.example.json`, `agent-os-health.sh`, quick-check, evals |
 | Enforcement and drift detection | `agent-os-enforcement-drift.md` | hook dispatcher, skill registry, parity contract, evals, health checks |
 | Agent OS self-improvement and workflow cleanup | `agent-os-improvement-loop.md` | task router, skill registry, workflow map, evals, Koda, Session Map |
+| Agent OS governance and versioning | `agent-os-governance.md` | `AGENTS.md`, `agent-os.md`, workflow map, specific playbook, skills, hooks, evals, health, install manifest, Koda, Session Map |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
 | Related issue and regression impact after fixes | `related-impact-audit.md` | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, evals |
@@ -178,6 +180,7 @@ created.
 | 2026-06-29 | Incident Workflow accepts the protection-first path. | Production incidents should not be handled like ordinary bugfixes. Agents must triage read-only first, name impact/severity, recommend mitigation, pause for production/critical authority decisions, prove stability after fix or rollback, and save a postmortem/lesson when material. | Use `incident-workflow.md`, `monitor-production-logs.md`, and incident evals before coding or closing serious production issues. |
 | 2026-06-29 | Project Adoption accepts shared core plus local project profile. | The umbrella Agent OS should stay portable, but each product repo needs a small verified adapter for commands, evidence, deploy path, critical lanes, and what done means. Installer pass is only baseline, not full readiness. | Use `project-adoption.md` before developer-staff rollout in product repos. |
 | 2026-06-29 | Ordinary staff use Teams Planner only; Agent OS rollout is for developer staff. | Hafiz clarified that non-developer staff should not use Agent OS or LLM workflow kits directly. They report through Teams Planner. The OS is for developer staff working on other projects. | Update rollout docs, evals, and future discussion wording to say developer staff rollout. |
+| 2026-06-29 | Governance and Versioning accepts the Agent OS change-control workflow. | Hafiz wants the Agent OS core strengthened before rollout. Future Agent OS changes need change type, source owner, connected-file check, checks, Koda decision, Git state, and clear close-out. | Use `agent-os-governance.md` before adding or changing Agent OS rules, workflows, skills, hooks, evals, or installer files. |
 
 ### Core Operating Layer
 
