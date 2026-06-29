@@ -110,6 +110,40 @@ CASES = [
         "should_pass": False,
         "why": "Close-outs should say whether Hafiz needs to decide something when meaningful work changes state.",
     },
+    {
+        "id": "RS-009",
+        "name": "blocked work with practical meaning",
+        "text": (
+            "Changed: I did not change code because the failing path needs a production-only "
+            "credential that is not available in this session. Checked: I inspected the "
+            "local route and safe logs, and the missing proof is isolated to the external "
+            "callback. Current state: blocked, not committed. Remaining: production callback "
+            "evidence is still unverified. Practical meaning: I can explain the likely cause, "
+            "but I cannot honestly say the fix works without that evidence. Recommended next "
+            "action: approve a scoped read-only production log check or provide a safe sample "
+            "payload. Decision needed: yes, choose the evidence path."
+        ),
+        "should_pass": True,
+        "why": "Blocked work should explain what is blocked, what was checked, and the exact next decision.",
+    },
+    {
+        "id": "RS-010",
+        "name": "bug explanation with technical detail",
+        "text": (
+            "Changed: I fixed the invoice status filter so assigned requests no longer "
+            "disappear from the staff list. Checked: focused feature test and browser "
+            "smoke passed. Current state: committed locally, not pushed. Remaining: "
+            "nothing remains unverified for the local fix. Practical meaning: staff "
+            "can now see the request after assigning it. Easier explanation: the list "
+            "was being filtered twice, so the item looked like it vanished. Technical "
+            "detail: the query now applies the assigned-status predicate once in the "
+            "request repository instead of also filtering it again in the controller. "
+            "Recommended next action: approve push if you want this on GitHub. "
+            "Decision needed: yes, push approval."
+        ),
+        "should_pass": True,
+        "why": "Bug close-outs should translate code behavior into practical and simple language.",
+    },
 ]
 
 

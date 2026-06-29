@@ -33,7 +33,7 @@ be automated next.
 | Enforcement and drift detection | AO-105 | Over-automating every preference in hooks, under-enforcing dangerous actions, or fixing drift in the wrong layer. |
 | State truth | AO-018, AO-065, AO-067, AO-095 | Confusing drafted, changed locally, committed locally, pushed to GitHub, PR open, merged, deployed, live checked, or accepted / closed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
-| Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
+| Response shape | RS-001, RS-002, RS-003, RS-004, RS-005, RS-006, RS-007, RS-008, RS-009, RS-010 | Closing work with vague "done" instead of changed, checked, state, remaining risk, next action, decision needed, practical meaning, easier explanation, formal-label translation, blocked-work clarity, and technical detail in natural language. |
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005, ST-006, ST-007, ST-008, ST-009 | Saying local, committed, pushed, PR-open, merged, deployed, or smoke-passed work is further along than evidence proves. |
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009 | Storing unsafe, vague, unscoped, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013 | Claiming unverified tools, using blocked tools without approval, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
@@ -74,15 +74,13 @@ These are important but not honest as simple router-classifier tests yet.
 
 ## Future Harness Targets
 
-1. Add richer response fixtures for practical meaning, easier explanation,
-   technical detail, and formal-label translation.
-2. Add richer repo-state fixtures for PR open, merged, deployed, and
+1. Add richer repo-state fixtures for PR open, merged, deployed, and
    live-smoke-passed scenarios with external evidence links.
-3. Add richer Koda integration fixtures for live memory retrieval quality,
+2. Add richer Koda integration fixtures for live memory retrieval quality,
    duplicate detection, correction updates, and read-only memory audits.
-4. Add live tool-capability probes for GitHub, Planner, Google Drive, and
+3. Add live tool-capability probes for GitHub, Planner, Google Drive, and
    production-log availability when each connector has a stable safe check.
-5. Extend the parity fixture from structural checks into behavior fixtures that
+4. Extend the parity fixture from structural checks into behavior fixtures that
    compare actual Claude and Codex responses against the same workflow prompts.
 
 ## Maintenance Rule
