@@ -83,6 +83,16 @@ small read tools are installed. It does not read Drive files by itself. When
 the connector tools are available in a chat, use a tiny search, folder listing,
 or file metadata read before fetching any file contents.
 
+To verify production monitoring/log-readiness access:
+
+```bash
+scripts/agent-checks/agent-os-production-logs-probe.py
+```
+
+Plain meaning: this checks read-only Sentry and BetterStack access with tiny
+status/count reads. It does not print raw logs, issue titles, monitor URLs,
+tokens, or secrets, and it does not resolve alerts or change monitors.
+
 ## Check A Product Repo
 
 From the umbrella root:

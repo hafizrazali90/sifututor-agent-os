@@ -53,6 +53,7 @@
     "scripts/agent-checks/agent-os-google-drive-probe.py",
     "scripts/agent-checks/agent-os-github-probe.py",
     "scripts/agent-checks/agent-os-planner-probe.py",
+    "scripts/agent-checks/agent-os-production-logs-probe.py",
     "scripts/agent-checks/agent-os-conversation-fixture-runner.py",
     "scripts/agent-checks/agent-os-parity-fixture-runner.py",
     "scripts/agent-checks/pre-commit-guard.sh",

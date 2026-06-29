@@ -100,6 +100,7 @@ check_file "Agent OS capability probe" "$ROOT/scripts/agent-checks/agent-os-capa
 check_file "Agent OS Google Drive probe" "$ROOT/scripts/agent-checks/agent-os-google-drive-probe.py"
 check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-probe.py"
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
+check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os-production-logs-probe.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
@@ -282,7 +283,7 @@ echo "- github: check on demand with scripts/agent-checks/agent-os-github-probe.
 echo "- plane: exception-only; do not use unless Hafiz explicitly asks in the current session"
 echo "- planner: check on demand with scripts/agent-checks/agent-os-planner-probe.py before claiming read access"
 echo "- google_drive: check connector readiness with scripts/agent-checks/agent-os-google-drive-probe.py; live read still needs exposed connector tools"
-echo "- production_logs: unknown unless a session-specific tool is connected"
+echo "- production_logs: check on demand with scripts/agent-checks/agent-os-production-logs-probe.py before claiming monitoring read access"
 echo "- deploy: blocked or not_connected by default; explicit approval required"
 
 echo

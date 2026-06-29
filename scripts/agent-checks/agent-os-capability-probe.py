@@ -136,7 +136,12 @@ def build_report() -> list[dict[str, str]]:
             "requires Microsoft 365 connector or m365 read-only wrapper probe",
             "run scripts/agent-checks/agent-os-planner-probe.py before claiming Planner read access",
         ),
-        record("production_logs", "unknown", "requires task-relevant monitoring wrapper or connector read probe"),
+        record(
+            "production_logs",
+            "unknown",
+            "requires task-relevant monitoring wrapper or connector read probe",
+            "run scripts/agent-checks/agent-os-production-logs-probe.py before claiming monitoring read access",
+        ),
         record("deploy", "blocked", "deploy approval required even when tooling exists"),
         record("plane", "exception_only", "do not use unless Hafiz explicitly asks in this session"),
         record("env_files", "forbidden", "never read or modify repository .env* files"),

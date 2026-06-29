@@ -253,6 +253,17 @@ scripts cannot invoke the chat connector. When the Google Drive app tools are
 exposed in a session, verify live access with a tiny search/list/metadata read
 before fetching file contents.
 
+For production monitoring / log-readiness capability, use:
+
+```bash
+scripts/agent-checks/agent-os-production-logs-probe.py
+```
+
+This performs tiny read-only Sentry and BetterStack checks through the approved
+`monitoring-readonly.conf` lane. It reports HTTP status and small sample counts
+only. It does not print issue titles, events, monitor URLs, raw logs, tokens, or
+secrets, and it does not resolve Sentry issues or change monitors.
+
 ## Connector Path Strategy
 
 Use the lowest-noise path that can prove the current task.
@@ -303,6 +314,12 @@ Research basis:
   ([performance guide](https://developers.google.com/workspace/drive/api/guides/performance),
   [files.list](https://developers.google.com/drive/api/reference/rest/v3/files/list),
   [files.get](https://developers.google.com/drive/api/reference/rest/v3/files/get)).
+- Sentry supports listing project issues with query parameters; use small
+  limits for capability checks
+  ([project issues](https://docs.sentry.io/api/events/list-a-projects-issues/)).
+- Better Stack Uptime API uses bearer authentication and paginated monitor
+  endpoints; use small pages for capability checks
+  ([getting started](https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/)).
 
 Run the local fixture runner when changing capability rules:
 
