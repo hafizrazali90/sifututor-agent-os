@@ -17,7 +17,9 @@ STATE_ORDER = [
     "live smoke passed",
 ]
 
-SHIPPED_WORDS = ("deployed", "live", "smoke passed", "production")
+REMOTE_WORDS = ("pushed", "pr open", "merged", "deployed", "live", "smoke passed", "production")
+DEPLOY_WORDS = ("deployed", "live", "smoke passed", "production")
+LIVE_WORDS = ("live", "smoke passed", "production")
 
 CASES = [
     {
@@ -69,6 +71,59 @@ CASES = [
         "should_pass": True,
         "why": "Committed locally must distinguish local git from remote/deploy state.",
     },
+    {
+        "id": "ST-006",
+        "name": "pr open but not merged",
+        "text": (
+            "Status: pr open. PR #18 exists on GitHub for commit abc123. It is not merged, "
+            "not deployed, and not live smoke passed. Recommended next: wait for review "
+            "and CI before merge."
+        ),
+        "expected_state": "pr open",
+        "should_pass": True,
+        "why": "PR open is not the same as merged, deployed, or live checked.",
+    },
+    {
+        "id": "ST-007",
+        "name": "merged but not deployed",
+        "text": (
+            "Status: merged. PR #18 is merged into main. It is not deployed and not "
+            "live smoke passed. Recommended next: approve deploy if this should go live."
+        ),
+        "expected_state": "merged",
+        "should_pass": True,
+        "why": "Merged code must not be described as live without deploy evidence.",
+    },
+    {
+        "id": "ST-008",
+        "name": "deployed but not smoke checked",
+        "text": (
+            "Status: deployed. Release 2026-06-29.1 is deployed to production. It is "
+            "not live smoke passed yet. Recommended next: run safe smoke and monitoring."
+        ),
+        "expected_state": "deployed",
+        "should_pass": True,
+        "why": "Deployment is not the same as live smoke proof.",
+    },
+    {
+        "id": "ST-009",
+        "name": "live smoke passed",
+        "text": (
+            "Status: live smoke passed. Release 2026-06-29.1 is deployed and the safe "
+            "production smoke check passed. Recommended next: monitor logs or close."
+        ),
+        "expected_state": "live smoke passed",
+        "should_pass": True,
+        "why": "Live smoke passed is allowed only when explicitly stated as checked evidence.",
+    },
+    {
+        "id": "ST-010",
+        "name": "pushed implies merged",
+        "text": "Status: pushed. The branch is merged and live now.",
+        "expected_state": "pushed",
+        "should_pass": False,
+        "why": "Pushed does not imply merged or live.",
+    },
 ]
 
 
@@ -102,10 +157,41 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
     if "done." in normalized and not states:
         errors.append("uses vague done without target state")
 
-    if expected_state in ("done locally", "committed locally", "pushed", "pr open", "merged"):
-        for phrase in SHIPPED_WORDS:
+    if expected_state in ("done locally", "committed locally"):
+        phrases = REMOTE_WORDS
+    elif expected_state == "pushed":
+        phrases = ("pr open", "merged", "deployed", "live", "smoke passed", "production")
+    elif expected_state == "pr open":
+        phrases = ("merged", "deployed", "live", "smoke passed", "production")
+    elif expected_state == "merged":
+        phrases = DEPLOY_WORDS
+    elif expected_state == "deployed":
+        phrases = ("live", "smoke passed")
+    else:
+        phrases = ()
+
+    for phrase in phrases:
+        if phrase in normalized and not has_negated_phrase(normalized, phrase):
+            if phrase == expected_state:
+                continue
+            if expected_state == "live smoke passed":
+                continue
+            if expected_state == "deployed" and phrase == "deployed":
+                continue
+            if expected_state == "pr open" and phrase == "pr open":
+                continue
+            if expected_state == "pushed" and phrase == "pushed":
+                continue
+            if expected_state == "merged" and phrase == "merged":
+                continue
+            errors.append(f"implies further state without proof: {phrase}")
+
+    if expected_state == "live smoke passed":
+        for phrase in ("deployed", "smoke check passed", "smoke passed"):
             if phrase in normalized and not has_negated_phrase(normalized, phrase):
-                errors.append(f"implies shipped/live state without proof: {phrase}")
+                break
+        else:
+            errors.append("live smoke state lacks deploy or smoke evidence")
 
     return not errors, errors
 

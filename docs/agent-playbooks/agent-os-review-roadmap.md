@@ -109,6 +109,7 @@ Use this as the master tracker while reviewing the architecture.
 | 19 | Incident Workflow | `monitor-production-logs.md`, `agent-os-evidence-model.md`, `related-impact-audit.md`, critical-lane rules | `incident-workflow.md`, workflow/eval/docs | Draft accepted | protection-first incident path and postmortem standard |
 | 20 | Project Adoption | install docs, rollout readiness, product `AGENTS.md`/`CLAUDE.md`, workflow doctor | `project-adoption.md`, install/readiness/workflow docs, health/manifest/evals | Draft accepted | shared core plus local project profile |
 | 21 | Governance and Versioning | review roadmap, research update procedure, improvement loop, evals, health/manifest | `agent-os-governance.md`, workflow/docs/evals/health/manifest | Draft accepted | Agent OS change-control workflow |
+| 22 | Evaluation Harness | eval coverage map, eval table, local fixture runners, health, workflow doctor | `agent-os-evaluation-harness.md`, response/state fixtures, coverage docs, health/manifest | Draft accepted | harness layers and first stronger local fixtures |
 
 ## Touch Map
 
@@ -134,6 +135,7 @@ Use this to avoid scattering changes across the wrong files.
 | Enforcement and drift detection | `agent-os-enforcement-drift.md` | hook dispatcher, skill registry, parity contract, evals, health checks |
 | Agent OS self-improvement and workflow cleanup | `agent-os-improvement-loop.md` | task router, skill registry, workflow map, evals, Koda, Session Map |
 | Agent OS governance and versioning | `agent-os-governance.md` | `AGENTS.md`, `agent-os.md`, workflow map, specific playbook, skills, hooks, evals, health, install manifest, Koda, Session Map |
+| Agent OS evaluation harness | `agent-os-evaluation-harness.md` | `agent-os-evals.md`, eval coverage map, fixture runners, health, workflow doctor, governance |
 | Workflow lane intensity | `agent-os-workflow-lanes.md` | `task-router.md`, evals, specific lane playbooks |
 | Verification and human-journey evidence | `agent-os-evidence-model.md` | `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, evals |
 | Related issue and regression impact after fixes | `related-impact-audit.md` | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, bugfix workflow, evals |

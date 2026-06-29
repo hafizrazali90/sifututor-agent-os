@@ -81,6 +81,7 @@ check_file "Agent OS enforcement drift" "$ROOT/docs/agent-playbooks/agent-os-enf
 check_file "Agent OS session map" "$ROOT/docs/agent-playbooks/session-map.md"
 check_file "Agent OS rollout readiness" "$ROOT/docs/agent-playbooks/agent-os-rollout-readiness.md"
 check_file "Agent OS eval coverage" "$ROOT/docs/agent-playbooks/agent-os-eval-coverage-map.md"
+check_file "Agent OS evaluation harness" "$ROOT/docs/agent-playbooks/agent-os-evaluation-harness.md"
 check_file "related impact audit" "$ROOT/docs/agent-playbooks/related-impact-audit.md"
 check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"

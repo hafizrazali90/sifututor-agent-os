@@ -13,6 +13,7 @@ REQUIRED_GROUPS = {
     "state": ("local", "committed", "pushed", "origin/main", "not committed", "not pushed", "clean"),
     "next": ("recommended next", "next action", "next step", "approve", "continue", "commit"),
     "remaining": ("remaining", "unverified", "nothing remains", "still needs", "not applicable"),
+    "decision": ("decision needed", "no decision needed", "approve", "accepted risk"),
 }
 
 CASES = [
@@ -36,7 +37,7 @@ CASES = [
             "Committed and pushed f1c15ca to origin/main. Checked eval runner, self-test, "
             "health, install dry-run, and pre-commit guard; all passed. Working tree is clean, "
             "nothing remains unverified for this tooling batch. Recommended next step: continue "
-            "with response-shape checks."
+            "with response-shape checks. Decision needed: no decision needed."
         ),
         "should_pass": True,
         "why": "Commit/push close-out must name pushed state, evidence, and next action.",
@@ -55,6 +56,34 @@ CASES = [
         "why": "Local commit close-out must explain the push decision instead of only saying not pushed yet.",
     },
     {
+        "id": "RS-006",
+        "name": "technical with easier explanation",
+        "text": (
+            "Changed: I updated the response-shape fixture so vague close-outs fail. "
+            "Checked: response-shape runner and Agent OS health passed. Current state: "
+            "changed locally, not committed. Remaining: nothing remains unverified for "
+            "this local fixture change. Easier explanation: the check now catches an "
+            "agent that says done without telling you what changed or what next. "
+            "Recommended next action: approve commit when the file list is shown. "
+            "Decision needed: yes, commit approval."
+        ),
+        "should_pass": True,
+        "why": "Technical changes should include practical meaning plus an easier explanation when useful.",
+    },
+    {
+        "id": "RS-007",
+        "name": "formal label translated",
+        "text": (
+            "Changed: I added a fixture for formal labels. Checked: response-shape "
+            "runner passed. Current state: local-only. Remaining: nothing remains "
+            "unverified for this docs check. Gate 2A here means the focused checks "
+            "passed; it does not mean pushed or live. Recommended next: continue "
+            "with repo-state fixtures. Decision needed: no decision needed."
+        ),
+        "should_pass": True,
+        "why": "Formal workflow labels are acceptable when immediately translated into normal language.",
+    },
+    {
         "id": "RS-003",
         "name": "vague done",
         "text": "Done. Everything should be okay.",
@@ -70,6 +99,16 @@ CASES = [
         ),
         "should_pass": False,
         "why": "Meaningful work should not make Hafiz ask what next.",
+    },
+    {
+        "id": "RS-008",
+        "name": "no decision needed",
+        "text": (
+            "I updated the docs, ran health, and the work is local-only. Nothing "
+            "remains unverified. Recommended next: continue."
+        ),
+        "should_pass": False,
+        "why": "Close-outs should say whether Hafiz needs to decide something when meaningful work changes state.",
     },
 ]
 

@@ -184,6 +184,7 @@ Read these as the core internal kit:
 | Bigger goals and remembered follow-ups | [mission-ledger.md](mission-ledger.md), [mission-ledger/README.md](mission-ledger/README.md) |
 | Rollout readiness | [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) |
 | Behavior checks | [agent-os-evals.md](agent-os-evals.md) |
+| Evaluation harness | [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) |
 
 ## Research
 

@@ -33,6 +33,7 @@
     "docs/agent-playbooks/session-map.md",
     "docs/agent-playbooks/agent-os-rollout-readiness.md",
     "docs/agent-playbooks/agent-os-evals.md",
+    "docs/agent-playbooks/agent-os-evaluation-harness.md",
     "docs/agent-playbooks/agent-os-eval-coverage-map.md",
     "docs/agent-playbooks/related-impact-audit.md",
     "docs/agent-playbooks/agent-os-installation.md",

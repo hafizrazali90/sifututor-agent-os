@@ -34,7 +34,7 @@ be automated next.
 | State truth | AO-018, AO-065, AO-067, AO-095 | Confusing drafted, changed locally, committed locally, pushed to GitHub, PR open, merged, deployed, live checked, or accepted / closed states. |
 | Readiness checks | AO-072 | Answering readiness questions without running the health/doctor path. |
 | Response shape | RS-001, RS-002, RS-003, RS-004 | Closing work with vague "done" instead of changed, checked, state, remaining risk, and next action. |
-| State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005 | Saying local or committed work is live, deployed, or smoke-passed without evidence. |
+| State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005, ST-006, ST-007, ST-008, ST-009 | Saying local, committed, pushed, PR-open, merged, deployed, or smoke-passed work is further along than evidence proves. |
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009 | Storing unsafe, vague, unscoped, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013 | Claiming unverified tools, using blocked tools without approval, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
@@ -46,7 +46,7 @@ These are important but not honest as simple router-classifier tests yet.
 
 | Area | Eval IDs | Why manual for now |
 | --- | --- | --- |
-| Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner; still needs full assistant response review for tone and layered explanations. |
+| Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner, including practical meaning, state, next action, decision needed, and formal-label translation. Full tone judgment still needs human review. |
 | Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069 | Needs current git, Mission Ledger, Planner, Koda, or production/deploy evidence. AO-098 documents the shared stale-context behavior; richer automation needs repo-state fixtures. |
 | Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Partly covered by capability fixtures; still needs live session tool discovery for each connector. |
@@ -92,3 +92,6 @@ When adding or changing an eval:
    fails when a code case is missing from the map.
 5. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
 6. Run `scripts/agent-checks/agent-os-health.sh`.
+
+Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
+deciding which layer should own a new harness case.
