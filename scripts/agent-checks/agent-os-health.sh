@@ -96,6 +96,7 @@ check_file "Agent OS session map check" "$ROOT/scripts/agent-checks/session-map-
 check_file "Agent OS session map HTML" "$ROOT/scripts/agent-checks/session-map-html.py"
 check_file "Agent OS Koda fixtures" "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py"
 check_file "Agent OS capability fixtures" "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py"
+check_file "Agent OS capability probe" "$ROOT/scripts/agent-checks/agent-os-capability-probe.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
@@ -189,6 +190,23 @@ else
   sed -n '1,8p' /tmp/agent-os-capability-fixtures.err 2>/dev/null || true
 fi
 rm -f /tmp/agent-os-capability-fixtures.out /tmp/agent-os-capability-fixtures.err
+
+if "$ROOT/scripts/agent-checks/agent-os-capability-probe.py" --json >/tmp/agent-os-capability-probe.out 2>/tmp/agent-os-capability-probe.err; then
+  capability_probe_summary="$(python3 - <<'PY' 2>/dev/null
+import json
+from pathlib import Path
+
+data = json.loads(Path("/tmp/agent-os-capability-probe.out").read_text())
+print(len(data.get("capabilities", [])))
+PY
+)"
+  pass "Agent OS capability probe" "${capability_probe_summary:-0} capabilities reported"
+else
+  fail "Agent OS capability probe" "capability probe failed"
+  sed -n '1,12p' /tmp/agent-os-capability-probe.out 2>/dev/null || true
+  sed -n '1,8p' /tmp/agent-os-capability-probe.err 2>/dev/null || true
+fi
+rm -f /tmp/agent-os-capability-probe.out /tmp/agent-os-capability-probe.err
 
 if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >/tmp/agent-os-conversation-fixtures.out 2>/tmp/agent-os-conversation-fixtures.err; then
   conversation_fixture_summary="$(tail -1 /tmp/agent-os-conversation-fixtures.out 2>/dev/null || true)"

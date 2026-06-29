@@ -196,6 +196,27 @@ The health check should report:
 Do not treat the health check as permission to cross approval gates. It reports
 capability; it does not approve business decisions.
 
+For a lightweight current-session capability report, use:
+
+```bash
+scripts/agent-checks/agent-os-capability-probe.py
+```
+
+Plain meaning:
+
+```text
+Before an agent says "I can use GitHub, Planner, Koda, production logs, or
+deploy tooling", it should check what is actually available, unknown, blocked,
+or forbidden in this session.
+```
+
+The first probe is local and non-mutating. It checks workspace write access,
+local git state, direct Koda health, local agent-access wrapper presence, and
+static boundaries such as commit/push/deploy/secrets/live. It does not call
+external GitHub, Planner, Google Drive, production logs, or deploy services.
+Those still need task-relevant connector probes or approved read-only wrappers
+before being reported as live evidence.
+
 Run the local fixture runner when changing capability rules:
 
 ```bash

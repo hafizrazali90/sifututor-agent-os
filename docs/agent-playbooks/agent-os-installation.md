@@ -42,6 +42,16 @@ This checks:
 - Codex skills
 - shared hook files
 - Koda direct health through `agent-os-health.sh`
+- local capability reporting through `agent-os-capability-probe.py`
+
+To see the current capability report directly:
+
+```bash
+scripts/agent-checks/agent-os-capability-probe.py
+```
+
+Plain meaning: this tells the agent what is available, unknown, blocked, or
+forbidden on the current machine before it claims tool access.
 
 ## Check A Product Repo
 
