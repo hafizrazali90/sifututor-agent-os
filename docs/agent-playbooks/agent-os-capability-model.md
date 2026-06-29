@@ -228,6 +228,18 @@ This performs a tiny read-only GitHub CLI probe: `gh auth status` and
 repo metadata reads without printing tokens and without creating, editing,
 pushing, opening PRs, merging, or changing anything.
 
+For Microsoft Teams Planner read capability, use:
+
+```bash
+scripts/agent-checks/agent-os-planner-probe.py
+```
+
+This performs a tiny read-only Microsoft Graph probe using the approved
+`m365-readonly.env` lane. It checks Graph auth, finds the `Development &
+Support` group, finds the `Task Management Board` plan, and reads task
+metadata without printing task titles, descriptions, assignees, card content,
+tokens, or secrets.
+
 ## Connector Path Strategy
 
 Use the lowest-noise path that can prove the current task.
@@ -268,6 +280,10 @@ Research basis:
 - MCP tools are model-controlled and discoverable, so tool exposure should stay
   clear, narrow, and human-governed for safety
   ([MCP tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)).
+- Microsoft Graph Planner APIs support listing group-owned plans and listing
+  tasks for a plan with `Tasks.Read.All` application permission
+  ([list plans](https://learn.microsoft.com/en-us/graph/api/plannergroup-list-plans?view=graph-rest-1.0),
+  [list tasks](https://learn.microsoft.com/en-us/graph/api/plannerplan-list-tasks?view=graph-rest-1.0)).
 
 Run the local fixture runner when changing capability rules:
 

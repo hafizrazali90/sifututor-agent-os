@@ -125,7 +125,12 @@ def build_report() -> list[dict[str, str]]:
         check_local_wrappers(),
         check_local_command("github", "gh"),
         check_local_command("google_drive", "gdrive"),
-        record("planner", "unknown", "requires Microsoft 365 connector or m365 read-only wrapper probe"),
+        record(
+            "planner",
+            "unknown",
+            "requires Microsoft 365 connector or m365 read-only wrapper probe",
+            "run scripts/agent-checks/agent-os-planner-probe.py before claiming Planner read access",
+        ),
         record("production_logs", "unknown", "requires task-relevant monitoring wrapper or connector read probe"),
         record("deploy", "blocked", "deploy approval required even when tooling exists"),
         record("plane", "exception_only", "do not use unless Hafiz explicitly asks in this session"),

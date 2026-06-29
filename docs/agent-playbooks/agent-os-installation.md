@@ -62,6 +62,16 @@ scripts/agent-checks/agent-os-github-probe.py
 Plain meaning: this checks the GitHub CLI login and reads tiny repo metadata.
 It does not push, create PRs, edit issues, merge, or change anything.
 
+To verify Microsoft Teams Planner read access for staff intake:
+
+```bash
+scripts/agent-checks/agent-os-planner-probe.py
+```
+
+Plain meaning: this checks Microsoft Graph login, the staff intake team, the
+Planner board, and task metadata visibility. It does not print card content,
+post to Teams, edit Planner cards, or change anything.
+
 ## Check A Product Repo
 
 From the umbrella root:

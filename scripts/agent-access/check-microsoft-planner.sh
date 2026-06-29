@@ -44,16 +44,20 @@ echo "  • No accessing mailboxes or calendars"
 echo "  • Intake and read-only routing only"
 echo ""
 
-# 3. Try a quick connectivity test if Lokka binary is available
-if [[ -x "$LOKKA_BIN" ]]; then
+# 3. Try a quick read-only connectivity test through the Agent OS probe
+PROBE="${PWD}/scripts/agent-checks/agent-os-planner-probe.py"
+if [[ -x "$PROBE" ]]; then
   echo "── Connectivity test ──"
-  LOKKA_OUTPUT=$(timeout 15 "$LOKKA_BIN" 'list tasks limit 1' 2>/dev/null || echo "TIMEOUT_OR_ERROR")
-  if [[ "$LOKKA_OUTPUT" == "TIMEOUT_OR_ERROR" ]]; then
-    printf '\033[33m~\033[0m Lokka test: timeout or error (may need re-auth)\n'
-    echo "  To re-auth: open Claude Code and invoke the M365 MCP skill"
-  elif echo "$LOKKA_OUTPUT" | grep -qi 'error\|unauthorized\|forbidden\|token'; then
-    printf '\033[33m~\033[0m Lokka test: auth issue — %s\n' "$(echo "$LOKKA_OUTPUT" | head -1)"
+  if "$PROBE" >/tmp/agent-os-planner-probe.out 2>/tmp/agent-os-planner-probe.err; then
+    printf '\033[32m✓\033[0m Microsoft Graph Planner probe: responsive\n'
+    sed -n '1,12p' /tmp/agent-os-planner-probe.out | sed 's/^/  /'
   else
-    printf '\033[32m✓\033[0m Lokka: responsive\n'
+    printf '\033[33m~\033[0m Microsoft Graph Planner probe: unavailable or timed out\n'
+    sed -n '1,8p' /tmp/agent-os-planner-probe.out 2>/dev/null | sed 's/^/  /'
+    sed -n '1,4p' /tmp/agent-os-planner-probe.err 2>/dev/null | sed 's/^/  /'
   fi
+  rm -f /tmp/agent-os-planner-probe.out /tmp/agent-os-planner-probe.err
+else
+  echo "── Connectivity test ──"
+  printf '\033[33m~\033[0m Agent OS Planner probe missing (%s)\n' "$PROBE"
 fi
