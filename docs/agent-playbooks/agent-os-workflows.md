@@ -419,6 +419,16 @@ Save to:
 Common failure: building from a weak prompt that lets another agent satisfy a
 nearby behavior instead of the actual requirement.
 
+Product design scenario matrix:
+
+| Scenario | Preparation | Agent should produce | Stop point |
+| --- | --- | --- | --- |
+| Tiny wording or field behavior | Quick Brief. | Plain-English change, out-of-scope note, focused evidence plan. | Ready for implementation if Hafiz agrees. |
+| Staff workflow is unclear | Product Shape. | Current behavior, affected roles, options, recommendation, decision needed, QA plan. | Stop for Hafiz decision before coding. |
+| Module redesign or new workflow | Product Shape, then Build-Ready Pack if approved. | Screen/workflow inventory, states, business rules, release communication, build slices. | Build-ready only after scope and acceptance are clear. |
+| Cross-module or API/mobile contract | Build-Ready Pack. | Entry points, contracts, state transitions, compatibility, tests, rollback/monitoring. | Stop before implementation unless build boundary is approved. |
+| Another agent/dev will build | Build-Ready Pack. | Goal, files to read, constraints, out-of-scope list, test plan, pause conditions, final report shape. | Handoff-ready, not built, unless implementation is also approved. |
+
 ## 3A. Implementation Readiness And Build Handoff Workflow
 
 Starts when a task is about to move from discussion, PRD, UX, diagnosis, or
@@ -470,6 +480,16 @@ Save to:
 Common failure: the agent starts coding from a vague instruction because it can
 find a nearby file, then proves a weaker behavior than Hafiz actually needed.
 
+Implementation readiness scenario matrix:
+
+| Scenario | Readiness check | Missing means | Stop point |
+| --- | --- | --- | --- |
+| Simple scoped docs/tooling change | Confirm file owner, exact change, checks, and commit boundary. | Ask once or inspect current docs before editing. | Ready to edit. |
+| Product bug with clear symptom | Confirm affected role/action, likely entry point, old failure, regression proof, related-impact level. | Diagnose first, not build. | Ready for bugfix only after cause/scope is clear. |
+| New feature slice | Confirm acceptance rules, state changes, edge cases, E2E/human-journey proof, release communication. | Product Shape or Build-Ready Pack needed. | Build first vertical slice only. |
+| Critical lane | Confirm read-only diagnosis, approved implementation boundary, rollback, negative tests, monitoring. | Stay in Phase A diagnosis. | Stop for Hafiz approval before edits. |
+| Handoff to another builder | Confirm goal, context pack, entry points, constraints, evidence, stop rules, final answer shape. | Handoff is not ready. | Produce handoff, not implementation. |
+
 ## 3B. Agent OS Improvement Loop
 
 Starts when Hafiz asks to improve the workflow, fix Agent OS behavior, make
@@ -515,6 +535,16 @@ Save to:
 Common failure: saving a Koda memory or adding a sentence to one doc while the
 skill, router, eval, or hook that actually controls the behavior stays stale.
 
+Agent OS improvement scenario matrix:
+
+| Scenario | Owns the fix | Agent should update | Stop point |
+| --- | --- | --- | --- |
+| Hafiz corrects agent behavior | Koda plus owning doc if future behavior changes. | Store correction immediately, then patch source-of-truth docs/evals when needed. | Commit docs only after coherent checks pass. |
+| Claude and Codex behave differently | Parity contract, skill registry, adapter docs, evals. | Identify adapter vs behavior drift, update shared rule first. | Stop before claiming parity until health/parity checks pass. |
+| Agent skips next action or state | Communication/state docs and response fixtures. | Add or adjust close-out rule and response-shape/eval coverage. | Commit after checks; no push unless approved. |
+| Rule is ignored repeatedly | Owning playbook plus enforcement/eval layer. | Choose docs, skill, hook, guard, eval, or health based on risk. | Avoid hook changes until rule shape is clear. |
+| Workflow feels too heavy | Workflow lanes and approval gates. | Relax safe docs/mechanical bundles, keep hard gates for push/deploy/critical/destructive work. | Commit only the agreed boundary. |
+
 ## 3C. Enforcement And Drift Detection Workflow
 
 Starts when a rule is being ignored, hooks/skills/evals need alignment, Claude
@@ -556,6 +586,16 @@ Save to:
 Common failure: adding hook complexity for a rule that needs agent judgment, or
 leaving a repeated approval/safety mistake as a loose doc note.
 
+Enforcement scenario matrix:
+
+| Scenario | Best enforcement | Why | Stop point |
+| --- | --- | --- | --- |
+| Forbidden action such as `.env*`, `live/`, or `--no-verify` | Guard or hook block. | Dangerous and objective. | Block immediately and offer safe alternative. |
+| Repeated wrong route or missing next action | Eval/fixture plus playbook wording. | Behavior can be tested without blocking normal work. | Commit after runner proves the fixture. |
+| Skill registry or adapter mismatch | Registry/parity health check. | Wiring drift should be visible in health. | Stop until parity check passes. |
+| Judgment-heavy preference | Playbook guidance and Koda correction. | A hook would be noisy or too rigid. | Use natural-language close-out and observe. |
+| Capability/access confusion | Capability model and health probe. | Agents need current tool truth before claiming ability. | Report available/blocked/unknown honestly. |
+
 ## 3D. Session Map Lifecycle Workflow
 
 Starts when a conversation is long, multi-goal, resumed after a pause, split
@@ -596,6 +636,16 @@ Save to:
 Common failure: creating several maps for one continuing mission, or keeping
 one map after the work has become a different project, branch, release path,
 owner, or unrelated mission.
+
+Session Map scenario matrix:
+
+| Scenario | Agent should do | Save/update | Stop point |
+| --- | --- | --- | --- |
+| Hafiz says `continue`, `go next`, or returns after a long pause | Read the latest relevant map and Git state first. | Update current focus, evidence, waiting items, and next action. | Continue if the map matches; say if unrelated. |
+| One main goal gains side topics | Keep one map and add side paths. | Record return path and state for each side path. | Split only if mission/project/branch/owner becomes different. |
+| Multiple active maps look relevant | Pause and choose using evidence. | Name likely map, conflict, and why. | Do not edit both casually. |
+| A session is parked or handed off | Mark lifecycle state and continuation prompt. | Include git state, evidence gaps, approvals, files, commits, and next action. | Future agent can resume without rereading chat. |
+| Work is truly finished | Close only when no required next action remains. | Record final state, pushed/merged/deployed/live status, and durable saves. | No hidden local-only work. |
 
 ## 4. Bugfix Workflow
 
@@ -817,6 +867,16 @@ Save to:
 Common failure: asking Hafiz or staff to retest before the agent has used
 available safe tools.
 
+Staff issue scenario matrix:
+
+| Scenario | First move | Route after quick diagnosis | Do not do |
+| --- | --- | --- | --- |
+| Staff says a SIMS button/modal/page does not work | Treat as symptom, identify role/page/action, inspect current UI/code/log/API evidence where safe. | Bugfix with journey proof and E2E decision if likely engineering work. | Ask staff to retest before agent-run evidence. |
+| Planner card has vague complaint or screenshot only | Read as context, extract symptom, check affected project/module and existing issues. | GitHub issue only after likely engineering scope exists; Mission Ledger if bigger/future. | Convert vague card directly into coding. |
+| Staff asks for new workflow/change | Clarify whether this is bug, feature, policy, or training gap. | Product design or Mission Ledger before build. | Treat staff preference as approved product direction. |
+| Report touches invoice/payment/auth/mobile API | Keep read-only and name critical risk. | Critical lane Phase A diagnosis. | Implement or mutate data before approval. |
+| Agent cannot reproduce because data/access is missing | Gather code/context evidence and name exact missing proof. | Ask Hafiz/staff for the specific missing item. | Say "not reproducible" without explaining what was checked. |
+
 ## 7. Critical Lane Workflow
 
 Starts whenever auth, payments, invoices, commissions, migrations, deployment,
@@ -852,6 +912,16 @@ Save to:
 Common failure: a small-looking invoice/payment/API change is treated like an
 ordinary bugfix.
 
+Critical lane scenario matrix:
+
+| Scenario | Phase A should include | Phase B starts only when | Stop point |
+| --- | --- | --- | --- |
+| Payment/invoice/auth bug | Read-only code/config/log/data-safe evidence, impact, likely cause, risk, recommended fix, rollback/test plan. | Hafiz approves implementation scope. | Diagnosis report first. |
+| Migration or production data change | Current schema/data-safe reads, affected rows estimate, rollback/backout, dry-run/test plan. | Explicit approval for mutation/deploy boundary. | Stop before data mutation. |
+| Mobile API contract change | Current payload, consumers, backward compatibility, error/permission behavior, rollout risk. | Approval after contract and compatibility plan. | Stop before breaking consumer behavior. |
+| Emergency hotfix | Triage fast but still read-only first. | Hafiz approves emergency implementation/deploy boundary. | Stop before deploy/rollback unless named. |
+| Critical change already coded elsewhere | Review evidence, approvals, tests, state, and release risk before touching. | Missing gates are completed or accepted. | Do not rubber-stamp. |
+
 ## 8. Implementation Workflow
 
 Starts when a scoped change is approved or clearly requested and is safe to
@@ -883,6 +953,16 @@ Save to:
 
 Common failure: adjacent cleanup creates a larger review and more risk than the
 actual task.
+
+Implementation scenario matrix:
+
+| Scenario | Agent should implement | Evidence while building | Stop point |
+| --- | --- | --- | --- |
+| Docs/workflow update | Smallest coherent doc/eval/skill set that owns the behavior. | Diff/readback and Agent OS checks. | Commit locally if approved; push separately. |
+| Narrow bugfix | Smallest root-cause fix plus regression coverage. | Focused test, related-impact check, E2E decision if user-facing. | Ready for verify/QA/review. |
+| Feature slice | One vertical slice, not all backend then all UI. | Test for accepted behavior, journey proof plan, release communication decision. | Stop after approved slice. |
+| Refactor | Preserve behavior and local conventions. | Existing tests plus targeted check around touched surface. | Stop if behavior changes unexpectedly. |
+| Dirty worktree has unrelated changes | Preserve user/other-agent changes. | File inventory before staging. | Ask only if unrelated changes block the task. |
 
 ## 9. Verification Workflow
 
@@ -1063,6 +1143,16 @@ Another common failure: the agent asks Hafiz to approve push, PR open, CI
 monitoring, and PR summary as four separate steps when one PR-ready boundary
 would be clearer.
 
+Commit, push, and PR scenario matrix:
+
+| Scenario | Agent should do | Approval needed | Stop point |
+| --- | --- | --- | --- |
+| Commit-only approved | Run guard, stage exact files, commit with valid message, report SHA and not-pushed state. | Exact file list approval. | Local commit. |
+| Push approved | Run pre-push review/risk check, inventory local commits, push exact branch. | Explicit push approval. | Pushed branch, not PR unless included. |
+| Proceed until PR ready | Push, open PR, write PR body, monitor CI, fix in-scope CI failures if inside boundary. | One clear PR-ready boundary. | PR ready; stop before merge unless included. |
+| Merge approved after PR/CI | Check CI/review/branch protection/evidence/release risk. | Explicit merge boundary. | Merged, not deployed unless included. |
+| Multiple local commits/fixes | Inventory each commit/fix and highest proven state. | Approval for the exact batch. | No hidden local-only or PR-only work. |
+
 ## 12A. Workflow Efficiency Audit
 
 Starts when Hafiz says the workflow is inefficient, confusing, too strict, too
@@ -1087,6 +1177,16 @@ Evidence required:
 Exit when the audit either recommends no change, captures a future follow-up, or
 routes to [agent-os-improvement-loop.md](agent-os-improvement-loop.md) for a
 coherent docs/skills/hooks/evals update.
+
+Workflow efficiency scenario matrix:
+
+| Scenario | Audit should ask | Likely fix | Stop point |
+| --- | --- | --- | --- |
+| Hafiz approves the same tiny step repeatedly | Is this mechanical and low-risk? | Bundle into one safe boundary. | Keep hard gates for push/deploy/critical/destructive work. |
+| Agent asks "what next?" too often | Is the next action obvious from state? | Improve close-out/state wording or Session Map. | Add eval if repeated. |
+| Agent skips evidence it could gather | Is the tool available and safe? | Update verify/QA/playbook or capability habit. | Do not shift tester work to Hafiz. |
+| Workflow feels too heavy | Is the risk actually low? | Use lighter lane or compact control wording. | Do not weaken critical gates. |
+| Automation could help | Is it read-only, mechanical, or boundary-based? | Script/hook/eval only after playbook behavior is stable. | Avoid premature hook complexity. |
 
 ## 13. Release, Deploy, And Monitor Workflow
 
@@ -1128,6 +1228,16 @@ Save to:
 
 Common failure: pushed or merged code is mistaken for live behavior.
 
+Release, deploy, and monitor scenario matrix:
+
+| Scenario | Agent should prove | Approval needed | Stop point |
+| --- | --- | --- | --- |
+| Is this merged? | PR/branch/main state and commit SHA. | None for read-only check. | Merged or not merged. |
+| Deploy to staging | Preflight, source commit, deploy command/path, staging version, changed-workflow smoke. | Explicit staging deploy approval if deploy writes. | Staging smoke checked. |
+| Deploy to production | Source commit, backups/rollback where relevant, production version, safe smoke, monitoring/logs. | Explicit production deploy approval. | Production monitored, unless acceptance still needed. |
+| Proceed until production monitored | Execute only the approved release path and safe read-only monitoring. | Boundary must include production deploy. | Stop before rollback/new fixes/destructive/critical widening unless named. |
+| After deploy issue appears | Treat as incident or release blocker. | Approval for rollback/fix-forward. | Protect users and report highest proven state. |
+
 ## 14. Incident Workflow
 
 Starts when production is failing, staff/users are blocked, money/security/data
@@ -1164,6 +1274,16 @@ Save to:
 - Koda for durable root-cause and prevention lessons.
 
 Common failure: an incident is handled like a normal low-risk bugfix.
+
+Incident scenario matrix:
+
+| Scenario | First response | Evidence | Stop point |
+| --- | --- | --- | --- |
+| Production route is down | Read-only triage, affected users/workflow, severity, current state. | HTTP/log/monitoring evidence, recent deploy state. | Recommend mitigation or fix path. |
+| Payment/auth/invoice/mobile API incident | Critical-lane incident. | Safe logs/data reads, impact, rollback/fix-forward options, negative test plan. | Stop before mutation/deploy unless approved. |
+| Intermittent staff/user reports | Gather timing, scope, logs, reproduction pattern. | Staff symptom plus system evidence. | Decide monitor, diagnose, or issue. |
+| Fix deployed | Smoke changed workflow, monitor logs/errors, report residual risk. | Deploy SHA, smoke, monitoring. | Production monitored or rollback/follow-up needed. |
+| Serious incident resolved | Capture cause, impact, fix, evidence, prevention follow-up. | Postmortem or Koda lesson. | Durable prevention path exists. |
 
 ## 14A. Project Adoption Workflow
 
@@ -1209,6 +1329,16 @@ Save to:
 Common failure: treating file installation as the same thing as a verified
 project workflow.
 
+Project adoption scenario matrix:
+
+| Scenario | Agent should check | Output | Stop point |
+| --- | --- | --- | --- |
+| Is this repo Agent OS-ready? | Root/project AGENTS, CLAUDE/reference, active task, TESTING, deploy/QA docs, health/install. | Readiness state plus gaps. | Do not claim ready from installer alone. |
+| New product repo adoption | Shared core plus local profile, not duplicated OS. | Project profile with commands, critical lanes, evidence, done states. | Baseline/profile verified. |
+| Existing repo with partial rules | Conflicts, missing checks, local conventions. | Gap list and smallest safe adoption patch. | Stop if rules conflict. |
+| Developer staff will use repo | Least-privilege capabilities, training, support path, escalation rules. | Staff-safe or builder-ready status. | Pilot before broad rollout. |
+| Another LLM/tool will use Agent OS | Adapter differences only. | Model-agnostic instructions plus tool-specific adapter. | Shared workflow behavior unchanged. |
+
 ## 14B. Governance And Versioning Workflow
 
 Starts when Hafiz changes how the Agent OS itself should work, when an agent
@@ -1242,6 +1372,16 @@ pushed, or parked with a clear return path.
 
 Common failure: treating a local dirty docs change as if future agents already
 have the new rule.
+
+Governance scenario matrix:
+
+| Scenario | Agent should name | Evidence | Stop point |
+| --- | --- | --- | --- |
+| New Agent OS rule | Change type, owner doc, connected files, Koda need. | Diff, checks, memory decision, Git state. | Changed locally, committed, or pushed clearly named. |
+| Rule changes skill/hook behavior | Registry/adapter/hook/eval impact. | Health/parity/conversation fixtures as relevant. | Do not claim adopted until wired and checked. |
+| Koda correction conflicts with docs | Current source of truth and conflict. | Current files plus memory context. | Ask/resolve before editing if conflict matters. |
+| Local-only commits exist | Highest proven Git state. | `git status`, commit list, push state. | Do not imply GitHub has local rules. |
+| Rule should be removed/relaxed | Why old rule is harmful, replacement boundary, risk guard. | Connected docs/evals updated coherently. | Preserve safety gates. |
 
 ## 15. Memory, Save-Session, And Handoff Workflow
 
@@ -1289,6 +1429,16 @@ Common failure: storing vague memory noise instead of actionable lessons.
 Another common failure: a handoff says "done" but omits that the work is only
 committed locally, not pushed, merged, deployed, or live checked.
 
+Memory, save-session, and handoff scenario matrix:
+
+| Scenario | Save should include | Koda should store | Stop point |
+| --- | --- | --- | --- |
+| Long session continues later | Main goal, current focus, Git state, evidence, next action, do-not-redo context. | Durable lessons/corrections only. | Continuation prompt works cold. |
+| Handoff to another agent/dev | Boundary, files/commits, risks, evidence, pause rules, final report shape. | Non-obvious rule or correction if reusable. | Receiver can start without transcript archaeology. |
+| Snapshot before compaction | Current state and immediate next action. | Usually no memory unless durable. | Context can resume after compaction. |
+| User correction | Practical correction and future behavior. | Store immediately with `source: correction`. | Docs/evals only if behavior must change. |
+| Session close | Highest proven state, pushed/merged/deployed/live status, remaining none/gaps. | Lessons worth reusing. | Close only when no required work remains. |
+
 ## 16. Mission Ledger Workflow
 
 Starts when a future task, adjacent idea, paused question, risk, research topic,
@@ -1315,6 +1465,16 @@ Save to:
 
 Common failure: the ledger becomes a second GitHub issue tracker instead of a
 parking lot for contextual future work.
+
+Mission Ledger scenario matrix:
+
+| Scenario | Ledger is right when | Use instead if | Stop point |
+| --- | --- | --- | --- |
+| Bigger idea not ready for build | Goal matters but scope is not execution-ready. | GitHub when coding scope is titleable. | Captured with next action. |
+| Adjacent issue discovered | It is outside current approved scope. | Fix now only if clearly in scope and safe. | Return path to current task stays clear. |
+| Research question | Needs future investigation, not immediate code. | Koda if it is a durable lesson already known. | Promote later when ready. |
+| Risk/follow-up from QA/review | Needs tracking but not current release blocker. | GitHub if it blocks engineering work. | Owner/next action named. |
+| Ledger item becomes actionable | Scope, project, and evidence are clear. | Create/link GitHub or PRD. | Ledger points to promoted home. |
 
 ## 17. Developer Staff Rollout Workflow
 
@@ -1352,6 +1512,16 @@ Save to:
 Common failure: ordinary staff are accidentally pulled into Agent OS instead of
 Teams Planner, or developer staff receive powerful tools without clear
 capability limits.
+
+Developer staff rollout scenario matrix:
+
+| Scenario | Agent should provide | Do not provide by default | Stop point |
+| --- | --- | --- | --- |
+| Ordinary staff report bugs | Teams Planner intake guidance. | Agent OS tools, repo access, production/deploy capability. | Staff know what to report. |
+| Developer staff pilot | Install steps, health check, repo profile, allowed tools, evidence expectations, escalation path. | Broad secrets, production mutation, deploy, Koda write, critical-lane authority. | Pilot-ready, not broad rollout. |
+| Staff uses another LLM | Model-agnostic AGENTS/playbooks plus adapter notes. | Claude/Codex-only assumptions. | Shared behavior stays consistent. |
+| Capability request | Least-privilege capability review. | Admin/destructive/critical tools without scoped approval. | Hafiz approves exact capability or rejects. |
+| Rollout feedback appears | Capture friction, failures, training gaps, support questions. | Silent self-rewriting. | Feed Agent OS improvement loop. |
 
 ## Recommended Use
 
