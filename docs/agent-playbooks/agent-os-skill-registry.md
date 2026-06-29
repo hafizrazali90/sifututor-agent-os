@@ -184,6 +184,13 @@ For PR-ready automation, use
 monitoring, and in-scope CI fixes after one clear boundary, but it stops before
 merge unless merge was explicitly included.
 
+For release-ready automation, use
+[`release-deploy-live-monitoring.md`](release-deploy-live-monitoring.md). Plain
+meaning: "proceed until production monitored" can include preflight, explicit
+deploy, safe smoke checks, read-only monitoring, and final release reporting,
+but it stops before rollback, new fixes, destructive action, critical-lane
+widening, or business risk acceptance unless those were explicitly included.
+
 ## Skill Boundaries
 
 Always separate these:

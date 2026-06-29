@@ -60,6 +60,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity is executable. Full behavior comparison still needs adapter-aware checks that compare real Claude and Codex responses for approval gates, evidence standard, and close-out behavior. |
 | Pre-push batch completion | AO-094 | Needs real local commit context, current Session Map state, check output, and human-readable package review. A simple router fixture cannot honestly tell whether a batch tells one complete story. |
 | PR/CI automation and efficiency audit | AO-115, AO-116, AO-117 | Needs real GitHub PR state, CI state, branch protection, approval identity, and friction history. The playbooks define the behavior now; richer automation needs GitHub fixtures and workflow-friction logs. |
+| Release/deploy/live monitoring | AO-118, AO-119, AO-120 | Needs real deploy records, production SHA, smoke evidence, monitoring output, and multi-fix release inventory. The playbook defines the state ladder now; richer automation needs safe deploy and observability fixtures. |
 | Save-session and handoff continuity | AO-103 | Needs real session length, Session Map state, local Git state, evidence gaps, and target receiver context. A simple router fixture cannot honestly prove the restart pack is useful. |
 
 ## Future Harness Targets

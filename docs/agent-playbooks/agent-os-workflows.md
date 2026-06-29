@@ -1042,6 +1042,15 @@ clear live-state reporting.
 Use project deploy docs plus [monitor-production-logs.md](monitor-production-logs.md).
 Do not deploy from this master workflow alone.
 
+Use [release-deploy-live-monitoring.md](release-deploy-live-monitoring.md) for
+the exact post-merge boundary. Plain meaning: the agent must distinguish merged,
+staging deployed, staging smoke checked, production deployed, production smoke
+checked, production monitored, and accepted / closed. "Proceed until production
+monitored" can include deploy only after explicit deploy approval, safe smoke
+checks, and read-only monitoring; it does not include new fixes, rollback,
+critical-lane widening, destructive action, or final business risk acceptance
+unless those are named.
+
 Evidence required:
 
 - Source commit/branch/PR identified.

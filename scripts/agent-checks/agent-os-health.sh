@@ -60,6 +60,7 @@ check_file "working with Hafiz" "$ROOT/docs/agent-playbooks/working-with-hafiz.m
 check_file "Agent OS routing model" "$ROOT/docs/agent-playbooks/agent-os-routing-model.md"
 check_file "Agent OS approval gates" "$ROOT/docs/agent-playbooks/agent-os-approval-gates.md"
 check_file "push PR CI automation" "$ROOT/docs/agent-playbooks/push-pr-ci-automation.md"
+check_file "release deploy live monitoring" "$ROOT/docs/agent-playbooks/release-deploy-live-monitoring.md"
 check_file "workflow efficiency audit" "$ROOT/docs/agent-playbooks/workflow-efficiency-audit.md"
 check_file "Agent OS communication" "$ROOT/docs/agent-playbooks/agent-os-communication.md"
 check_file "internal build plan" "$ROOT/docs/agent-playbooks/agent-os-internal-build-plan.md"

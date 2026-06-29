@@ -148,6 +148,12 @@ and CI watching can be automated after one clear boundary, but PR approval,
 merge, deploy, production, destructive actions, and critical-lane work stay
 tied to the approved stop point.
 
+Use [release-deploy-live-monitoring.md](release-deploy-live-monitoring.md) when
+the packet may include staging deploy, production deploy, live smoke, or
+monitoring. Plain meaning: deploy and production release stay explicit, but the
+agent can automate preflight, safe smoke, read-only monitoring, and final state
+reporting inside an approved release boundary.
+
 ### 3. Standing Task Access Approval
 
 Hafiz has granted standing task-scoped approval for agents to use the narrowest
@@ -199,6 +205,7 @@ Allowed bundles:
 | verify + QA | Exact non-destructive commands or safe check scope. |
 | push + open PR + monitor CI | Exact branch/remote, PR target, evidence plan, and stop-before-merge boundary. |
 | PR ready + merge if CI passes | Exact branch/PR target, merge boundary, no critical-lane risk, required checks, and stop-before-deploy boundary. |
+| deploy + smoke + monitor | Exact source commit/PR, target environment, deploy approval, smoke scope, monitoring scope, and stop-before-new-fix/rollback boundary. |
 
 If Hafiz says `approve` after the agent asked for an exact bundle, approval
 covers the whole named bundle.
@@ -214,6 +221,12 @@ allowed. It does not cover deploy because deploy was explicitly excluded.
 If the boundary is "until PR ready", `approve` covers branch push, PR creation,
 PR body/checklist, CI monitoring, and in-scope CI fixes. It does not cover merge
 unless merge was named.
+
+If the boundary is "until production monitored", `approve` covers release
+preflight, deploy execution only after deploy approval is explicit, deployed
+state verification, safe smoke checks, read-only monitoring, and final release
+reporting. It does not cover rollback, new fixes, destructive action, critical
+lane widening, or final business risk acceptance unless those were named.
 
 ### 5. Separate Approval Always
 
