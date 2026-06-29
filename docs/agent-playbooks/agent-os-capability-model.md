@@ -314,6 +314,82 @@ MCP/connector when the agent needs richer read-only interaction.
 Direct API only inside a narrow wrapper when it is the cleanest safe path.
 ```
 
+## Tool-Use Decision Flow
+
+Plain meaning:
+
+```text
+Do not ask "what is the most powerful connector?"
+Ask "what is the smallest reliable tool that proves this task safely?"
+```
+
+Use this order when choosing a tool path:
+
+1. **Can the local workspace prove it?** Use shell, `rg`, `git`, test runners,
+   project scripts, or Agent OS wrapper scripts. This is fastest and cheapest
+   for code, docs, repo state, checks, probes, and repeatable evidence.
+2. **Does the task need a human-visible web journey?** Use Playwright or the
+   browser. Code and API checks do not prove that a staff/admin/parent/tutor
+   can complete a UI workflow.
+3. **Does the task need rich service context or managed auth?** Use the
+   connector/MCP/app tool when available, narrowed to the needed service and
+   operation. This is best for Google Drive docs, GitHub PR/issue interaction,
+   and service data that benefits from structured tool responses.
+4. **Does the task need repeatable service automation with tiny output?** Use a
+   direct API wrapper script, not raw API calls in chat. This is best for
+   Planner intake probes, monitoring checks, and stable low-noise operational
+   evidence.
+5. **Does the task happen inside a native desktop app?** Use native app control
+   only when the real work is in Finder, Preview, Numbers, or another macOS app
+   and no safer structured path exists.
+6. **Is the action write, admin, critical, destructive, deploy, merge, PR, or
+   push?** Stop at the approval gate unless Hafiz already included that exact
+   boundary in the current-session approval.
+
+If two paths can answer the same question, choose the one with:
+
+- less secret exposure
+- less irrelevant data
+- smaller token output
+- more repeatable evidence
+- clearer audit trail
+- fewer permissions
+
+## Sifututor Tool Choice Matrix
+
+| Job | Preferred path | Why |
+| --- | --- | --- |
+| Search code, inspect files, check changed docs | CLI: `rg`, `sed`, `git diff`, project scripts | Fast, local, no connector overhead. |
+| Run tests, lint, health, guards, probes | CLI wrapper or project command | Repeatable and easy to report. |
+| Check local Git state or commit contents | CLI: `git status`, `git log`, `git diff` | Git itself is the source of truth. |
+| Check GitHub auth/repo/PR/CI state quickly | CLI probe first; GitHub connector/MCP for richer PR/issue workflows | CLI is compact; connector is better for multi-step GitHub review or comments. |
+| Read Teams Planner staff intake | Direct Microsoft Graph wrapper for safe summaries; connector only if richer interaction is needed | Planner is intake, not source of engineering truth; output must stay small and private. |
+| Read Google Drive/Docs/Sheets/Slides | Google Drive connector/app first; Drive API wrapper only for repeatable metadata checks | Connector handles document structure better; wrappers keep probes small. |
+| Check Sentry/BetterStack monitoring | Direct read-only wrapper | Monitoring probes should return status/counts, not noisy issue details or raw logs. |
+| Prove browser-visible product behavior | Playwright/browser | User-visible behavior must be checked like a human journey. |
+| Operate a real macOS app | Native app control | Only when the actual task is inside that app. |
+| Explain current Agent OS capability | Agent OS health/probe scripts | Standardized, low-noise capability report. |
+
+## Fallback Rule
+
+When the preferred path fails:
+
+1. Do a tiny capability probe or health check.
+2. Say what failed in practical language: not installed, not authenticated,
+   permission blocked, tool timeout, or target data missing.
+3. Try the next safest path only if it stays inside the active task and the
+   approval boundary.
+4. Do not silently skip evidence. If no safe path exists, say what remains
+   unverified and what Hafiz would need to approve or provide.
+
+Example:
+
+```text
+The Google Drive connector is visible but live file reads are not exposed in
+this session. I can still check local docs and repo state, but I cannot claim
+the Drive document itself was verified until a tiny Drive read succeeds.
+```
+
 For token efficiency, prefer commands that return small structured output,
 especially JSON fields selected with `--json`, `--jq`, or a wrapper-specific
 summary. Do not dump full issues, logs, PR diffs, Planner cards, or Drive files

@@ -400,6 +400,26 @@ Sifututor implication:
 Sources:
 
 - Local transcript: `/Users/hafizrazali/.codex/attachments/125ad375-ea35-4e88-a552-e1b0dfcdb924/pasted-text.txt`
+- MCP tools specification:
+  <https://modelcontextprotocol.io/specification/2025-11-25/server/tools>
+- GitHub MCP Server:
+  <https://github.com/github/github-mcp-server>
+- GitHub CLI manuals:
+  <https://cli.github.com/manual/gh_auth_status>,
+  <https://cli.github.com/manual/gh_repo_view>,
+  <https://cli.github.com/manual/gh_help_formatting>
+- Microsoft Graph best practices and throttling:
+  <https://learn.microsoft.com/en-us/graph/best-practices-concept>,
+  <https://learn.microsoft.com/en-us/graph/throttling>
+- Google Drive API performance and file reads:
+  <https://developers.google.com/workspace/drive/api/guides/performance>,
+  <https://developers.google.com/drive/api/reference/rest/v3/files/list>
+- Playwright best practices:
+  <https://playwright.dev/docs/best-practices>
+- Sentry and Better Stack API docs:
+  <https://docs.sentry.io/api/>,
+  <https://docs.sentry.io/api/ratelimits/>,
+  <https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/>
 
 Findings:
 
@@ -426,6 +446,16 @@ Findings:
   - CLI when it is local, direct, cheap, and already well-known.
   - MCP when abstraction, authentication, permissions, or auditability justify
     the overhead.
+- Direct API is useful when wrapped behind a narrow script. It should not mean
+  pasting raw API calls and broad payloads into chat. Use it for stable
+  low-noise probes, read-only monitoring checks, and service summaries where
+  the wrapper can sanitize output.
+- Browser automation is its own category. It is not mainly a connector choice;
+  it proves what a human user sees and can do. Use Playwright/browser evidence
+  for staff/admin/parent/tutor UI journeys when feasible.
+- Native app control is last-mile automation for real desktop apps. Use it
+  only when the task actually happens inside the app and a structured API,
+  CLI, connector, or browser path cannot prove the work.
 
 Sifututor implication:
 
@@ -441,6 +471,17 @@ Sifututor implication:
   and guard scripts.
 - For authenticated services and staff-facing systems, prefer MCP/connectors
   with scoped credentials and audit trails.
+- For probes and recurring operational checks, prefer CLI/direct wrapper
+  scripts with tiny structured output.
+- For Google Drive documents, prefer the Google Drive connector/app when live
+  document content is needed; use wrapper probes only for metadata/readiness.
+- For Planner, prefer the direct Microsoft Graph wrapper for small read-only
+  staff-intake summaries unless a richer connector workflow becomes necessary.
+- For Sentry/BetterStack, prefer direct read-only wrappers that return
+  status/count evidence without raw logs, secret values, issue details, or
+  monitor URLs.
+- For visible product behavior, prefer browser/mobile automation over code
+  inspection alone.
 
 ## Recommended Sifututor Agent OS Architecture
 
