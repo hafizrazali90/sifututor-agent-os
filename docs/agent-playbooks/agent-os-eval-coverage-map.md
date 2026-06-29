@@ -66,6 +66,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Project adoption | AO-124, AO-125, AO-126 | Needs real target repo docs, installer output, project command evidence, and readiness profile review. The playbook defines the adoption path now; richer automation needs per-project fixtures. |
 | Governance and versioning | AO-127, AO-128 | Needs real changed files, source ownership, checks, Koda state, and Git state. The playbook defines the path now; richer automation needs change-set fixtures. |
 | Save-session and handoff continuity | AO-103 | Needs real session length, Session Map state, local Git state, evidence gaps, and target receiver context. A simple router fixture cannot honestly prove the restart pack is useful. |
+| Work intake scenario quality | AO-132 | Needs current Session Map state and existing-doc awareness. A simple router fixture can catch the route, but a human/agent review must judge whether the agent continued from settled intake rules or restarted the topic. |
 
 ## Future Harness Targets
 

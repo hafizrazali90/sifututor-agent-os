@@ -213,6 +213,31 @@ Use this routing table:
 | Long current session with side paths | Update Session Map. | Only for execution-ready code work inside the session. | It is only current-session continuity. |
 | Multiple fixes in one chat | Update Session Release Ledger. | Each fix that needs engineering execution should have or link its issue. | The ledger itself is state tracking, not a replacement for issues. |
 
+## Intake Scenario Matrix
+
+Use these examples when the abstract rule is not enough. The goal is to help
+the agent behave predictably without making Hafiz remember the routing table.
+
+| Scenario | What It Means | First Agent Move | Home If Real Work | Must Not Do |
+| --- | --- | --- | --- | --- |
+| Hafiz says `fix this` and points at a clear bug | Current direction from Hafiz, but still not proof of root cause. | Read the relevant current files, task state, and safe evidence enough to name the likely module and done state. | GitHub issue or active task for code work; Session Map if the session is already multi-step. | Start broad coding with no trace, or ask Hafiz to diagnose what the agent can inspect. |
+| Hafiz says `let's discuss` or asks `is this good?` | Thinking/design mode, not implementation approval. | Explain options, tradeoffs, recommendation, and what would be documented or changed if approved. | Living doc or Mission Ledger only if Hafiz wants it saved. | Create issues, edit code, or run heavy workflow ceremony. |
+| Staff or Planner says something is broken | Real-world symptom from operations, not verified engineering truth. | Check Planner/context when relevant, then do narrow read-only diagnosis against current repo, route, UI/API, logs, or safe data. | GitHub issue when likely code work is confirmed; chat-only/support/process when not code. | Treat the report as root cause, close an issue from Planner alone, or start coding before reproduction/inspection. |
+| GitHub issue exists but is vague | Possible execution ticket, but the scope may be weak. | Read the issue, linked context, current code/docs, and ask or diagnose only enough to make it build-ready. | Keep or refine the GitHub issue; add implementation readiness if another builder will take it. | Build from assumptions, expand beyond the issue, or duplicate a new issue. |
+| Koda says a workaround or rule exists | Durable memory/history, not current-state proof. | Search/read current docs and files that own the behavior; compare memory against current reality. | Update docs or Koda if the memory is stale; proceed only after current evidence agrees. | Treat Koda as permission, proof that a fix is live, or stronger than current code/docs. |
+| Production signal or monitoring alert appears | Live evidence that something may be affecting users. | Use incident or diagnose workflow; gather read-only evidence, severity, affected surface, and safe mitigation options. | Incident workflow, GitHub issue for confirmed fix, Mission Ledger for prevention follow-up. | Mutate production, deploy, rollback, or edit critical lanes without the required approval. |
+| Another session or agent hands off work | Continuation signal that may be stale or incomplete. | Read the Session Map/reference pack, git state, linked issue/PR, and latest evidence before continuing. | Continue the existing home if it still matches; otherwise update Session Map and explain the mismatch. | Restart from scratch, trust old chat over current repo state, or create duplicate state records. |
+| Agent notices an adjacent issue during a task | New finding, not automatically part of the approved scope. | State the finding and compare it with the current task boundary. | Current task only if inside scope; otherwise Mission Ledger or GitHub issue if Hafiz approves execution-ready work. | Silently fix it, broaden the PR, or bury it in the final answer. |
+
+Close-out example:
+
+```text
+I treated the Planner note as a staff-reported symptom, not root cause. I
+checked the current route/component and found it likely is code work, so the
+right home is a GitHub issue before implementation. I did not edit code yet.
+Recommended next: create/link the issue, then diagnose the fix path.
+```
+
 Good default flow:
 
 ```text

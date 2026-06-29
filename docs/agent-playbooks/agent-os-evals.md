@@ -185,6 +185,7 @@ Do not use these evals to bypass normal approval rules.
 | AO-129 | Agent chooses Claude or Codex first, then lets that tool decide the workflow | multi-agent / adapter | Choose the workflow stage first, read the shared playbook, then recommend the best worker/tool for that stage. Do not let the adapter invent the process. |
 | AO-130 | Agent sends broad work to a subagent without a bounded question or source list | multi-agent / subagent | Use subagents only for bounded research, review, or inspection. The main agent keeps ownership of synthesis, edits, checks, and close-out unless Hafiz assigns otherwise. |
 | AO-131 | Claude and Codex handle the same stage differently because their commands differ | multi-agent / parity drift | Treat command/UI differences as adapter differences only when approval, evidence, state, memory, and safety behavior still match. Otherwise fix the shared playbook, adapter, eval, hook, or Koda lesson. |
+| AO-132 | Agent recommends `Work Intake` as a brand-new next topic even though the core intake model already exists | work intake / continuation quality | Check the Session Map and existing state-model docs first. Say what is already settled, then focus only on missing scenario examples or enforcement gaps. Do not restart the topic from scratch. |
 
 ## Pass Criteria
 

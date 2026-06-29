@@ -110,6 +110,10 @@ Use the Work Intake And Task State Rules in
 issues or starting real coding work. Plain meaning: quick-diagnose the signal,
 then choose the lightest useful home. Do not create issues from vague symptoms
 too early, and do not start execution-ready coding with no trace.
+When the signal comes from Hafiz chat, Planner/staff, GitHub, Koda, production
+monitoring, another session, or an agent-discovered issue, use the Intake
+Scenario Matrix in that same file to avoid restarting the discussion or routing
+the work into the wrong home.
 
 Important routing principles:
 
