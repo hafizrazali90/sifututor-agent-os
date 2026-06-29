@@ -46,14 +46,14 @@ Do not make Hafiz remember numeric levels. Use natural language.
 
 | Say this | Use when | What must be clear before coding |
 | --- | --- | --- |
-| `This is ready after a quick explanation.` | Tiny docs/copy/config change, obvious one-file fix, or low-risk tool update. | What changes, what does not change, and how it will be checked. |
-| `This needs a build-ready brief first.` | Real bugfix, feature slice, user-facing behavior, staff workflow, multiple files, or unclear implementation options. | Problem, user/role, real entry point, business rule, scope, risks, evidence plan, and stop point. |
-| `This needs full implementation design first.` | Critical lane, cross-module workflow, new module, mobile/API contract, payment/invoice/commission/auth/migration/deploy work, or handoff to another builder. | Full workflow, state transitions, contracts, edge cases, rollback, tests, human-journey proof, and build handoff package. |
+| `This only needs a Quick Brief.` | Tiny docs/copy/config change, obvious one-file fix, or low-risk tool update. | What changes, what does not change, and how it will be checked. |
+| `This needs Product Shape first.` | Real bugfix, feature slice, user-facing behavior, staff workflow, multiple files, or unclear implementation options. | Problem, user/role, real entry point, business rule, scope, risks, evidence plan, and stop point. |
+| `This needs a Build-Ready Pack before implementation.` | Critical lane, cross-module workflow, new module, mobile/API contract, payment/invoice/commission/auth/migration/deploy work, or handoff to another builder. | Full workflow, state transitions, contracts, edge cases, rollback, tests, human-journey proof, and build handoff package. |
 
 The agent recommends the lightest safe version. Hafiz can ask for more detail
 or less ceremony, but risk can force a deeper brief.
 
-## Build-Ready Brief
+## Build-Ready Pack
 
 For real implementation work, the agent should be able to explain this before
 editing:

@@ -96,25 +96,25 @@ Use natural language instead.
 
 | Say this | Use when | What the agent should explain |
 | --- | --- | --- |
-| `This looks small enough for a quick explanation.` | Small safe change, typo, narrow bug, simple docs/tooling edit, obvious behavior. | What is wrong, what will change, what will not change, and how it will be checked. |
-| `This needs a design brief first.` | There are choices, visible user workflow impact, staff process impact, unclear expected behavior, or a multi-file change. | Current behavior, options, recommendation, accepted scope, risks, and evidence plan. |
-| `This needs full design before implementation.` | Module redesign, new module, multi-role workflow, payment/invoice/commission/auth, migration, mobile API contract, backend/frontend contract, or handoff to another agent/dev. | PRD/design brief, clarifier if needed, UX spec, backend/API contract if needed, evidence plan, and build prompt. |
+| `This only needs a Quick Brief.` | Small safe change, typo, narrow bug, simple docs/tooling edit, obvious behavior. | What is wrong, what will change, what will not change, and how it will be checked. |
+| `This needs Product Shape first.` | There are choices, visible user workflow impact, staff process impact, unclear expected behavior, or a multi-file change. | Current behavior, options, recommendation, accepted scope, risks, and evidence plan. |
+| `This needs a Build-Ready Pack before implementation.` | Module redesign, new module, multi-role workflow, payment/invoice/commission/auth, migration, mobile API contract, backend/frontend contract, or handoff to another agent/dev. | PRD/design brief, clarifier if needed, UX spec, backend/API contract if needed, evidence plan, and build prompt. |
 
 The agent should say this conversationally:
 
 ```text
-This looks small enough for a quick explanation. I’ll tell you what I’m
-changing, what I’m not touching, and how I’ll check it.
+This only needs a Quick Brief. I’ll tell you what I’m changing, what I’m not
+touching, and how I’ll check it.
 ```
 
 ```text
-This needs a design brief first because there are a few valid ways to handle
+This needs Product Shape first because there are a few valid ways to handle
 "pending", and I want you to understand the option before I build.
 ```
 
 ```text
-This needs full design before implementation because it touches invoices and
-parent payment state. I can keep the explanation concise, but I should not
+This needs a Build-Ready Pack before implementation because it touches invoices
+and parent payment state. I can keep the explanation concise, but I should not
 treat it as a quick fix.
 ```
 
@@ -130,9 +130,9 @@ Content standard:
 
 | Preparation | Must answer | Keep it conversational |
 | --- | --- | --- |
-| Quick explanation | What is wrong? What will change? What will not be touched? How will it be checked? | Use a short paragraph or small bullets. No PRD needed. |
-| Design brief | What is the problem? What is current behavior? Who is affected? What are the options? What is recommended and why? What will/won't change? What risks/tradeoffs exist? How will it be proven? What decision is needed? | Explain options and recommendation like a discussion, not a rigid form. |
-| Full design | Problem, users/roles, current workflow, target workflow, business rules, states/edge cases, options/recommendation, UX behavior, backend/API/data contract if needed, permissions, out of scope, risks, evidence/test plan, implementation slices, build prompt, approval needed. | Use sections when needed, but keep every section understandable in plain language. |
+| Quick Brief | What is wrong? What will change? What will not be touched? How will it be checked? | Use a short paragraph or small bullets. No PRD needed. |
+| Product Shape | What is the problem? What is current behavior? Who is affected? What are the options? What is recommended and why? What will/won't change? What risks/tradeoffs exist? How will it be proven? What decision is needed? | Explain options and recommendation like a discussion, not a rigid form. |
+| Build-Ready Pack | Problem, users/roles, current workflow, target workflow, business rules, states/edge cases, options/recommendation, UX behavior, backend/API/data contract if needed, permissions, out of scope, risks, evidence/test plan, implementation slices, build prompt, approval needed. | Use sections when needed, but keep every section understandable in plain language. |
 
 Implementation-readiness rule:
 
@@ -142,33 +142,33 @@ plain English clearly enough that Hafiz understands the behavior, scope, risk,
 and evidence without reading the code.
 ```
 
-Example quick explanation:
+Example Quick Brief:
 
 ```text
-This looks small enough for a quick explanation.
+This only needs a Quick Brief.
 The issue is just a typo in the button label.
 I’ll update the label text only.
 I won’t touch the form behavior, validation, or save logic.
 I’ll check the affected page/file after the edit.
 ```
 
-Example design brief:
+Example Product Shape:
 
 ```text
-This needs a design brief first because "pending" may mean different statuses.
+This needs Product Shape first because "pending" may mean different statuses.
 My recommendation is to start with requests waiting for tutor assignment,
 because that solves the immediate staff workflow without changing the whole
 table. I won’t rewrite status logic in this slice. The risk is staff may expect
 "pending" to include other statuses, so I need your decision on the meaning.
 ```
 
-Example full design:
+Example Build-Ready Pack:
 
 ```text
-This needs full design before implementation because it touches invoice and
-payment state. I’ll map who can adjust the invoice, when adjustment is allowed,
-what happens if payment already exists, parent visibility, audit trail, backend
-state changes, and the test/smoke plan before any coding.
+This needs a Build-Ready Pack before implementation because it touches invoice
+and payment state. I’ll map who can adjust the invoice, when adjustment is
+allowed, what happens if payment already exists, parent visibility, audit
+trail, backend state changes, and the test/smoke plan before any coding.
 ```
 
 ## SIMS Module Redesign Loop

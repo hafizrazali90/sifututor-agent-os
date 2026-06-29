@@ -380,9 +380,9 @@ Use conversational preparation depth, not numeric labels:
 
 | Phrase | Use when |
 | --- | --- |
-| `quick explanation` | Small safe changes where a short English explanation is enough before implementation. |
-| `design brief` | User workflow, staff process, unclear expected behavior, or multiple implementation options. |
-| `full design` | Major workflow, critical lane, multi-role/module work, backend/frontend contract, or handoff to another builder. |
+| `Quick Brief` | Small safe changes where a short English explanation is enough before implementation. |
+| `Product Shape` | User workflow, staff process, unclear expected behavior, or multiple implementation options. |
+| `Build-Ready Pack` | Major workflow, critical lane, multi-role/module work, backend/frontend contract, or handoff to another builder. |
 
 The agent should recommend the lightest safe preparation, but risk can force
 deeper preparation. Hafiz can ask for more or less, and the agent should explain
@@ -390,11 +390,11 @@ any safety concern in normal language.
 
 Content standard:
 
-- Quick explanation answers what is wrong, what will change, what will not be
+- Quick Brief answers what is wrong, what will change, what will not be
   touched, and how it will be checked.
-- Design brief explains the problem, current behavior, affected users, options,
+- Product Shape explains the problem, current behavior, affected users, options,
   recommendation, tradeoffs, evidence plan, and decision needed.
-- Full design maps the workflow/spec/contract/test plan/build prompt before
+- Build-Ready Pack maps the workflow/spec/contract/test plan/build prompt before
   implementation.
 
 Evidence required:
@@ -441,9 +441,9 @@ task should stop.
 
 Use conversational readiness:
 
-- quick explanation for tiny safe changes
-- build-ready brief for real implementation work
-- full implementation design for critical lanes, cross-module work, mobile/API
+- Quick Brief for tiny safe changes
+- Product Shape for real implementation work that still needs product clarity
+- Build-Ready Pack for critical lanes, cross-module work, mobile/API
   contracts, new modules, or handoff to another builder
 
 Evidence required:
