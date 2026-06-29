@@ -981,6 +981,15 @@ Evidence required before commit:
 Push/PR/merge approval must be explicit in the current session. A commit
 approval does not imply push. A push approval does not imply deploy.
 
+Use [push-pr-ci-automation.md](push-pr-ci-automation.md) when Hafiz wants PR
+opening, CI checking, PR readiness, or merge to be less manual. Plain meaning:
+the agent should automate repetitive GitHub work after one clear boundary, then
+stop at the next real authority decision. For example, "proceed until PR ready"
+can include push, PR creation, PR body, CI monitoring, and in-scope CI fixes,
+but it stops before merge. "Proceed until merged if CI passes" may include
+merge only when the boundary explicitly says so and the work is not blocked by
+critical-lane, evidence, review, or branch-protection risk.
+
 Exit when the requested git action is completed, refused for safety, or waiting
 for exact approval.
 
@@ -991,6 +1000,35 @@ Save to:
 
 Common failure: local-only work is described as done without saying it is not
 pushed, merged, or live.
+
+Another common failure: the agent asks Hafiz to approve push, PR open, CI
+monitoring, and PR summary as four separate steps when one PR-ready boundary
+would be clearer.
+
+## 12A. Workflow Efficiency Audit
+
+Starts when Hafiz says the workflow is inefficient, confusing, too strict, too
+loose, or when repeated manual approval happens for steps he normally accepts.
+
+Use [workflow-efficiency-audit.md](workflow-efficiency-audit.md).
+
+Plain meaning: inspect the workflow like a product. Find where Hafiz is doing
+work the agent should do, where the agent is skipping evidence it could gather,
+where state is confusing, and where automation would help without removing real
+risk decisions.
+
+Evidence required:
+
+- The repeated friction or confusing step is named.
+- The practical impact on Hafiz or the agent workflow is explained.
+- The suggested fix names the owning layer: playbook, skill, hook, eval, Koda,
+  Session Map, GitHub, or final response shape.
+- The automation boundary is named: read-only, mechanical, or boundary-based.
+- The remaining risk guard is named.
+
+Exit when the audit either recommends no change, captures a future follow-up, or
+routes to [agent-os-improvement-loop.md](agent-os-improvement-loop.md) for a
+coherent docs/skills/hooks/evals update.
 
 ## 13. Release, Deploy, And Monitor Workflow
 

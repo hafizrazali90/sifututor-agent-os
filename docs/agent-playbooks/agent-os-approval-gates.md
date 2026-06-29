@@ -142,6 +142,12 @@ story, have no half-written rules or workflows inside it, have passing required
 checks, and clearly separate future work that is not included yet. If any of
 those are false, keep working locally instead of asking for push approval.
 
+Use [push-pr-ci-automation.md](push-pr-ci-automation.md) when the packet may
+include push, PR creation, CI monitoring, or merge. Plain meaning: PR opening
+and CI watching can be automated after one clear boundary, but PR approval,
+merge, deploy, production, destructive actions, and critical-lane work stay
+tied to the approved stop point.
+
 ### 3. Standing Task Access Approval
 
 Hafiz has granted standing task-scoped approval for agents to use the narrowest
@@ -191,6 +197,8 @@ Allowed bundles:
 | push + close issue | Commit already made, exact branch/remote, human-first Push Package Summary, and issue clearly complete. |
 | docs edit + checks | Exact docs scope and non-destructive checks. |
 | verify + QA | Exact non-destructive commands or safe check scope. |
+| push + open PR + monitor CI | Exact branch/remote, PR target, evidence plan, and stop-before-merge boundary. |
+| PR ready + merge if CI passes | Exact branch/PR target, merge boundary, no critical-lane risk, required checks, and stop-before-deploy boundary. |
 
 If Hafiz says `approve` after the agent asked for an exact bundle, approval
 covers the whole named bundle.
@@ -202,6 +210,10 @@ If the agent asked for an autopilot boundary such as "until merged, stop before
 deploy", `approve` covers all normal steps required to reach that boundary:
 review, checks, commit if exact file list was named, push, PR, and merge when
 allowed. It does not cover deploy because deploy was explicitly excluded.
+
+If the boundary is "until PR ready", `approve` covers branch push, PR creation,
+PR body/checklist, CI monitoring, and in-scope CI fixes. It does not cover merge
+unless merge was named.
 
 ### 5. Separate Approval Always
 
@@ -282,3 +294,9 @@ Watch for:
 - places where the agent should have stopped earlier
 - places where the agent asked for approval too often
 - any near-miss around production, secrets, critical lanes, or git history
+
+Use [workflow-efficiency-audit.md](workflow-efficiency-audit.md) when this
+review finds repeated friction. Plain meaning: do not keep adding approval
+rules blindly; inspect where the workflow is wasting Hafiz's time, where the
+agent should automate mechanical work, and where risk decisions still belong to
+Hafiz.

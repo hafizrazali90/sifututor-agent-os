@@ -178,6 +178,12 @@ $review first
 -> requested outbound action only
 ```
 
+For PR-ready automation, use
+[`push-pr-ci-automation.md`](push-pr-ci-automation.md). Plain meaning:
+"proceed until PR ready" can include push, PR creation, PR body/checklist, CI
+monitoring, and in-scope CI fixes after one clear boundary, but it stops before
+merge unless merge was explicitly included.
+
 ## Skill Boundaries
 
 Always separate these:

@@ -13,6 +13,8 @@
     "docs/agent-playbooks/working-with-hafiz.md",
     "docs/agent-playbooks/agent-os-routing-model.md",
     "docs/agent-playbooks/agent-os-approval-gates.md",
+    "docs/agent-playbooks/push-pr-ci-automation.md",
+    "docs/agent-playbooks/workflow-efficiency-audit.md",
     "docs/agent-playbooks/agent-os-communication.md",
     "docs/agent-playbooks/context-authority.md",
     "docs/agent-playbooks/agent-os-memory.md",

@@ -32,6 +32,8 @@ Use these when the user asks for:
 - Agent OS current state and review roadmap: [agent-os-review-roadmap.md](agent-os-review-roadmap.md)
 - Agent OS routing model: [agent-os-routing-model.md](agent-os-routing-model.md)
 - Agent OS approval gates: [agent-os-approval-gates.md](agent-os-approval-gates.md)
+- Agent OS push, PR, CI, and merge automation: [push-pr-ci-automation.md](push-pr-ci-automation.md)
+- Agent OS workflow efficiency audit: [workflow-efficiency-audit.md](workflow-efficiency-audit.md)
 - Agent OS communication and close-out: [agent-os-communication.md](agent-os-communication.md)
 - working with Hafiz: [working-with-hafiz.md](working-with-hafiz.md)
 - Agent OS installation: [agent-os-installation.md](agent-os-installation.md)
