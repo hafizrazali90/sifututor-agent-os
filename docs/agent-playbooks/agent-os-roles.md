@@ -8,6 +8,10 @@ Plain meaning: the agent should do as much useful technical work as it safely
 can, but Hafiz still owns product direction, business judgment, risk acceptance,
 and permission for actions that change external state.
 
+Use [multi-agent-adapter-workflow.md](multi-agent-adapter-workflow.md) when the
+question is not only "who owns this decision?" but also "which agent, adapter,
+subagent, or human should do this stage of work?"
+
 ## Core Split
 
 ```text

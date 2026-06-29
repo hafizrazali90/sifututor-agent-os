@@ -24,6 +24,11 @@ It requires every agent to follow the same:
 - handoff shape,
 - plain-language close-out.
 
+Use [multi-agent-adapter-workflow.md](multi-agent-adapter-workflow.md) when
+deciding which agent, adapter, subagent, or human should do a stage of work.
+That workflow owns the rule that the workflow stage comes first and agent
+strength is only a recommendation.
+
 Different agents can expose different command shapes. For example, Claude may
 have four visible product-design commands while Codex uses one umbrella
 `$product-design` skill. That is acceptable only if the underlying phases,

@@ -4,6 +4,11 @@ Use this when handing the same task from Claude to Codex, Codex to Claude, or a
 fresh agent session. The goal is one shared state, not two separate agent
 memories.
 
+Use [multi-agent-adapter-workflow.md](multi-agent-adapter-workflow.md) before
+switching when the real question is which worker should own the next workflow
+stage. Switching is a state-transfer action, not a way to let each agent invent
+a different process.
+
 ## Before Switching
 
 1. Save the current task state:
