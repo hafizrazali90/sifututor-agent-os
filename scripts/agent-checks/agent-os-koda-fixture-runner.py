@@ -125,6 +125,55 @@ def validate_koda_path(scenario: dict) -> list[str]:
     return errors
 
 
+def validate_dedupe_decision(scenario: dict) -> list[str]:
+    errors = []
+    similar_memory_id = normalize(scenario.get("similar_memory_id"))
+    similarity = float(scenario.get("similarity") or 0)
+    decision = normalize(scenario.get("decision"))
+
+    if similar_memory_id and similarity >= 0.85:
+        if "update" not in decision and "skip" not in decision:
+            errors.append("high-similarity memory should update/skip instead of storing duplicate")
+    if not similar_memory_id and "update" in decision:
+        errors.append("should not update a missing memory id")
+
+    return errors
+
+
+def validate_correction_update(scenario: dict) -> list[str]:
+    errors = []
+    correction = bool(scenario.get("is_correction"))
+    target_id = normalize(scenario.get("target_memory_id"))
+    decision = normalize(scenario.get("decision"))
+    source = normalize(scenario.get("source"))
+
+    if correction:
+        if source != "correction":
+            errors.append("correction memory updates must use source=correction")
+        if target_id and "update" not in decision:
+            errors.append("known correction target should update the existing memory")
+        if not target_id and "store" not in decision:
+            errors.append("new correction without a target should be stored as a correction")
+
+    return errors
+
+
+def validate_readonly_audit(scenario: dict) -> list[str]:
+    errors = []
+    scope = normalize(scenario.get("scope"))
+    action = normalize(scenario.get("action"))
+    report = normalize(scenario.get("report"))
+
+    if "bulk" in scope or "migration" in scope or "cleanup" in scope:
+        if "write" in action or "update" in action or "delete" in action:
+            errors.append("bulk memory cleanup must start with read-only audit, not writes")
+        for phrase in ("candidate", "risk", "recommendation"):
+            if phrase not in report:
+                errors.append(f"read-only audit report missing {phrase}")
+
+    return errors
+
+
 CASES: list[dict] = [
     {
         "id": "KO-001",
@@ -255,6 +304,80 @@ CASES: list[dict] = [
         },
         "should_pass": False,
         "why": "Silent memory loss recreates the context problems the Agent OS is meant to prevent.",
+    },
+    {
+        "id": "KO-010",
+        "name": "duplicate memory should update",
+        "validator": validate_dedupe_decision,
+        "payload": {
+            "similar_memory_id": "mem_1234",
+            "similarity": 0.91,
+            "decision": "update existing memory mem_1234 with sharper wording",
+        },
+        "should_pass": True,
+        "why": "High-similarity memories should update or skip instead of creating duplicates.",
+    },
+    {
+        "id": "KO-011",
+        "name": "duplicate memory stored again rejected",
+        "validator": validate_dedupe_decision,
+        "payload": {
+            "similar_memory_id": "mem_1234",
+            "similarity": 0.91,
+            "decision": "store a new memory",
+        },
+        "should_pass": False,
+        "why": "Storing a near-duplicate makes Koda noisier and weaker.",
+    },
+    {
+        "id": "KO-012",
+        "name": "correction updates known target",
+        "validator": validate_correction_update,
+        "payload": {
+            "is_correction": True,
+            "target_memory_id": "mem_5678",
+            "source": "correction",
+            "decision": "update existing memory mem_5678",
+        },
+        "should_pass": True,
+        "why": "Corrections should fix the known stale memory instead of adding conflicting truth.",
+    },
+    {
+        "id": "KO-013",
+        "name": "correction with wrong source rejected",
+        "validator": validate_correction_update,
+        "payload": {
+            "is_correction": True,
+            "target_memory_id": "mem_5678",
+            "source": "auto-captured",
+            "decision": "update existing memory mem_5678",
+        },
+        "should_pass": False,
+        "why": "User corrections must be marked as corrections for auditability.",
+    },
+    {
+        "id": "KO-014",
+        "name": "bulk cleanup starts with read-only audit",
+        "validator": validate_readonly_audit,
+        "payload": {
+            "scope": "bulk memory cleanup",
+            "action": "read-only audit",
+            "report": "candidate stale memories, risk, recommendation",
+        },
+        "should_pass": True,
+        "why": "Memory migration or cleanup should report candidates and risks before changing Koda.",
+    },
+    {
+        "id": "KO-015",
+        "name": "bulk cleanup writes first rejected",
+        "validator": validate_readonly_audit,
+        "payload": {
+            "scope": "bulk memory cleanup",
+            "action": "update and delete memories",
+            "report": "candidate stale memories",
+        },
+        "should_pass": False,
+        "why": "Bulk memory work should not mutate Koda before a read-only audit.",
     },
 ]
 
