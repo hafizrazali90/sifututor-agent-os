@@ -104,7 +104,9 @@ future agent or developer understands the product repo.
 ## Local Project Profile
 
 Each product repo should eventually have a short local profile in its
-`AGENTS.md`, `CLAUDE.md`, or a linked project doc.
+`AGENTS.md`, `CLAUDE.md`, or a linked project doc. Draft profiles may live under
+`docs/agent-playbooks/project-profiles/` first when the target repo should not
+be edited yet.
 
 Use [templates/project-profile.md](templates/project-profile.md) as the reusable
 shape. Keep the final profile close to the product repo so agents can find it
@@ -243,6 +245,8 @@ Ask Hafiz before:
 Save to:
 
 - product `AGENTS.md` or linked project doc for the local project profile
+- umbrella `docs/agent-playbooks/project-profiles/` for draft profiles that are
+  not ready to promote into a product repo yet
 - `docs/agent-playbooks/agent-os-rollout-readiness.md` for readiness rules
 - `docs/agent-playbooks/agent-os-installation.md` for installer behavior
 - Session Map for current adoption progress

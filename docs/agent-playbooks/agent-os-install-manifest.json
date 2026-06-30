@@ -41,6 +41,8 @@
     "docs/agent-playbooks/related-impact-audit.md",
     "docs/agent-playbooks/agent-os-installation.md",
     "docs/agent-playbooks/agent-os-install-manifest.json",
+    "docs/agent-playbooks/project-profiles/README.md",
+    "docs/agent-playbooks/project-profiles/sifu-tutor.md",
     "docs/agent-playbooks/templates/profile-assignment-record.md",
     "docs/agent-playbooks/templates/project-profile.md",
     "scripts/agent-checks/agent-os-health.sh",
