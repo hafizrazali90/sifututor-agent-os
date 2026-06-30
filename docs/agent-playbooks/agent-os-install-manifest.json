@@ -6,6 +6,7 @@
     "AGENTS.md",
     ".codex/config.toml",
     "docs/agent-playbooks/agent-os.md",
+    "docs/agent-playbooks/agent-os-architecture-map.md",
     "docs/agent-playbooks/agent-os-infrastructure.md",
     "docs/agent-playbooks/agent-os-skill-registry.md",
     "docs/agent-playbooks/multi-agent-adapter-workflow.md",

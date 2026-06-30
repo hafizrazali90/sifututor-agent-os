@@ -164,6 +164,7 @@ Read these as the core internal kit:
 
 | Layer | Source |
 | --- | --- |
+| Human-first architecture map | [agent-os-architecture-map.md](agent-os-architecture-map.md) |
 | Full infrastructure map | [agent-os-infrastructure.md](agent-os-infrastructure.md) |
 | Claude/Codex parity contract | [agent-os-parity-contract.md](agent-os-parity-contract.md) |
 | Roles and responsibilities | [agent-os-roles.md](agent-os-roles.md) |
@@ -192,6 +193,11 @@ Read these as the core internal kit:
 Use [agent-os-research.md](agent-os-research.md) as the living research note for
 external references, source-backed design lessons, and the distributable staff
 starter-kit direction.
+
+Use [agent-os-architecture-map.md](agent-os-architecture-map.md) when the Agent
+OS feels confusing or too deep in details. It explains the whole system in
+human-first language before diving into the infrastructure map, workflow
+playbooks, skills, hooks, memory, and evidence rules.
 
 Use [agent-os-infrastructure.md](agent-os-infrastructure.md) to understand how
 Agent OS pieces fit together: hooks, workflow skills, playbooks, guards, Koda,
