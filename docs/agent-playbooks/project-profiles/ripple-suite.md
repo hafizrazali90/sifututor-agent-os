@@ -7,8 +7,8 @@ Plain meaning:
 
 ```text
 This tells the shared Agent OS how Ripple Suite actually works.
-It is verified as an umbrella project profile, but it is not yet promoted into
-the product repo and it is not yet a developer-staff rollout profile.
+It is verified as an umbrella project profile and linked from the product repo,
+but it is not yet a developer-staff rollout profile.
 ```
 
 ## Profile Status
@@ -16,7 +16,7 @@ the product repo and it is not yet a developer-staff rollout profile.
 | Field | Value |
 | --- | --- |
 | Project | `ripple-suite` |
-| Adoption state | `profile verified` |
+| Adoption state | `profile verified; linked from product repo` |
 | Last verified | `2026-06-30 against clean origin/main checkout af0222b` |
 | Verified by | `Codex` |
 | Main owner | `Hafiz / Sifututor Engineering` |
@@ -25,9 +25,9 @@ the product repo and it is not yet a developer-staff rollout profile.
 This is verified as an umbrella profile because it was checked against a clean
 temporary worktree from `origin/main` at `af0222b`, with safe command-manifest
 readback, testing-manifest readback, deployment-doc readback, and Agent OS
-install dry-run evidence. It is not yet `ready for developer staff use` because
-the profile has not been promoted or linked inside the product repo, optional
-local Agent OS baseline files are still missing, and product test/build commands
+install dry-run evidence. It is now linked from product `AGENTS.md` and
+`CLAUDE.md`. It is not yet `ready for developer staff use` because optional
+local Agent OS baseline files are still missing and product test/build commands
 were not executed as readiness proof.
 
 ## Plain Summary
@@ -165,7 +165,7 @@ prepared only, deployed, smoke checked, monitored, or accepted/closed.
 | --- | --- | --- |
 | Agent OS install dry-run reported two optional baseline files that would be created. | Baseline is not fully applied in the product repo. | Decide whether to apply missing optional baseline files in a separate approved product-repo adoption task. |
 | Full product test/build commands were not executed. | Profile is verified for orientation, but not a fresh readiness proof for staff/builder rollout. | Run selected product checks before declaring ready for internal agent or developer staff use. |
-| Product profile is currently in umbrella docs, not product repo. | Agents editing only `ripple-suite` may not see this profile first. | Promote or link the profile from product `AGENTS.md`/`CLAUDE.md` after Hafiz approves product repo edits. |
+| Product profile lives in umbrella docs and is linked from product `AGENTS.md`/`CLAUDE.md`. | Agents can discover the profile, but the product repo still depends on the umbrella workspace path. | Decide later whether to copy a small local profile into the product repo for standalone use, or keep the umbrella profile as the shared source. |
 | Local checkout was on a stale feature branch with gone upstream when checked. | Current local branch state should not be used as product readiness evidence. | Use clean `origin/main` worktrees for profile/readiness checks until the local branch is reset or intentionally resumed. |
 
 ## Verification Notes
@@ -196,11 +196,9 @@ Still unknown:
 - Whether all listed commands pass on the current branch when executed.
 - Whether missing optional Agent OS baseline files should be applied to
   `ripple-suite` now or later.
-- Whether the umbrella profile should be promoted or linked inside the product
-  repo before developer-staff use.
 
 Recommended next:
 
-- Decide whether to promote/link this profile into the product repo, apply the
-  optional local Agent OS baseline files, or continue drafting profiles for the
-  next product repo first.
+- Decide whether to apply the optional local Agent OS baseline files, copy a
+  standalone profile into the product repo, or continue drafting profiles for
+  the next product repo first.
