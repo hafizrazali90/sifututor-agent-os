@@ -175,6 +175,51 @@ scoped repo changes, and Advanced Operations only after Hafiz approves the
 person, scope, tool, and boundary. Ordinary non-developer staff stay in Teams
 Planner intake.
 
+## Profile Activation Checklist
+
+Use this before saying a profile is ready.
+
+Plain meaning:
+
+```text
+Choosing a profile is not enough. The needed tools must be connected, checked,
+and limited to that profile.
+```
+
+1. **Name the person/agent and profile.**
+   Example: `Nadia - Developer staff Reader/QA for sifu-tutor`.
+2. **Name the project or service boundary.**
+   Example: `sifu-tutor only`, `GitHub read only`, or `Planner intake only`.
+3. **Connect only the tools needed for the profile.**
+   Do not enable Drive, GitHub write, Koda write, deploy, or monitoring just
+   because they exist.
+4. **Run the smallest safe probe/check for each connected tool.**
+   Use the capability probes in this guide where available.
+5. **Record the capability state.**
+   Use `available`, `fallback`, `unknown`, `not_connected`, `blocked`, or
+   `forbidden` from [agent-os-capability-model.md](agent-os-capability-model.md).
+6. **Explain what is still blocked.**
+   A connected tool may still be blocked by profile, approval, missing
+   project profile, missing credentials, or critical-lane rules.
+7. **Run a small real task before expanding access.**
+   Reader/QA should produce evidence. Builder should make a scoped local
+   change and stop before push/PR/deploy unless approved.
+8. **Review before escalation.**
+   Escalate only after the profile worked safely and the next tool is truly
+   needed.
+
+Activation report shape:
+
+```text
+Profile: <person/agent> - <profile> - <project/service>
+Connected: <tools connected and probed>
+Available: <what works now>
+Blocked: <what is intentionally not allowed>
+Unknown: <what was not checked or not connected>
+Next safe task: <small task to prove this profile works>
+Escalation needed: <none or exact approval needed>
+```
+
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 

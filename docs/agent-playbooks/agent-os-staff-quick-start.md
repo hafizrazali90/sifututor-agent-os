@@ -36,6 +36,11 @@ Before installing or enabling tools, choose the profile from
 Ordinary non-developer staff are not in these profiles. They use Teams Planner
 only.
 
+After choosing the profile, use the Profile Activation Checklist in
+[agent-os-installation.md](agent-os-installation.md). A profile is not ready
+until the required tools are connected, probed, and reported as available,
+fallback, unknown, blocked, or forbidden.
+
 ## Which Path To Use
 
 | Developer staff need | Recommended path | What they can do first |
