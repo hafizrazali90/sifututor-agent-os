@@ -560,6 +560,43 @@ right repo profile and checks is not ready for the same work as an internal
 agent. An "agent" with a connector is still blocked from push, deploy, critical
 implementation, or destructive action unless the approval boundary includes it.
 
+## Profile Lifecycle
+
+Profiles are not permanent entitlements. They are working access for a purpose.
+
+Plain meaning:
+
+```text
+Access should have a reason, a boundary, and a review point.
+If the reason is gone, reduce the access.
+```
+
+| Stage | Meaning | Required action |
+| --- | --- | --- |
+| Request | Someone needs access for a job. | Name person/agent, project, goal, profile, and why the lower profile is not enough. |
+| Activate | Tools are connected and checked. | Follow the Profile Activation Checklist and record capability states. |
+| Use | Work happens inside the profile. | Stay inside profile limits and report evidence/blocked actions clearly. |
+| Review | Decide whether access is still needed. | Check recent use, risk, project status, failed guards, and whether a lower profile now works. |
+| Downgrade | Less access is enough. | Remove write/broad/advanced tools and keep only needed read/check capability. |
+| Suspend | Access should pause. | Disable or stop using the profile when need, identity, risk, or tool state is unclear. |
+| Upgrade | More access is needed. | Require Hafiz approval naming person, scope, tool, boundary, evidence, and review point. |
+| Close | The access purpose is finished. | Record final state, remove temporary tools, and keep only durable lessons. |
+
+Review triggers:
+
+- project or task ended
+- person changed role or project
+- profile has not been used recently
+- tool connection failed or became unknown
+- guard/check failed
+- staff/user report suggests misuse or confusion
+- requested action crosses push, PR, merge, deploy, production, critical,
+  destructive, admin, or secret boundaries
+- a lower profile can now do the job
+
+Do not upgrade by momentum. Upgrade only when the current profile cannot
+complete the approved work safely.
+
 ## Koda Access By Agent
 
 Use the most reliable interface for each agent.

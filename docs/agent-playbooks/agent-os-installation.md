@@ -220,6 +220,50 @@ Next safe task: <small task to prove this profile works>
 Escalation needed: <none or exact approval needed>
 ```
 
+## Profile Review Checklist
+
+Use this when reviewing, downgrading, suspending, upgrading, or closing a
+profile.
+
+Plain meaning:
+
+```text
+Do not let access stay high just because it was once needed.
+```
+
+Review:
+
+1. What profile is active now?
+2. What project/service boundary does it cover?
+3. Which tools are still connected?
+4. Which tools were actually used recently?
+5. Did any probe, guard, health check, or workflow check fail?
+6. Is the original reason for access still active?
+7. Can a lower profile do the job now?
+8. Is any requested escalation tied to a specific approved task?
+
+Decision:
+
+| Decision | Use when | Action |
+| --- | --- | --- |
+| Keep | Same profile is still needed and checks are healthy. | Keep profile and set the next review point. |
+| Downgrade | Less access is enough. | Remove write/broad/advanced tools and record the lower profile. |
+| Suspend | Need, identity, tool state, or risk is unclear. | Stop using the profile until clarified. |
+| Upgrade | Current profile cannot complete approved work safely. | Get Hafiz approval for person, scope, tool, boundary, evidence, and review point. |
+| Close | Work is done or access is no longer needed. | Remove temporary tools and keep only durable lessons. |
+
+Profile review report shape:
+
+```text
+Profile reviewed: <person/agent> - <profile> - <project/service>
+Current tools: <connected/probed tools>
+Recent use: <what was actually used>
+Decision: <keep | downgrade | suspend | upgrade | close>
+Why: <plain reason>
+Next review: <date/event/none>
+Approval needed: <none or exact approval>
+```
+
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 

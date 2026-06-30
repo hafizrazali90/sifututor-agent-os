@@ -107,6 +107,10 @@ Choose the narrowest profile from
 Do not give a builder profile just because the person is technical. Match the
 profile to the actual job.
 
+Every developer-staff profile needs a review point. Use the Profile Review
+Checklist in [agent-os-installation.md](agent-os-installation.md) before
+keeping, downgrading, suspending, upgrading, or closing access.
+
 Include:
 
 - repo write access
