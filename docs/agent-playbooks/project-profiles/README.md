@@ -21,4 +21,4 @@ it before editing.
 
 | Project | Profile | State |
 | --- | --- | --- |
-| `sifu-tutor` | [sifu-tutor.md](sifu-tutor.md) | profile drafted |
+| `sifu-tutor` | [sifu-tutor.md](sifu-tutor.md) | profile verified in umbrella; not yet promoted into product repo |

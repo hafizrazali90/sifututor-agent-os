@@ -7,8 +7,8 @@ Plain meaning:
 
 ```text
 This tells the shared Agent OS how SIMS actually works.
-It is a draft profile until the remaining gaps are verified from the current
-repo state and safe command output.
+It is verified as an umbrella project profile, but it is not yet promoted into
+the product repo and it is not yet a developer-staff rollout profile.
 ```
 
 ## Profile Status
@@ -16,16 +16,18 @@ repo state and safe command output.
 | Field | Value |
 | --- | --- |
 | Project | `sifu-tutor` |
-| Adoption state | `profile drafted` |
-| Last verified | `not yet; drafted 2026-06-30` |
-| Verified by | `not verified; drafted by Codex` |
+| Adoption state | `profile verified` |
+| Last verified | `2026-06-30 against clean origin/main checkout ae199ce97` |
+| Verified by | `Codex` |
 | Main owner | `Hafiz / Sifututor Engineering` |
 | Profile location | Umbrella profile: `docs/agent-playbooks/project-profiles/sifu-tutor.md`; product rules: `sifu-tutor/AGENTS.md`, `sifu-tutor/CLAUDE.md` |
 
-This is not yet `profile verified` because product commands were identified
-from docs/manifests but not executed in this pass, the local `sifu-tutor`
-worktree had existing uncommitted changes, and the Agent OS install dry-run
-reported optional local baseline files that would be created in apply mode.
+This is verified as an umbrella profile because it was checked against a clean
+temporary worktree from `origin/main` at `ae199ce97`, with safe command-manifest
+readback and Agent OS install dry-run evidence. It is not yet `ready for
+developer staff use` because the profile has not been promoted or linked inside
+the product repo, optional local Agent OS baseline files are still missing, and
+product test/build commands were not executed as readiness proof.
 
 ## Plain Summary
 
@@ -50,9 +52,10 @@ together.
 
 ## Commands
 
-Commands below are identified from `composer.json`, `package.json`, `AGENTS.md`,
-`CLAUDE.md`, and deployment/QA docs. Marked `yes` means the command is present
-in the repo docs or manifests, not that it was executed in this profile pass.
+Commands below were verified from a clean `origin/main` checkout using
+`npm pkg get scripts`, `composer validate --no-check-publish`, and
+`composer run-script --list`. Marked `yes` means the command exists in current
+repo manifests or docs. It does not mean the full test/build command was run.
 
 | Purpose | Command | Verified? | Notes |
 | --- | --- | --- | --- |
@@ -156,15 +159,15 @@ accepted/closed.
 
 | Gap | Impact | Recommended next |
 | --- | --- | --- |
-| Product worktree had existing dirty files during this profile pass. | The profile should not be treated as final proof of the current product repo state. | Re-run profile verification from a clean/current `sifu-tutor` branch before staff/builder rollout. |
 | Agent OS install dry-run reported optional baseline files that would be created. | Baseline is not fully applied in the product repo. | Decide whether to apply missing baseline files in a separate approved product-repo adoption task. |
 | No `TESTING.md` found at repo root. | Agent OS test coverage manifest workflow cannot use a root manifest yet. | Decide whether SIMS should add a root `TESTING.md` or rely on existing `docs/qa/` and E2E docs. |
-| Commands were identified from docs/manifests, not executed. | Profile is drafted, not fully verified. | Run safe command verification from an appropriate branch/worktree. |
+| Full product test/build commands were not executed. | Profile is verified for orientation, but not a fresh readiness proof for staff/builder rollout. | Run selected product checks before declaring ready for internal agent or developer staff use. |
 | Product profile is currently in umbrella docs, not product repo. | Agents editing only `sifu-tutor` may not see this profile first. | Promote or link the profile from product `AGENTS.md`/`CLAUDE.md` after Hafiz approves product repo edits. |
 
 ## Verification Notes
 
-Checked on 2026-06-30:
+Checked on 2026-06-30 against a temporary clean worktree from `origin/main` at
+`ae199ce97`:
 
 - `sifu-tutor/AGENTS.md`
 - `sifu-tutor/CLAUDE.md`
@@ -179,6 +182,10 @@ Checked on 2026-06-30:
 - `sifu-tutor/docs/qa/qa-framework.md`
 - `sifu-tutor/docs/qa/manual-qa-standard.md`
 - `scripts/agent-checks/agent-os-install.sh --target sifu-tutor`
+- `npm pkg get scripts`
+- `composer validate --no-check-publish`
+- `composer run-script --list`
+- E2E path inventory under `e2e/` and `tests/e2e/`
 
 Install dry-run result:
 
@@ -188,7 +195,7 @@ AGENT OS INSTALL: PASS (4 warning(s), 0 file(s) created)
 
 Still unknown:
 
-- Whether all listed commands pass on the current branch.
+- Whether all listed commands pass on the current branch when executed.
 - Whether missing optional Agent OS baseline files should be applied to
   `sifu-tutor` now or later.
 - Whether a root `TESTING.md` should be introduced or existing QA docs should
@@ -196,6 +203,6 @@ Still unknown:
 
 Recommended next:
 
-- Decide whether to verify this profile from a clean/current `sifu-tutor`
-  branch and promote/link it into the product repo, or continue drafting
-  profiles for the next product repo first.
+- Decide whether to promote/link this profile into the product repo, apply the
+  optional local Agent OS baseline files, or continue drafting profiles for the
+  next product repo first.
