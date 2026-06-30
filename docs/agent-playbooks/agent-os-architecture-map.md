@@ -148,7 +148,7 @@ These are not failures. They are open construction areas.
 
 | Area | What is missing | Why it matters |
 | --- | --- | --- |
-| Private profile registry operations | We have the rule and template, but not the exact daily routine for creating, reviewing, and cleaning real entries. | Without this, access records can become stale or confusing. |
+| Private profile registry operations | Built locally as an operations playbook. | The next real-use step is to create/review actual private records only when needed. |
 | Staff/developer rollout | Parked by Hafiz for now. | The core OS should be stable before developer staff use it. Ordinary staff stay in Teams Planner. |
 | Project-by-project adoption | Some repos still need verified local profiles. | A shared Agent OS needs local project commands, evidence, deploy path, and critical-lane rules. |
 | More eval coverage | Existing checks cover important behaviors, but more real scenarios can be added. | Rules are stronger when checks catch drift. |
@@ -237,12 +237,10 @@ Explain why that part matters before continuing.
 Use this order when continuing the Agent OS build:
 
 1. Architecture map and current status.
-2. Private profile registry operations.
-3. Project adoption profiles.
-4. Staff/developer rollout after core stability.
-5. More evals and dashboard improvements.
-6. Distribution kit for other LLMs or staff.
+2. Project adoption profiles.
+3. Staff/developer rollout after core stability.
+4. More evals and dashboard improvements.
+5. Distribution kit for other LLMs or staff.
 
 This order is not permanent. It is the current practical path from confusion to
 control.
-

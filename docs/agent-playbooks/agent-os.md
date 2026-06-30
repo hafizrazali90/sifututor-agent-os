@@ -178,6 +178,7 @@ Read these as the core internal kit:
 | Context accuracy | [context-authority.md](context-authority.md) |
 | Memory | [agent-os-memory.md](agent-os-memory.md), [agent-os-memory-architecture.md](agent-os-memory-architecture.md) |
 | Tools and capability | [agent-os-capability-model.md](agent-os-capability-model.md) |
+| Profile registry operations | [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
@@ -250,6 +251,10 @@ active memory pack direction.
 Use [agent-os-capability-model.md](agent-os-capability-model.md) to decide what
 an agent can actually do based on connected tools, fallback paths, approval
 gates, and forbidden boundaries.
+
+Use [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md)
+when creating, updating, reviewing, auditing, downgrading, suspending, or closing
+private profile assignment records.
 
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right workflow intensity: Light, Medium, Full, or Critical.

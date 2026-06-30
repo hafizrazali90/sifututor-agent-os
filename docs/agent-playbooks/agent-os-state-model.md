@@ -205,6 +205,10 @@ Do not commit that file. It may name people, projects, profiles, review points,
 and tool states, but it must not contain passwords, tokens, API keys, `.env`
 values, raw production data, or private payloads.
 
+Use [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md)
+for the daily routine: create, update, review, audit, downgrade, suspend, or
+close private profile records.
+
 ## Work Intake And Task State Rules
 
 Use this when a request first becomes possible work.

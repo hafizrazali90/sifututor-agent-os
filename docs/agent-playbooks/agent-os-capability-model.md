@@ -597,6 +597,12 @@ Review triggers:
 Do not upgrade by momentum. Upgrade only when the current profile cannot
 complete the approved work safely.
 
+For real assignment records, use
+[agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md).
+The capability model defines the rules; the registry operations playbook defines
+how private records are created, reviewed, audited, downgraded, suspended, and
+closed.
+
 ## Koda Access By Agent
 
 Use the most reliable interface for each agent.

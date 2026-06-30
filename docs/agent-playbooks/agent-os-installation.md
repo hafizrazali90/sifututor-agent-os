@@ -281,6 +281,11 @@ trail such as chat, GitHub issue, PR, or handoff. Do not store real profile
 assignments in Koda unless the content is a durable rule rather than a current
 access state.
 
+Use [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md)
+for the actual operating routine: when to create records, when to review them,
+how to summarize audits, and how to close or downgrade access without leaking
+private assignment details.
+
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 

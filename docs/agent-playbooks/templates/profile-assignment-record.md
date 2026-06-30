@@ -12,6 +12,10 @@ Recommended private registry:
 Do not store secrets, tokens, `.env*` values, raw credentials, customer private
 data, or production payloads in this record.
 
+Follow `docs/agent-playbooks/agent-os-profile-registry-operations.md` when
+creating, updating, reviewing, auditing, downgrading, suspending, or closing a
+real record.
+
 ## Record
 
 | Field | Value |
