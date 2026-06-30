@@ -492,6 +492,74 @@ not-connected tools need a plain fallback, blocked tools need approval,
 critical tools need the right gate, staff capability starts least-privilege,
 and forbidden boundaries stay forbidden even when someone asks for them.
 
+## Tool Permission Profiles
+
+Use permission profiles to decide which tools a person, agent, or staff member
+should start with. Do not give everyone the same connector set.
+
+Plain meaning:
+
+```text
+Give the person or agent enough tools to do the job, not every tool that exists.
+More access should be earned by need, evidence, and approval.
+```
+
+| Profile | Who uses it | Default tools | Blocked by default |
+| --- | --- | --- | --- |
+| Owner / Hafiz | Hafiz with trusted agents | Broad read evidence, repo/docs, Koda, GitHub, Planner context, Drive docs, monitoring reads when relevant, local checks. | Secrets, repo `.env*`, `live/` edits, destructive actions, and any external-state action not explicitly approved in the current session. |
+| Internal agent | Codex/Claude working with Hafiz | Repo read/write in scoped files, safe local checks, Koda, approved read-only evidence lanes, browser/Playwright, GitHub/Planner/Drive/monitoring probes as relevant. | Push, PR, merge, deploy, production mutation, critical-lane implementation, broad unrelated reads, and secret access. |
+| Developer staff - reader/QA | Developer staff checking or reproducing work | Repo/docs read, local checks, QA docs, browser/Playwright where configured, issue/PR read, local memory fallback. | Code writes, commits, push, PR, deploy, production data, Koda write, broad service connectors. |
+| Developer staff - builder | Trusted developer staff doing scoped code work | Repo read/write, branch work, local tests, issue/PR read, project profile, safe evidence tools. | Push/PR/merge/deploy without approval, production access, secrets, critical-lane implementation without diagnosis and approval. |
+| Support / ordinary staff | Non-developer staff | Microsoft Teams Planner intake only: report symptoms, screenshots, reproduction notes, workflow feedback. | Agent OS install, repo access, code tools, Koda write, GitHub write, production/deploy tools, secrets. |
+| Advanced operations | Explicitly approved person/session only | Narrow tools for the approved operation, read-only diagnosis first, then approved write/deploy/admin path. | Anything outside the approved person, scope, environment, and time boundary. |
+
+Default profile rule:
+
+```text
+Start lower. Escalate only when the work requires it and Hafiz approves the
+person, project, tool, scope, and boundary.
+```
+
+Profile does not create access by itself:
+
+```text
+Connection gives capability.
+Profile gives permission.
+Approval gives authority.
+Probe gives current proof that the tool works.
+```
+
+Use this sequence:
+
+1. Pick the profile.
+2. Connect only the tools needed for that profile.
+3. Probe/check the tools before claiming they work.
+4. Use the tools only inside the profile limits.
+5. Stop at approval gates for push, PR, merge, deploy, production, critical
+   lanes, destructive actions, and external-state changes.
+
+Example:
+
+```text
+A developer staff member may have the Builder profile, but if GitHub is not
+connected, they still cannot open PRs. If GitHub is connected, the profile may
+allow PR reading, but push or merge still needs approval.
+```
+
+Escalation must name:
+
+- who needs the access
+- which project or service it affects
+- what exact tool/capability is needed
+- whether it is read, write, admin, critical, or destructive
+- what evidence will prove the work
+- when the access should stop or be reviewed again
+
+Do not use a role label as proof of capability. A "developer" without the
+right repo profile and checks is not ready for the same work as an internal
+agent. An "agent" with a connector is still blocked from push, deploy, critical
+implementation, or destructive action unless the approval boundary includes it.
+
 ## Koda Access By Agent
 
 Use the most reliable interface for each agent.
@@ -506,25 +574,29 @@ Use the most reliable interface for each agent.
 The CLI is a local interface to the same Koda memory backend. It does not weaken
 Koda safety rules.
 
-## Staff Rollout Implication
+## Developer Staff Rollout Implication
 
-Staff can use the Agent OS, but staff permissions should be narrower by
-default.
+Developer staff can use the Agent OS, but their permissions should be narrower
+than Hafiz/internal-agent permissions by default. Ordinary non-developer staff
+stay in Teams Planner intake unless Hafiz explicitly changes the rollout model.
 
-Typical staff capability:
+Typical developer-staff capability:
 
-- report issues
+- read safe docs
+- inspect scoped repo files
 - add reproduction notes
 - follow QA checklists
-- attach screenshots
-- read safe docs
+- run local non-destructive checks
+- prepare scoped code changes only when approved for builder profile
 
-Staff should not by default:
+Developer staff should not by default:
 
 - push code
 - merge
 - deploy
 - read secrets
+- write Koda
+- access production systems
 - close engineering issues without evidence
 
 ## Current Decision

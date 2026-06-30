@@ -96,6 +96,17 @@ verify the report through the normal workflow before coding.
 
 Give this only to developer staff who need to work in another project repo.
 
+Choose the narrowest profile from
+[agent-os-capability-model.md](agent-os-capability-model.md):
+
+- **Developer staff - reader/QA** for reproduction, checks, QA evidence, and
+  issue/PR reading.
+- **Developer staff - builder** only when the person needs scoped repo writes
+  and can follow the normal verify/QA/review/commit gates.
+
+Do not give a builder profile just because the person is technical. Match the
+profile to the actual job.
+
 Include:
 
 - repo write access

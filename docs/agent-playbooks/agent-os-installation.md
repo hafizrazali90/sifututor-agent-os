@@ -168,6 +168,13 @@ Start staff with the smallest safe setup:
 4. Koda or a documented local memory fallback.
 5. No production, deploy, payment, auth, or secret access by default.
 
+Before enabling tools, pick the permission profile from
+[agent-os-capability-model.md](agent-os-capability-model.md). Use Reader/QA for
+developer staff who only need evidence and reproduction, Builder only for
+scoped repo changes, and Advanced Operations only after Hafiz approves the
+person, scope, tool, and boundary. Ordinary non-developer staff stay in Teams
+Planner intake.
+
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 

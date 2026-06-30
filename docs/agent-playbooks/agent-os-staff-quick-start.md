@@ -24,6 +24,18 @@ Developer staff should not get production, deploy, payment, auth, database, or
 secret access by default. Add those only when Hafiz explicitly approves the
 need and the access can be audited.
 
+Before installing or enabling tools, choose the profile from
+[agent-os-capability-model.md](agent-os-capability-model.md):
+
+| Profile | Use when | Starting access |
+| --- | --- | --- |
+| Reader/QA | The developer staff member is reproducing, checking, reviewing, or gathering evidence. | Repo/docs read, local checks, QA docs, issue/PR read, browser/Playwright if configured. |
+| Builder | The developer staff member needs to make scoped code changes. | Reader/QA access plus scoped repo write and normal verify/QA/review/commit gates. |
+| Advanced operations | The work touches deploy, production, payment, auth, invoice, commission, migration, mobile API contract, or admin systems. | No default access; requires Hafiz approval for person, scope, tool, and boundary. |
+
+Ordinary non-developer staff are not in these profiles. They use Teams Planner
+only.
+
 ## Which Path To Use
 
 | Developer staff need | Recommended path | What they can do first |
