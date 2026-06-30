@@ -150,7 +150,7 @@ These are not failures. They are open construction areas.
 | --- | --- | --- |
 | Private profile registry operations | Built locally as an operations playbook. | The next real-use step is to create/review actual private records only when needed. |
 | Staff/developer rollout | Parked by Hafiz for now. | The core OS should be stable before developer staff use it. Ordinary staff stay in Teams Planner. |
-| Project-by-project adoption | `sifu-tutor` profile is verified in umbrella docs; it still needs promotion/linking into the product repo before rollout. | A shared Agent OS needs local project commands, evidence, deploy path, and critical-lane rules. |
+| Project-by-project adoption | `sifu-tutor` and `ripple-suite` profiles are verified in umbrella docs; both still need promotion/linking into product repos before rollout. | A shared Agent OS needs local project commands, evidence, deploy path, and critical-lane rules. |
 | More eval coverage | Existing checks cover important behaviors, but more real scenarios can be added. | Rules are stronger when checks catch drift. |
 | Cleaner human dashboard | Session Map HTML exists, but the overall Agent OS map can become easier to scan. | Hafiz should not need to read walls of text to know where we are. |
 | Long-term distribution kit | Not the priority yet. | Build for ourselves first, then package for staff or other LLMs later. |
@@ -237,7 +237,7 @@ Explain why that part matters before continuing.
 Use this order when continuing the Agent OS build:
 
 1. Architecture map and current status.
-2. Decide whether to verify/promote the `sifu-tutor` profile from a clean branch, or draft the next repo profile.
+2. Decide whether to promote/link the verified `sifu-tutor` and `ripple-suite` profiles into their product repos, or draft the next repo profile.
 3. Staff/developer rollout after core stability.
 4. More evals and dashboard improvements.
 5. Distribution kit for other LLMs or staff.

@@ -22,3 +22,4 @@ it before editing.
 | Project | Profile | State |
 | --- | --- | --- |
 | `sifu-tutor` | [sifu-tutor.md](sifu-tutor.md) | profile verified in umbrella; not yet promoted into product repo |
+| `ripple-suite` | [ripple-suite.md](ripple-suite.md) | profile verified in umbrella; not yet promoted into product repo |
