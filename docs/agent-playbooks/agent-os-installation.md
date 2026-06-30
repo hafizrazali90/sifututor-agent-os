@@ -264,6 +264,23 @@ Next review: <date/event/none>
 Approval needed: <none or exact approval>
 ```
 
+## Profile Assignment Records
+
+Use [templates/profile-assignment-record.md](templates/profile-assignment-record.md)
+when creating a real profile record.
+
+Recommended private registry:
+
+```text
+~/.config/sifututor/agent-os/profile-assignments.md
+```
+
+Public repo docs should define the profiles, lifecycle, and template. Real
+assignments should live in the private registry or a task-specific approval
+trail such as chat, GitHub issue, PR, or handoff. Do not store real profile
+assignments in Koda unless the content is a durable rule rather than a current
+access state.
+
 Give extra tools only when the staff member has a real need and the capability
 can be checked.
 

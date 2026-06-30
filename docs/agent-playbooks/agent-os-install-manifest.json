@@ -39,6 +39,7 @@
     "docs/agent-playbooks/related-impact-audit.md",
     "docs/agent-playbooks/agent-os-installation.md",
     "docs/agent-playbooks/agent-os-install-manifest.json",
+    "docs/agent-playbooks/templates/profile-assignment-record.md",
     "scripts/agent-checks/agent-os-health.sh",
     "scripts/agent-checks/agent-os-install.sh",
     "scripts/agent-checks/agent-os-eval-runner.py",

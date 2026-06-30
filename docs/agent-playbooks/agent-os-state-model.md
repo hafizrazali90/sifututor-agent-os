@@ -131,6 +131,9 @@ where it will help future work the most.
 | It is exact code/docs that changed | Git commit |
 | It is multiple fixes in one chat with separate PR/merge/deploy/live states | Session Release Ledger |
 | It is a staff-reported symptom | Planner/support context first, then diagnosis before GitHub |
+| It is the public rule for permission profiles | Agent OS docs, especially `agent-os-capability-model.md` |
+| It is an actual assigned profile for a person/agent | Private profile registry, not public repo docs or Koda |
+| It is task-specific approval to use a stronger profile | Chat/PR/GitHub issue/handoff for that task, with no secrets |
 | It is only a short temporary clarification for this moment | Chat only |
 
 Decision tree:
@@ -169,6 +172,38 @@ GitHub only for execution-ready work.
 If two sources disagree, use [context-authority.md](context-authority.md).
 Plain meaning: route the information to the right home, but do not trust stale
 or conflicting context without checking the source that owns the current truth.
+
+## Profile Record Ownership
+
+Use this when deciding where real permission assignments should live.
+
+Plain meaning:
+
+```text
+Docs define the rules.
+Private records say who currently has which profile.
+Koda remembers durable lessons, not live access assignments.
+```
+
+| Record | Home | Why |
+| --- | --- | --- |
+| Profile definitions | Public Agent OS docs | Shared rules are safe to version and distribute. |
+| Actual person/agent profile assignment | Private profile registry outside the repo | May contain names, project boundaries, and operational access context. |
+| Approved access lanes | `agent-access-map.md` plus scoped local config paths | The map documents lanes without printing secret values. |
+| Tool connection/probe result for a setup | Activation report or private registry | It is current operational state, not a durable rule. |
+| Task-specific escalation approval | Current chat, GitHub issue/PR, or handoff | Approval belongs to the task boundary and should be reviewable. |
+| Durable access policy lesson | Koda plus docs | Future agents should remember behavior-changing rules. |
+| Secrets, tokens, raw credentials, `.env*` values | Nowhere in Agent OS records | Forbidden. Use scoped credential files only through wrappers/probes. |
+
+Recommended private registry path:
+
+```text
+~/.config/sifututor/agent-os/profile-assignments.md
+```
+
+Do not commit that file. It may name people, projects, profiles, review points,
+and tool states, but it must not contain passwords, tokens, API keys, `.env`
+values, raw production data, or private payloads.
 
 ## Work Intake And Task State Rules
 
