@@ -124,7 +124,8 @@ If any of those files already exist, the installer leaves them alone.
 ## Draft The Local Project Profile
 
 After the dry-run check, do not call the repo fully adopted yet. Fill the local
-project profile from [project-adoption.md](project-adoption.md):
+project profile using [templates/project-profile.md](templates/project-profile.md)
+and [project-adoption.md](project-adoption.md):
 
 - purpose and primary users
 - stack/runtime
@@ -141,6 +142,9 @@ Plain meaning:
 The installer proves the basic files exist. The project profile proves the
 agent understands how this repo actually works.
 ```
+
+Use `unknown` for unverified commands, deploy paths, evidence requirements, or
+critical lanes. Do not guess.
 
 ## Verify After Install
 

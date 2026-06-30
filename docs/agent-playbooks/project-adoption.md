@@ -106,7 +106,11 @@ future agent or developer understands the product repo.
 Each product repo should eventually have a short local profile in its
 `AGENTS.md`, `CLAUDE.md`, or a linked project doc.
 
-Use this shape:
+Use [templates/project-profile.md](templates/project-profile.md) as the reusable
+shape. Keep the final profile close to the product repo so agents can find it
+before editing that repo.
+
+Minimum fields:
 
 ```text
 Project:
@@ -140,6 +144,11 @@ focused tests pass, a browser journey or screenshot-backed check proves the
 staff workflow, TESTING.md is updated when needed, and the change is committed.
 It is not live until merge, deploy, smoke, and monitoring evidence prove it.
 ```
+
+Do not mark a profile as verified until the commands, evidence expectations,
+critical lanes, deploy path, and done state have been checked against current
+repo files or safe command output. If a field is unknown, say `unknown` and add
+it to the Known Gaps section.
 
 ## Product Repo Starter Map
 
