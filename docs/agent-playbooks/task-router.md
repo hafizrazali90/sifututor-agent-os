@@ -115,6 +115,24 @@ something better, resolve Claude/Codex workflow drift, or clean up docs, skills,
 hooks, evals, Koda, and Session Map consistency. Plain meaning: do not patch one
 file and call the Agent OS fixed when the behavior depends on several layers.
 
+Use [no-mistakes-lite.md](no-mistakes-lite.md) before saying work is ready,
+done, safe, merge-ready, deploy-ready, or live, and before commit, push, PR,
+merge, deploy, release close-out, save-session, or handoff after meaningful
+work. Plain meaning: one final honesty pass should confirm scope, proof,
+missing evidence, real state, approval boundary, and recommended next action.
+
+Use [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) when
+multiple agents, sessions, branches, PRs, fixes, or long-running tasks may be
+active at the same time. Plain meaning: if two active code tasks may edit the
+same repo, isolate them in separate worktrees or clearly record why the current
+workspace is safe.
+
+Use [autonomous-work-packets.md](autonomous-work-packets.md) when Hafiz asks the
+agent to autopilot, keep going, proceed until done, clean up a whole batch, or
+work for a longer stretch without micro-approval. Plain meaning: approval gates
+define how far the agent may go; autonomous work packets define how the agent
+loops safely while going there.
+
 Use [mission-ledger.md](mission-ledger.md) when the prompt belongs to a bigger
 goal or should be captured for later but is not ready for GitHub yet.
 To keep routing lightweight, use `rg` against `docs/agent-playbooks/mission-ledger`

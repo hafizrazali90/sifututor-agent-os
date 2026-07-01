@@ -205,6 +205,9 @@ Read these as the core internal kit:
 | Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
 | Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
+| Final honesty gate | [no-mistakes-lite.md](no-mistakes-lite.md) |
+| Parallel work and worktrees | [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) |
+| Autonomous work packets | [autonomous-work-packets.md](autonomous-work-packets.md) |
 | Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
 | Bigger goals and remembered follow-ups | [mission-ledger.md](mission-ledger.md), [mission-ledger/README.md](mission-ledger/README.md) |
 | Rollout readiness | [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) |

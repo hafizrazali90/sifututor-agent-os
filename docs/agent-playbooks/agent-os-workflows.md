@@ -1183,6 +1183,12 @@ Another common failure: the agent asks Hafiz to approve push, PR open, CI
 monitoring, and PR summary as four separate steps when one PR-ready boundary
 would be clearer.
 
+Use [autonomous-work-packets.md](autonomous-work-packets.md) when the approved
+boundary requires repeated loops, such as docs cleanup, repeated CI fixes,
+multi-section workflow cleanup, or long-running improvement work. Plain meaning:
+approval gates define how far the work may go; autonomous packets define how
+the agent loops, reports, retries, stops, and saves state inside that boundary.
+
 Commit, push, and PR scenario matrix:
 
 | Scenario | Agent should do | Approval needed | Stop point |

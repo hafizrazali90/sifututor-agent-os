@@ -8,6 +8,11 @@ Use [agent-os-state-model.md](agent-os-state-model.md) for the shared status
 language across local work, commits, PRs, merges, deploys, and live smoke
 evidence.
 
+Use [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) when more
+than one worktree, branch, PR, agent, or long-running task may be active. Plain
+meaning: the ledger should say which workspace owns each fix so no local commit
+or PR gets stranded.
+
 ## Trigger
 
 Start a Session Release Ledger as soon as any of these is true:
@@ -31,6 +36,7 @@ Session Release Ledger
 1. <plain issue title>
    Issue:
    Branch:
+   Worktree:
    Commit:
    PR:
    Tests:
@@ -42,6 +48,7 @@ Session Release Ledger
 2. <plain issue title>
    Issue:
    Branch:
+   Worktree:
    Commit:
    PR:
    Tests:

@@ -108,6 +108,16 @@ Before merging, the agent must confirm:
 
 If any item is missing, stop and explain the practical blocker.
 
+Before push, PR open, CI-ready, or merge-ready claims, apply
+[no-mistakes-lite.md](no-mistakes-lite.md). Plain meaning: outbound automation
+can be bundled, but the final report must still name what is proven, what is
+missing, the real GitHub state, and the next decision.
+
+If multiple worktrees, branches, PRs, agents, or fixes are active, apply
+[parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) before pushing
+or opening a PR. Plain meaning: confirm the exact workspace and branch that
+owns the outbound change so unrelated local work is not shipped accidentally.
+
 ## Close-Out Shape
 
 Use natural language:
@@ -122,4 +132,3 @@ Decision needed: yes, merge approval.
 
 For docs-only or Agent OS work, a shorter close-out is fine as long as it names
 the highest proven state.
-

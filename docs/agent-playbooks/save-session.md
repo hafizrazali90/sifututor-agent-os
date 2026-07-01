@@ -64,6 +64,16 @@ If the session has multiple fixes, branches, PRs, or deploy candidates, include
 or update the Session Release Ledger before saving. Do not let "fixed in code"
 sound like "merged", "deployed", or "live checked".
 
+If the session used multiple worktrees, branches, agents, or parallel tasks, use
+[parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) before saving.
+The save report should name each worktree, branch, dirty state, local-only
+commit, PR, cleanup condition, and next action.
+
+If the session used an autonomous work packet, use
+[autonomous-work-packets.md](autonomous-work-packets.md) before saving. The save
+report should name the finish point, current loop/slice, completed loops,
+failed checks, stop reason, and next loop or decision.
+
 If local commits are not pushed, say that plainly:
 
 ```text
@@ -137,6 +147,10 @@ From the umbrella root:
 git status --short --branch
 scripts/agent-checks/pre-commit-guard.sh
 ```
+
+For Normal Save or Critical Save after meaningful work, apply
+[no-mistakes-lite.md](no-mistakes-lite.md) before the final save report. Plain
+meaning: the next session should inherit an honest state, not a vague "done."
 
 From a product project:
 

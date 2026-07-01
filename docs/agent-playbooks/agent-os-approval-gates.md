@@ -154,6 +154,11 @@ monitoring. Plain meaning: deploy and production release stay explicit, but the
 agent can automate preflight, safe smoke, read-only monitoring, and final state
 reporting inside an approved release boundary.
 
+Use [autonomous-work-packets.md](autonomous-work-packets.md) when the packet is
+long-running or loop-based. Plain meaning: this playbook decides the approval
+boundary, while autonomous work packets decide loop limits, progress cadence,
+retry behavior, commit behavior, and stop rules inside that boundary.
+
 ### 3. Standing Task Access Approval
 
 Hafiz has granted standing task-scoped approval for agents to use the narrowest
@@ -266,6 +271,7 @@ These actions must not be hidden inside a larger bundle:
 | `yes` | Confirm the current recommendation or discussion point; act if the action is clear and safe. |
 | `what next` | Recommend one next step; do not scatter options unless there is a real decision. |
 | `autopilot until <boundary>` / `finish this end to end` / `do everything needed` | Continue through the named or natural safe path and stop at the boundary or any unapproved risk gate. |
+| `autopilot this` / `keep going until fixed` / `clean up this batch` | Translate it into an autonomous work packet with finish point, loop rules, stop rules, progress cadence, and out-of-scope actions. |
 
 If there is no clear previous recommendation or exact approval request, ask one
 short clarification.

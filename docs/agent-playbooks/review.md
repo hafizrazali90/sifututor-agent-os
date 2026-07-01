@@ -12,6 +12,9 @@ whether the agent gathered enough proof before handing work to Hafiz or staff.
 Use its Proof Standard to separate code proof, journey proof, and release proof
 before allowing the next state to be described as ready.
 
+Use [no-mistakes-lite.md](no-mistakes-lite.md) as the final honesty gate before
+the review allows a commit, push, PR, merge, deploy, or ready/done claim.
+
 Use [related-impact-audit.md](related-impact-audit.md) for bugfix, hotfix, and
 user-facing small-change review. Plain meaning: review should check whether the
 agent looked for obvious same-pattern bugs, adjacent regression risk, and scope

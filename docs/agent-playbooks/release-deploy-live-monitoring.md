@@ -85,6 +85,11 @@ approval when they are necessary for the active release task. They do not allow
 deploys, production writes, secret reads, broad data browsing, or unrelated
 infrastructure exploration.
 
+Before saying staging or production is ready, deployed, live, smoke checked,
+monitored, or accepted, apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain
+meaning: merged, deployed, smoke checked, monitored, and accepted are different
+states, and the agent must not collapse them into "done."
+
 ## Minimum Release Report
 
 Use this natural-language shape:
@@ -132,4 +137,3 @@ If smoke or monitoring fails:
 - Treating read-only monitoring access as permission to mutate production.
 - Deploying a critical-lane change without diagnosis, stronger evidence, and
   explicit approval.
-

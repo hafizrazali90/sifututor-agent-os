@@ -175,6 +175,9 @@ Create or update one when any of these are true:
 - The work may need to continue in another session or agent.
 - The work has real state to track: local, committed, pushed, PR open, merged,
   deployed, live smoke passed, blocked, or closed.
+- More than one worktree, branch, PR, or parallel agent/session may be active.
+- An autonomous work packet is active and needs loop state, stop rules, or
+  resume instructions.
 - Before handoff or save-session, when the next agent would otherwise need to
   reconstruct the story from chat.
 
@@ -227,6 +230,14 @@ editing so we do not split the story.
 Then recommend the likely map using current evidence: latest modified time,
 matching project, matching branch, matching commit/PR references, and matching
 Continuation Prompt.
+
+Use [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md) when the
+map needs to track separate workspaces, branch ownership, local-only commits,
+PR state, or cleanup conditions.
+
+Use [autonomous-work-packets.md](autonomous-work-packets.md) when the map needs
+to track loop number, current slice, stop rules, progress cadence, interruption
+state, or resume instructions for a long-running work packet.
 
 Do not merge two maps casually. Merge only by writing a clear handoff or
 promotion note that says which map continues and which map is parked, closed,

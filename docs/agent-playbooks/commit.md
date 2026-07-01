@@ -56,8 +56,11 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    meaning: before saving the commit, confirm the change is scoped, evidenced,
    honest about state, not hiding critical-lane risk, not missing relevant
    release communication, and not confusing multi-fix session state.
-7. Review `git status --short`, `git diff`, and `git diff --staged`.
-8. Ask the user to approve the exact staged file list unless already approved.
+7. Apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain meaning: before
+   committing, make one final honesty pass over scope, proof, missing evidence,
+   state, approval boundary, and recommended next action.
+8. Review `git status --short`, `git diff`, and `git diff --staged`.
+9. Ask the user to approve the exact staged file list unless already approved.
 
 ## Message Format
 

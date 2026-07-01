@@ -296,6 +296,52 @@ This performs tiny read-only Sentry and BetterStack checks through the approved
 only. It does not print issue titles, events, monitor URLs, raw logs, tokens, or
 secrets, and it does not resolve Sentry issues or change monitors.
 
+## Tool Connector Standard
+
+Use this as the source of truth when deciding between CLI, CLI wrapper, MCP,
+app connector, direct API wrapper, browser/Playwright, or native GUI control.
+
+Plain meaning:
+
+```text
+Hafiz decides the goal and acceptable risk.
+The agent chooses the smallest reliable tool that can prove the task safely.
+```
+
+The agent should not ask Hafiz which connector to use for ordinary read/check
+work. It should decide from the task, use the narrowest safe path, and explain
+the evidence in normal language. Ask Hafiz only when the tool choice changes
+product direction, crosses an approval gate, needs broad/unavailable access, or
+the project/account/environment is unclear.
+
+Default connector preferences:
+
+| Need | Default path | Why |
+| --- | --- | --- |
+| Local code, docs, git state, tests, lint, guards, and health checks | CLI first | Fast, cheap, local, predictable, and easy to audit. |
+| Repeatable probes, Koda for Codex, monitoring, Planner summaries, and safe operational checks | CLI wrapper first | Keeps output small, hides secrets, and makes the behavior reusable. |
+| Rich service workflows such as Google Docs, PR comments, Drive files, Sheets, Slides, or issue review | App connector / MCP when exposed and scoped | Better structure and managed auth when the task needs more than a tiny probe. |
+| Stable automation when MCP is too broad, too noisy, or unreliable | Direct API wrapper | Gives a narrow controlled path with sanitized output. |
+| Visible product behavior | Browser or Playwright | A real user journey must be proven like a human would experience it. |
+| Native desktop app work | GUI automation only when needed | Useful for real app tasks, but more fragile than structured interfaces. |
+
+For Sifututor specifically:
+
+- use CLI-first for local development and repo truth
+- use wrapper-first for Koda in Codex sessions
+- use GitHub CLI probes for quick GitHub state, then connector/app tools for
+  richer PR, issue, review, or comment workflows
+- use safe Planner wrappers for staff-intake summaries because Planner is
+  intake context, not engineering truth
+- use Google Drive connectors/apps for real document content when exposed
+- use read-only production wrappers for monitoring, smoke, and operational
+  evidence
+- use browser/Playwright for user-facing behavior whenever feasible
+
+Do not make connector choice a power contest. The best tool is the one that
+answers the current question with the least unrelated access, token output,
+secret exposure, and manual interpretation.
+
 ## Connector Path Strategy
 
 Use the lowest-noise path that can prove the current task.
@@ -313,6 +359,8 @@ CLI wrapper first for probes.
 MCP/connector when the agent needs richer read-only interaction.
 Direct API only inside a narrow wrapper when it is the cleanest safe path.
 ```
+
+This default is a shorthand. The full standard above decides the actual path.
 
 ## Tool-Use Decision Flow
 
