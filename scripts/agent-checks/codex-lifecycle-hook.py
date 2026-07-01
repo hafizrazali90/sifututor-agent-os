@@ -995,6 +995,18 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking to check workflow health.",
         )
 
+    if "live evidence" in normalized and any(word in normalized for word in ("probe", "report", "capability", "check", "summary")):
+        return (
+            "$quick-check",
+            [
+                "Use $quick-check for the live evidence probe report.",
+                "Run `python3 scripts/agent-checks/agent-os-live-evidence-report.py` to summarize current GitHub, Planner, production monitoring, and Koda retrieval evidence.",
+                "Treat the report as read-only evidence only; do not mutate GitHub, Planner, production monitoring, or Koda.",
+                "Explain any unavailable source as missing evidence instead of guessing.",
+            ],
+            "Prompt asks for a live evidence probe report.",
+        )
+
     if "create" in normalized and "issue" in normalized and ("document" in normalized or "plan" in normalized):
         return (
             "$task-router",

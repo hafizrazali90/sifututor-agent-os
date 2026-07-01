@@ -296,6 +296,33 @@ This performs tiny read-only Sentry and BetterStack checks through the approved
 only. It does not print issue titles, events, monitor URLs, raw logs, tokens, or
 secrets, and it does not resolve Sentry issues or change monitors.
 
+For a combined live-evidence report across GitHub, Planner, production
+monitoring, and Koda retrieval, use:
+
+```bash
+python3 scripts/agent-checks/agent-os-live-evidence-report.py
+```
+
+To save the report:
+
+```bash
+python3 scripts/agent-checks/agent-os-live-evidence-report.py \
+  -o /tmp/agent-os-live-evidence-report.md
+```
+
+This calls the narrow safe probes and summarizes what is currently available,
+what each source proves, and what is still approval-gated.
+Use this when Hafiz asks for a live capability check, a probe report, or a
+current evidence summary before PR, Planner, monitoring, or Koda-dependent
+work.
+It does not mutate GitHub, Planner, production monitoring, or Koda.
+
+Plain meaning:
+
+```text
+This is the one-page receipt for "what can the agent really read right now?"
+```
+
 ## Tool Connector Standard
 
 Use this as the source of truth when deciding between CLI, CLI wrapper, MCP,

@@ -46,7 +46,7 @@ be automated next.
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
 | Validation loop | Executable harness score | Hiding scattered Agent OS failures across separate scripts. Checked by `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, which combines executable checks into one readiness score. |
-| Scenario Lab | RW-001 through RW-017 | Realistic Hafiz work moments across commit, push, critical lane, staff intake, agent-as-tester, memory, session map, production, forbidden secrets, validation target, readiness, product design, GitHub PR readiness, Planner read-only intake, production monitoring, stale Koda conflict, and Claude/Codex behavior comparison. Checked by `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`. |
+| Scenario Lab | RW-001 through RW-018 | Realistic Hafiz work moments across commit, push, critical lane, staff intake, agent-as-tester, memory, session map, production, forbidden secrets, validation target, readiness, product design, GitHub PR readiness, Planner read-only intake, production monitoring, stale Koda conflict, Claude/Codex behavior comparison, and live evidence probe reporting. Checked by `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`. |
 
 ## Manual Scenario Coverage
 

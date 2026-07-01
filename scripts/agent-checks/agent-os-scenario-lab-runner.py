@@ -167,6 +167,19 @@ SCENARIOS = [
         reason_contains="Claude/Codex behavior comparison",
         actions_contain=["parity runner", "route", "approval boundary", "different wording is fine"],
     ),
+    Scenario(
+        id="RW-018",
+        area="live evidence report",
+        prompt="Generate a live evidence probe report for the Agent OS.",
+        expected_skill="$quick-check",
+        reason_contains="live evidence probe report",
+        actions_contain=[
+            "agent-os-live-evidence-report.py",
+            "GitHub, Planner, production monitoring, and Koda",
+            "read-only evidence",
+        ],
+        actions_absent=["deploy"],
+    ),
 ]
 
 

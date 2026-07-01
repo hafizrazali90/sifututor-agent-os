@@ -88,6 +88,7 @@ check_file "Agent OS eval coverage" "$ROOT/docs/agent-playbooks/agent-os-eval-co
 check_file "Agent OS evaluation harness" "$ROOT/docs/agent-playbooks/agent-os-evaluation-harness.md"
 check_file "Agent OS scenario lab" "$ROOT/docs/agent-playbooks/agent-os-scenario-lab.md"
 check_file "related impact audit" "$ROOT/docs/agent-playbooks/related-impact-audit.md"
+check_file "live evidence template" "$ROOT/docs/agent-playbooks/templates/live-evidence-probe-report.md"
 check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
@@ -105,6 +106,7 @@ check_file "Agent OS Google Drive probe" "$ROOT/scripts/agent-checks/agent-os-go
 check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-probe.py"
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
 check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os-production-logs-probe.py"
+check_file "Agent OS live evidence report" "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-validation-loop.py"
@@ -224,6 +226,15 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-capability-probe.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-capability-probe.out $TMP_DIR/agent-os-capability-probe.err
+
+if python3 -m py_compile "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py" >$TMP_DIR/agent-os-live-evidence-report.out 2>$TMP_DIR/agent-os-live-evidence-report.err; then
+  pass "Agent OS live evidence report" "py_compile ok"
+else
+  fail "Agent OS live evidence report" "py_compile failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-live-evidence-report.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-live-evidence-report.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-live-evidence-report.out $TMP_DIR/agent-os-live-evidence-report.err
 
 if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >$TMP_DIR/agent-os-conversation-fixtures.out 2>$TMP_DIR/agent-os-conversation-fixtures.err; then
   conversation_fixture_summary="$(tail -1 $TMP_DIR/agent-os-conversation-fixtures.out 2>/dev/null || true)"
