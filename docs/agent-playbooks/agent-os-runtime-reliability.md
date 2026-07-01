@@ -198,6 +198,46 @@ Done.
 
 That is too thin because it hides mode, state, proof, and next action.
 
+## Daily Operating Examples
+
+Use these examples as the practical daily pattern.
+They are not scripts.
+They show what the agent should make visible while still sounding natural.
+
+Plain meaning:
+
+```text
+Hafiz should feel where the work is heading without memorizing the workflow.
+The agent should know what to load, what to prove, where to stop, and what to
+recommend next.
+```
+
+| Situation | Runtime mode | Loaded context | Proof or state to name | Stop point | Good response shape |
+| --- | --- | --- | --- | --- | --- |
+| Hafiz says `ok proceed` after a clear Agent OS recommendation | Build or Plan, depending on the last recommendation | Active Session Map, Task Router, owning Agent OS playbook, relevant eval/owner docs | Current git state and what is already accepted or pushed | Commit or push only if the approved packet included it | "I will continue the last recommended Agent OS step. I will update the owner doc, check the connected eval/index files, run Agent OS checks, and stop before any unapproved outbound step." |
+| Hafiz says `let's discuss` or asks why something matters | Discuss | Current decision, relevant roadmap/Koda only if prior context matters | No file change unless Hafiz asks to document | Stop before durable edits | "We are still deciding. The choice is between A and B; I recommend A because..., but I will not change docs until you say proceed." |
+| Hafiz says `proceed until done` for safe Agent OS docs | Build -> Verify -> Review -> Commit, and Push only if included | Improvement loop, owner playbook, doc routing, evals, Session Map | Changed files, checks, highest proven Git state | Stop at the approved boundary or a failed check | "Done for this packet means the docs are updated, checks pass, the Session Map is current, and the package is committed. Push needs to be included in the boundary." |
+| Hafiz says `commit` after a checked package | Commit | Commit playbook, current git diff/status, pre-commit guard | Exact staged file list and guard output | Stop before push unless push was approved | "I will commit only these files. The unrelated dirty file stays out. After commit, the next action is either push or continue the next Agent OS topic." |
+| Hafiz says `push` after local commits | Review -> Push | Review/no-mistakes-lite, git ahead/dirty state, latest checks | Ahead commits, uncommitted files, last health/guard result | Stop before PR/merge/deploy unless approved | "I am doing the outbound review first: one commit is ahead, checks passed, and no unrelated files are staged. If clean, I will push main." |
+| Hafiz asks `what next?` | Task Router / Discuss | Active Session Map, current git state, recent pushed commits, relevant Koda | Current focus, waiting decisions, dirty/ahead state | Recommend one next action | "The Runtime Reliability packet is pushed. The next useful step is to add daily examples so the rule is easier to apply in real work." |
+| Hafiz reports an agent mistake | Diagnose or Workflow Improvement | Improvement loop, communication/routing/approval owner docs, evals, Koda, Session Map | What failed, likely owner, whether it is repeated or one-off | Stop before durable edits if the behavior is not agreed | "The mistake is not just wording; it is a routing/close-out gap. I recommend updating the owner playbook and adding an eval, then checking health." |
+| Hafiz asks to fix a product bug | Diagnose | Project AGENTS, active task, diagnose playbook, Planner when staff-reported, project docs as triggered | Reproduction or read-only evidence; do not treat symptom as cause | Stop before critical-lane implementation or unclear scope | "I will first prove what is actually broken. If it is a normal bug, I will propose the fix path; if it touches payment/auth/mobile API, I stop after diagnosis for approval." |
+| Hafiz asks to verify or QA | Verify or QA | Verify/QA playbook, evidence model, project rules, TESTING/UI docs when triggered | Exact command, browser/mobile/API evidence, missing evidence if any | Stop if proof is missing or unsafe | "Code tests prove the engine; for this staff workflow I also need browser evidence or a named reason why that is not feasible." |
+| Hafiz says `save session` or the chat is getting long | Save or Handoff | Session Map, save-session/handoff docs, Git state, Koda memory rules | Main goal, current focus, highest proven state, dirty files, next action | Stop when future agent can resume | "I will save the story, not just the last command: goal, subgoals, decisions, pushed/local state, evidence, and the first next action." |
+
+## What To Avoid
+
+Avoid these runtime mistakes:
+
+| Mistake | Why it hurts | Better behavior |
+| --- | --- | --- |
+| Saying only `done` | Hafiz cannot tell whether it is local, committed, pushed, live, or only discussed. | Name the highest proven state and next action. |
+| Asking for every tiny step after a safe packet was approved | It makes Hafiz manage the workflow instead of directing the outcome. | Continue inside the approved boundary and stop at real gates. |
+| Treating `proceed` as permission to invent new scope | It breaks trust and makes the OS unpredictable. | Return to the last clear recommendation. |
+| Reading every Agent OS doc for every Agent OS task | It wastes context and can make the agent less focused. | Use doc routing and the owner index. |
+| Trusting a stale Session Map current focus | The agent may continue old work after newer commits changed the real state. | Check Git/chat/Koda evidence and update the pointer. |
+| Calling a user workflow verified from code tests only | Code proof may not prove the real staff/parent/tutor journey. | Add journey proof or name the honest blocker. |
+
 ## Future Automation
 
 Automate only after the manual pattern is stable.

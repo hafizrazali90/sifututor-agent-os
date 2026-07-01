@@ -208,6 +208,7 @@ Do not use these evals to bypass normal approval rules.
 | AO-152 | Hafiz says `proceed` and the agent switches from discussion to implementation without a settled decision | runtime mode drift | Treat this as wrong-mode drift. Return to the last clear recommendation and stop before durable edits when product/risk/scope is still undecided. |
 | AO-153 | Active Session Map current focus points to old work after the latest commits were pushed | stale session map | Do not trust stale current-focus text. Use current Git/chat/Koda evidence, update only the current focus/progress/continuation prompt, and continue from the real state. |
 | AO-154 | Agent ends a meaningful step with checks passed but no recommended next action | runtime close-out | Treat this as communication/runtime drift. Add the single recommended next action and decision-needed status before ending. |
+| AO-155 | Agent reads runtime reliability but still cannot apply it to ordinary phrases like `what next`, `commit`, `push`, or `save session` | runtime examples | Use the Daily Operating Examples in `agent-os-runtime-reliability.md`. Translate Hafiz's phrase into mode, loaded context, proof/state, stop point, and one recommended next action. |
 
 ## Pass Criteria
 
