@@ -110,6 +110,40 @@ is workflow rules, approved docs win. If the question is remembered preference,
 Koda is useful, but still not proof of live code or production behavior.
 ```
 
+## Acceptance State Ownership
+
+Use this when a report, close-out, or future session needs to know whether a
+task or Agent OS rule is active, parked, accepted, or closed.
+
+Plain meaning:
+
+```text
+The word "accepted" needs an owner.
+The word "closed" needs proof that nothing required remains.
+```
+
+| Claim | Source that owns it | Correct check |
+| --- | --- | --- |
+| Agent OS rule is adopted for future agents | Pushed owner docs/playbooks plus connected skill/eval/check state | Check current files, Git state, and relevant health/eval output. |
+| Agent OS idea is parked | Roadmap, Mission Ledger, or Session Map decision row | Check the reason, owner, and return trigger. |
+| Agent OS work is accepted/closed | Hafiz's current approval plus pushed owner docs/checks when behavior changed | Confirm no required review, commit, push, eval, Koda, or follow-up remains. |
+| Product fix is accepted/closed | Hafiz/business owner plus QA/release evidence | Confirm the fix reached the intended finish state and remaining risk is accepted or parked. |
+| Release is accepted/closed | Hafiz/business owner plus deploy/smoke/monitoring evidence | Confirm the agreed production state was reached and no required monitoring or rollback decision remains. |
+| Staff-reported issue is accepted/closed | Staff/Hafiz acceptance plus engineering/live evidence when code changed | Planner alone is not enough for engineering/live closure. |
+
+If the owner source is missing, say the highest proven state instead:
+
+```text
+This is pushed and available for use, but I cannot call it accepted/closed yet
+because Hafiz has not accepted the remaining review point.
+```
+
+or:
+
+```text
+This is parked, not active. The return trigger is developer-staff rollout.
+```
+
 ## Routing New Information
 
 Use this when deciding where a new idea, correction, issue, or follow-up should

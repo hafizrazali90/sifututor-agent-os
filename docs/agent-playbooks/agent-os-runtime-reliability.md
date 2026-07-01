@@ -146,6 +146,7 @@ Watch for these signals:
 | Context overload | Agent reads too many unrelated docs and loses the point. | Return to doc routing and owner index. |
 | Scope expansion | Agent fixes adjacent issues silently. | Classify in-scope, blocking, pre-existing, or follow-up. |
 | Source conflict | Koda, chat, Session Map, GitHub, Git, deploy, QA, docs, or Planner disagree. | Use `context-authority.md`: name the question, choose the owner source, check current evidence, then continue or stop. |
+| Closure drift | Agent says accepted, closed, or done when the work is only pushed, parked, or waiting for Hafiz/business acceptance. | Use `agent-os-workflow-lanes.md` and `agent-os-state-model.md` to name the real closure state. |
 | Stale Session Map | Current focus or continuation prompt points to old work. | Update the map or say it is stale before relying on it. |
 | Map not updated after state change | The work moved from changed locally to committed/pushed/deployed, but the map still says the old state. | Use the Session Map live update loop and correct only the current pointer. |
 
@@ -253,6 +254,7 @@ recommend next.
 | Hafiz says `save session` or the chat is getting long | Save or Handoff | Session Map, save-session/handoff docs, Git state, Koda memory rules | Main goal, current focus, highest proven state, dirty files, next action | Stop when future agent can resume | "I will save the story, not just the last command: goal, subgoals, decisions, pushed/local state, evidence, and the first next action." |
 | A long packet changes state from local to committed or pushed | Build -> Commit -> Push/PR | Session Map live update loop, Git state, review/commit playbooks | Highest proven Git state, remaining dirty files, next action | Stop at the approved boundary | "The map still says changed locally, but Git shows the packet is pushed. I will update only the current pointer and progress row before continuing." |
 | Sources disagree about state | Task Router / Review | Context authority, state model, owner source for the question | Highest proven state and the source that proves it | Stop if the conflict changes scope, risk, product meaning, approval, or critical-lane behavior | "Koda says this was accepted, but current docs do not contain the rule. I will treat Koda as history, use the docs as the adoption source, and update the owner doc before claiming the rule is adopted." |
+| Hafiz asks whether an Agent OS topic is done | Task Router / Review | Workflow lanes, state model, roadmap, Git state, Session Map | Whether it is discussed, changed locally, pushed, adopted for use, parked, or accepted/closed | Stop before pretending Hafiz accepted a remaining review/risk point | "This packet is pushed and adopted for future agents because the owner docs and checks are in GitHub. It is not fully closed if you still want to review the concept; the next action is accept it, park it, or revise it." |
 
 ## What To Avoid
 

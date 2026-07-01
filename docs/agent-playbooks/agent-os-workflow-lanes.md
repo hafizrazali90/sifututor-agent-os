@@ -67,6 +67,49 @@ A production release may need `PR ready -> merged -> deployed -> live checked
 -> monitored`.
 A discussion may stop at `Answer only`.
 
+## Acceptance And Closure Criteria
+
+Use this when deciding whether an Agent OS rule, workflow packet, product fix,
+or release can be called accepted, parked, or closed.
+
+Plain meaning:
+
+```text
+Done is not one word.
+Say whether the work is discussed, drafted, changed, proven, committed,
+pushed, adopted for use, parked, or accepted/closed.
+```
+
+For Agent OS work, use these practical states:
+
+| State | What it means | What must be true |
+| --- | --- | --- |
+| Discussed | Hafiz and the agent talked through the idea. | No durable rule is implied unless Koda/docs say so. |
+| Drafted | A plan, rule, or playbook text exists locally. | It may still be incomplete or unchecked. |
+| Changed locally | Owner docs or scripts changed in the working tree. | Git status/diff shows the change, but future sessions cannot rely on it from GitHub yet. |
+| Local proof | The local change passed the relevant checks. | Check output supports the claim, but it may still be uncommitted or unpushed. |
+| Committed | The change is saved in local Git history. | Commit SHA exists locally. It is not shared until pushed. |
+| Pushed | The change is on GitHub. | `origin/main` or the named branch contains the commit. |
+| Adopted for use | Future agents should follow it as an active rule. | The owner source is pushed, connected docs/skills/evals are aligned enough, and checks passed or gaps are named. |
+| Parked | The idea is intentionally not active yet. | The reason and return trigger live in the roadmap, Mission Ledger, or Session Map. |
+| Accepted or closed | Hafiz, the business owner, or the responsible reviewer accepts the outcome and any named remaining risk. | No required next action remains for the approved scope, or remaining work is explicitly parked/follow-up. |
+
+Do not collapse these states.
+For example, a pushed Agent OS doc is available to future agents, but it is not
+automatically accepted/closed if Hafiz still wants to review the concept.
+A deployed product fix is not accepted/closed if smoke, monitoring, or business
+acceptance is still waiting.
+
+Use this short response shape when the closure state matters:
+
+```text
+Current state: <state>.
+Why: <source/evidence>.
+Not closed yet because: <missing decision/proof/follow-up>, or "nothing
+required remains."
+Recommended next: <one action>.
+```
+
 ## Depth Selection
 
 At task start, choose the depth from Hafiz's wording, current state, and risk.
