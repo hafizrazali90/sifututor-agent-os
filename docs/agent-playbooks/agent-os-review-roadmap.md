@@ -29,6 +29,61 @@ The core is still the Hafiz-Agent operating model:
 This section is the inventory. It answers: what exists today, what each layer is
 supposed to do, where it lives, and what still needs review.
 
+## Agent OS Completion Map
+
+Use this section when Hafiz asks whether the Agent OS is "done", "good enough",
+or ready for daily use.
+
+Plain meaning:
+
+```text
+The Agent OS can be useful before it is finished.
+Name which layer is usable now, which layer is still being hardened, and which
+layer is intentionally parked.
+```
+
+Current practical answer:
+
+```text
+The Agent OS is good enough for Hafiz + agent daily internal workflow when the
+agent follows the shared playbooks, uses Koda/Session Map/Git state correctly,
+runs the Agent OS checks, and reports the next action clearly.
+
+It is not yet fully complete for developer-staff rollout or broad multi-LLM
+distribution until the remaining rollout, pilot, and project-profile items are
+reviewed with real users.
+```
+
+| Completion Area | Daily Internal Use | Still Missing Before Wider Rollout |
+| --- | --- | --- |
+| Working agreement | Usable. Hafiz owns intent/risk; agent owns execution/evidence/next guidance. | Keep refining examples from real friction. |
+| Routing and approval | Usable. Short commands, approval bundles, finish states, and hard gates are documented and checked. | More real conversation fixtures after daily use. |
+| Context, state, and memory | Usable. Koda, Session Map, Git, GitHub, QA, deploy state, and Planner have owner rules. | Periodic memory cleanup/audit and stale-state fixture hardening. |
+| Tool capability | Usable. Capability probes and auto-read rules exist. | Keep adding connector-specific probes only when tools become part of daily work. |
+| Evidence and QA | Usable for agent-led verification expectations. | More project-specific evidence profiles and permanent E2E coverage discipline through real product work. |
+| Runtime reliability | Usable. Mode, loaded context, proof/state, next action, Session Map updates, and no-next-step fixes are documented. | More real traces from long autonomous packets. |
+| Evals and health checks | Usable. Health, workflow doctor, eval runner, fixtures, parity checks, and probes pass. | More behavior fixtures when repeated drift appears. |
+| Project adoption | Partial. `sifu-tutor` and `ripple-suite` have proven profiles; adoption is parked while core stabilizes. | Continue product repo profiles before developer-staff rollout. |
+| Developer staff rollout | Parked. Ordinary staff stay in Teams Planner. | Pilot plan, starter kit validation, access profile review, and staff training examples. |
+| Distribution to other LLMs | Partial. Shared Markdown playbooks are model-agnostic; adapters exist for Codex/Claude. | Adapter templates and install/pilot proof for other tools. |
+
+Use this finish map:
+
+| Finish Level | Meaning | Required Proof |
+| --- | --- | --- |
+| Daily-use ready | Hafiz and agents can use the OS in normal internal work. | Core docs pushed, health/doctor pass, Session Map/Koda state works, and close-outs guide the next action. |
+| Product-work ready | A specific repo can safely use the OS for coding work. | Local project profile, commands, critical lanes, evidence path, and repo-specific done state are verified. |
+| Developer-staff pilot ready | A developer staff member can try the OS with limited scope. | Project profile is ready, least-privilege access is defined, onboarding is current, and review gates are clear. |
+| Broad rollout ready | Multiple developers/tools can use the OS predictably. | Pilot feedback is resolved, adapter parity is checked, install docs are proven, and support/rollback path exists. |
+
+Current recommended next:
+
+```text
+Use the Agent OS in daily Hafiz-agent work now.
+Before wider rollout, finish or intentionally park project adoption, developer
+staff pilot, distribution adapters, and periodic cleanup/audit.
+```
+
 ## Architecture Map
 
 | Layer | What It Should Do | Current Assets | Current Weakness | Improve Or Add |
@@ -112,6 +167,7 @@ Use this as the master tracker while reviewing the architecture.
 | 22 | Evaluation Harness | eval coverage map, eval table, local fixture runners, health, workflow doctor | `agent-os-evaluation-harness.md`, response/state fixtures, coverage docs, health/manifest | Draft accepted | harness layers and first stronger local fixtures |
 | 23 | Multi-Agent And Adapter Workflow | parity contract, roles, switching docs, handoff/save-session, skill registry, coverage audit | `multi-agent-adapter-workflow.md`, parity/roles/switching links, health/manifest | Draft accepted | stage-first worker selection |
 | 24 | Acceptance And Closure Criteria | workflow lanes, state model, runtime reliability, evals, roadmap | `agent-os-workflow-lanes.md`, `agent-os-state-model.md`, runtime/eval docs | Draft accepted | accepted, parked, adopted, and closed state rules |
+| 25 | Agent OS Completion Map | roadmap, Agent OS overview, health/evals, Session Map | `agent-os-review-roadmap.md`, `agent-os.md`, eval docs | Draft accepted | daily-use versus rollout-ready checklist |
 
 ## Touch Map
 
@@ -207,6 +263,7 @@ created.
 | 2026-07-01 | Workflow execution depth needs named finish states. | Hafiz approved continuing after enforcement promotion. The next confusion risk is that "done", "finish", "production", or "proceed" can mean many different things: answer only, drafted, changed locally, local proof, committed, PR ready, merged, deployed, live checked, monitored, or accepted/closed. | Use `agent-os-workflow-lanes.md` Execution Depth. Task Router should recommend the finish state, proof, and pause point so Hafiz does not need to remember the whole workflow path. |
 | 2026-07-01 | Workflow conflict handling needs an owner-source routine. | Hafiz approved continuing after workflow execution depth. The next confusion risk is that Koda, chat, Session Map, GitHub, Git, deploy state, QA evidence, docs, Planner, and current user expectation can disagree. Agents need a practical way to decide what wins without silently choosing the convenient source. | Use `context-authority.md` Conflict Handling Routine and `agent-os-state-model.md` State Conflict Handling. Ask what question is being answered, choose the source that owns that question, check current evidence, report the highest proven state, and stop only when the conflict changes scope, risk, product meaning, approval, or critical-lane behavior. |
 | 2026-07-01 | Acceptance and closure criteria must separate pushed, adopted, parked, and accepted/closed. | Hafiz keeps asking whether everything is done, and the Agent OS can become endless if agents cannot say whether a packet is merely available, actively adopted, intentionally postponed, or truly accepted. | Use `agent-os-workflow-lanes.md` and `agent-os-state-model.md`: say the current closure state, the source that proves it, what is not closed yet, and the next action: accept, revise, park, commit, push, or continue. |
+| 2026-07-01 | Agent OS completion needs a daily-use versus rollout-ready map. | Hafiz wants to know when the Agent OS is good enough, not keep adding rules forever. The system can be useful for Hafiz-agent daily work before it is ready for developer-staff rollout or broad multi-LLM distribution. | Use the Completion Map in this roadmap: daily-use ready, product-work ready, developer-staff pilot ready, and broad rollout ready are different finish levels with different proof. |
 
 ### Core Operating Layer
 
@@ -647,10 +704,11 @@ A review area is not done until all of these are true:
 
 ## Immediate Next Review
 
-Continue with section 17: **Push / PR / Release Lifecycle**.
+Continue with **daily-use validation through real work**.
 
-Reason: the Agent OS now has stronger commit, evidence, state, self-improvement,
-and related-impact rules. The next weak point is the outward path after local
-commits: push, PR, merge, deploy, live check, and how agents explain the
-highest proven state without making Hafiz ask what is actually on GitHub or
-live.
+Reason: the core Hafiz-agent workflow now has routing, approval, evidence,
+state, conflict handling, closure criteria, health checks, and a completion map.
+The next useful proof is not another abstract layer. It is using the OS on real
+daily work and recording friction: what still makes Hafiz ask "what next",
+where the agent still over-asks or over-acts, and which project profile or
+rollout item blocks the next completion level.

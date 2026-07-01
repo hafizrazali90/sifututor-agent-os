@@ -109,6 +109,31 @@ Use these twelve layers as the high-level table of contents for the Agent OS:
 Phase 1 should deeply build Purpose through Safety, with basic Codex/Claude
 adapters. Change Control and Rollout stay lighter until the core is stable.
 
+## Completion Standard
+
+The Agent OS is not one all-or-nothing finish line.
+
+Use [agent-os-review-roadmap.md](agent-os-review-roadmap.md) as the completion
+map.
+
+Plain version:
+
+```text
+Daily-use ready is not the same as developer-staff rollout ready.
+```
+
+The current target is:
+
+- **Daily-use ready** for Hafiz and agents inside this workspace.
+- **Product-work ready** one repo at a time through verified project profiles.
+- **Developer-staff pilot ready** only after project adoption, access, training,
+  and review gates are proven.
+- **Broad rollout ready** only after pilot feedback and adapter parity are
+  checked.
+
+When Hafiz asks whether the Agent OS is done, report the highest honest
+completion level and what remains before the next level.
+
 ## First-Mate Routing
 
 Task Router is the first-mate layer for now.
