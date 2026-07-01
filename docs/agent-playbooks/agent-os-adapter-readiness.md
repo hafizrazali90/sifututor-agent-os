@@ -101,6 +101,24 @@ Run these prompts against each adapter when checking live behavior:
 
 Different wording is fine. Different behavior is not.
 
+## Live Transcript Drift Checks
+
+When reviewing a real Claude or Codex transcript, check for these common false
+passes.
+
+| Observed answer shape | Why it is drift | Correct Agent OS behavior |
+| --- | --- | --- |
+| Routes vague staff reports as `bugfix` immediately. | It sounds safe, but it starts from implementation language before evidence exists. | Route as diagnose/triage first; treat staff/Planner input as reported symptom until reproduced or inspected. |
+| Routes payment/auth/invoice/mobile API prompts as normal `bugfix`. | Critical lanes need a stronger pause before implementation. | Route as critical-lane diagnosis, gather read-only evidence, then ask for implementation approval. |
+| Requires `.claude/tasks/active.json` for every prompt. | State files are project helpers, not the whole Agent OS. | Read active task state when present and relevant; otherwise use Session Map, Git, Koda, GitHub, Planner, docs, and current files as appropriate. |
+| Invents universal fields such as `gate4_evidence` or `status: handed_off`. | Those may exist in one adapter or old workflow, but are not the shared proof model. | Use the route playbook's evidence standard and report the highest proven state in plain language. |
+| Uses project-only commands such as `/sifu-save-session` as the shared route. | It makes future agents think the OS is Claude/project-specific. | Name the shared route: `/save-session`, `$save-session`, or natural-language save-session, all following `save-session.md`. |
+| Says "reply to Planner/reporter" without Hafiz approval. | Planner is intake/context by default, not a write surface. | Read Planner when relevant; recommend questions or ask Hafiz before updating Planner/reporter. |
+
+These drifts are still safer than uncontrolled implementation, but they are not
+daily-use ready. Mark them as partial pass and update the owning shared rule,
+adapter guidance, eval, or Koda correction if the pattern repeats.
+
 ## Runner
 
 Use:

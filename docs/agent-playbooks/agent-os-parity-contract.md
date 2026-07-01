@@ -130,6 +130,7 @@ expecting every model/tool to expose identical UI.
 | Product Design packaging differs | Claude shows four steps; Codex shows one umbrella skill, which can feel like less control. | Require Codex to name the current phase; optionally add Codex phase aliases later. |
 | Evals mostly test Codex routing | We can prove Codex hook behavior better than live Claude extension behavior. | Use `agent-os-adapter-readiness.py` for wiring, behavior trace for deterministic Codex routing, and live Claude prompts only as optional evidence until the extension has a stable non-interactive test path. |
 | Hook behavior differs by tool | Claude and Codex lifecycle hooks are not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
+| Claude adapter overfits old task-state mechanics | Live Claude transcript tests showed safe but rigid answers that required `active.json`, Claude-only gate fields, or old command names for every workflow. | Treat `active.json`, Claude hooks, and project slash commands as adapter helpers. The shared behavior comes from `AGENTS.md`, this contract, and the playbooks. |
 | Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
 | Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |
 
@@ -163,6 +164,27 @@ must produce even when their command names differ.
 | BP-008 | Hafiz asks for Plane status without explicitly requesting Plane | Do not use Plane by default. Use GitHub, active task state, Mission Ledger, Koda, and close-out instead. |
 | BP-009 | A session has multiple goals, side paths, or parallel agent work | Create or update the Session Map so Hafiz and future agents can see the main goal, current focus, decisions, side paths, evidence, and return path. |
 | BP-010 | Hafiz asks to improve the workflow or make future agents handle a mistake better | Use the Agent OS Improvement Loop: classify the mistake, choose the owning source of truth, check connected docs/skills/hooks/evals/Koda/Session Map, update the smallest coherent set, and do not silently self-rewrite. |
+| BP-011 | A project has `.claude/tasks/active.json` | Read it as workflow state when the project uses it, but do not treat it as the only truth. Cross-check chat, Git, Session Map, Koda, GitHub, Planner, and current files based on the question being answered. |
+| BP-012 | A project or session does not have a relevant active task file | Do not invent `active.json` fields or block ordinary discussion/docs work on missing gate values. Use the route playbook, current evidence, and approval boundary instead. |
+| BP-013 | Claude uses project-specific slash commands such as `/sifu-save-session` | Treat them as adapter conveniences only. The shared workflow name is `/save-session`, `$save-session`, or natural-language "save session", and all must follow `save-session.md`. |
+
+## Adapter Helper Boundaries
+
+Some tools have helpful mechanics that are not universal Agent OS rules.
+
+| Helper | Correct use | Drift to avoid |
+| --- | --- | --- |
+| `.claude/tasks/active.json` | Current execution pointer for projects that use state files. Read it when present and relevant. | Requiring it for every parent-workspace discussion, workflow improvement, or commit explanation. |
+| Claude workflow hooks | Extra safety for branch names, commit messages, quality gates, Koda context, and project state. | Saying a hook-only field such as `gate4_evidence` is the shared proof standard when the playbook defines a broader evidence requirement. |
+| Project slash commands | Convenient Claude entrypoints for the same shared workflows. | Calling `/sifu-save-session`, `/ripple-commit`, or another project alias the source of truth instead of the shared playbook. |
+| Gate labels | Useful audit shorthand inside verification, QA, review, commit, or handoff records. | Leading Hafiz-facing explanations with labels when plain language would be clearer. |
+
+Plain meaning:
+
+```text
+Use adapter mechanics when they help. Do not let them replace the shared
+workflow, evidence standard, or state model.
+```
 
 ## Behavior Parity Review Standard
 
