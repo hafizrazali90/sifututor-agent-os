@@ -20,6 +20,11 @@ user-facing small-change review. Plain meaning: review should check whether the
 agent looked for obvious same-pattern bugs, adjacent regression risk, and scope
 expansion before saving or sending work outward.
 
+Use [agent-os-general-guidelines.md](agent-os-general-guidelines.md) for
+baseline quality habits: do not hide generated-file edits, do not ignore
+lint/test/flaky-check failures, be picky about touched UI, and keep quality
+high without silently widening scope.
+
 ## Fresh-Context Review
 
 Use fresh-context review when the next state matters enough that the builder's
@@ -88,6 +93,9 @@ asks whether work is safe to approve.
 | State confusion | Is the work only changed locally, committed, pushed, PR-open, merged, deployed, live checked, or accepted? | The report implies a higher state than Git/PR/deploy/QA evidence proves. |
 | Critical-lane boundary | Did auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract behavior change? | Read-only diagnosis, approval, reviewer, or safe evidence is missing. |
 | Release communication | Do staff/users need changelog, help text, What's New, or operational notice? | A relevant staff-facing change has no release communication and no reason it is unnecessary. |
+| Generated files | Were generated files edited manually instead of changing the source? | A generated artifact was hand-edited without project rules saying it is human-maintained. |
+| Visible UI quality | If UI changed, does it look coherent and match the project pattern? | The changed UI has obvious layout, copy, state, accessibility, or consistency issues that are in scope or unreported. |
+| Lint/test/flaky checks | Are failures caused by this change, pre-existing, unrelated, or flaky? | Failures caused by the change remain, or unrelated failures are hidden instead of reported and routed. |
 | Multi-fix state | Are there multiple fixes, branches, commits, PRs, or deploy candidates in this session? | Session Release Ledger is missing/stale or any fix state is unclear before push/merge/deploy. |
 | Product/business risk | Does Hafiz need to decide wording, UX fit, staff workflow, policy, timing, or risk acceptance? | The agent presents a business/product judgment as already decided. |
 

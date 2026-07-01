@@ -14,6 +14,9 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 - Never commit `.env*`, credentials, tokens, production secrets, `live/`, or
   `.workflow-rollout/`.
 - Use direct `git commit -m` flags. Do not use HEREDOC command substitution.
+- Do not add an agent name as a commit co-author unless Hafiz explicitly asks.
+- Do not commit manually edited generated files unless the project explicitly
+  treats that generated artifact as human-maintained.
 
 ## Before Staging
 
@@ -49,6 +52,9 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    - If any item is not relevant, record why in the final answer or PR body.
    - Treat a missing relevant release communication item as a commit blocker,
      even when tests pass.
+   - If the changelog or release-note artifact is generated in that project,
+     edit the source-of-truth release note or generator input instead of
+     hand-editing generated output.
 5. If the session contains multiple fixes, update the Session Release Ledger
    and confirm no intended fix is stranded on another branch or local-only
    commit.

@@ -220,6 +220,12 @@ The Agent OS should make the work safer and faster without making Hafiz feel
 trapped inside process. Strict where mistakes are expensive. Lightweight when
 we are thinking, learning, or making small safe changes.
 
+Use [agent-os-general-guidelines.md](agent-os-general-guidelines.md) for the
+baseline quality habits underneath every workflow: writing style, generated
+files, commit co-author rules, quality-over-shortcut decisions, user-journey
+bug proof, visible UI quality, lint/test/flaky-check handling, and scope
+control.
+
 ## Architecture Index
 
 Read these as the core internal kit:
@@ -242,6 +248,7 @@ Read these as the core internal kit:
 | Tools and capability | [agent-os-capability-model.md](agent-os-capability-model.md) |
 | Profile registry operations | [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
+| General quality guidelines | [agent-os-general-guidelines.md](agent-os-general-guidelines.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
