@@ -101,6 +101,12 @@ needs to decide product direction, risk, scope, or acceptance.
 Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.
+Use [context-authority.md](context-authority.md) when sources disagree. Plain
+meaning: if Koda, chat, Session Map, GitHub, Git, deploy state, QA evidence,
+Planner, docs, or Hafiz's current instruction do not line up, the router should
+name the question, choose the source that owns that question, check current
+evidence, and stop only when the conflict changes scope, risk, product meaning,
+or approval.
 
 Use [agent-os-capability-model.md](agent-os-capability-model.md) when deciding
 what tools the agent should use for current evidence. Plain meaning: after the
@@ -116,6 +122,9 @@ task state. Plain meaning: Planner is staff intake, GitHub is engineering
 execution, Koda is durable memory, Session Map is current-session story, Git is
 exact changed files, deploy records prove deployed code, and QA evidence proves
 real behavior.
+If two sources disagree, route through the Conflict Handling Routine in
+[context-authority.md](context-authority.md) before editing or reporting a
+stronger state.
 
 Use the Routing New Information section in
 [agent-os-state-model.md](agent-os-state-model.md) before storing a new idea,

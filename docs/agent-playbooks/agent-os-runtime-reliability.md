@@ -145,6 +145,7 @@ Watch for these signals:
 | Approval drift | Agent asks for every tiny step or crosses a real gate. | Use one approved boundary, but stop at hard gates. |
 | Context overload | Agent reads too many unrelated docs and loses the point. | Return to doc routing and owner index. |
 | Scope expansion | Agent fixes adjacent issues silently. | Classify in-scope, blocking, pre-existing, or follow-up. |
+| Source conflict | Koda, chat, Session Map, GitHub, Git, deploy, QA, docs, or Planner disagree. | Use `context-authority.md`: name the question, choose the owner source, check current evidence, then continue or stop. |
 | Stale Session Map | Current focus or continuation prompt points to old work. | Update the map or say it is stale before relying on it. |
 | Map not updated after state change | The work moved from changed locally to committed/pushed/deployed, but the map still says the old state. | Use the Session Map live update loop and correct only the current pointer. |
 
@@ -251,6 +252,7 @@ recommend next.
 | Hafiz asks to verify or QA | Verify or QA | Verify/QA playbook, evidence model, project rules, TESTING/UI docs when triggered | Exact command, browser/mobile/API evidence, missing evidence if any | Stop if proof is missing or unsafe | "Code tests prove the engine; for this staff workflow I also need browser evidence or a named reason why that is not feasible." |
 | Hafiz says `save session` or the chat is getting long | Save or Handoff | Session Map, save-session/handoff docs, Git state, Koda memory rules | Main goal, current focus, highest proven state, dirty files, next action | Stop when future agent can resume | "I will save the story, not just the last command: goal, subgoals, decisions, pushed/local state, evidence, and the first next action." |
 | A long packet changes state from local to committed or pushed | Build -> Commit -> Push/PR | Session Map live update loop, Git state, review/commit playbooks | Highest proven Git state, remaining dirty files, next action | Stop at the approved boundary | "The map still says changed locally, but Git shows the packet is pushed. I will update only the current pointer and progress row before continuing." |
+| Sources disagree about state | Task Router / Review | Context authority, state model, owner source for the question | Highest proven state and the source that proves it | Stop if the conflict changes scope, risk, product meaning, approval, or critical-lane behavior | "Koda says this was accepted, but current docs do not contain the rule. I will treat Koda as history, use the docs as the adoption source, and update the owner doc before claiming the rule is adopted." |
 
 ## What To Avoid
 

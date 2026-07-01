@@ -129,6 +129,109 @@ I found conflicting context:
 
 Do not silently choose the convenient source.
 
+## Conflict Handling Routine
+
+Use this routine whenever two sources disagree.
+
+Plain meaning:
+
+```text
+Do not argue with the sources.
+Ask what question we are answering, then check the source that owns that
+question.
+```
+
+Steps:
+
+1. Name the question.
+2. Name the conflicting sources.
+3. Pick the owner source for that question.
+4. Check the freshest available evidence from that owner source.
+5. State the highest safe conclusion.
+6. Decide whether to continue, stop, update a stale source, or ask Hafiz.
+
+Use this shape:
+
+```text
+I found a conflict:
+- Question: <what are we trying to know?>
+- Source A says: <old memory / Session Map / GitHub / docs / chat>
+- Source B says: <git / PR / deploy / QA / current code>
+- Source that owns this question: <owner>
+- Practical meaning: <what Hafiz should understand>
+- Recommended action: <continue / update stale source / ask Hafiz / stop>
+```
+
+Do not make the conflict feel bigger than it is.
+If the mismatch is only stale progress text, update the current pointer and
+continue.
+If the mismatch changes product behavior, risk, scope, production state,
+critical-lane behavior, or Hafiz's decision, stop and explain before editing.
+
+## Conflict Priority
+
+Use this order when a conflict appears:
+
+| Conflict question | Owner source | Agent behavior |
+| --- | --- | --- |
+| Is this action forbidden? | Root/project `AGENTS.md`, hard safety rules | Stop. Do not read secrets, modify `live/`, bypass hooks, or use destructive git commands. |
+| What does Hafiz want now? | Latest clear Hafiz instruction in this session | Treat it as current intent, unless it crosses a forbidden or critical boundary. |
+| What is the current code/repo state? | Current files, `git status`, branch, commit, tests | Use current evidence over old chat, Koda, or stale docs. |
+| What changed exactly? | Git diff or commit | Do not use chat, Koda, or Session Map as proof of changed files. |
+| Is it on GitHub? | Remote branch, commit, issue, or PR | Do not use a local commit as proof that GitHub has it. |
+| Is it merged? | PR state or `origin/main` commit ancestry | Do not use PR-open or local branch state as proof of merge. |
+| Is it deployed? | Deploy record or production/staging SHA | Do not use merge state as proof of deploy. |
+| Does it work for users? | QA, E2E, smoke, screenshots, monitoring, safe runtime checks | Do not use deploy state alone as proof that the journey works. |
+| Is this a durable lesson? | Koda plus owning docs/playbook | Do not use Koda as live state proof. |
+| What is the current session return path? | Session Map plus latest chat close-out | If stale, update the pointer with current Git/evidence and continue. |
+| What is bigger/future work? | Mission Ledger | Do not expand a scoped GitHub issue just because a bigger mission exists. |
+| What did staff report? | Planner/support report | Treat as reported symptom; verify cause before coding or closing. |
+
+## Continue Or Stop
+
+Continue when:
+
+- the conflict is stale progress text and current Git/evidence is clear;
+- the conflict does not change scope, risk, product meaning, or approval;
+- the agent can safely update the stale pointer it owns;
+- the work can proceed using the source that clearly owns the question.
+
+Stop and ask Hafiz when:
+
+- current instruction conflicts with `AGENTS.md`, project rules, or forbidden
+  boundaries;
+- Hafiz's requested target changes product/business meaning;
+- current evidence contradicts an approval, PR, deploy, or live claim;
+- a critical lane appears;
+- the conflict would expand scope or change acceptance;
+- the agent cannot tell which source owns the question.
+
+Examples:
+
+```text
+Session Map says "changed locally", but Git shows commit `abc123` is pushed.
+This is stale progress text. Update the map pointer and continue.
+```
+
+```text
+Koda says the workaround was accepted, but current code no longer has that
+path. Treat Koda as historical, check current code, and update Koda if the old
+memory would mislead future agents.
+```
+
+```text
+GitHub issue is closed, but production SHA does not include the commit. Say the
+engineering issue is closed, but the fix is not live yet. Recommend deploy or
+live check only if the boundary is approved.
+```
+
+```text
+Hafiz asks for a business-rule change that contradicts current code. Current
+code proves current behavior; Hafiz defines desired behavior. Treat it as a
+change request and use the right lane, especially if it touches auth, payment,
+invoice, commission, migration, deploy, or mobile API contracts.
+```
+
 ## Stale Context Protocol
 
 Use this when memory, old chat, docs, GitHub, task state, or the current repo do

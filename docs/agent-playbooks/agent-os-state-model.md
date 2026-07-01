@@ -173,6 +173,44 @@ If two sources disagree, use [context-authority.md](context-authority.md).
 Plain meaning: route the information to the right home, but do not trust stale
 or conflicting context without checking the source that owns the current truth.
 
+## State Conflict Handling
+
+Use this when a status source says one thing and another source says something
+different.
+
+Plain meaning:
+
+```text
+The source that owns the question wins.
+If the owner source is stale or missing, say what is unproven instead of
+guessing.
+```
+
+Common conflicts:
+
+| Conflict | Owner source | Correct report |
+| --- | --- | --- |
+| Chat or Session Map says done, but Git has dirty files | Git status/diff | Changed locally, not clean or committed. |
+| Koda says a rule exists, but docs do not | Owning docs/playbook for public behavior | Memory exists, but the rule is not adopted until docs are updated and pushed. |
+| Local commit exists, but `origin/main` lacks it | Remote branch / GitHub | Committed locally, not pushed to GitHub. |
+| PR is open, but not merged | PR state | PR ready or under review, not merged. |
+| PR is merged, but deploy record does not include it | Deploy record / production SHA | Merged, not deployed. |
+| Deploy happened, but no smoke or QA evidence exists | QA/smoke evidence | Deployed, not live checked. |
+| Smoke passed, but no monitoring happened | Monitoring evidence | Live checked, not monitored. |
+| Monitoring passed, but Hafiz has not accepted business risk | Hafiz / business owner | Monitored, not accepted or closed. |
+| Planner says fixed, but no Git/PR/deploy/QA evidence exists | Git/PR/deploy/QA evidence | Staff report says fixed; engineering/live state is unverified. |
+| Mission Ledger describes bigger work than the GitHub issue | GitHub issue for current execution; Mission Ledger for bigger goal | Keep current work scoped; mention bigger goal as follow-up. |
+
+Use this response shape:
+
+```text
+I checked the source that owns this state.
+Highest proven state: <state>.
+Not proven yet: <pushed / merged / deployed / live checked / monitored /
+accepted>.
+Recommended next: <one action>.
+```
+
 ## Profile Record Ownership
 
 Use this when deciding where real permission assignments should live.
