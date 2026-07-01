@@ -67,6 +67,10 @@ Use Markdown as the source of truth.
 If Hafiz wants a dashboard, generate HTML from the Markdown instead of manually
 maintaining a separate HTML file.
 
+Use [planning-artifacts.md](planning-artifacts.md) when deciding whether the
+Session Map alone is enough, or whether the current work also needs a Quick
+Brief, Product Shape, Build-Ready Pack, or generated HTML review view.
+
 Plain meaning:
 
 ```text

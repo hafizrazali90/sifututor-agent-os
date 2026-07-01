@@ -68,6 +68,13 @@ classification rules.
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right intensity: Light, Medium, Full, or Critical.
 
+Use [planning-artifacts.md](planning-artifacts.md) when the task needs
+brainstorming, option comparison, Product Shape, Build-Ready Pack, a visual
+review board, or a clear explanation before implementation. Plain meaning: do
+not jump from vague agreement into code. Choose the smallest useful planning
+artifact, explain why it is enough, and stop before coding when Hafiz still
+needs to decide product direction, risk, scope, or acceptance.
+
 Use [agent-os-state-model.md](agent-os-state-model.md) when deciding where the
 current task, issue, mission status, evidence, and release state should be
 recorded.

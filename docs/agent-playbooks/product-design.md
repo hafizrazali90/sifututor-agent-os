@@ -94,6 +94,10 @@ Do not start implementation when:
 Do not ask Hafiz to remember labels such as `Level 1`, `Level 2`, or `Level 3`.
 Use natural language instead.
 
+Use [planning-artifacts.md](planning-artifacts.md) as the shared source of
+truth for when chat, Quick Brief, Product Shape, Build-Ready Pack, Session Map,
+or Markdown + HTML review is the right planning artifact.
+
 | Say this | Use when | What the agent should explain |
 | --- | --- | --- |
 | `This only needs a Quick Brief.` | Small safe change, typo, narrow bug, simple docs/tooling edit, obvious behavior. | What is wrong, what will change, what will not change, and how it will be checked. |

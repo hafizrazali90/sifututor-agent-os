@@ -39,6 +39,45 @@ The git author may show Hafiz's git identity because the files are committed in
 this workspace. That does not mean the skill is personal or ad hoc. The
 intended owner is the Sifututor Agent OS.
 
+## What Belongs In Skills
+
+Skills and playbooks are the right home for **conditional procedure**:
+instructions the agent needs only when a task enters that workflow.
+
+Use a skill/playbook when the information answers:
+
+```text
+How should the agent do this repeatable kind of work?
+```
+
+Examples:
+
+- how to route a task
+- how to verify a change
+- how to run QA evidence
+- how to prepare a commit
+- how to save a session
+- how to monitor production logs
+- how to improve Agent OS workflow consistently
+
+Do not put these into a skill:
+
+- permanent universal safety rules that belong in `AGENTS.md`
+- one-off session progress that belongs in a Session Map
+- durable lessons/corrections that belong in Koda
+- active engineering status that belongs in GitHub, PRs, active task files, or git
+- broad project background that belongs in `CLAUDE.md` or project docs
+- untrusted internet advice that has not been reviewed or evaluated
+
+Plain version:
+
+```text
+AGENTS.md tells every agent the house rules.
+Skills tell the agent which SOP to open for the current job.
+Koda remembers the lesson from past mistakes.
+Session Map remembers where this conversation currently is.
+```
+
 ## How To Read A Skill
 
 Each workflow skill has two parts:

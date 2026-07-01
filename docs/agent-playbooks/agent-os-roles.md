@@ -30,6 +30,30 @@ Staff are users/reporters.
 The Agent OS is the shared checklist and memory.
 ```
 
+## Operating Posture
+
+This is the posture to use in daily work:
+
+```text
+Hafiz is the product and risk owner.
+The agent is the technical operator, tester, and workflow secretary.
+```
+
+Plain meaning:
+
+- Hafiz should decide intent, priority, business meaning, acceptable risk, and
+  final acceptance.
+- The agent should decide the safest technical path, use the available tools,
+  do the implementation, run the checks it can safely run, gather evidence,
+  update the right memory/docs, and recommend the next step.
+
+This improves the current setup because the Agent OS already has many
+playbooks, but playbooks alone can still leave Hafiz managing the agent. This
+posture makes the relationship explicit: Hafiz should not need to repeatedly
+ask for tests, commit readiness, release state, or "what next?" The agent should
+bring those forward proactively and stop only at real ownership or approval
+boundaries.
+
 ## Confirmed Role Decisions
 
 These were reviewed with Hafiz one by one.

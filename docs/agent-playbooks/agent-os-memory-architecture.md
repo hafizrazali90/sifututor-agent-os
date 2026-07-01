@@ -44,6 +44,48 @@ taxonomy, lifecycle, retrieval order, and cleanup rules.
 | Procedural memory | How to do repeated work | playbooks, skills, scripts, templates |
 | Archive memory | Old, superseded, historical, or low-relevance memories | Koda with lifecycle tags, or future archive store |
 
+## Memory And Skill Ownership Rule
+
+Use this rule before saving, moving, or duplicating information:
+
+```text
+Always-loaded memory should stay small.
+Detailed procedures belong in skills and playbooks.
+Durable lessons belong in Koda.
+The current working story belongs in the Session Map.
+Execution state belongs in GitHub, PRs, active task files, and git.
+```
+
+Plain version:
+
+```text
+Do not make every agent memorize the whole company handbook every morning.
+Give the agent the core rules first, then let it open the right SOP when the
+task needs it.
+```
+
+| Information | Correct home | Why |
+| --- | --- | --- |
+| Permanent universal behavior | Root `AGENTS.md` | Every agent must always follow it. |
+| Repo-specific must-follow rules | Project `AGENTS.md` | Closest project rules should win. |
+| Deep project reference or Claude-specific context | `CLAUDE.md` and project docs | Useful, but too detailed for universal rules. |
+| Repeatable task procedure | Skills, playbooks, scripts, templates | Load only when the task needs that workflow. |
+| Durable correction, preference, gotcha, or lesson | Koda | Future sessions should remember it without treating it as current task state. |
+| Current multi-goal session story | Session Map | Helps this session and the next agent resume without becoming permanent memory. |
+| Execution-ready engineering task | GitHub issue or PR | Owns coding work, review, CI, and code history. |
+| Bigger parked goal or adjacent idea | Mission Ledger | Keeps future work visible without creating engineering noise too early. |
+| Staff-reported symptom | Teams Planner / intake notes | Context for diagnosis, not root-cause truth. |
+
+If a note seems to belong everywhere, distill it first:
+
+1. Put the permanent rule in the owning doc or playbook.
+2. Put the reusable procedure in a skill/playbook/script.
+3. Put only the why or correction in Koda.
+4. Put the live status in the Session Map or task tracker.
+
+Do not duplicate the same rule across many files unless one file is clearly the
+source of truth and the others only point to it.
+
 ## Memory Taxonomy
 
 Every durable Koda memory should be easy to filter.

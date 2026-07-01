@@ -419,6 +419,11 @@ Use conversational preparation depth, not numeric labels:
 | `Product Shape` | User workflow, staff process, unclear expected behavior, or multiple implementation options. |
 | `Build-Ready Pack` | Major workflow, critical lane, multi-role/module work, backend/frontend contract, or handoff to another builder. |
 
+Use [planning-artifacts.md](planning-artifacts.md) as the shared rule for
+choosing chat-only, Quick Brief, Product Shape, Build-Ready Pack, Session Map,
+or Markdown + HTML review. Product design owns the product content; the
+planning-artifact playbook owns the artifact choice and source-of-truth rule.
+
 The agent should recommend the lightest safe preparation, but risk can force
 deeper preparation. Hafiz can ask for more or less, and the agent should explain
 any safety concern in normal language.

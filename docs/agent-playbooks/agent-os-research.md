@@ -1,6 +1,6 @@
 # Sifututor Agent OS Research Notes
 
-Last updated: 2026-06-04
+Last updated: 2026-07-01
 
 This note collects external references and design lessons for building the
 Sifututor Agent OS as a reusable development system that Hafiz can distribute
@@ -258,6 +258,193 @@ Sifututor implication:
 - The Agent OS should not be "one agent can do anything." It should be:
   "one agent can do many things through the right workflow, with the right
   approval and evidence."
+
+### L8 Principal Agentic Engineering Workflow - Kun Chen
+
+Sources:
+
+- Local transcript:
+  `~/Downloads/L8 Principal's Agentic Engineering Workflow.txt`
+- YouTube:
+  https://www.youtube.com/watch?v=iQyg-KypKAA
+- ByteByteGo companion article:
+  https://blog.bytebytego.com/p/an-ex-meta-l8s-agentic-engineering
+- AXI:
+  https://github.com/kunchenguid/axi
+- Lavish:
+  https://github.com/kunchenguid/lavish-axi
+- no-mistakes:
+  https://github.com/kunchenguid/no-mistakes
+- gnhf:
+  https://github.com/kunchenguid/gnhf
+- treehouse:
+  https://github.com/kunchenguid/treehouse
+- firstmate:
+  https://github.com/kunchenguid/firstmate
+- Vercel skills CLI:
+  https://github.com/vercel-labs/skills
+- WezTerm:
+  https://wezterm.org/index.html
+- tmux:
+  https://github.com/tmux/tmux/wiki
+- Neovim:
+  https://neovim.io/
+- OpenSuperWhisper:
+  https://github.com/starmel/OpenSuperWhisper
+
+Source quality notes:
+
+- The downloaded transcript is useful but incomplete; it stops around the
+  no-mistakes section. Use the ByteByteGo article as the fuller companion
+  source for validation, parallelization, worktrees, remote control, and the
+  daily flow.
+- Kun's repos are primary sources for his tools, but they are still one
+  person's workflow. Treat them as strong design references, not automatic
+  policy for Sifututor.
+- Any external tool should be evaluated against Sifututor's risk model before
+  adoption. Popularity is not enough.
+
+Findings:
+
+1. **Agentic engineering is a workflow, not one magic agent.**
+   Kun's setup combines terminal continuity, memory, skills, visual planning,
+   autonomous implementation, independent validation, parallel worktrees, and
+   a first-mate/orchestrator layer. The practical idea is that the human stays
+   at the level of intent, decisions, and quality bar while agents handle more
+   of the middle.
+
+2. **Agent-agnostic memory and skills are central.**
+   The transcript emphasizes a small global memory file, project-level
+   `AGENTS.md`/`CLAUDE.md`, and skills for conditional knowledge. This matches
+   Sifututor's direction: stable rules in `AGENTS.md`, deeper project context
+   in `CLAUDE.md`, and repeatable workflows in skills/playbooks.
+
+3. **Keep always-loaded memory small.**
+   Kun warns that global memory is loaded into every session, so it should
+   mostly hold personal preferences and durable rules. Larger or conditional
+   instructions should move into skills so they load only when needed. This
+   supports Sifututor's memory architecture: docs are the system, Koda is
+   distilled lessons, and skills/playbooks handle conditional workflows.
+
+4. **E2E-first bug fixing is a key rule.**
+   The transcript says bug fixes should start by reproducing the bug in an
+   end-user-like setting, not by jumping straight to unit tests. This strongly
+   supports Sifututor's Agent-As-Tester model, permanent E2E rule, QA playbook,
+   and human-journey evidence standard.
+
+5. **Skill quality must be evaluated.**
+   Kun explicitly warns that random internet skills can leak secrets, run
+   unsafe commands, or degrade agent performance. Vercel's skills CLI defines
+   skills as reusable `SKILL.md` instruction sets and supports many agent
+   harness locations, but installation should still be governed. For Sifututor,
+   this supports having a skill registry, install manifest, workflow doctor,
+   and evaluation harness instead of blindly installing popular skills.
+
+6. **Tool ergonomics matter as much as model quality.**
+   Kun's AXI work argues that tools should be designed for agents, not only
+   humans. AXI's published GitHub benchmark reports `gh-axi` at 100% success,
+   lower average cost, and lower duration than GitHub MCP in that benchmark.
+   Its principles include token-efficient output, minimal schemas, truncation
+   with escape hatches, structured errors, and next-step suggestions. This
+   supports Sifututor's "best connector" discussion: choose CLI/MCP/API/AXI by
+   measured reliability, token cost, latency, safety, and output quality.
+
+7. **Visual planning can reduce Hafiz frustration.**
+   Lavish turns plans into local-first interactive HTML artifacts where the
+   human can annotate specific elements and send feedback back to the agent.
+   This maps directly to Hafiz's complaint that walls of text are hard to
+   understand and that he wants to read code-like logic in natural language.
+   Sifututor already has Session Map HTML ideas; Lavish suggests a stronger
+   pattern for complex UX/product/design decisions.
+
+8. **Implementation should follow a clarified plan.**
+   Kun uses a concentrated planning phase so implementation can run with less
+   interruption. This matches Hafiz's desired behavior: discuss options first,
+   understand what will be built, then let the agent proceed inside the agreed
+   boundary.
+
+9. **Validation should be independent and adversarial.**
+   The no-mistakes workflow runs validation in a disposable worktree with
+   review, tests, docs, lint, push, PR, and CI. Kun says reviewers should run
+   in fresh context to avoid same-session bias, ambiguous product decisions
+   should escalate to the human, and E2E evidence should be forced. Sifututor
+   already has verify, QA, review, commit, and CI/PR workflow pieces; the gap
+   is whether to bundle them into a stronger no-mistakes-style local gate.
+
+10. **Parallel work needs isolation and visible state.**
+    Kun uses tmux for visible/persistent agent sessions and treehouse for
+    reusable isolated worktrees. Treehouse manages a worktree pool so agents do
+    not step on each other. Sifututor already uses worktrees heavily, but the
+    workflow still relies on the agent remembering branch/worktree state. A
+    lightweight treehouse-like pattern or stricter Session Release Ledger could
+    reduce confusion.
+
+11. **Long-running autonomous work needs small committed steps.**
+    gnhf runs long objectives through repeated small, committed, documented
+    changes with rollback/retry behavior and logs. This is similar to our goal
+    budget/autopilot discussions, but Sifututor should be careful: for product
+    code, payments, invoices, mobile API contracts, deployments, and live data,
+    autonomous loops need strict boundaries and evidence requirements.
+
+12. **A "first mate" can reduce coordination overhead.**
+    firstmate positions one primary agent as the interface to a crew, with
+    explicit project modes such as no-mistakes, direct-PR, or local-only. This
+    is conceptually close to our router/orchestrator idea. For Sifututor, the
+    useful principle is not necessarily installing firstmate now; it is making
+    the route and autonomy mode explicit before work begins.
+
+13. **Remote continuity is part of the workflow.**
+    Kun uses tmux plus SSH/Tailscale/mosh so sessions continue across devices.
+    This is not an immediate Sifututor Agent OS core need, but it reinforces
+    the value of persistent session state, visible status, and continuation
+    prompts.
+
+Sifututor comparison:
+
+| Kun workflow element | Sifututor already has | Gap / discussion point |
+| --- | --- | --- |
+| Small global memory + project memory | Root/project `AGENTS.md`, `CLAUDE.md`, Koda | Audit what belongs in always-loaded docs vs skills/Koda |
+| Skills for conditional knowledge | Codex skills + playbooks | Add evaluation and pruning discipline for skill quality |
+| Voice-first prompting | Hafiz often uses short natural prompts | Decide whether to recommend local dictation as optional |
+| AXI-style tool ergonomics | Capability model, probes, wrappers | Benchmark or score connector choices before standardizing |
+| Lavish visual planning | Session Map HTML, product-design playbook | Decide whether complex planning should use interactive HTML |
+| Autonomous implementation after plan | Autopilot boundaries | Strengthen "planned enough to autopilot" criteria |
+| no-mistakes validation gate | Verify, QA, review, commit, PR/CI playbooks | Consider one bundled local gate before push/PR |
+| Fresh reviewer context | Review playbook | Make independent review/fresh-context rule clearer |
+| E2E evidence | Agent-As-Tester + permanent E2E rule | Keep enforcing; improve scenario examples |
+| Worktree isolation | Manual worktrees, Session Release Ledger | Improve worktree naming/status/cleanup or consider a tool |
+| gnhf long-running loop | Goal/autopilot discussion, session maps | Define when overnight/autonomous loops are safe or forbidden |
+| firstmate orchestration | Task router, workflow skills, parity contract | Make "mode" explicit: local-only, PR-ready, deploy-ready, etc. |
+
+Recommended discussion order:
+
+1. **Operating posture:** Do we want Hafiz to be "captain / product-risk owner"
+   and the agent to be "technical crew / tester / secretary"?
+2. **Memory and skills:** What belongs in `AGENTS.md`, project docs, Koda, and
+   skills so we reduce token waste without losing context?
+3. **Planning artifact:** Should complex decisions use an interactive HTML plan
+   or a better Markdown/Session Map first?
+4. **Tool connector standard:** Should we adopt an AXI-like scorecard for CLI,
+   MCP, API, browser, and GUI tools?
+5. **Validation gate:** Should we build a Sifututor "no-mistakes-lite" gate
+   that bundles review, tests, docs, lint, evidence, PR, and CI?
+6. **Parallel work:** How many concurrent sessions/worktrees should we allow,
+   and what status board prevents confusion?
+7. **Autonomous long-running work:** When is a gnhf-style loop safe, and what
+   is forbidden?
+8. **First-mate routing:** Should one agent/session become the visible
+   coordinator while workers run behind it?
+9. **Remote/continuation:** What status, Session Map, and resume artifacts are
+   enough so work feels continuous across devices and sessions?
+
+Initial recommendation:
+
+- Do not install the full external toolchain yet.
+- Use the workflow as a design reference and discuss one layer at a time.
+- First Sifututor improvement candidate: strengthen the validation gate into a
+  no-mistakes-lite playbook that runs fresh-context review, focused tests,
+  E2E/human-journey proof, docs/evidence checks, lint/build where relevant,
+  and clear PR/CI status before asking Hafiz to review or merge.
 
 ### Cross-Agent Workflow Parity
 

@@ -33,6 +33,27 @@ system. The Agent OS includes:
 - guard scripts under `scripts/agent-checks/`
 - agent adapters such as Codex skills/hooks and Claude skills
 
+## First Operating Principle
+
+Hafiz owns intent, product direction, business judgment, and risk acceptance.
+The agent owns technical execution, testing, evidence, memory, and next-step
+guidance.
+
+Plain version:
+
+```text
+Hafiz decides what matters and what risk is acceptable.
+The agent figures out the technical path, does the work, proves it, explains it,
+remembers the lesson, and recommends the next move.
+```
+
+This is the main difference between a passive coding assistant and the
+Sifututor Agent OS. Hafiz should not have to manage every command, test,
+workflow step, or reminder. The agent should carry the technical burden and
+pause only when a decision genuinely belongs to Hafiz: product direction,
+business rules, subjective acceptance, external state, production, money, data,
+access, critical lanes, destructive action, or final risk acceptance.
+
 ## Phased Purpose
 
 Start narrow enough to work. Design wide enough to grow.
@@ -181,6 +202,7 @@ Read these as the core internal kit:
 | Profile registry operations | [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
+| Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
 | Verification and human-journey evidence | [agent-os-evidence-model.md](agent-os-evidence-model.md) |
 | Task and release state | [agent-os-state-model.md](agent-os-state-model.md) |
