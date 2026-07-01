@@ -47,8 +47,10 @@ the lightest test that can honestly catch the mistake if it returns.
 | State fixture | The wording does not confuse local, pushed, PR, merged, deployed, or live. | Preventing false "done/live" claims. | Proving real GitHub/deploy state. |
 | Conversation fixture | Short replies resolve against the prior visible request. | `approve`, `proceed`, `what next`, `go next`. | Long multi-session reasoning. |
 | Koda fixture | Memory payloads and stale-memory behavior are safe. | Memory quality and fallback discipline. | Live retrieval relevance by itself. |
+| Koda retrieval probe | Existing important memories are findable again through live Koda search. | Checking whether future sessions can recover Scenario Lab, Koda CLI, parity, and live-evidence lessons. | Routine health checks, because live service quality can vary. |
 | Capability fixture | Tool availability and approval claims stay honest. | Unknown, not connected, blocked, critical, and staff capability states. | Deep live connector behavior. |
 | Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
+| Behavior trace | The agent picks the expected route, first move, approval boundary, and evidence markers for common prompts. | Claude/Codex parity review points and workflow predictability. | Subjective quality of the full answer. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
 | Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
 | Scenario Lab | Realistic Hafiz work moments are checked at the route/proof/boundary level. | Daily-work readiness, approval boundaries, tool discipline, and cross-layer behavior. | Real production safety, subjective acceptance, or full live LLM answer quality. |
@@ -74,6 +76,11 @@ The loop is allowed to run more than once because some checks may depend on
 current local state, but it should not hide failures. If the target is not
 reached, fix the failing layer instead of lowering the score.
 
+The behavior trace runner has an optional `--live-claude` mode for comparing
+Claude CLI traces, but that mode is evidence-only. It may hit model budget,
+rate-limit, or project-context loading limits, so normal readiness should use
+the deterministic trace plus real-session review.
+
 Counted in the score:
 
 - router and behavior evals
@@ -81,6 +88,7 @@ Counted in the score:
 - state wording fixtures
 - Koda and capability fixtures
 - conversation and parity fixtures
+- behavior trace checks
 - workflow example structure
 - Agent OS health and workflow doctor
 - Scenario Lab realistic work scenarios
@@ -88,8 +96,10 @@ Counted in the score:
 Not counted yet:
 
 - subjective tone quality beyond response-shape fixtures
-- real Claude-vs-Codex answer comparison
+- full real Claude-vs-Codex answer comparison
 - live connector quality beyond local probes and on-demand capability checks
+- live Koda retrieval quality, which is run on demand because it depends on the
+  current memory service
 - product E2E correctness
 - Hafiz/business acceptance
 
@@ -241,6 +251,7 @@ scripts/agent-checks/agent-os-eval-runner.py --self-test
 scripts/agent-checks/agent-os-response-shape-runner.py
 scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
+scripts/agent-checks/agent-os-behavior-trace-runner.py
 python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
 python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90
 scripts/agent-checks/agent-os-health.sh
@@ -252,6 +263,7 @@ For docs-only harness changes, also run:
 ```bash
 git diff --check
 python3 -m json.tool docs/agent-playbooks/agent-os-install-manifest.json >/dev/null
+python3 scripts/agent-checks/agent-os-koda-retrieval-quality.py
 ```
 
 Before commit, run:

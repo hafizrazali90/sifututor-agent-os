@@ -111,6 +111,8 @@ check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-validation-loop.py"
 check_file "Agent OS scenario lab" "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py"
+check_file "Agent OS behavior trace" "$ROOT/scripts/agent-checks/agent-os-behavior-trace-runner.py"
+check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >$TMP_DIR/agent-os-eval-runner.out 2>$TMP_DIR/agent-os-eval-runner.err; then
@@ -265,6 +267,25 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-scenario-lab.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-scenario-lab.out $TMP_DIR/agent-os-scenario-lab.err
+
+if "$ROOT/scripts/agent-checks/agent-os-behavior-trace-runner.py" >$TMP_DIR/agent-os-behavior-trace.out 2>$TMP_DIR/agent-os-behavior-trace.err; then
+  behavior_trace_summary="$(tail -1 $TMP_DIR/agent-os-behavior-trace.out 2>/dev/null || true)"
+  pass "Agent OS behavior trace" "${behavior_trace_summary:-passed}"
+else
+  fail "Agent OS behavior trace" "behavior trace runner failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-behavior-trace.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-behavior-trace.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-behavior-trace.out $TMP_DIR/agent-os-behavior-trace.err
+
+if python3 -m py_compile "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py" >$TMP_DIR/agent-os-koda-retrieval.out 2>$TMP_DIR/agent-os-koda-retrieval.err; then
+  pass "Agent OS Koda retrieval" "py_compile ok; run directly for live retrieval quality"
+else
+  fail "Agent OS Koda retrieval" "py_compile failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-koda-retrieval.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-koda-retrieval.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-koda-retrieval.out $TMP_DIR/agent-os-koda-retrieval.err
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"

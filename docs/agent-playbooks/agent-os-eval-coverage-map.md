@@ -36,6 +36,7 @@ be automated next.
 | Response shape | RS-001, RS-002, RS-003, RS-004, RS-005, RS-006, RS-007, RS-008, RS-009, RS-010 | Closing work with vague "done" instead of changed, checked, state, remaining risk, next action, decision needed, practical meaning, easier explanation, formal-label translation, blocked-work clarity, and technical detail in natural language. |
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005, ST-006, ST-007, ST-008, ST-009, ST-010, ST-011, ST-012, ST-013, ST-014 | Saying local, committed, pushed, PR-open, merged, deployed, or smoke-passed work is further along than evidence proves; claiming PR/deploy state without a PR/link, commit, release, or deployment evidence. |
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009, KO-010, KO-011, KO-012, KO-013, KO-014, KO-015 | Storing unsafe, vague, unscoped, duplicate, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy; using wrong correction source; mutating Koda during bulk cleanup before a read-only audit. |
+| Koda retrieval quality | KR-001 through KR-004 | Important Agent OS memories can be found again by future sessions using the direct Koda helper. Checked on demand by `scripts/agent-checks/agent-os-koda-retrieval-quality.py`; health checks syntax only because live retrieval depends on current Koda service state. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013, CP-014, CP-015, CP-016, CP-017 | Claiming unverified tools, using blocked tools without approval, asking again for task-relevant approved auto-read evidence, using auto-read as broad/unrelated access, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Capability probe | Local capability report | Claiming local filesystem, git, Koda, agent-access wrapper, commit, push, deploy, secret, or live-write capability without checking current-session state first. Checked by `scripts/agent-checks/agent-os-capability-probe.py` and health. |
 | GitHub probe | GitHub CLI read probe | Claiming GitHub repo metadata access without checking `gh` auth and a tiny read-only repo metadata call first. Checked on demand by `scripts/agent-checks/agent-os-github-probe.py`; health checks file presence only to stay fast. |
@@ -44,6 +45,7 @@ be automated next.
 | Production logs probe | Sentry and BetterStack read probe | Claiming production monitoring/log evidence without checking approved read-only Sentry and BetterStack access first, or printing noisy issue/log details during a capability check. Checked by `scripts/agent-checks/agent-os-production-logs-probe.py`; output is status/counts only. |
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
+| Behavior traces | BT-001 through BT-004 | Codex chooses the expected workflow route, first move, approval boundary, and evidence language for common Hafiz prompts; optional live Claude mode can compare Claude's structured trace without making normal health depend on live LLM output. Checked by `scripts/agent-checks/agent-os-behavior-trace-runner.py` and the validation loop. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
 | Validation loop | Executable harness score | Hiding scattered Agent OS failures across separate scripts. Checked by `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, which combines executable checks into one readiness score. |
 | Scenario Lab | RW-001 through RW-018 | Realistic Hafiz work moments across commit, push, critical lane, staff intake, agent-as-tester, memory, session map, production, forbidden secrets, validation target, readiness, product design, GitHub PR readiness, Planner read-only intake, production monitoring, stale Koda conflict, Claude/Codex behavior comparison, and live evidence probe reporting. Checked by `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`. |
@@ -56,7 +58,7 @@ These are important but not honest as simple router-classifier tests yet.
 | --- | --- | --- |
 | Communication style | AO-032, AO-033, AO-034, AO-035, AO-064, AO-070 | Partly covered by the response-shape runner, including practical meaning, state, next action, decision needed, and formal-label translation. Full tone judgment still needs human review. |
 | Context conflicts with live repo state | AO-036, AO-037, AO-038, AO-039, AO-040, AO-044, AO-066, AO-068, AO-069, AO-160, AO-161, AO-162 | Needs current git, Mission Ledger, Planner, Koda, Session Map, PR, QA, or production/deploy evidence. AO-098 documents the shared stale-context behavior; AO-160 through AO-162 define the conflict-handling routine. Richer automation needs repo-state and session-state fixtures. |
-| Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures; still needs live write/read behavior and retrieval quality evidence. |
+| Memory quality and safety | AO-041, AO-042, AO-043, AO-045, AO-046, AO-051, AO-052, AO-053 | Partly covered by Koda fixtures and the on-demand live Koda retrieval-quality runner. Live write/read behavior still needs careful non-polluting test design before it becomes routine automation. |
 | Capability inventory | AO-047, AO-048, AO-049, AO-050 | Local capability state is covered by the capability probe and capability fixtures. GitHub read capability is covered by an on-demand `gh` probe. Planner read capability is covered by an on-demand Microsoft Graph probe. Google Drive connector readiness is covered by a metadata probe, but live Drive reads still need exposed connector tools. Production monitoring capability is covered by an on-demand Sentry/BetterStack probe. |
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Build handoff quality | AO-104 | Needs real feature/bug context, codebase entry points, risks, and evidence plan. A simple router fixture cannot prove a build-ready brief is complete. |
@@ -74,7 +76,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Agent OS completion map and validation target | AO-166, AO-167, AO-168 | Completion/rollout claims need current roadmap state, health/check evidence, project-profile adoption state, access profile readiness, pilot state, and Hafiz/business acceptance. The 90% validation-target prompt is executable: it must route to workflow improvement, run the validation loop, explain what the score proves, and fix failing Agent OS layers if below target. |
 | Session Map lifecycle | AO-106, AO-156 | Needs real parallel sessions, side paths, compaction, branch state, handoff context, and Git state changes. A simple fixture can catch obvious over-creation, but not whether two maps should be merged, parked, split, or updated after a commit/push. The live update loop defines the manual behavior now. |
 | Developer staff rollout details | AO-073, AO-074 | Needs generated developer-staff onboarding artifacts, and must preserve the rule that ordinary staff use Teams Planner only. |
-| Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity and the Behavior Parity Review Standard are executable through the parity runner. Full behavior comparison still needs adapter-aware traces that compare real Claude and Codex responses for route, first move, approval boundary, evidence, state language, memory/task routing, and close-out. |
+| Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity and the Behavior Parity Review Standard are executable through the parity runner. The behavior trace runner now checks Codex route/first move/action markers and can optionally ask Claude CLI for a structured live trace. Full response-quality comparison still needs human review because different wording is allowed. |
 | Multi-agent and adapter workflow | AO-129, AO-130, AO-131 | Needs real stage context, available tools, handoff state, and worker capability evidence. The playbook defines the stage-first rule now; richer automation needs trace fixtures from real multi-agent sessions. |
 | Pre-push batch completion | AO-094 | Needs real local commit context, current Session Map state, check output, and human-readable package review. A simple router fixture cannot honestly tell whether a batch tells one complete story. |
 | PR/CI automation and efficiency audit | AO-115, AO-116, AO-117 | Needs real GitHub PR state, CI state, branch protection, approval identity, and friction history. The playbooks define the behavior now; richer automation needs GitHub fixtures and workflow-friction logs. |
@@ -87,12 +89,12 @@ These are important but not honest as simple router-classifier tests yet.
 
 ## Future Harness Targets
 
-1. Add live Koda retrieval quality fixtures only when a stable non-polluting
-   live-read harness exists.
+1. Add non-polluting Koda live write/read checks only when the harness can
+   create, find, and clean up test memories without polluting durable memory.
 2. Add an app-tool live-read fixture for Google Drive when Codex can call the
    Google Drive connector from the fixture harness.
-3. Extend the parity fixture from structural checks into behavior fixtures that
-   compare actual Claude and Codex responses against the same workflow prompts.
+3. Extend live Claude/Codex behavior comparison into a richer response-quality
+   review once trace output is stable enough and cost/noise are acceptable.
 
 ## Maintenance Rule
 

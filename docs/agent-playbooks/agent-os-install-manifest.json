@@ -72,6 +72,8 @@
     "scripts/agent-checks/agent-os-parity-fixture-runner.py",
     "scripts/agent-checks/agent-os-validation-loop.py",
     "scripts/agent-checks/agent-os-scenario-lab-runner.py",
+    "scripts/agent-checks/agent-os-behavior-trace-runner.py",
+    "scripts/agent-checks/agent-os-koda-retrieval-quality.py",
     "docs/agent-playbooks/templates/live-evidence-probe-report.md",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"
