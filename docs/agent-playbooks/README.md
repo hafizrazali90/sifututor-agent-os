@@ -56,6 +56,7 @@ Use these when the user asks for:
 - test coverage manifest enforcement: [test-coverage.md](test-coverage.md)
 - staging and committing: [commit.md](commit.md)
 - saving knowledge at the end of work: [save-session.md](save-session.md)
+- remote/device/session continuation: [save-session.md](save-session.md), [session-map.md](session-map.md)
 - handoff to another agent or human: [handoff.md](handoff.md)
 - context snapshot before switching or compaction: [snapshot.md](snapshot.md)
 - bug diagnosis or root-cause analysis: [diagnose.md](diagnose.md)

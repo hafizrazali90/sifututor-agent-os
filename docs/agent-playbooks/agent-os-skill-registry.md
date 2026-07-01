@@ -119,7 +119,7 @@ skill.
 
 | Skill | Human name | Use when | Wrapper | Playbook | Claude equivalent | Not for |
 | --- | --- | --- | --- | --- | --- | --- |
-| `$task-router` | Task Router | Starting, classifying, resuming, or routing meaningful work. | `.agents/skills/task-router/SKILL.md` | `docs/agent-playbooks/task-router.md` | `/task-router` or project router skill | Direct commit, deploy, or implementation without checking route and state. |
+| `$task-router` | Task Router | Starting, classifying, resuming, routing meaningful work, or acting as the first-mate/front-desk layer for the Agent OS. | `.agents/skills/task-router/SKILL.md` | `docs/agent-playbooks/task-router.md` | `/task-router` or project router skill | Direct commit, deploy, or implementation without checking route, state, finish point, evidence need, and approval boundary. |
 | `$diagnose` | Diagnose | Bugs, failing tests, unexpected behavior, unclear root cause, or quick read-only intake diagnosis. | `.agents/skills/diagnose/SKILL.md` | `docs/agent-playbooks/diagnose.md` | `/diagnose` | Implementation before approval in critical lanes. |
 | `$verify` | Verify | Proving implementation works before QA, review, or commit. | `.agents/skills/verify/SKILL.md` | `docs/agent-playbooks/verify.md` | `/verify` | Product acceptance or broad manual QA by itself. |
 | `$qa` | QA | Regression, smoke, browser, visual, manual-style, or route-level quality checks. | `.agents/skills/qa/SKILL.md` | `docs/agent-playbooks/qa.md` | `/qa` | Replacing focused implementation verification. |

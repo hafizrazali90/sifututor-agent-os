@@ -56,6 +56,54 @@ Stop before dangerous actions.
 Leave a clear trail.
 ```
 
+## First-Mate Routing
+
+Use this as the human-friendly name for the router's orchestration
+responsibility.
+
+Plain meaning:
+
+```text
+The router is the front desk of the Agent OS.
+Hafiz should not need to remember every workflow, skill, tool, or stop point.
+```
+
+This is not a separate agent yet. For now, first-mate routing is an upgraded
+responsibility of Task Router.
+
+When a task starts or resumes, Task Router should answer these questions before
+the agent gets deep into work:
+
+1. What is Hafiz trying to achieve?
+2. Is this discussion, diagnosis, design, build, verify, QA, review, commit,
+   push/PR, deploy, monitoring, save-session, or handoff?
+3. What is the practical finish point for this task: diagnosed only, fixed
+   locally, committed, PR opened, merged, deployed, live-smoke-passed, or
+   monitored?
+4. Which worker or tool fits the current stage: Codex, Claude, future LLM,
+   subagent, browser, CLI, connector, Koda, GitHub, Planner, or human?
+5. What evidence will prove the current stage?
+6. Where must the agent stop for Hafiz's approval, risk acceptance, or product
+   judgment?
+7. What is the next recommended action after this step?
+
+Non-technical version:
+
+```text
+Do not make Hafiz manage the crew.
+Translate his request into a safe route, pick the right worker/tool, explain
+where the work will pause, and keep the next move visible.
+```
+
+Current implementation decision:
+
+```text
+Do not create a separate "first-mate agent" yet.
+Make Task Router own this behavior first.
+Split it into a dedicated agent/tool only if the router becomes too heavy or
+repeated evals show one router cannot manage the orchestration cleanly.
+```
+
 Useful references:
 
 - LangChain human-in-the-loop:

@@ -54,6 +54,12 @@ Use this order:
 
 Do not choose the worker first and let the worker invent the process.
 
+Task Router owns the first pass of this decision. In normal words, Task Router
+acts as the first-mate layer: it decides the workflow stage, then recommends
+the best worker/tool for that stage. This keeps Codex, Claude, future LLMs,
+subagents, and humans aligned without forcing every adapter to expose the same
+commands.
+
 ## Workflow Stage Map
 
 | Stage | Shared source | Best default worker | Why |
@@ -208,4 +214,3 @@ When using this workflow, report:
 - which shared playbook controls the behavior
 - what state must be saved before switching
 - what Hafiz still needs to decide
-

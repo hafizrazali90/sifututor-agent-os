@@ -148,6 +148,13 @@ monitoring, another session, or an agent-discovered issue, use the Intake
 Scenario Matrix in that same file to avoid restarting the discussion or routing
 the work into the wrong home.
 
+First-mate routing belongs here. Plain meaning: Task Router is the front desk
+of the Agent OS. It should translate Hafiz's natural-language request into the
+current workflow stage, practical finish point, best worker/tool, evidence
+need, approval stop point, and next recommended action before the agent gets
+deep into work. Do not create a separate first-mate agent yet; use
+[agent-os-routing-model.md](agent-os-routing-model.md) as the source of truth.
+
 Important routing principles:
 
 - Do not route by keyword alone.
@@ -155,6 +162,10 @@ Important routing principles:
   light unless Hafiz asks to document or implement.
 - Workflow-improvement prompts should route to the Agent OS Improvement Loop,
   not to ordinary product implementation or Koda-only memory saving.
+- Task Router owns first-mate routing for now. It should answer: what Hafiz is
+  trying to achieve, what workflow stage applies, what done means, which
+  worker/tool fits, what proof is needed, where to stop, and what to recommend
+  next.
 - When a session becomes hard to follow, or when real work starts moving through
   multiple states, start or update the Session Map before continuing deeper.
 - `proceed` means act on the last clear recommended step.

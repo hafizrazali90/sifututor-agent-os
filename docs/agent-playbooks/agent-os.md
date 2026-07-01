@@ -13,6 +13,9 @@ losing context or adding unnecessary ceremony.
   product design, QA, commit, or save-session.
 - **Playbook**: the written steps for a workflow.
 - **Router**: the part that decides which workflow applies.
+- **First-mate routing**: the router's front-desk responsibility: translate
+  Hafiz's request into workflow stage, finish point, worker/tool, evidence,
+  approval stop point, and next action.
 - **Guardrails**: rules and scripts that prevent expensive mistakes.
 - **Working Agreement**: how Hafiz, Codex, Claude, and reviewers collaborate.
 
@@ -98,12 +101,50 @@ Use these twelve layers as the high-level table of contents for the Agent OS:
 | Memory | What goes to Koda, docs, GitHub, Mission Ledger, or nowhere. |
 | Testing | How the agent proves work through tests, E2E, smoke, screenshots, API checks, or monitoring. |
 | Safety | Approval gates, forbidden actions, critical lanes, and destructive boundaries. |
+| Continuation | How work resumes across chats, devices, agents, terminal sessions, compaction, or long pauses. |
 | Agent Adapters | How Codex, Claude, and future LLMs connect to the same core rules. |
 | Change Control | How Agent OS changes are proposed, reviewed, committed, and versioned. |
 | Rollout | How the system is installed, trained, and expanded to staff or projects. |
 
 Phase 1 should deeply build Purpose through Safety, with basic Codex/Claude
 adapters. Change Control and Rollout stay lighter until the core is stable.
+
+## First-Mate Routing
+
+Task Router is the first-mate layer for now.
+
+Plain version:
+
+```text
+Hafiz should be able to say the goal in normal language.
+The router should decide the safest route, best worker/tool, proof needed,
+where to stop, and the next action.
+```
+
+Do not create a separate first-mate agent yet. Start by strengthening
+Task Router and split it out only if repeated real use shows the router is too
+heavy or unclear.
+
+## Continuation Standard
+
+The Agent OS should feel continuous even when the chat, device, agent, or
+terminal changes.
+
+Plain version:
+
+```text
+The work should resume from a clear continuation pack, not from someone trying
+to remember the old chat.
+```
+
+Use Session Map for the current story, save-session for the restart pack, Git
+for exact file state, GitHub/PRs for engineering state, Koda for durable
+lessons, and Mission Ledger for future or parked work.
+
+Persistent environment tools such as tmux, WezTerm, SSH, Tailscale, or mosh are
+optional helpers. They can keep a session alive, but they are not the source of
+truth. A future agent should still be able to resume from the written
+Continuation Pack.
 
 ## Collaboration Model
 

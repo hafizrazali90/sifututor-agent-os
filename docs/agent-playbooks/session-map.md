@@ -280,6 +280,38 @@ I found an active Session Map for <topic>, but your prompt looks like <new
 topic>. I will treat this as new work unless you want to resume that map.
 ```
 
+## Remote And Device Continuation
+
+Persistent terminal tools can help, but the Session Map remains the readable
+continuation source.
+
+Plain meaning:
+
+```text
+tmux, WezTerm, SSH, Tailscale, or mosh can keep the room open.
+The Session Map tells the next person what the room is for.
+```
+
+Use terminal continuity as an environment convenience, not as the only state
+record. A resumed agent should still read the Reference Pack, check Git state,
+and verify current evidence before acting.
+
+When work may continue from another device, another agent, or a later day, make
+sure the Session Map names:
+
+- main goal
+- current focus
+- highest proven state
+- dirty files or local-only commits
+- first source to read
+- first safe command/check to run
+- waiting decision or approval boundary
+- single recommended next action
+
+If the old terminal/session is useful but not required, say that clearly. If it
+is required, save or hand off enough detail so the next agent can recover if
+the terminal is gone.
+
 ## Operating Rhythm
 
 Use this rhythm during normal work:

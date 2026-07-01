@@ -42,6 +42,20 @@ The next Claude, Codex, or human should be able to continue in a few minutes,
 not reconstruct the whole story from chat.
 ```
 
+Remote/device continuity uses the same standard.
+
+Plain meaning:
+
+```text
+Whether Hafiz resumes tomorrow, from another device, in Claude, in Codex, or in
+a persistent terminal, the source of truth is the continuation pack, not the
+old chat scrollback.
+```
+
+Terminal tools such as tmux, WezTerm, SSH, Tailscale, or mosh can keep a work
+environment alive, but they do not replace the save report, Session Map, Git
+state, Koda lesson, GitHub/PR state, Mission Ledger item, or evidence trail.
+
 For meaningful sessions, the save report must include these facts:
 
 1. Main goal: why the session started.
@@ -73,6 +87,15 @@ If the session used an autonomous work packet, use
 [autonomous-work-packets.md](autonomous-work-packets.md) before saving. The save
 report should name the finish point, current loop/slice, completed loops,
 failed checks, stop reason, and next loop or decision.
+
+If the session is meant to continue across devices, terminal windows, agents, or
+days, also include:
+
+1. The first source to read on resume.
+2. The exact command or check that safely re-establishes current state.
+3. Any local-only state that will not exist on another machine until pushed.
+4. Whether the old terminal/session is helpful context or required context.
+5. The one action the next session should do first.
 
 If local commits are not pushed, say that plainly:
 

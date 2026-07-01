@@ -20,6 +20,51 @@ user-facing small-change review. Plain meaning: review should check whether the
 agent looked for obvious same-pattern bugs, adjacent regression risk, and scope
 expansion before saving or sending work outward.
 
+## Fresh-Context Review
+
+Use fresh-context review when the next state matters enough that the builder's
+own confidence is not sufficient.
+
+Plain meaning:
+
+```text
+Review the work like you did not build it.
+Do not trust the implementation story until the diff, state, and evidence
+support it.
+```
+
+Fresh-context review is a stronger mode inside this playbook, not a separate
+skill by default.
+
+Use it before:
+
+- push, PR, merge, deploy, release close-out, or live/done claims
+- critical-lane work
+- user-facing feature, bugfix, hotfix, or small-change work
+- long autonomous work packets
+- multi-fix sessions
+- complex Agent OS changes that affect future agent behavior
+
+Skip the full version for tiny docs-only, typo, or copy edits unless the edit
+changes approval, safety, memory, evidence, routing, or deployment behavior.
+
+Fresh-context review should ask:
+
+1. What would I check first if I did not trust the builder's explanation?
+2. Does the diff match the intended scope?
+3. Does the evidence prove the acceptance rule, or only a weaker behavior?
+4. Could a real user journey still fail?
+5. Is the state honest: local, committed, pushed, PR open, merged, deployed,
+   live checked, monitored, accepted, or closed?
+6. Did the builder miss related impact, release communication, permanent E2E,
+   Session Release Ledger, or approval boundary?
+7. What should happen next, and what should not happen yet?
+
+If another agent, Claude, a subagent, or a human reviewer is available and the
+risk justifies it, the main agent may ask for bounded fresh review. The main
+agent still owns synthesis, final checks, and close-out unless Hafiz assigns
+ownership elsewhere.
+
 ## Review And Risk Checkpoint
 
 Review is the agent's second-brain check before work is saved or sent outward.

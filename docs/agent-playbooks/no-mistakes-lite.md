@@ -82,6 +82,7 @@ sessions, or anything leaving local:
 | Is there a critical lane? | Auth, payment, invoice, commission, migration, deploy, production data, and mobile API contracts need stronger gates. |
 | Is release communication needed? | Staff-facing changes may need changelog, help text, What's New, or ops note. |
 | Is this a multi-fix session? | Session Release Ledger must show no fix is stranded or overstated. |
+| Is fresh-context review needed? | If this is user-facing, critical, outbound, complex, autonomous, or multi-fix work, review it like the builder's assumptions may be wrong. |
 | What state is actually proven? | Changed locally, committed, pushed, PR open, merged, deployed, live checked, monitored, or accepted. |
 | Is approval needed? | Push, PR, merge, deploy, destructive, production, critical-lane, and secret boundaries need explicit approval. |
 | What is the recommended next action? | Hafiz should not have to ask "what next?" |
@@ -122,7 +123,7 @@ No-mistakes-lite does not replace the existing playbooks.
 | --- | --- | --- |
 | `verify.md` | Does the implementation work technically? | Was the right verification actually run? |
 | `qa.md` | Can a real user journey be trusted? | Is journey proof required and present? |
-| `review.md` | Is it scoped, evidenced, safe, and honest? | Did review catch blockers before the next state? |
+| `review.md` | Is it scoped, evidenced, safe, and honest? | Did review catch blockers before the next state, and did risky/outbound work get fresh-context review? |
 | `commit.md` | How to stage and commit safely. | Is this truly commit-ready? |
 | `push-pr-ci-automation.md` | How to automate push, PR, and CI inside an approved boundary. | Is the outbound boundary approved and evidence current? |
 | `release-deploy-live-monitoring.md` | How to release, smoke, and monitor. | Is the live/deploy claim honest? |
