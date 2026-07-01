@@ -127,6 +127,7 @@ Watch for these signals:
 | Context overload | Agent reads too many unrelated docs and loses the point. | Return to doc routing and owner index. |
 | Scope expansion | Agent fixes adjacent issues silently. | Classify in-scope, blocking, pre-existing, or follow-up. |
 | Stale Session Map | Current focus or continuation prompt points to old work. | Update the map or say it is stale before relying on it. |
+| Map not updated after state change | The work moved from changed locally to committed/pushed/deployed, but the map still says the old state. | Use the Session Map live update loop and correct only the current pointer. |
 
 Plain version:
 
@@ -224,6 +225,7 @@ recommend next.
 | Hafiz asks to fix a product bug | Diagnose | Project AGENTS, active task, diagnose playbook, Planner when staff-reported, project docs as triggered | Reproduction or read-only evidence; do not treat symptom as cause | Stop before critical-lane implementation or unclear scope | "I will first prove what is actually broken. If it is a normal bug, I will propose the fix path; if it touches payment/auth/mobile API, I stop after diagnosis for approval." |
 | Hafiz asks to verify or QA | Verify or QA | Verify/QA playbook, evidence model, project rules, TESTING/UI docs when triggered | Exact command, browser/mobile/API evidence, missing evidence if any | Stop if proof is missing or unsafe | "Code tests prove the engine; for this staff workflow I also need browser evidence or a named reason why that is not feasible." |
 | Hafiz says `save session` or the chat is getting long | Save or Handoff | Session Map, save-session/handoff docs, Git state, Koda memory rules | Main goal, current focus, highest proven state, dirty files, next action | Stop when future agent can resume | "I will save the story, not just the last command: goal, subgoals, decisions, pushed/local state, evidence, and the first next action." |
+| A long packet changes state from local to committed or pushed | Build -> Commit -> Push/PR | Session Map live update loop, Git state, review/commit playbooks | Highest proven Git state, remaining dirty files, next action | Stop at the approved boundary | "The map still says changed locally, but Git shows the packet is pushed. I will update only the current pointer and progress row before continuing." |
 
 ## What To Avoid
 

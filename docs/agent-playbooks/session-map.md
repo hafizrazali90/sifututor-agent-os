@@ -243,6 +243,73 @@ Do not merge two maps casually. Merge only by writing a clear handoff or
 promotion note that says which map continues and which map is parked, closed,
 or superseded.
 
+## Live Update Loop
+
+The Session Map should stay current enough to resume from, but it should not
+become busywork.
+
+Plain meaning:
+
+```text
+Do not update the map after every chat message.
+Update it when the story changes.
+```
+
+Update the map at these moments:
+
+| Moment | What to update | Why it matters |
+| --- | --- | --- |
+| Session starts or resumes | Human Snapshot, Agent Context, Continuation Prompt | The next agent knows the real current focus. |
+| Hafiz makes a decision | Decisions, Progress Board, current focus | The decision does not disappear into chat scrollback. |
+| The work changes state | Progress Board, Links And Evidence, highest proven state | Local, committed, pushed, PR open, deployed, and live checked stay distinct. |
+| Before switching topics | Side Paths And Return Path, recommended next action | The main mission remains findable after a side path. |
+| Before commit, push, PR, merge, deploy, or save-session | Progress Board, Agent Context, Links And Evidence | Outbound or ending states are based on the current story, not memory. |
+| During a long autonomous packet | Current slice, completed checks, stop reason, next loop | A resumed agent can continue without rerunning the whole session. |
+| After a stale map is detected | Current focus, progress row, continuation prompt | The map points to the road we are actually on. |
+
+Use the smallest useful update.
+Most of the time, that means changing only:
+
+- the Human Snapshot current/next lines;
+- the relevant Progress Board row;
+- one Decision row, if a decision was made;
+- Agent Context current focus, done means, stop point, and boundary;
+- the Continuation Prompt.
+
+Do not rewrite the whole historical map during unrelated work.
+History can stay as history; the current pointer must be honest.
+
+## Current Task Pointer
+
+For long work, the Session Map should answer four questions in the first screen
+or Agent Context:
+
+```text
+What are we trying to finish?
+What is the current focus?
+What is the highest proven state?
+What should happen next?
+```
+
+If the map cannot answer those four questions, update it before going deeper.
+
+Examples:
+
+| Situation | Good current pointer |
+| --- | --- |
+| Docs changed but not committed | "Changed locally; checks pending; next action is run Agent OS checks." |
+| Commit created but not pushed | "Committed locally in `<sha>`; next action is pre-push review or continue local work." |
+| Push completed | "Pushed to GitHub; next action is continue the next Agent OS phase." |
+| Product fix deployed but not monitored | "Deployed; smoke passed; monitoring still pending." |
+| Side path parked | "Parked because <reason>; return to <main focus> next." |
+
+Plain meaning:
+
+```text
+The Session Map should tell Hafiz and the next agent where the thread is
+standing, not just what happened earlier.
+```
+
 ## Smart Resume Behavior
 
 Use smart automatic resume. Do not make Hafiz remember magic words, but do not
