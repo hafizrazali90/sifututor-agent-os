@@ -37,6 +37,7 @@ Use these when the user asks for:
 - Agent OS rollout readiness: [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md)
 - Agent OS eval cases: [agent-os-evals.md](agent-os-evals.md)
 - Agent OS evaluation harness: [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md)
+- Agent OS real-world scenario lab: [agent-os-scenario-lab.md](agent-os-scenario-lab.md)
 - Agent OS research notes: [agent-os-research.md](agent-os-research.md)
 - Agent OS current state and review roadmap: [agent-os-review-roadmap.md](agent-os-review-roadmap.md)
 - Agent OS routing model: [agent-os-routing-model.md](agent-os-routing-model.md)

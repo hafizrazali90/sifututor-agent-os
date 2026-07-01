@@ -47,6 +47,9 @@ cd "$ROOT" || {
   exit 1
 }
 
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-os-health.XXXXXX")"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
 echo "Detected"
 check_file "root AGENTS" "$ROOT/AGENTS.md"
 check_file "Agent OS overview" "$ROOT/docs/agent-playbooks/agent-os.md"
@@ -83,6 +86,7 @@ check_file "Agent OS session map" "$ROOT/docs/agent-playbooks/session-map.md"
 check_file "Agent OS rollout readiness" "$ROOT/docs/agent-playbooks/agent-os-rollout-readiness.md"
 check_file "Agent OS eval coverage" "$ROOT/docs/agent-playbooks/agent-os-eval-coverage-map.md"
 check_file "Agent OS evaluation harness" "$ROOT/docs/agent-playbooks/agent-os-evaluation-harness.md"
+check_file "Agent OS scenario lab" "$ROOT/docs/agent-playbooks/agent-os-scenario-lab.md"
 check_file "related impact audit" "$ROOT/docs/agent-playbooks/related-impact-audit.md"
 check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
@@ -104,134 +108,152 @@ check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
 check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-validation-loop.py"
+check_file "Agent OS scenario lab" "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
-if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >/tmp/agent-os-eval-runner.out 2>/tmp/agent-os-eval-runner.err; then
-  eval_summary="$(tail -1 /tmp/agent-os-eval-runner.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >$TMP_DIR/agent-os-eval-runner.out 2>$TMP_DIR/agent-os-eval-runner.err; then
+  eval_summary="$(tail -1 $TMP_DIR/agent-os-eval-runner.out 2>/dev/null || true)"
   pass "Agent OS evals" "${eval_summary:-passed}"
 else
   fail "Agent OS evals" "routing/behavior eval runner failed"
-  sed -n '1,12p' /tmp/agent-os-eval-runner.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-eval-runner.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-eval-runner.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-eval-runner.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-eval-runner.out /tmp/agent-os-eval-runner.err
+rm -f $TMP_DIR/agent-os-eval-runner.out $TMP_DIR/agent-os-eval-runner.err
 
-if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" --self-test >/tmp/agent-os-eval-self-test.out 2>/tmp/agent-os-eval-self-test.err; then
-  self_test_summary="$(tail -1 /tmp/agent-os-eval-self-test.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" --self-test >$TMP_DIR/agent-os-eval-self-test.out 2>$TMP_DIR/agent-os-eval-self-test.err; then
+  self_test_summary="$(tail -1 $TMP_DIR/agent-os-eval-self-test.out 2>/dev/null || true)"
   pass "Agent OS eval self-test" "${self_test_summary:-passed}"
 else
   fail "Agent OS eval self-test" "negative eval self-test failed"
-  sed -n '1,12p' /tmp/agent-os-eval-self-test.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-eval-self-test.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-eval-self-test.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-eval-self-test.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-eval-self-test.out /tmp/agent-os-eval-self-test.err
+rm -f $TMP_DIR/agent-os-eval-self-test.out $TMP_DIR/agent-os-eval-self-test.err
 
-if "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py" >/tmp/agent-os-response-shape.out 2>/tmp/agent-os-response-shape.err; then
-  response_shape_summary="$(tail -1 /tmp/agent-os-response-shape.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py" >$TMP_DIR/agent-os-response-shape.out 2>$TMP_DIR/agent-os-response-shape.err; then
+  response_shape_summary="$(tail -1 $TMP_DIR/agent-os-response-shape.out 2>/dev/null || true)"
   pass "Agent OS response shape" "${response_shape_summary:-passed}"
 else
   fail "Agent OS response shape" "response-shape runner failed"
-  sed -n '1,12p' /tmp/agent-os-response-shape.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-response-shape.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-response-shape.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-response-shape.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-response-shape.out /tmp/agent-os-response-shape.err
+rm -f $TMP_DIR/agent-os-response-shape.out $TMP_DIR/agent-os-response-shape.err
 
-if "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py" >/tmp/agent-os-workflow-examples.out 2>/tmp/agent-os-workflow-examples.err; then
-  workflow_example_summary="$(tail -1 /tmp/agent-os-workflow-examples.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py" >$TMP_DIR/agent-os-workflow-examples.out 2>$TMP_DIR/agent-os-workflow-examples.err; then
+  workflow_example_summary="$(tail -1 $TMP_DIR/agent-os-workflow-examples.out 2>/dev/null || true)"
   pass "Agent OS workflow examples" "${workflow_example_summary:-passed}"
 else
   fail "Agent OS workflow examples" "workflow example runner failed"
-  sed -n '1,12p' /tmp/agent-os-workflow-examples.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-workflow-examples.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-workflow-examples.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-workflow-examples.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-workflow-examples.out /tmp/agent-os-workflow-examples.err
+rm -f $TMP_DIR/agent-os-workflow-examples.out $TMP_DIR/agent-os-workflow-examples.err
 
-if "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py" >/tmp/agent-os-state-fixtures.out 2>/tmp/agent-os-state-fixtures.err; then
-  state_fixture_summary="$(tail -1 /tmp/agent-os-state-fixtures.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py" >$TMP_DIR/agent-os-state-fixtures.out 2>$TMP_DIR/agent-os-state-fixtures.err; then
+  state_fixture_summary="$(tail -1 $TMP_DIR/agent-os-state-fixtures.out 2>/dev/null || true)"
   pass "Agent OS state fixtures" "${state_fixture_summary:-passed}"
 else
   fail "Agent OS state fixtures" "state fixture runner failed"
-  sed -n '1,12p' /tmp/agent-os-state-fixtures.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-state-fixtures.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-state-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-state-fixtures.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-state-fixtures.out /tmp/agent-os-state-fixtures.err
+rm -f $TMP_DIR/agent-os-state-fixtures.out $TMP_DIR/agent-os-state-fixtures.err
 
-if python3 "$ROOT/scripts/agent-checks/session-map-check.py" >/tmp/agent-os-session-map.out 2>/tmp/agent-os-session-map.err; then
-  session_map_summary="$(tail -1 /tmp/agent-os-session-map.out 2>/dev/null || true)"
+if python3 "$ROOT/scripts/agent-checks/session-map-check.py" >$TMP_DIR/agent-os-session-map.out 2>$TMP_DIR/agent-os-session-map.err; then
+  session_map_summary="$(tail -1 $TMP_DIR/agent-os-session-map.out 2>/dev/null || true)"
   pass "Agent OS session map check" "${session_map_summary:-passed}"
 else
   fail "Agent OS session map check" "session-map checker failed"
-  sed -n '1,12p' /tmp/agent-os-session-map.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-session-map.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-session-map.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-session-map.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-session-map.out /tmp/agent-os-session-map.err
+rm -f $TMP_DIR/agent-os-session-map.out $TMP_DIR/agent-os-session-map.err
 
-if python3 "$ROOT/scripts/agent-checks/session-map-html.py" "$ROOT/docs/agent-playbooks/templates/session-map.md" -o /tmp/agent-os-session-map.html >/tmp/agent-os-session-map-html.out 2>/tmp/agent-os-session-map-html.err; then
-  html_summary="$(tail -1 /tmp/agent-os-session-map-html.out 2>/dev/null || true)"
+if python3 "$ROOT/scripts/agent-checks/session-map-html.py" "$ROOT/docs/agent-playbooks/templates/session-map.md" -o $TMP_DIR/agent-os-session-map.html >$TMP_DIR/agent-os-session-map-html.out 2>$TMP_DIR/agent-os-session-map-html.err; then
+  html_summary="$(tail -1 $TMP_DIR/agent-os-session-map-html.out 2>/dev/null || true)"
   pass "Agent OS session map HTML" "${html_summary:-passed}"
 else
   fail "Agent OS session map HTML" "HTML generator failed"
-  sed -n '1,12p' /tmp/agent-os-session-map-html.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-session-map-html.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-session-map-html.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-session-map-html.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-session-map.html /tmp/agent-os-session-map-html.out /tmp/agent-os-session-map-html.err
+rm -f $TMP_DIR/agent-os-session-map.html $TMP_DIR/agent-os-session-map-html.out $TMP_DIR/agent-os-session-map-html.err
 
-if "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py" >/tmp/agent-os-koda-fixtures.out 2>/tmp/agent-os-koda-fixtures.err; then
-  koda_fixture_summary="$(tail -1 /tmp/agent-os-koda-fixtures.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-koda-fixture-runner.py" >$TMP_DIR/agent-os-koda-fixtures.out 2>$TMP_DIR/agent-os-koda-fixtures.err; then
+  koda_fixture_summary="$(tail -1 $TMP_DIR/agent-os-koda-fixtures.out 2>/dev/null || true)"
   pass "Agent OS Koda fixtures" "${koda_fixture_summary:-passed}"
 else
   fail "Agent OS Koda fixtures" "Koda fixture runner failed"
-  sed -n '1,12p' /tmp/agent-os-koda-fixtures.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-koda-fixtures.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-koda-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-koda-fixtures.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-koda-fixtures.out /tmp/agent-os-koda-fixtures.err
+rm -f $TMP_DIR/agent-os-koda-fixtures.out $TMP_DIR/agent-os-koda-fixtures.err
 
-if "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py" >/tmp/agent-os-capability-fixtures.out 2>/tmp/agent-os-capability-fixtures.err; then
-  capability_fixture_summary="$(tail -1 /tmp/agent-os-capability-fixtures.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py" >$TMP_DIR/agent-os-capability-fixtures.out 2>$TMP_DIR/agent-os-capability-fixtures.err; then
+  capability_fixture_summary="$(tail -1 $TMP_DIR/agent-os-capability-fixtures.out 2>/dev/null || true)"
   pass "Agent OS capability fixtures" "${capability_fixture_summary:-passed}"
 else
   fail "Agent OS capability fixtures" "capability fixture runner failed"
-  sed -n '1,12p' /tmp/agent-os-capability-fixtures.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-capability-fixtures.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-capability-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-capability-fixtures.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-capability-fixtures.out /tmp/agent-os-capability-fixtures.err
+rm -f $TMP_DIR/agent-os-capability-fixtures.out $TMP_DIR/agent-os-capability-fixtures.err
 
-if "$ROOT/scripts/agent-checks/agent-os-capability-probe.py" --json >/tmp/agent-os-capability-probe.out 2>/tmp/agent-os-capability-probe.err; then
-  capability_probe_summary="$(python3 - <<'PY' 2>/dev/null
+if "$ROOT/scripts/agent-checks/agent-os-capability-probe.py" --json >$TMP_DIR/agent-os-capability-probe.out 2>$TMP_DIR/agent-os-capability-probe.err; then
+  capability_probe_summary="$(TMP_DIR="$TMP_DIR" python3 - <<'PY' 2>/dev/null
 import json
+import os
 from pathlib import Path
 
-data = json.loads(Path("/tmp/agent-os-capability-probe.out").read_text())
+data = json.loads((Path(os.environ["TMP_DIR"]) / "agent-os-capability-probe.out").read_text())
 print(len(data.get("capabilities", [])))
 PY
 )"
-  pass "Agent OS capability probe" "${capability_probe_summary:-0} capabilities reported"
+  if [[ "$capability_probe_summary" =~ ^[0-9]+$ ]] && [[ "$capability_probe_summary" -gt 0 ]]; then
+    pass "Agent OS capability probe" "$capability_probe_summary capabilities reported"
+  else
+    fail "Agent OS capability probe" "capability probe returned no capabilities"
+    sed -n '1,12p' $TMP_DIR/agent-os-capability-probe.out 2>/dev/null || true
+    sed -n '1,8p' $TMP_DIR/agent-os-capability-probe.err 2>/dev/null || true
+  fi
 else
   fail "Agent OS capability probe" "capability probe failed"
-  sed -n '1,12p' /tmp/agent-os-capability-probe.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-capability-probe.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-capability-probe.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-capability-probe.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-capability-probe.out /tmp/agent-os-capability-probe.err
+rm -f $TMP_DIR/agent-os-capability-probe.out $TMP_DIR/agent-os-capability-probe.err
 
-if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >/tmp/agent-os-conversation-fixtures.out 2>/tmp/agent-os-conversation-fixtures.err; then
-  conversation_fixture_summary="$(tail -1 /tmp/agent-os-conversation-fixtures.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >$TMP_DIR/agent-os-conversation-fixtures.out 2>$TMP_DIR/agent-os-conversation-fixtures.err; then
+  conversation_fixture_summary="$(tail -1 $TMP_DIR/agent-os-conversation-fixtures.out 2>/dev/null || true)"
   pass "Agent OS conversation fixtures" "${conversation_fixture_summary:-passed}"
 else
   fail "Agent OS conversation fixtures" "conversation fixture runner failed"
-  sed -n '1,12p' /tmp/agent-os-conversation-fixtures.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-conversation-fixtures.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-conversation-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-conversation-fixtures.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-conversation-fixtures.out /tmp/agent-os-conversation-fixtures.err
+rm -f $TMP_DIR/agent-os-conversation-fixtures.out $TMP_DIR/agent-os-conversation-fixtures.err
 
-if "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py" >/tmp/agent-os-parity-fixtures.out 2>/tmp/agent-os-parity-fixtures.err; then
-  parity_fixture_summary="$(tail -1 /tmp/agent-os-parity-fixtures.out 2>/dev/null || true)"
+if "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py" >$TMP_DIR/agent-os-parity-fixtures.out 2>$TMP_DIR/agent-os-parity-fixtures.err; then
+  parity_fixture_summary="$(tail -1 $TMP_DIR/agent-os-parity-fixtures.out 2>/dev/null || true)"
   pass "Agent OS parity fixtures" "${parity_fixture_summary:-passed}"
 else
   fail "Agent OS parity fixtures" "parity fixture runner failed"
-  sed -n '1,12p' /tmp/agent-os-parity-fixtures.out 2>/dev/null || true
-  sed -n '1,8p' /tmp/agent-os-parity-fixtures.err 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-parity-fixtures.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-parity-fixtures.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-parity-fixtures.out /tmp/agent-os-parity-fixtures.err
+rm -f $TMP_DIR/agent-os-parity-fixtures.out $TMP_DIR/agent-os-parity-fixtures.err
+
+if python3 "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py" --target 0.90 >$TMP_DIR/agent-os-scenario-lab.out 2>$TMP_DIR/agent-os-scenario-lab.err; then
+  scenario_lab_summary="$(tail -1 $TMP_DIR/agent-os-scenario-lab.out 2>/dev/null || true)"
+  pass "Agent OS scenario lab" "${scenario_lab_summary:-passed}"
+else
+  fail "Agent OS scenario lab" "scenario lab runner failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-scenario-lab.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-scenario-lab.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-scenario-lab.out $TMP_DIR/agent-os-scenario-lab.err
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pass "git repo" "yes"
@@ -265,13 +287,13 @@ fi
 
 echo
 echo "Koda"
-if "$ROOT/scripts/agent-checks/koda" health >/tmp/agent-os-koda-check.out 2>/tmp/agent-os-koda-check.err; then
+if "$ROOT/scripts/agent-checks/koda" health >$TMP_DIR/agent-os-koda-check.out 2>$TMP_DIR/agent-os-koda-check.err; then
   pass "Koda direct health" "pass"
 else
   warn "Koda direct health" "failed or unavailable"
-  sed -n '1,8p' /tmp/agent-os-koda-check.err 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-koda-check.err 2>/dev/null || true
 fi
-rm -f /tmp/agent-os-koda-check.out /tmp/agent-os-koda-check.err
+rm -f $TMP_DIR/agent-os-koda-check.out $TMP_DIR/agent-os-koda-check.err
 
 echo
 echo "Capability Summary"

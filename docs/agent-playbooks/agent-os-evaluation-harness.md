@@ -51,6 +51,7 @@ the lightest test that can honestly catch the mistake if it returns.
 | Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
 | Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
+| Scenario Lab | Realistic Hafiz work moments are checked at the route/proof/boundary level. | Daily-work readiness, approval boundaries, tool discipline, and cross-layer behavior. | Real production safety, subjective acceptance, or full live LLM answer quality. |
 
 ## 90% Validation Loop
 
@@ -82,6 +83,7 @@ Counted in the score:
 - conversation and parity fixtures
 - workflow example structure
 - Agent OS health and workflow doctor
+- Scenario Lab realistic work scenarios
 
 Not counted yet:
 
@@ -240,6 +242,7 @@ scripts/agent-checks/agent-os-response-shape-runner.py
 scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
 python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
+python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90
 scripts/agent-checks/agent-os-health.sh
 scripts/agent-checks/workflow-doctor.sh
 ```

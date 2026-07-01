@@ -42,6 +42,7 @@
     "docs/agent-playbooks/agent-os-rollout-readiness.md",
     "docs/agent-playbooks/agent-os-evals.md",
     "docs/agent-playbooks/agent-os-evaluation-harness.md",
+    "docs/agent-playbooks/agent-os-scenario-lab.md",
     "docs/agent-playbooks/agent-os-eval-coverage-map.md",
     "docs/agent-playbooks/related-impact-audit.md",
     "docs/agent-playbooks/agent-os-installation.md",
@@ -69,6 +70,7 @@
     "scripts/agent-checks/agent-os-conversation-fixture-runner.py",
     "scripts/agent-checks/agent-os-parity-fixture-runner.py",
     "scripts/agent-checks/agent-os-validation-loop.py",
+    "scripts/agent-checks/agent-os-scenario-lab-runner.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"
   ],

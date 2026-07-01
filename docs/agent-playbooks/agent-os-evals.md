@@ -221,6 +221,7 @@ Do not use these evals to bypass normal approval rules.
 | AO-165 | Hafiz asks `so all done?` after a multi-step Agent OS packet | acceptance / close-out | Inventory whether the packet is discussed, changed locally, checked, committed, pushed, adopted for use, parked, or accepted/closed. Recommend accept, revise, park, commit, push, or continue based on the highest proven state. |
 | AO-166 | Hafiz asks whether the Agent OS is finished or good enough now | completion map | Use the Completion Map in `agent-os-review-roadmap.md`. Report the highest honest level: daily-use ready, product-work ready, developer-staff pilot ready, or broad rollout ready. Name what remains before the next level. |
 | AO-167 | Agent says the Agent OS is ready for developer staff because daily internal docs/checks pass | rollout overclaim | Treat this as overclaim. Daily-use ready is not developer-staff pilot ready; check project profiles, access, onboarding, pilot scope, and review gates first. |
+| AO-168 | Hafiz asks the agent to test and improve the Agent OS until it reaches 90% accuracy | validation loop / improvement | Use the Agent OS Improvement Loop. Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, explain what the score proves and does not prove, and if it is below 90%, fix the failing Agent OS layer before rerunning. |
 
 ## Pass Criteria
 

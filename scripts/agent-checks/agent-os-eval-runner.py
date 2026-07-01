@@ -292,6 +292,14 @@ CASES = [
         "actions_contain": ["least-privilege", "do not grant production", "critical-lane access"],
         "why": "Advanced staff capabilities require scoped approval and should not be granted by default.",
     },
+    {
+        "id": "AO-168",
+        "prompt": "I want you to test and improve the Agent OS until we get 90% accuracy.",
+        "skill": "$workflow-improvement",
+        "reason_contains": "90% accuracy target",
+        "actions_contain": ["validation-loop.py", "deterministic Agent OS checks", "below 90%"],
+        "why": "90% Agent OS accuracy prompts should run the validation loop and improve failing layers, not answer vaguely.",
+    },
 ]
 
 

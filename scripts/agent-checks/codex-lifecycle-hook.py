@@ -942,6 +942,20 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking to check workflow health.",
         )
 
+    if "agent os" in normalized and any(word in normalized for word in ("90%", "90 percent", "90 accuracy", "accuracy")) and any(
+        word in normalized for word in ("test", "testing", "improve", "behaving", "behavior")
+    ):
+        return (
+            "$workflow-improvement",
+            [
+                "Use $workflow-improvement because Hafiz is asking to improve Agent OS behavior, not product code.",
+                "Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3` before claiming the executable Agent OS score.",
+                "Explain that the score covers deterministic Agent OS checks, not subjective tone, live LLM judgment, product E2E correctness, or business acceptance.",
+                "If the score is below 90%, fix the failing Agent OS layer and rerun instead of lowering the target.",
+            ],
+            "Prompt asks to test and improve Agent OS behavior against a 90% accuracy target.",
+        )
+
     if "agent os" in normalized and any(word in normalized for word in ("ready", "readiness", "install-ready")):
         return (
             "$quick-check",
@@ -1093,7 +1107,18 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt asks for multi-fix live-state truth.",
         )
 
-    if any(word in normalized for word in ("push", "deploy", "release", "merge", "pull request", " pr ")):
+    production_boundary = any(
+        phrase in normalized
+        for phrase in (
+            "until production",
+            "to production",
+            "production deploy",
+            "deploy production",
+            "push production",
+            "release production",
+        )
+    )
+    if any(word in normalized for word in ("push", "deploy", "release", "merge", "pull request", " pr ")) or production_boundary:
         return (
             "$review",
             [

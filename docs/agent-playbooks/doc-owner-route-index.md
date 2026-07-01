@@ -25,7 +25,7 @@ This index explains who owns the decision.
 | Memory | What belongs in Koda, docs, Session Map, Mission Ledger, or nowhere. | `agent-os-memory.md`, `agent-os-memory-architecture.md`, `context-authority.md` |
 | Evidence and testing | How the agent proves work. | `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, `no-mistakes-lite.md` |
 | Safety and approvals | What needs approval or must never happen. | `agent-os-approval-gates.md`, `agent-access-map.md`, `agent-os-capability-model.md`, `commit.md` |
-| Workflow improvement and governance | How the Agent OS changes itself safely. | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md` |
+| Workflow improvement and governance | How the Agent OS changes itself safely. | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md` |
 | Multi-agent and adapters | How Claude, Codex, and future LLMs use the same core. | `agent-os-parity-contract.md`, `agent-os-skill-registry.md`, `agent-os-hook-dispatcher.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md` |
 | Planning and product design | How vague ideas become understandable build work. | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md` |
 | Delivery and release | How PR, CI, merge, deploy, smoke, monitoring, and incidents work. | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, `incident-workflow.md` |
@@ -67,7 +67,7 @@ If a new idea fits one of these rows, update that owner first.
 | Memory | `agent-os-memory.md`, `agent-os-memory-architecture.md` |
 | Safety, capability, and access | `agent-os-approval-gates.md`, `agent-os-capability-model.md`, `agent-access-map.md`, `commit.md` |
 | GitHub, PR, release, deploy, and incidents | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, `incident-workflow.md`, `product-push-map.md` |
-| Governance, improvement, and evals | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-coverage-audit.md`, `workflow-efficiency-audit.md` |
+| Governance, improvement, and evals | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md`, `agent-os-coverage-audit.md`, `workflow-efficiency-audit.md` |
 | Installation, rollout, and project profiles | `agent-os-installation.md`, `agent-os-install-manifest.json`, `agent-os-rollout-readiness.md`, `agent-os-staff-quick-start.md`, `project-adoption.md`, `agent-os-profile-registry-operations.md`, project profiles under `project-profiles/` |
 | Mission and future work | `mission-ledger.md`, `mission-ledger/*`, `plane.md` |
 | Research and roadmap | `agent-os-research.md`, `agent-os-review-roadmap.md`, `parity-status.md`, `claude-codex-parity-implementation-report.md`, `commit-plan.md`, `lls-workflow-migration.md`, `workflow-rollout-cleanup.md`, `README.md` |

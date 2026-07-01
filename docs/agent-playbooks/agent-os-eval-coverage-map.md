@@ -46,6 +46,7 @@ be automated next.
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
 | Validation loop | Executable harness score | Hiding scattered Agent OS failures across separate scripts. Checked by `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, which combines executable checks into one readiness score. |
+| Scenario Lab | RW-001 through RW-012 | Realistic Hafiz work moments across commit, push, critical lane, staff intake, agent-as-tester, memory, session map, production, forbidden secrets, validation target, readiness, and product design. Checked by `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`. |
 
 ## Manual Scenario Coverage
 
@@ -70,7 +71,7 @@ These are important but not honest as simple router-classifier tests yet.
 | Runtime reliability | AO-151, AO-152, AO-153, AO-154, AO-155 | Partly covered by response-shape and conversation fixtures. Full checks need real session state, active Session Map, route context, and current Git evidence. The runtime playbook defines the behavior now, including daily operating examples for common Hafiz phrases. |
 | Workflow execution depth | AO-158, AO-159 | Needs the actual task, risk lane, current Git/PR/deploy state, and approved boundary. The workflow lanes playbook now defines finish states such as local proof, committed, PR ready, merged, deployed, live checked, monitored, and accepted/closed. Future automation can warn when `done` or `production` is used without a named finish state. |
 | Acceptance and closure criteria | AO-163, AO-164, AO-165 | Needs real current state, Hafiz/business acceptance, parked-topic reason, Git/check evidence, and current Session Map context. The workflow lanes and state model now define when a packet is merely pushed/adopted, intentionally parked, or truly accepted/closed. |
-| Agent OS completion map | AO-166, AO-167 | Needs current roadmap state, health/check evidence, project-profile adoption state, access profile readiness, pilot state, and Hafiz/business acceptance. The roadmap now separates daily-use ready, product-work ready, developer-staff pilot ready, and broad rollout ready. |
+| Agent OS completion map and validation target | AO-166, AO-167, AO-168 | Completion/rollout claims need current roadmap state, health/check evidence, project-profile adoption state, access profile readiness, pilot state, and Hafiz/business acceptance. The 90% validation-target prompt is executable: it must route to workflow improvement, run the validation loop, explain what the score proves, and fix failing Agent OS layers if below target. |
 | Session Map lifecycle | AO-106, AO-156 | Needs real parallel sessions, side paths, compaction, branch state, handoff context, and Git state changes. A simple fixture can catch obvious over-creation, but not whether two maps should be merged, parked, split, or updated after a commit/push. The live update loop defines the manual behavior now. |
 | Developer staff rollout details | AO-073, AO-074 | Needs generated developer-staff onboarding artifacts, and must preserve the rule that ordinary staff use Teams Planner only. |
 | Claude/Codex behavioral parity | AO-082, AO-083, AO-084 | Structural parity and the Behavior Parity Review Standard are executable through the parity runner. Full behavior comparison still needs adapter-aware traces that compare real Claude and Codex responses for route, first move, approval boundary, evidence, state language, memory/task routing, and close-out. |
@@ -100,13 +101,16 @@ When adding or changing an eval:
 1. Add or update the Markdown eval table.
 2. Add executable coverage when the behavior can be tested honestly by the
    runner.
-3. If it cannot be executable yet, record it under manual scenario or future
+3. Add Scenario Lab coverage when the behavior needs a realistic Hafiz work
+   moment rather than only a small route eval.
+4. If it cannot be executable yet, record it under manual scenario or future
    harness coverage here.
-4. Keep every executable `AO-*` case listed in this coverage map; the runner
+5. Keep every executable `AO-*` case listed in this coverage map; the runner
    fails when a code case is missing from the map.
-5. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
-6. Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`.
-7. Run `scripts/agent-checks/agent-os-health.sh`.
+6. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
+7. Run `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`.
+8. Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`.
+9. Run `scripts/agent-checks/agent-os-health.sh`.
 
 Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
 deciding which layer should own a new harness case.
