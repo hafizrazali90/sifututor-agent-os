@@ -68,6 +68,7 @@
     "scripts/agent-checks/agent-os-production-logs-probe.py",
     "scripts/agent-checks/agent-os-conversation-fixture-runner.py",
     "scripts/agent-checks/agent-os-parity-fixture-runner.py",
+    "scripts/agent-checks/agent-os-validation-loop.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"
   ],

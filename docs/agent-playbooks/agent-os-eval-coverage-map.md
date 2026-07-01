@@ -45,6 +45,7 @@ be automated next.
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
+| Validation loop | Executable harness score | Hiding scattered Agent OS failures across separate scripts. Checked by `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, which combines executable checks into one readiness score. |
 
 ## Manual Scenario Coverage
 
@@ -104,7 +105,8 @@ When adding or changing an eval:
 4. Keep every executable `AO-*` case listed in this coverage map; the runner
    fails when a code case is missing from the map.
 5. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
-6. Run `scripts/agent-checks/agent-os-health.sh`.
+6. Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`.
+7. Run `scripts/agent-checks/agent-os-health.sh`.
 
 Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
 deciding which layer should own a new harness case.

@@ -50,6 +50,46 @@ the lightest test that can honestly catch the mistake if it returns.
 | Capability fixture | Tool availability and approval claims stay honest. | Unknown, not connected, blocked, critical, and staff capability states. | Deep live connector behavior. |
 | Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
+| Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
+
+## 90% Validation Loop
+
+When Hafiz asks whether the Agent OS is actually behaving correctly, run:
+
+```bash
+python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
+```
+
+Plain meaning:
+
+```text
+This runs the deterministic Agent OS checks together and gives one score.
+If the score is 90% or higher, the written/routed/checkable parts of the Agent
+OS are healthy enough for daily use. It does not prove every future LLM answer
+will be perfect.
+```
+
+The loop is allowed to run more than once because some checks may depend on
+current local state, but it should not hide failures. If the target is not
+reached, fix the failing layer instead of lowering the score.
+
+Counted in the score:
+
+- router and behavior evals
+- response-shape fixtures
+- state wording fixtures
+- Koda and capability fixtures
+- conversation and parity fixtures
+- workflow example structure
+- Agent OS health and workflow doctor
+
+Not counted yet:
+
+- subjective tone quality beyond response-shape fixtures
+- real Claude-vs-Codex answer comparison
+- live connector quality beyond local probes and on-demand capability checks
+- product E2E correctness
+- Hafiz/business acceptance
 
 ## Test Depth
 
@@ -199,6 +239,7 @@ scripts/agent-checks/agent-os-eval-runner.py --self-test
 scripts/agent-checks/agent-os-response-shape-runner.py
 scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
+python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
 scripts/agent-checks/agent-os-health.sh
 scripts/agent-checks/workflow-doctor.sh
 ```
