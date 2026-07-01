@@ -22,6 +22,7 @@ Use these when the user asks for:
 - Agent OS tool and capability model: [agent-os-capability-model.md](agent-os-capability-model.md)
 - Agent OS workflow lanes: [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)
 - Agent OS general guidelines: [agent-os-general-guidelines.md](agent-os-general-guidelines.md)
+- Agent OS doc routing and context loading: [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md)
 - Agent OS master workflows: [agent-os-workflows.md](agent-os-workflows.md)
 - Agent OS planning artifacts: [planning-artifacts.md](planning-artifacts.md)
 - Agent OS governance and versioning: [agent-os-governance.md](agent-os-governance.md)

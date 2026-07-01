@@ -68,6 +68,12 @@ classification rules.
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right intensity: Light, Medium, Full, or Critical.
 
+Use [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md)
+after choosing the route to decide which docs are mandatory, which are triggered
+by the task, and which should be skipped for now. Plain meaning: Task Router
+should not make the agent read everything. It should make the agent read the
+right source-of-truth docs for the current job.
+
 Use [planning-artifacts.md](planning-artifacts.md) when the task needs
 brainstorming, option comparison, Product Shape, Build-Ready Pack, a visual
 review board, or a clear explanation before implementation. Plain meaning: do

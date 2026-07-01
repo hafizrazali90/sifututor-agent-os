@@ -97,6 +97,27 @@ $commit
 
 The playbook wins when the wrapper is too brief.
 
+## Context Loading Rule
+
+Skills should load only the relevant docs for the active route.
+
+Use [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md) as
+the source of truth for deciding which docs are:
+
+- always required;
+- required by the selected workflow;
+- triggered by project, UI, testing, critical-lane, release, or Agent OS
+  conditions;
+- safe to skip until needed.
+
+Plain version:
+
+```text
+The skill is the doorway.
+The playbook is the SOP.
+Doc routing tells the agent which extra manuals matter for this job.
+```
+
 ## Routing Rule
 
 Skill selection is:

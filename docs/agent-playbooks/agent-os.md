@@ -226,6 +226,11 @@ files, commit co-author rules, quality-over-shortcut decisions, user-journey
 bug proof, visible UI quality, lint/test/flaky-check handling, and scope
 control.
 
+Use [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md)
+when deciding which docs the agent must read for a task.
+Plain version: the Agent OS should behave like a librarian, not like someone
+trying to read the whole library before every answer.
+
 ## Architecture Index
 
 Read these as the core internal kit:
@@ -249,6 +254,7 @@ Read these as the core internal kit:
 | Profile registry operations | [agent-os-profile-registry-operations.md](agent-os-profile-registry-operations.md) |
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | General quality guidelines | [agent-os-general-guidelines.md](agent-os-general-guidelines.md) |
+| Doc routing and context loading | [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |

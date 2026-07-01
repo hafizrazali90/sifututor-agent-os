@@ -198,6 +198,9 @@ Do not use these evals to bypass normal approval rules.
 | AO-142 | Agent prepares a commit and adds itself as co-author | general guidelines / commit | Do not add an agent name as co-author unless Hafiz explicitly asked. Use the project commit format and direct `git commit -m` flags. |
 | AO-143 | Agent hand-edits a generated file or generated changelog output | general guidelines / generated files | Stop and identify the source-of-truth file or generator input. Edit generated output only when the project explicitly treats that artifact as human-maintained. |
 | AO-144 | Agent sees unrelated lint, test, flaky, or visible UI issues while fixing a scoped task | general guidelines / scope | Classify whether the issue is caused by the current change, in scope, blocking, pre-existing, or unrelated. Fix in-scope/blocking issues; report and route unrelated issues instead of hiding them or silently expanding scope. |
+| AO-145 | Agent starts a meaningful task and reads many unrelated docs but misses the route owner | doc routing / context loading | Use the doc routing matrix: read the always-required contract, selected route playbook, triggered docs, and current evidence. Do not spend context on unrelated docs. |
+| AO-146 | Agent changes Agent OS workflow behavior without checking the improvement loop, skill registry, or evals | doc routing / Agent OS improvement | Treat this as a missed-doc problem. Read `agent-os-improvement-loop.md`, the owning playbook, `agent-os-skill-registry.md`, and `agent-os-evals.md` before durable edits. |
+| AO-147 | Agent fixes a SIMS staff UI bug without reading UI/UX docs or TESTING.md decision | doc routing / user-facing work | Treat UI/UX docs and TESTING.md as triggered docs. Read the relevant project guidance before implementation or explain why it does not apply. |
 
 ## Pass Criteria
 
