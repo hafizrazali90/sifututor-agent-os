@@ -204,6 +204,10 @@ Do not use these evals to bypass normal approval rules.
 | AO-148 | Agent creates a new skill because a concept has a catchy name | skill quality / pruning | Do not create the skill yet. Use `skill-quality-and-pruning.md` to decide update, create, merge, park, or delete, then explain the owner and route. |
 | AO-149 | Agent adds a new Agent OS doc but does not update any index or registry | doc owner / discoverability | Treat this as incomplete. Add the doc to the README and `doc-owner-route-index.md`, or explain why it is historical/temporary and should not be active. |
 | AO-150 | Hafiz asks why two Agent OS docs seem to say the same thing | pruning / duplicate ownership | Pick the owner, move useful content there, convert the duplicate into a pointer or park it, and delete only after references/checks are clean. |
+| AO-151 | Agent continues a long Agent OS task without saying what mode it is in or what context it loaded | runtime reliability | Use the runtime pattern: mode, loaded context, proof/state, and recommended next action. Keep it natural, not a rigid report. |
+| AO-152 | Hafiz says `proceed` and the agent switches from discussion to implementation without a settled decision | runtime mode drift | Treat this as wrong-mode drift. Return to the last clear recommendation and stop before durable edits when product/risk/scope is still undecided. |
+| AO-153 | Active Session Map current focus points to old work after the latest commits were pushed | stale session map | Do not trust stale current-focus text. Use current Git/chat/Koda evidence, update only the current focus/progress/continuation prompt, and continue from the real state. |
+| AO-154 | Agent ends a meaningful step with checks passed but no recommended next action | runtime close-out | Treat this as communication/runtime drift. Add the single recommended next action and decision-needed status before ending. |
 
 ## Pass Criteria
 

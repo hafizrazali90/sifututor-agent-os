@@ -81,6 +81,11 @@ splitting, merging, parking, or deleting workflow skills/playbooks. Plain
 meaning: first find the owner; then decide whether the Agent OS needs a new
 artifact at all.
 
+Use [agent-os-runtime-reliability.md](agent-os-runtime-reliability.md) after
+choosing the route to keep the active mode, loaded context, proof/state, and
+next action visible. Plain meaning: the router should not only pick the route;
+it should help the agent stay in the right gear while working.
+
 Use [planning-artifacts.md](planning-artifacts.md) when the task needs
 brainstorming, option comparison, Product Shape, Build-Ready Pack, a visual
 review board, or a clear explanation before implementation. Plain meaning: do

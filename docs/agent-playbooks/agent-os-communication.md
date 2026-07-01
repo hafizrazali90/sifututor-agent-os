@@ -193,6 +193,9 @@ Required meaning in either shape:
 
 - what changed
 - how it was checked
+- the current runtime mode when it helps prevent confusion, such as discuss,
+  plan, diagnose, build, verify, QA, review, commit, push/PR, release, or save
+- the loaded context when missed docs or too much context could change the work
 - what remains unclear or unverified
 - the single recommended next step
 - whether Hafiz needs to decide anything
@@ -216,6 +219,11 @@ Decision needed: no.
 
 Use a structured close-out only when it improves scanning, such as after a long
 task, QA run, handoff, commit prep, or incomplete work.
+
+Use [agent-os-runtime-reliability.md](agent-os-runtime-reliability.md) when a
+session becomes stateful or long-running. Plain meaning: the close-out should
+make the mode, context, state, proof, and next action clear enough that Hafiz
+does not have to reconstruct where we are.
 
 The executable response-shape subset lives at:
 

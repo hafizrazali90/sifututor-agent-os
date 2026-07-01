@@ -18,7 +18,7 @@ This index explains who owns the decision.
 | Owner | Owns | Main docs |
 | --- | --- | --- |
 | Operating contract | Rules every agent must obey. | `AGENTS.md`, `agent-os.md`, `agent-os-general-guidelines.md` |
-| Routing and context loading | What workflow applies and which docs to read. | `task-router.md`, `agent-os-routing-model.md`, `doc-routing-and-context-loading.md`, `agent-os-workflow-lanes.md` |
+| Routing and context loading | What workflow applies and which docs to read. | `task-router.md`, `agent-os-routing-model.md`, `doc-routing-and-context-loading.md`, `agent-os-workflow-lanes.md`, `agent-os-runtime-reliability.md` |
 | Skill and doc quality | Whether to create, update, merge, park, or delete Agent OS artifacts. | `skill-quality-and-pruning.md`, `agent-os-skill-registry.md`, this index |
 | Communication with Hafiz | How to explain work, status, risk, and next steps. | `working-with-hafiz.md`, `agent-os-communication.md` |
 | State and continuation | What is drafted, local, committed, pushed, PR-open, merged, deployed, live, parked, or handed off. | `agent-os-state-model.md`, `session-map.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `session-release-ledger.md` |
@@ -37,7 +37,7 @@ This index explains who owns the decision.
 
 | If the user asks... | Start with | Then use |
 | --- | --- | --- |
-| "What should we do next?" | `task-router.md` | active Session Map, state model, doc routing |
+| "What should we do next?" | `task-router.md` | active Session Map, state model, doc routing, runtime reliability |
 | "Improve the workflow" | `agent-os-improvement-loop.md` | skill registry, skill quality, evals, Koda, Session Map |
 | "Which docs should the LLM read?" | `doc-routing-and-context-loading.md` | this index, task router |
 | "Should this be a skill?" | `skill-quality-and-pruning.md` | skill registry, parity contract |
@@ -58,7 +58,7 @@ If a new idea fits one of these rows, update that owner first.
 | Owner | Active docs |
 | --- | --- |
 | Overview and architecture | `agent-os.md`, `agent-os-architecture-map.md`, `agent-os-infrastructure.md`, `agent-os-internal-build-plan.md`, `agent-os-quick-start.md` |
-| Routing and workflow weight | `task-router.md`, `agent-os-routing-model.md`, `agent-os-workflow-lanes.md`, `doc-routing-and-context-loading.md`, `doc-owner-route-index.md` |
+| Routing and workflow weight | `task-router.md`, `agent-os-routing-model.md`, `agent-os-workflow-lanes.md`, `doc-routing-and-context-loading.md`, `doc-owner-route-index.md`, `agent-os-runtime-reliability.md` |
 | Skill and adapter system | `agent-os-skill-registry.md`, `skill-quality-and-pruning.md`, `agent-os-parity-contract.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `agent-os-hook-dispatcher.md`, `codex-hook-trust.md` |
 | Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
 | Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md` |

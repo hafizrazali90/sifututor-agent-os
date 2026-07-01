@@ -237,6 +237,11 @@ map for Agent OS docs, and
 new skills, playbooks, hooks, evals, or workflow docs.
 Plain version: every new rule needs an owner, a route, and a reason to exist.
 
+Use [agent-os-runtime-reliability.md](agent-os-runtime-reliability.md) when
+the work is active and the agent needs to keep mode, loaded context,
+proof/state, and next action visible.
+Plain version: this is how the Agent OS avoids drifting during a real session.
+
 ## Architecture Index
 
 Read these as the core internal kit:
@@ -263,6 +268,7 @@ Read these as the core internal kit:
 | Doc routing and context loading | [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md) |
 | Doc owner and route index | [doc-owner-route-index.md](doc-owner-route-index.md) |
 | Skill quality and pruning | [skill-quality-and-pruning.md](skill-quality-and-pruning.md) |
+| Runtime reliability | [agent-os-runtime-reliability.md](agent-os-runtime-reliability.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |
