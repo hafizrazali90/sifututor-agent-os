@@ -119,6 +119,27 @@ These drifts are still safer than uncontrolled implementation, but they are not
 daily-use ready. Mark them as partial pass and update the owning shared rule,
 adapter guidance, eval, or Koda correction if the pattern repeats.
 
+## Latest Live Claude Retest
+
+2026-07-01 Claude extension retest after `cf7b7e2`:
+
+- Staff modal prompt: mostly pass. Claude routed to intake / diagnosis and no
+  longer treated the vague report as implementation-ready. Minor remaining
+  nuance: the agent should identify the report, modal, screen, and trigger
+  before naming a specific component to inspect.
+- Payment callback prompt: pass. Claude routed to critical-lane diagnosis,
+  kept the work read-only, and stopped before implementation approval.
+- Commit, commit+push, proceed-until-done, what-next, workflow improvement,
+  and save-session prompts: pass. Claude no longer required universal
+  `active.json` fields, invented gate evidence, or project-only command names.
+
+Plain meaning:
+
+```text
+The correction worked. Claude is not perfect-wording proven, but the main
+adapter drift from the first transcript is fixed enough for daily retesting.
+```
+
 ## Runner
 
 Use:
