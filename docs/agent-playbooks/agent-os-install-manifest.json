@@ -9,6 +9,7 @@
     "docs/agent-playbooks/agent-os-architecture-map.md",
     "docs/agent-playbooks/agent-os-infrastructure.md",
     "docs/agent-playbooks/agent-os-skill-registry.md",
+    "docs/agent-playbooks/agent-os-adapter-readiness.md",
     "docs/agent-playbooks/multi-agent-adapter-workflow.md",
     "docs/agent-playbooks/agent-os-hook-dispatcher.md",
     "docs/agent-playbooks/agent-os-quick-start.md",
@@ -74,6 +75,7 @@
     "scripts/agent-checks/agent-os-scenario-lab-runner.py",
     "scripts/agent-checks/agent-os-behavior-trace-runner.py",
     "scripts/agent-checks/agent-os-koda-retrieval-quality.py",
+    "scripts/agent-checks/agent-os-adapter-readiness.py",
     "docs/agent-playbooks/templates/live-evidence-probe-report.md",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"

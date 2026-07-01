@@ -128,7 +128,7 @@ expecting every model/tool to expose identical UI.
 | --- | --- | --- |
 | Parity contract was implied, not explicit | Hafiz had to infer whether Claude and Codex should behave the same. | Keep this contract as the single parity map. |
 | Product Design packaging differs | Claude shows four steps; Codex shows one umbrella skill, which can feel like less control. | Require Codex to name the current phase; optionally add Codex phase aliases later. |
-| Evals mostly test Codex routing | We can prove Codex hook behavior better than Claude/Codex parity. | Add a parity eval that checks every shared workflow has a Claude adapter, Codex adapter, shared playbook, and expected close-out. |
+| Evals mostly test Codex routing | We can prove Codex hook behavior better than live Claude extension behavior. | Use `agent-os-adapter-readiness.py` for wiring, behavior trace for deterministic Codex routing, and live Claude prompts only as optional evidence until the extension has a stable non-interactive test path. |
 | Hook behavior differs by tool | Claude and Codex lifecycle hooks are not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
 | Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
 | Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |

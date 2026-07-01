@@ -51,6 +51,7 @@ the lightest test that can honestly catch the mistake if it returns.
 | Capability fixture | Tool availability and approval claims stay honest. | Unknown, not connected, blocked, critical, and staff capability states. | Deep live connector behavior. |
 | Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
 | Behavior trace | The agent picks the expected route, first move, approval boundary, and evidence markers for common prompts. | Claude/Codex parity review points and workflow predictability. | Subjective quality of the full answer. |
+| Adapter readiness | Codex and Claude are wired to the shared Agent OS core. | Setup confidence before daily use or handoff. | Proving the live extension always behaves correctly. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
 | Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
 | Scenario Lab | Realistic Hafiz work moments are checked at the route/proof/boundary level. | Daily-work readiness, approval boundaries, tool discipline, and cross-layer behavior. | Real production safety, subjective acceptance, or full live LLM answer quality. |
@@ -81,6 +82,10 @@ Claude CLI traces, but that mode is evidence-only. It may hit model budget,
 rate-limit, or project-context loading limits, so normal readiness should use
 the deterministic trace plus real-session review.
 
+The adapter readiness runner checks whether Codex and Claude are set up to use
+the Agent OS. It proves wiring, not perfect obedience. Treat live extension
+behavior as a separate proof level.
+
 Counted in the score:
 
 - router and behavior evals
@@ -89,6 +94,7 @@ Counted in the score:
 - Koda and capability fixtures
 - conversation and parity fixtures
 - behavior trace checks
+- adapter readiness checks
 - workflow example structure
 - Agent OS health and workflow doctor
 - Scenario Lab realistic work scenarios
@@ -252,6 +258,7 @@ scripts/agent-checks/agent-os-response-shape-runner.py
 scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
 scripts/agent-checks/agent-os-behavior-trace-runner.py
+scripts/agent-checks/agent-os-adapter-readiness.py
 python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
 python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90
 scripts/agent-checks/agent-os-health.sh

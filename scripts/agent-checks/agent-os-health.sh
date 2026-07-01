@@ -113,6 +113,7 @@ check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-valid
 check_file "Agent OS scenario lab" "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py"
 check_file "Agent OS behavior trace" "$ROOT/scripts/agent-checks/agent-os-behavior-trace-runner.py"
 check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py"
+check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >$TMP_DIR/agent-os-eval-runner.out 2>$TMP_DIR/agent-os-eval-runner.err; then
@@ -277,6 +278,16 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-behavior-trace.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-behavior-trace.out $TMP_DIR/agent-os-behavior-trace.err
+
+if "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py" >$TMP_DIR/agent-os-adapter-readiness.out 2>$TMP_DIR/agent-os-adapter-readiness.err; then
+  adapter_readiness_summary="$(tail -1 $TMP_DIR/agent-os-adapter-readiness.out 2>/dev/null || true)"
+  pass "Agent OS adapter readiness" "${adapter_readiness_summary:-passed}"
+else
+  fail "Agent OS adapter readiness" "adapter readiness runner failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-adapter-readiness.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-adapter-readiness.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-adapter-readiness.out $TMP_DIR/agent-os-adapter-readiness.err
 
 if python3 -m py_compile "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py" >$TMP_DIR/agent-os-koda-retrieval.out 2>$TMP_DIR/agent-os-koda-retrieval.err; then
   pass "Agent OS Koda retrieval" "py_compile ok; run directly for live retrieval quality"
