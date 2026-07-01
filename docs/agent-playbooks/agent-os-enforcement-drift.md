@@ -56,6 +56,55 @@ Start with the weakest enforcement that works. Move up the ladder only when
 the mistake is expensive, repeated, or easy to check automatically.
 ```
 
+## Promotion Path
+
+Rules should earn stronger enforcement.
+
+Plain meaning:
+
+```text
+Do not turn every good rule into a hook.
+Promote a rule only when real use proves it needs stronger protection.
+```
+
+Use this path:
+
+| Stage | Use when | Promote when | Do not promote when |
+| --- | --- | --- | --- |
+| Manual guidance | The rule is new, judgment-heavy, or still being shaped with Hafiz. | The same mistake repeats or the rule becomes clear enough to test. | The rule is mainly tone, style, preference, or product judgment. |
+| Playbook or skill wrapper | The rule belongs inside a repeatable workflow. | Agents keep missing it even after route docs are loaded. | The issue is one-off or better handled by a clearer example. |
+| Markdown eval | The expected behavior should be named and reviewed. | The behavior is repeated, expensive, or likely to drift between agents. | The behavior cannot be stated clearly yet. |
+| Local fixture or runner | The behavior can be checked deterministically without live credentials. | The fixture would catch the mistake without false confidence. | The check needs real session judgment, external state, or product acceptance. |
+| Script or guard | The rule can be checked safely against files, commands, or repo state. | A local deterministic check prevents a real mistake. | The check would block valid work or require broad access. |
+| Hook reminder | The rule is often missed at prompt or tool-use time. | A reminder prevents repeated routing/context mistakes. | The hook would become noisy or try to decide judgment-heavy work. |
+| Hard hook/block | The action is unsafe before it happens. | The action crosses secrets, `live/`, destructive, bypass, or unapproved outbound boundaries. | The rule is only about quality, wording, or workflow preference. |
+
+Decision shortcut:
+
+```text
+Manual if it needs judgment.
+Eval if it should not quietly return.
+Script if it is deterministic.
+Hook if it must happen at prompt/tool time.
+Hard block only for real danger.
+```
+
+## Promotion Questions
+
+Before promoting a rule, answer:
+
+1. What exact mistake are we preventing?
+2. Has it happened more than once, or is it dangerous enough once?
+3. Which layer owns the truth: docs, skill, Koda, Session Map, git, tests, hook,
+   or external service?
+4. Can it be checked locally without guessing?
+5. Would automation create false confidence or annoying false blocks?
+6. What is the lightest layer that would have caught the mistake?
+7. How will Hafiz understand the new behavior in plain language?
+
+If those questions are unclear, keep the rule manual and add a better example
+first.
+
 ## What Must Be Hard-Blocked
 
 Hard-block these through `AGENTS.md`, hooks, guards, or scripts where possible:
@@ -119,6 +168,10 @@ Add or update an eval when:
 
 Do not add an eval for every awkward answer. Use the eval suite for repeated or
 expensive mistakes.
+
+Use Markdown evals first when the behavior is important but not yet
+deterministic. Promote to a runner only when the expected answer can be checked
+without needing live session judgment.
 
 ## When To Change A Hook
 
@@ -189,3 +242,11 @@ If this fails, is it dangerous, repeated, or easy to check?
 If yes, move it up the enforcement ladder.
 
 If no, keep it as a playbook, example, close-out expectation, or Koda lesson.
+
+When in doubt, prefer:
+
+```text
+better example -> Markdown eval -> local fixture -> script -> hook -> hard block
+```
+
+Do not skip straight from "Hafiz prefers this" to "the hook must enforce it."

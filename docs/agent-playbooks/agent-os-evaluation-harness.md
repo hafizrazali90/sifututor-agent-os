@@ -101,6 +101,35 @@ Plain meaning:
 Do not make the Agent OS stricter than our understanding.
 ```
 
+## Promotion To Automation
+
+Use [agent-os-enforcement-drift.md](agent-os-enforcement-drift.md) before
+promoting a manual rule into a runner, script, hook, or hard block.
+
+Plain meaning:
+
+```text
+The harness should protect settled behavior.
+It should not freeze a rule we are still learning.
+```
+
+Promote a Markdown eval into an executable runner case only when:
+
+- the expected behavior can be stated in concrete text or state checks;
+- the fixture can fail deterministically;
+- the fixture does not need live credentials, subjective product judgment, or
+  hidden chat context;
+- the failure would catch a repeated or expensive Agent OS mistake;
+- the check will not produce noisy false failures during normal work.
+
+Keep the case manual when:
+
+- the behavior needs judgment;
+- the state depends on live GitHub, deploy, Planner, Koda relevance, or another
+  external service;
+- the rule is mostly tone/style and already covered by response-shape examples;
+- the Agent OS is still discussing the right behavior with Hafiz.
+
 ## Repo-State Fixture Standard
 
 A repo-state fixture should name:

@@ -210,6 +210,7 @@ Do not use these evals to bypass normal approval rules.
 | AO-154 | Agent ends a meaningful step with checks passed but no recommended next action | runtime close-out | Treat this as communication/runtime drift. Add the single recommended next action and decision-needed status before ending. |
 | AO-155 | Agent reads runtime reliability but still cannot apply it to ordinary phrases like `what next`, `commit`, `push`, or `save session` | runtime examples | Use the Daily Operating Examples in `agent-os-runtime-reliability.md`. Translate Hafiz's phrase into mode, loaded context, proof/state, stop point, and one recommended next action. |
 | AO-156 | Agent completes a commit or push during a long session but leaves the Session Map pointing to the previous local-only packet | session map live update | Use the Session Map Live Update Loop. Update the smallest current pointer: Human Snapshot current/next, Progress Board row, Agent Context current focus/state, and Continuation Prompt. Do not rewrite history or touch unrelated dirty files. |
+| AO-157 | Agent turns a newly agreed workflow preference directly into a hook or hard block | enforcement promotion | Use the enforcement promotion path: manual guidance first, then playbook/skill, Markdown eval, local fixture, script/guard, hook reminder, and hard block only for real danger. Explain why the chosen layer is the lightest reliable one. |
 
 ## Pass Criteria
 
