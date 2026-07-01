@@ -747,7 +747,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         )
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs)\b",
         normalized,
     )
     if direct_skill:
@@ -784,11 +784,25 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt approves a visible commit-only bundle.",
         )
 
+    if "koda" in normalized and any(word in normalized for word in ("conflict", "disagree", "disagrees", "contradict", "stale")):
+        return (
+            "$task-router",
+            [
+                "Use docs/agent-playbooks/context-authority.md before acting on the Koda conflict.",
+                "Identify the owner source for the question: current repo/docs/evidence, Hafiz decision, or historical memory.",
+                "Treat Koda as historical context until current files and evidence confirm it.",
+                "If Koda is stale, explain the mismatch and update Koda after verification.",
+            ],
+            "Prompt reports a Koda conflict with current context and needs source-of-truth handling.",
+        )
+
     if "koda" in normalized and any(word in normalized for word in ("workaround", "memory", "accepted", "apply")):
         return (
             "$task-router",
             [
                 "Treat Koda as historical context, not automatic permission to edit.",
+                "Use docs/agent-playbooks/context-authority.md when memory and current sources might disagree.",
+                "Identify the owner source before deciding whether the memory still applies.",
                 "Check current files and current repo behavior before applying any remembered workaround.",
                 "If the memory is stale, explain the mismatch and update Koda after verification.",
             ],
@@ -828,8 +842,10 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         return (
             "$diagnose",
             [
+                "Use Planner read-only as intake evidence when relevant and available.",
                 "Treat this as a reported symptom, not verified root cause.",
                 "Check Planner or available staff-reported context when relevant, then reproduce or inspect before editing.",
+                "Do not mutate Planner status, assignment, priority, or content unless Hafiz explicitly asks.",
                 "Convert confirmed engineering work into the normal GitHub/task workflow.",
             ],
             "Prompt starts from staff or Planner-reported operational context.",
@@ -956,6 +972,19 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt asks to test and improve Agent OS behavior against a 90% accuracy target.",
         )
 
+    if all(word in normalized for word in ("claude", "codex")) and any(
+        word in normalized for word in ("compare", "different", "differently", "drift", "parity", "same workflow", "behave")
+    ):
+        return (
+            "$workflow-improvement",
+            [
+                "Use the Claude/Codex behavior comparison path instead of judging wording by taste.",
+                "Run the parity runner and compare route, first move, approval boundary, evidence, state language, memory/task routing, and close-out.",
+                "Different wording is fine when the shared workflow behavior is equivalent.",
+            ],
+            "Prompt asks for Claude/Codex behavior comparison.",
+        )
+
     if "agent os" in normalized and any(word in normalized for word in ("ready", "readiness", "install-ready")):
         return (
             "$quick-check",
@@ -1017,6 +1046,20 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for review/audit behavior.",
         )
 
+    if any(phrase in normalized for phrase in ("pull request", " pr ", "pr #")) and any(
+        word in normalized for word in ("ready", "merge", "ci", "checks", "approved", "review")
+    ):
+        return (
+            "$review",
+            [
+                "Use $review for GitHub PR readiness before recommending merge or release.",
+                "Run the GitHub read probe or an equivalent safe GitHub read before claiming PR state.",
+                "Check CI/check evidence, unresolved review comments, branch/commit state, and changed-file risk.",
+                "Do not merge, deploy, or mark accepted unless that boundary is explicitly approved and the evidence is current.",
+            ],
+            "Prompt asks for GitHub PR readiness.",
+        )
+
     if any(word in normalized for word in ("diagnose", "debug", "root cause", "why", "failing", "failure", "broken", "bug")):
         return (
             "$diagnose",
@@ -1045,6 +1088,20 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "For bugfix/hotfix work, state the old failure mode and regression evidence.",
             ],
             "Prompt is asking for QA or regression evidence.",
+        )
+
+    if any(word in normalized for word in ("monitor", "monitoring", "logs", "sentry", "betterstack")) and any(
+        word in normalized for word in ("production", "prod", "deploy", "release", "live")
+    ):
+        return (
+            "$monitor-production-logs",
+            [
+                "Use $monitor-production-logs for production monitoring evidence.",
+                "Run the production logs probe or approved read-only Sentry/BetterStack checks before claiming monitoring is clean.",
+                "Report counts/status only; do not print secrets, noisy payloads, or unrelated production details.",
+                "Do not deploy, rollback, acknowledge issues, or mutate production systems unless Hafiz explicitly approves that separate boundary.",
+            ],
+            "Prompt asks for production monitoring evidence.",
         )
 
     if any(person in normalized for person in ("human", "hafiz", "staff")) and any(

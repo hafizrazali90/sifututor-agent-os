@@ -127,6 +127,46 @@ SCENARIOS = [
         actions_contain=["PRD", "UX spec", "build prompts"],
         actions_absent=["commit"],
     ),
+    Scenario(
+        id="RW-013",
+        area="github pr evidence",
+        prompt="Is PR #8 ready to merge?",
+        expected_skill="$review",
+        reason_contains="GitHub PR readiness",
+        actions_contain=["GitHub read probe", "CI/check evidence", "Do not merge"],
+    ),
+    Scenario(
+        id="RW-014",
+        area="planner intake evidence",
+        prompt="Planner has a staff card saying the parent app request is broken.",
+        expected_skill="$diagnose",
+        reason_contains="Planner-reported operational context",
+        actions_contain=["Planner read-only", "reported symptom", "Do not mutate Planner"],
+    ),
+    Scenario(
+        id="RW-015",
+        area="production monitoring evidence",
+        prompt="Monitor production logs after the sifu-tutor deploy.",
+        expected_skill="$monitor-production-logs",
+        reason_contains="production monitoring evidence",
+        actions_contain=["production logs probe", "Sentry", "BetterStack", "Do not deploy"],
+    ),
+    Scenario(
+        id="RW-016",
+        area="stale memory conflict",
+        prompt="Koda memory says we accepted this path, but the current docs disagree.",
+        expected_skill="$task-router",
+        reason_contains="Koda conflict",
+        actions_contain=["context-authority.md", "owner source", "update Koda"],
+    ),
+    Scenario(
+        id="RW-017",
+        area="claude codex comparison",
+        prompt="Compare Claude and Codex for this workflow and tell me if they behave differently.",
+        expected_skill="$workflow-improvement",
+        reason_contains="Claude/Codex behavior comparison",
+        actions_contain=["parity runner", "route", "approval boundary", "different wording is fine"],
+    ),
 ]
 
 
