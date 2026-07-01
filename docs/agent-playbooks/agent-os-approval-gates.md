@@ -33,6 +33,10 @@ until that point. "Done" may mean diagnosed only, fixed locally, committed, PR
 opened, staging verified, production live, or production monitored. Anything
 outside that named boundary still needs a fresh explicit decision.
 
+Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to name the
+execution depth before asking for approval. Plain meaning: first say the
+recommended finish state, then say which boundary needs approval.
+
 Previously agreed context counts. If the current task context already contains
 the scope, path, approvals, and stop point, the agent should continue through
 that approved path without asking again for the same decision. The agent pauses
@@ -266,6 +270,7 @@ These actions must not be hidden inside a larger bundle:
 | `proceed` / `continue` / `yes` / `ok` after an exact commit-only recommendation | Commit exactly that listed bundle, after guard/checks, and stop before push. |
 | `proceed next` | Continue the next review/action from visible chat context. |
 | `proceed until done` / `continue until done` | Treat as end-to-end intent. Explain what done means, how far the agent can go now, and what approval is needed to go further. |
+| `proceed until production` | Treat as release intent. Name whether the practical finish state is deployed, live checked, monitored, or accepted/closed; then require the needed deploy/release approvals. |
 | `proceed until finish` after a clear approved path | Continue using the already-approved path. Do not re-ask for approvals already included in the current task context. |
 | `approve` | Approve the last exact approval request, including a bundle if the request named it. |
 | `yes` | Confirm the current recommendation or discussion point; act if the action is clear and safe. |

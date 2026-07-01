@@ -67,6 +67,11 @@ classification rules.
 
 Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to choose the
 right intensity: Light, Medium, Full, or Critical.
+Also use its Execution Depth section to choose the practical finish state:
+answer only, drafted, changed locally, local proof, committed, PR ready, merged,
+deployed, live checked, monitored, or accepted/closed. Plain meaning: after the
+route is known, the router should recommend how far this task should go before
+it stops.
 
 Use [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md)
 after choosing the route to decide which docs are mandatory, which are triggered
@@ -172,6 +177,10 @@ current workflow stage, practical finish point, best worker/tool, evidence
 need, approval stop point, and next recommended action before the agent gets
 deep into work. Do not create a separate first-mate agent yet; use
 [agent-os-routing-model.md](agent-os-routing-model.md) as the source of truth.
+Use [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) when the practical
+finish point is unclear. Plain meaning: Hafiz should not need to remember
+whether the next stop is local proof, commit, PR ready, merged, deployed, live
+checked, or monitored. The router should recommend that stop point.
 
 Important routing principles:
 

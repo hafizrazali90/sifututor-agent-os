@@ -31,6 +31,25 @@ Prove the current state honestly.
 Recommend the next move.
 ```
 
+When work has more than one natural step, also name:
+
+```text
+finish state -> pause point
+```
+
+Plain meaning:
+
+```text
+Mode says what kind of work the agent is doing.
+Finish state says how far this task is meant to go.
+Pause point says where Hafiz needs to decide again.
+```
+
+Use the finish states from
+[agent-os-workflow-lanes.md](agent-os-workflow-lanes.md): answer only,
+drafted, changed locally, local proof, committed, PR ready, merged, deployed,
+live checked, monitored, or accepted/closed.
+
 This does not mean every reply needs a formal report.
 It means the agent should not drift silently.
 
@@ -151,6 +170,10 @@ State:
 <changed locally, committed locally, pushed, PR open, merged, deployed, live
 checked, parked, or still discussion>
 
+Target finish:
+<answer only, drafted, local proof, committed, PR ready, merged, deployed,
+live checked, monitored, or accepted/closed when useful>
+
 Checked:
 <tests/checks/evidence or why not needed>
 
@@ -218,6 +241,8 @@ recommend next.
 | Hafiz says `ok proceed` after a clear Agent OS recommendation | Build or Plan, depending on the last recommendation | Active Session Map, Task Router, owning Agent OS playbook, relevant eval/owner docs | Current git state and what is already accepted or pushed | Commit or push only if the approved packet included it | "I will continue the last recommended Agent OS step. I will update the owner doc, check the connected eval/index files, run Agent OS checks, and stop before any unapproved outbound step." |
 | Hafiz says `let's discuss` or asks why something matters | Discuss | Current decision, relevant roadmap/Koda only if prior context matters | No file change unless Hafiz asks to document | Stop before durable edits | "We are still deciding. The choice is between A and B; I recommend A because..., but I will not change docs until you say proceed." |
 | Hafiz says `proceed until done` for safe Agent OS docs | Build -> Verify -> Review -> Commit, and Push only if included | Improvement loop, owner playbook, doc routing, evals, Session Map | Changed files, checks, highest proven Git state | Stop at the approved boundary or a failed check | "Done for this packet means the docs are updated, checks pass, the Session Map is current, and the package is committed. Push needs to be included in the boundary." |
+| Hafiz says `proceed until done` for a product bug | Diagnose -> Build -> Verify -> QA -> Review | Project docs, active task/GitHub issue, diagnose/verify/QA/review playbooks, TESTING/UI docs when triggered | Reproduction, fix evidence, journey/E2E decision, highest Git state | Recommend local proof, commit, PR ready, or production path based on risk | "For this bug, I recommend stopping at PR ready first: reproduce, fix, prove the user journey, commit, push, open PR, and monitor CI. Production stays separate unless you approve that boundary." |
+| Hafiz says `proceed until production` | Review -> Release -> Smoke -> Monitor | Release playbook, approved source commit/PR, deploy path, smoke and monitoring tools | Deploy source, environment, smoke result, monitoring result | Stop before rollback, new fixes, destructive actions, or final business risk acceptance unless named | "For production, the finish state is live checked first, then monitored if included. I will name the commit, deploy target, smoke checks, and monitoring window before calling it live." |
 | Hafiz says `commit` after a checked package | Commit | Commit playbook, current git diff/status, pre-commit guard | Exact staged file list and guard output | Stop before push unless push was approved | "I will commit only these files. The unrelated dirty file stays out. After commit, the next action is either push or continue the next Agent OS topic." |
 | Hafiz says `push` after local commits | Review -> Push | Review/no-mistakes-lite, git ahead/dirty state, latest checks | Ahead commits, uncommitted files, last health/guard result | Stop before PR/merge/deploy unless approved | "I am doing the outbound review first: one commit is ahead, checks passed, and no unrelated files are staged. If clean, I will push main." |
 | Hafiz asks `what next?` | Task Router / Discuss | Active Session Map, current git state, recent pushed commits, relevant Koda | Current focus, waiting decisions, dirty/ahead state | Recommend one next action | "The Runtime Reliability packet is pushed. The next useful step is to add daily examples so the rule is easier to apply in real work." |

@@ -87,6 +87,17 @@ the agent gets deep into work:
    judgment?
 7. What is the next recommended action after this step?
 
+Use the Execution Depth section in
+[agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) to name the finish
+state in normal language.
+
+Good finish states include:
+
+```text
+answer only, drafted, changed locally, local proof, committed, PR ready,
+merged, deployed, live checked, monitored, accepted or closed
+```
+
 Non-technical version:
 
 ```text
@@ -143,10 +154,14 @@ Use this quick tree before choosing tools or editing files:
    Use the normal build route. Create or link the engineering issue when
    needed, implement in safe slices, verify, QA, review, then stop before commit
    unless commit was approved.
-7. **Is Hafiz asking to commit, push, open PR, merge, deploy, or release?**
+7. **What finish state fits this request?**
+   Name the practical stop point before deep work: answer only, drafted,
+   changed locally, local proof, committed, PR ready, merged, deployed, live
+   checked, monitored, or accepted/closed.
+8. **Is Hafiz asking to commit, push, open PR, merge, deploy, or release?**
    Treat it as an outbound action. Inventory status, run the required guards,
    and require the correct explicit approval for that boundary.
-8. **Is Hafiz using a short command like `go next`, `proceed`, or `approve`?**
+9. **Is Hafiz using a short command like `go next`, `proceed`, or `approve`?**
    Follow the last clear recommendation or exact approval request. If the last
    step is missing, stale, ambiguous, or risky, ask a short clarification.
 
@@ -159,6 +174,7 @@ Thinking? Discuss.
 Designing? Draft and decide.
 Checking? Gather evidence.
 Building? Implement and verify.
+How far? Name the finish state.
 Shipping? Guard and ask approval.
 Short command? Follow the last clear step.
 ```

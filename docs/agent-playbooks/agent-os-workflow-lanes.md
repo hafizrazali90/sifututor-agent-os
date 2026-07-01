@@ -23,6 +23,82 @@ fatigue.
 
 The Agent OS should choose the lightest lane that honestly fits the risk.
 
+## Execution Depth
+
+Lane intensity answers:
+
+```text
+How much process does this task need?
+```
+
+Execution depth answers:
+
+```text
+How far should the agent carry this specific task before stopping?
+```
+
+Plain meaning:
+
+```text
+Do not make Hafiz remember the whole path.
+Tell him the practical finish state, recommend the safest useful stop point,
+then work until that point or a real gate.
+```
+
+Use these finish states in plain language:
+
+| Finish state | Use when Hafiz wants | What the agent should do | Stop before |
+| --- | --- | --- | --- |
+| Answer only | Understanding, comparison, or recommendation. | Explain, compare options, recommend one next step. | Durable edits. |
+| Drafted | A living plan, PRD, UX shape, or workflow idea. | Create/update the smallest useful planning artifact. | Implementation. |
+| Changed locally | A safe docs/tooling/code change without saving history yet. | Edit scoped files and run the relevant local checks. | Commit unless approved. |
+| Local proof | Confidence that the change works locally. | Run focused tests, lint/build, browser/API/mobile checks, or docs health checks. | Commit/push/PR. |
+| Committed | A clean local history point. | Guard, stage exact files, commit the approved package. | Push unless approved. |
+| PR ready | GitHub review state is prepared. | Push branch, open/update PR, write body, monitor CI, and fix in-scope CI only if approved. | Merge unless approved. |
+| Merged | Shared source of truth includes the change. | Review/merge only inside an approved boundary. | Deploy unless approved. |
+| Deployed | Staging or production received the approved commit. | Run release preflight and deploy to the named environment only when approved. | Live claims without smoke. |
+| Live checked | The real environment passed the agreed smoke or journey check. | Run safe smoke/API/browser/monitoring evidence for the deployed state. | New fixes, rollback, or broader risk acceptance unless approved. |
+| Monitored | Post-release health has been watched. | Check read-only logs/monitoring for the agreed window or scope. | Final acceptance when business judgment is still needed. |
+| Accepted or closed | Hafiz/staff/business owner accepts the result. | State what is proven, what is accepted, and what is closed. | Calling unaccepted risk accepted. |
+
+These are not rigid phases.
+A tiny docs typo may go from `Changed locally` to `Committed`.
+A production release may need `PR ready -> merged -> deployed -> live checked
+-> monitored`.
+A discussion may stop at `Answer only`.
+
+## Depth Selection
+
+At task start, choose the depth from Hafiz's wording, current state, and risk.
+
+| Hafiz says or implies | Recommended depth | Practical response |
+| --- | --- | --- |
+| `why`, `what is this`, `can we discuss` | Answer only | Explain and recommend. Do not edit unless Hafiz says to document it. |
+| `let's design`, `brainstorm`, `plan properly` | Drafted | Use chat, Quick Brief, Product Shape, Build-Ready Pack, or Session Map. |
+| `proceed` after a docs/workflow recommendation | Changed locally + local proof | Update the scoped docs and checks. Stop before commit/push unless included. |
+| `fix this` | Local proof, then recommend commit/PR path | Diagnose, change, verify, QA/review as needed, then name the next gate. |
+| `proceed until commit` | Committed | Work through checks/review/commit and stop before push. |
+| `proceed until PR ready` | PR ready | Commit, push, open PR, monitor CI, then stop before merge. |
+| `proceed until merged` | Merged | Reach merged state if checks and approval boundary allow, then stop before deploy. |
+| `proceed until production` | Deployed + live checked, and monitoring if named | Explain the release path, require deploy approval, deploy, smoke, and report monitoring boundary. |
+| `proceed until done` | Translate first | Say what done means for this task, how far the agent can go now, and what still needs approval. |
+
+When unsure, recommend a depth instead of asking Hafiz to pick from a menu.
+
+Good:
+
+```text
+For this bug, I recommend stopping at PR ready first: diagnose, fix, prove the
+browser journey, commit, push, open PR, and monitor CI. Production deploy stays
+separate.
+```
+
+Bad:
+
+```text
+What do you want me to do next?
+```
+
 ## Lane Intensity Model
 
 | Intensity | Meaning | Example |
@@ -38,6 +114,7 @@ Each lane should define:
 
 - entry criteria: when to use it
 - exit criteria: when the lane is done
+- execution depth: the practical finish state for this task
 - required evidence: what proof is enough
 - approval boundary: what needs Hafiz approval
 - escalation trigger: when to move to a stricter lane
