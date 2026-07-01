@@ -78,6 +78,11 @@ Koda remembers the lesson from past mistakes.
 Session Map remembers where this conversation currently is.
 ```
 
+Use [skill-quality-and-pruning.md](skill-quality-and-pruning.md) before adding
+a new skill or playbook. Plain meaning: create a new skill only when the work
+is repeatable, distinct, has its own trigger/evidence/stop point, and cannot be
+cleanly handled by updating an existing owner.
+
 ## How To Read A Skill
 
 Each workflow skill has two parts:
@@ -117,6 +122,9 @@ The skill is the doorway.
 The playbook is the SOP.
 Doc routing tells the agent which extra manuals matter for this job.
 ```
+
+Use [doc-owner-route-index.md](doc-owner-route-index.md) when deciding which
+doc owns a rule or where a new Agent OS document belongs.
 
 ## Routing Rule
 

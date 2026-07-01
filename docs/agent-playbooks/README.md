@@ -23,6 +23,8 @@ Use these when the user asks for:
 - Agent OS workflow lanes: [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)
 - Agent OS general guidelines: [agent-os-general-guidelines.md](agent-os-general-guidelines.md)
 - Agent OS doc routing and context loading: [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md)
+- Agent OS doc owner and route index: [doc-owner-route-index.md](doc-owner-route-index.md)
+- Agent OS skill quality and pruning: [skill-quality-and-pruning.md](skill-quality-and-pruning.md)
 - Agent OS master workflows: [agent-os-workflows.md](agent-os-workflows.md)
 - Agent OS planning artifacts: [planning-artifacts.md](planning-artifacts.md)
 - Agent OS governance and versioning: [agent-os-governance.md](agent-os-governance.md)

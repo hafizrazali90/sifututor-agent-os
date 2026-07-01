@@ -231,6 +231,12 @@ when deciding which docs the agent must read for a task.
 Plain version: the Agent OS should behave like a librarian, not like someone
 trying to read the whole library before every answer.
 
+Use [doc-owner-route-index.md](doc-owner-route-index.md) as the library shelf
+map for Agent OS docs, and
+[skill-quality-and-pruning.md](skill-quality-and-pruning.md) before creating
+new skills, playbooks, hooks, evals, or workflow docs.
+Plain version: every new rule needs an owner, a route, and a reason to exist.
+
 ## Architecture Index
 
 Read these as the core internal kit:
@@ -255,6 +261,8 @@ Read these as the core internal kit:
 | Workflow intensity | [agent-os-workflow-lanes.md](agent-os-workflow-lanes.md) |
 | General quality guidelines | [agent-os-general-guidelines.md](agent-os-general-guidelines.md) |
 | Doc routing and context loading | [doc-routing-and-context-loading.md](doc-routing-and-context-loading.md) |
+| Doc owner and route index | [doc-owner-route-index.md](doc-owner-route-index.md) |
+| Skill quality and pruning | [skill-quality-and-pruning.md](skill-quality-and-pruning.md) |
 | Master workflow map | [agent-os-workflows.md](agent-os-workflows.md) |
 | Planning artifacts | [planning-artifacts.md](planning-artifacts.md) |
 | Change control and versioning | [agent-os-governance.md](agent-os-governance.md) |

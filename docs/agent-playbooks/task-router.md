@@ -74,6 +74,13 @@ by the task, and which should be skipped for now. Plain meaning: Task Router
 should not make the agent read everything. It should make the agent read the
 right source-of-truth docs for the current job.
 
+Use [doc-owner-route-index.md](doc-owner-route-index.md) when a doc owner is
+unclear or the agent might add a new doc. Use
+[skill-quality-and-pruning.md](skill-quality-and-pruning.md) before creating,
+splitting, merging, parking, or deleting workflow skills/playbooks. Plain
+meaning: first find the owner; then decide whether the Agent OS needs a new
+artifact at all.
+
 Use [planning-artifacts.md](planning-artifacts.md) when the task needs
 brainstorming, option comparison, Product Shape, Build-Ready Pack, a visual
 review board, or a clear explanation before implementation. Plain meaning: do

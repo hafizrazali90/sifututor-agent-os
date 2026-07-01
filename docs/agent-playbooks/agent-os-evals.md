@@ -201,6 +201,9 @@ Do not use these evals to bypass normal approval rules.
 | AO-145 | Agent starts a meaningful task and reads many unrelated docs but misses the route owner | doc routing / context loading | Use the doc routing matrix: read the always-required contract, selected route playbook, triggered docs, and current evidence. Do not spend context on unrelated docs. |
 | AO-146 | Agent changes Agent OS workflow behavior without checking the improvement loop, skill registry, or evals | doc routing / Agent OS improvement | Treat this as a missed-doc problem. Read `agent-os-improvement-loop.md`, the owning playbook, `agent-os-skill-registry.md`, and `agent-os-evals.md` before durable edits. |
 | AO-147 | Agent fixes a SIMS staff UI bug without reading UI/UX docs or TESTING.md decision | doc routing / user-facing work | Treat UI/UX docs and TESTING.md as triggered docs. Read the relevant project guidance before implementation or explain why it does not apply. |
+| AO-148 | Agent creates a new skill because a concept has a catchy name | skill quality / pruning | Do not create the skill yet. Use `skill-quality-and-pruning.md` to decide update, create, merge, park, or delete, then explain the owner and route. |
+| AO-149 | Agent adds a new Agent OS doc but does not update any index or registry | doc owner / discoverability | Treat this as incomplete. Add the doc to the README and `doc-owner-route-index.md`, or explain why it is historical/temporary and should not be active. |
+| AO-150 | Hafiz asks why two Agent OS docs seem to say the same thing | pruning / duplicate ownership | Pick the owner, move useful content there, convert the duplicate into a pointer or park it, and delete only after references/checks are clean. |
 
 ## Pass Criteria
 

@@ -104,6 +104,7 @@ Common chains:
 | Agent did not explain next action | `agent-os-communication.md`, `working-with-hafiz.md`, `commit.md` or active playbook, response-shape runner |
 | Wrong route selected | `task-router.md`, `agent-os-routing-model.md`, `agent-os-evals.md`, lifecycle hook |
 | New workflow skill needed | `agent-os-skill-registry.md`, `.agents/skills/*`, `agent-os-workflows.md`, `README.md`, install manifest |
+| New doc, duplicate doc, or skill sprawl | `skill-quality-and-pruning.md`, `doc-owner-route-index.md`, `agent-os-skill-registry.md`, `README.md`, evals |
 | Claude/Codex mismatch | `agent-os-parity-contract.md`, registry, shared playbook, both adapters |
 | Memory behavior wrong | `agent-os-memory.md`, memory architecture, Koda fixtures, Koda search/update |
 | Hook behavior wrong | hook dispatcher doc, fixture first, hook code second |
@@ -129,6 +130,10 @@ When updating:
 - make the smallest coherent change
 - avoid duplicate rules in many files
 - link secondary files back to the source of truth
+- use `skill-quality-and-pruning.md` before creating or splitting skills,
+  playbooks, hooks, evals, or workflow docs
+- update `doc-owner-route-index.md` when a new active Agent OS doc is added or
+  ownership changes
 - add an eval or fixture when the mistake is repeated, expensive, or easy to
   check
 - update the skill registry when a skill changes or is added
