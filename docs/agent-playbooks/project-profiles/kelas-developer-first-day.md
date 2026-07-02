@@ -152,6 +152,79 @@ git checkout feat/launch-readiness
 If `feat/launch-readiness` has already been merged, use the current default
 branch instead.
 
+## First Setup Test
+
+Before starting real product work, the developer should prove that the local
+setup, Claude/Codex context, and basic Agent OS wiring are working.
+
+Plain meaning:
+
+```text
+Do not guess that the setup works.
+Make the developer run a small setup test and report back.
+```
+
+From the Agent OS repo:
+
+```bash
+cd ~/Projects/Sifututor
+git status --short --branch
+scripts/agent-checks/agent-os-health.sh
+scripts/agent-checks/agent-os-install.sh --target kelas
+```
+
+From the Kelas repo:
+
+```bash
+cd ~/Projects/Sifututor/kelas
+git status --short --branch
+node -v
+npm -v
+```
+
+If dependencies are already installed and Node is version 24, also run:
+
+```bash
+npm run check:types
+npm run test
+```
+
+If dependencies are not installed yet, the developer should stop and report
+that setup state before running install commands. If Node is not version 24,
+the developer should report that first because Kelas checks are not honest on
+Node 20.
+
+### First Setup Report Back
+
+Ask the developer to send this report before the first real task:
+
+```text
+Kelas Agent OS setup report
+
+Agent OS repo cloned: yes/no
+Kelas repo cloned: yes/no
+Branch:
+Claude/Codex can read AGENTS.md: yes/no
+Claude/Codex can read Kelas CLAUDE.md: yes/no
+Node version:
+npm version:
+Agent OS health result: pass/fail/not run
+Kelas install check result: pass/fail/not run
+Koda read connected: yes/no/not configured
+Koda write: not enabled unless approved
+Blocked or missing access:
+What I need from Hafiz:
+```
+
+The setup is ready for the first low-risk task only when:
+
+- the Agent OS repo and Kelas repo are both cloned
+- Claude/Codex can read the Agent OS and Kelas local rules
+- the developer is on the expected Kelas branch
+- Node 24 is available or the missing Node 24 issue is clearly reported
+- Agent OS health and Kelas install check either pass or the failure is
+  explained clearly
+
 ## First Prompt For Claude Or Codex
 
 The developer can paste this at the start of the first Kelas task:
