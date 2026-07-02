@@ -15,20 +15,21 @@ work.
 | Field | Value |
 | --- | --- |
 | Project | `kelas` / `kelasapp` |
-| Adoption state | `profile drafted; local Agent OS integration installed` |
+| Adoption state | `profile drafted; Agent OS integration installed and pushed on feat/launch-readiness` |
 | Last verified | `2026-07-02 from local checkout on feat/launch-readiness` |
 | Verified by | `Codex` |
 | Main owner | `Hafiz / Learnest Lab` |
 | Profile location | Umbrella draft: `docs/agent-playbooks/project-profiles/kelas.md`; product profile: `kelas/.agent-os/project-profile.md`; product rules: `kelas/AGENTS.md`, `kelas/CLAUDE.md` |
 
-This is a draft profile with local Agent OS integration installed, not yet a
-verified developer-staff rollout profile. It was created from safe read-only
+This is a draft profile with Agent OS integration installed and pushed on the
+Kelas `feat/launch-readiness` branch, not yet a verified developer-staff
+rollout profile. It was created from safe read-only
 evidence in the local checkout at `/Users/hafizrazali/Projects/Sifututor/kelas`,
 which points to `https://github.com/Learnest-Lab/kelasapp.git`. The checkout is
 currently on `feat/launch-readiness`, and the working tree has untracked
 `audit-screenshots/` plus unrelated PDF/report files. Product `AGENTS.md`,
 `CLAUDE.md`, `.agent-os/project-profile.md`, and `.claude/tasks` wiring were
-added and committed locally on 2026-07-02 in Kelas commit `d72c4b5`.
+added, committed, and pushed on 2026-07-02 in Kelas commit `d72c4b5`.
 
 ## Plain Summary
 
@@ -158,7 +159,7 @@ be `PR opened with evidence`, not merge or deploy.
 
 | Gap | Impact | Recommended next |
 | --- | --- | --- |
-| Product repo integration is committed locally but not pushed. | Claude/Codex can use the files locally, but GitHub and other machines will not see them until pushed. | Push Kelas commit `d72c4b5` when approved. |
+| Developer first-day rollout has not been piloted with the assigned dev. | The repo has the Agent OS files, but we have not proven a real developer can start, diagnose, verify, and open a PR without Hafiz re-explaining the workflow. | Use [kelas-developer-first-day.md](kelas-developer-first-day.md) for the first low-risk Kelas task and record confusion as Agent OS feedback. |
 | Current shell is Node `v20.20.2`, but Kelas requires Node 24. | Local lint/build/test readiness cannot be honestly claimed from this session. | Run Node 24 checks locally through nvm or rely on GitHub Actions for first readiness proof. |
 | Existing E2E tests still contain boilerplate French/SaaS-template expectations. | Current E2E suite may not prove real Kelas workflows or bilingual English/Bahasa Melayu behavior. | Replace or extend E2E with Kelas journeys: onboarding/org, classes, guardians/students/enrolments, attendance, billing, public invoice, receipt upload. |
 | `DEPLOY.md` says the repo had no remote, but local Git now points to `Learnest-Lab/kelasapp`. | Deploy docs are partly stale. | Update deploy docs after confirming the intended remote/branch/release path. |
@@ -197,4 +198,6 @@ Still unknown:
 
 Recommended next:
 
-- Push Kelas commit `d72c4b5` after deciding the correct branch/PR path.
+- Use [kelas-developer-first-day.md](kelas-developer-first-day.md) to onboard
+  the assigned developer on one low-risk Kelas task from `feat/launch-readiness`
+  or after that branch is merged into the intended base branch.

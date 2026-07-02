@@ -23,4 +23,4 @@ it before editing.
 | --- | --- | --- |
 | `sifu-tutor` | [sifu-tutor.md](sifu-tutor.md) | profile verified in umbrella; linked from product repo |
 | `ripple-suite` | [ripple-suite.md](ripple-suite.md) | profile verified in umbrella; linked from product repo |
-| `kelas` / `kelasapp` | [kelas.md](kelas.md) | profile drafted in umbrella; local product integration installed, not rollout-verified |
+| `kelas` / `kelasapp` | [kelas.md](kelas.md); [first-day developer setup](kelas-developer-first-day.md) | profile drafted in umbrella; product integration pushed on `feat/launch-readiness`, not rollout-verified |

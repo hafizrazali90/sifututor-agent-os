@@ -49,6 +49,7 @@ Use these when the user asks for:
 - Agent OS autonomous work packets: [autonomous-work-packets.md](autonomous-work-packets.md)
 - Agent OS incident workflow: [incident-workflow.md](incident-workflow.md)
 - Agent OS project adoption: [project-adoption.md](project-adoption.md)
+- Kelas developer first-day Agent OS setup: [project-profiles/kelas-developer-first-day.md](project-profiles/kelas-developer-first-day.md)
 - Agent OS workflow efficiency audit: [workflow-efficiency-audit.md](workflow-efficiency-audit.md)
 - Agent OS communication and close-out: [agent-os-communication.md](agent-os-communication.md)
 - working with Hafiz: [working-with-hafiz.md](working-with-hafiz.md)
