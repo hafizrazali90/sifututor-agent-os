@@ -41,6 +41,83 @@ Ask before risky doors: push, PR, merge, deploy, production, critical lanes, or
 destructive actions.
 ```
 
+## Tool Access For The Developer
+
+Do not give the developer every tool just because they are using the full Agent
+OS workflow.
+
+Plain meaning:
+
+```text
+The workflow can be full.
+The tool access should still be bounded.
+```
+
+Use this rule from the capability model:
+
+```text
+Connection gives capability.
+Profile gives permission.
+Approval gives authority.
+Probe gives current proof that the tool works.
+```
+
+For the first Kelas task, the developer normally needs:
+
+| Tool or access | Starting decision | Why |
+| --- | --- | --- |
+| Agent OS repo | Read access | Needed so Claude/Codex can read the workflow rules. |
+| Kelas repo | Write access if coding | Needed for branches, local edits, tests, and PR prep. |
+| GitHub issues/PRs | Read/write for Kelas | Needed to work from one issue and open one PR with evidence. |
+| Local Claude/Codex in VS Code | Allowed | Needed for guided coding, diagnosis, verification, and close-out. |
+| Node 24 and local checks | Required | Kelas checks are only honest on Node 24. |
+| Browser/Playwright | Allowed when configured | Needed to prove visible user journeys. |
+| Koda read | Allowed from day one if safely scoped | Useful for shared lessons, project history, and Agent OS context. |
+| Koda write | Approval-required by default | Durable memory should not be written by a new developer until trust and rules are proven. |
+| Production/deploy tools | Blocked by default | First task stops before merge, deploy, production, and monitoring. |
+| Database/admin/payment/auth tools | Blocked by default | These are sensitive lanes and need separate approval. |
+| `.env*`, secrets, raw credentials | Forbidden | The Agent OS never asks developers or agents to read or print secrets. |
+
+If the developer or their agent needs a blocked tool, they should report:
+
+```text
+Tool needed:
+Why it is needed:
+Read/write/admin/destructive:
+What evidence it will prove:
+What I can still do without it:
+Where I will stop:
+```
+
+Do not treat missing access as failure. It is useful evidence about the rollout.
+
+### Koda For Developer Staff
+
+Koda is the shared memory layer for durable lessons, corrections, and repeated
+workflow behavior. It is not the first place a new developer should write.
+
+For day one:
+
+- the developer may use Koda read if the connection is safely scoped
+- the developer records findings in the GitHub issue, PR, handoff, or task note
+- the developer reports Agent OS confusion using the confusion template below
+- Hafiz or a trusted internal agent decides what deserves Koda memory
+
+Give Koda write access only after the developer has shown they can distinguish:
+
+- a durable lesson from a temporary task detail
+- a correction from an opinion
+- project-safe context from secrets or private payloads
+- current repo evidence from stale memory
+
+Plain version:
+
+```text
+Koda read can help from day one.
+Koda write should be earned through memory discipline.
+Promote useful PR/task lessons into Koda after review.
+```
+
 ## What To Tell The Developer
 
 Send this instruction:
