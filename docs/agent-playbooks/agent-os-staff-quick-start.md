@@ -8,21 +8,42 @@ Ordinary non-developer staff do not use this guide. They report issues through
 Microsoft Teams Planner. Agent OS is for Hafiz and developer staff who work in
 project repos.
 
-The goal is not to give every developer staff member every tool. The goal is to
-give each developer a safe starting setup that helps them investigate,
-document, verify, or build work without touching production or secrets.
+The goal is for developer staff to adopt the full Agent OS workflow, not a
+tiny slice of it. They should learn how to move from intake to diagnosis,
+planning, build, verification, QA, review, PR, and close-out. Tool permissions
+are handled by the Agent OS as the work reaches approval boundaries.
 
 Use [agent-os-rollout-readiness.md](agent-os-rollout-readiness.md) to decide
 which readiness level a developer staff member should receive. Non-developer
 staff stay in Teams Planner intake.
 
+For the practical handout that a developer can follow during their first real
+task, use [developer-full-adoption-pack.md](developer-full-adoption-pack.md).
+
+Developer adoption assumes the developer can read the Agent OS repo as the
+workflow handbook, and can access the assigned product repo for actual project
+work. Agent OS repo write access is different: changing shared workflow rules
+should go through reviewed workflow-improvement work.
+
 ## First Rule
 
-Start with the smallest safe capability.
+Adopt the full workflow first. Let the Agent OS stop the work when approval is
+needed.
+
+Plain version:
+
+```text
+The developer should work naturally through the whole route.
+The Agent OS should say when to continue, when to ask, and when to stop.
+```
+
+The developer does not need to memorize every permission rule before starting.
+They do need to respect the stop point when the Agent OS says an action needs
+Hafiz approval, engineering-lead approval, or a higher access profile.
 
 Developer staff should not get production, deploy, payment, auth, database, or
-secret access by default. Add those only when Hafiz explicitly approves the
-need and the access can be audited.
+secret access by default. Add those only when the active work reaches that
+boundary, Hafiz approves the need, and the access can be audited.
 
 Before installing or enabling tools, choose the profile from
 [agent-os-capability-model.md](agent-os-capability-model.md):
@@ -40,6 +61,57 @@ After choosing the profile, use the Profile Activation Checklist in
 [agent-os-installation.md](agent-os-installation.md). A profile is not ready
 until the required tools are connected, probed, and reported as available,
 fallback, unknown, blocked, or forbidden.
+
+## Full Workflow Adoption
+
+Developer staff should learn the same route that Hafiz, Codex, and Claude use.
+The first training task should be safe, but the workflow should be complete:
+
+1. **Intake** - understand the issue, report, GitHub issue, or requested
+   improvement.
+2. **Diagnosis** - inspect current behavior before changing it.
+3. **Plan** - explain the likely cause, intended change, proof needed, and stop
+   point in plain language.
+4. **Build** - make the smallest scoped change that solves the task.
+5. **Verify** - run the checks that prove the changed behavior.
+6. **QA** - test like a real user would, not only like a programmer.
+7. **Review** - check risk, regressions, scope creep, missing evidence, and
+   whether the task is actually ready for the next state.
+8. **Commit / PR** - prepare the change with clear evidence and get approval at
+   the required boundary.
+9. **Close out** - state what changed, how it was checked, what remains, and the
+   single recommended next action.
+
+This is how the developer becomes useful as Hafiz's tester. They are testing
+two things at once:
+
+- whether the product change works for a real user
+- whether the Agent OS instructions are clear enough for another developer to
+  follow without Hafiz explaining every step
+
+## Approval Boundaries
+
+Permission is not the first thing the developer has to think about. It is the
+Agent OS job to detect the boundary and tell the developer what is needed next.
+
+Examples:
+
+| Moment | What the Agent OS should say |
+| --- | --- |
+| Safe read-only diagnosis | Continue without asking for extra permission. |
+| Scoped local code change in an approved builder task | Continue, then verify and QA before commit. |
+| Commit | Ask for approval with exact changed files and checks. |
+| Push, PR, merge, deploy, or production action | Ask for explicit approval before acting. |
+| Payment, auth, invoice, commission, migration, or mobile API contract work | Start with read-only diagnosis, then stop for approval before implementation. |
+| Tool or account is not connected | Explain what access is needed, why, scope, and what proof it will support. |
+| Secret, `.env*`, `live/` edit, destructive action, or unsafe broad access | Stop; this is forbidden or requires a separate explicit approval path. |
+
+Plain version:
+
+```text
+Do the work normally.
+When the work reaches a risky door, the Agent OS tells you to knock first.
+```
 
 ## Which Path To Use
 

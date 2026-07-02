@@ -96,6 +96,21 @@ verify the report through the normal workflow before coding.
 
 Give this only to developer staff who need to work in another project repo.
 
+The kit is workflow-first, not permission-first. A developer staff member
+should learn the whole Agent OS route from intake through close-out. Access
+profiles decide which actions are allowed when the route reaches a boundary;
+they do not replace the workflow.
+
+Use [developer-full-adoption-pack.md](developer-full-adoption-pack.md) as the
+developer-facing handout for the first full-workflow task.
+
+Plain version:
+
+```text
+Teach the developer the full way of working.
+Let the Agent OS ask for permission at the risky steps.
+```
+
 Choose the narrowest profile from
 [agent-os-capability-model.md](agent-os-capability-model.md):
 
@@ -120,6 +135,8 @@ Include:
 - verify/QA/review path
 - exact file-list approval before commit
 - explicit approval before push, PR, merge, deploy, or critical implementation
+- clear close-out wording so Hafiz sees what changed, how it was checked, what
+  remains, and the single recommended next action
 
 Developer Staff Kit access is still not production access.
 
@@ -206,5 +223,7 @@ The developer-staff builder rollout is ready only when a trusted dev/agent user 
 2. make a scoped change
 3. run the right checks
 4. report evidence in plain language
-5. stop before commit/push/deploy unless approval exists
-6. avoid confusing local, pushed, merged, deployed, and live-smoke states
+5. let the Agent OS identify when commit, push, PR, merge, deploy, production,
+   or critical-lane approval is needed
+6. stop when the Agent OS says approval is required
+7. avoid confusing local, pushed, merged, deployed, and live-smoke states

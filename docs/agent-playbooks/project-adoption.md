@@ -4,6 +4,11 @@ Use this when applying the Sifututor Agent OS to a product repo, checking
 whether a product repo is ready, or preparing a repo so Claude, Codex, another
 LLM, or a trusted developer can work there predictably.
 
+The target product repo does not have to live inside the Sifututor GitHub org
+or local umbrella workspace. A repo in another company GitHub org, such as the
+Kelas app under Learnest Lab, still follows the same adoption rule: shared
+Agent OS core plus a small verified local project profile.
+
 Plain meaning:
 
 ```text
@@ -59,6 +64,8 @@ Start this workflow when Hafiz asks:
 - to make Claude/Codex/another LLM work consistently in a repo
 - to prepare a repo for developer staff, trusted developers, or agents
 - why a product repo behaves differently from the umbrella Agent OS
+- to onboard a developer into an external company repo, such as the Kelas app
+  under Learnest Lab
 
 Also use it before developer-staff rollout. Ordinary non-developer staff use
 Teams Planner as intake; they do not install or operate Agent OS by default.

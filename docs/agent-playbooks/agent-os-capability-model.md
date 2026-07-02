@@ -698,6 +698,19 @@ Developer staff can use the Agent OS, but their permissions should be narrower
 than Hafiz/internal-agent permissions by default. Ordinary non-developer staff
 stay in Teams Planner intake unless Hafiz explicitly changes the rollout model.
 
+This is not a limited workflow. Developer staff should still follow the full
+Agent OS route: intake, diagnosis, plan, build, verify, QA, review, commit/PR,
+and close-out. The permission profile decides what happens when the route
+reaches a boundary. The developer works normally until the Agent OS says the
+next action needs approval, a different tool connection, or a higher profile.
+
+Plain version:
+
+```text
+Full workflow adoption.
+Bounded access at risky steps.
+```
+
 Typical developer-staff capability:
 
 - read safe docs
