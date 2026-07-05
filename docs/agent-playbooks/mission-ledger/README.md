@@ -94,6 +94,7 @@ python3 scripts/agent-checks/mission-ledger-check.py
 
 - [_inbox.md](_inbox.md)
 - [cross-project.md](cross-project.md)
+- [kelas.md](kelas.md)
 - [ripple-suite.md](ripple-suite.md)
 - [sifu-tutor.md](sifu-tutor.md)
 - [sifututor_tutor.md](sifututor_tutor.md)
