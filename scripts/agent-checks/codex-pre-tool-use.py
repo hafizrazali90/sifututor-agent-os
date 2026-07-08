@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 
-WORKSPACE = "/Users/hafizrazali/Projects/Sifututor"
+WORKSPACE = str(
+    Path(os.environ.get("SIFUTUTOR_AGENT_OS_ROOT", Path(__file__).resolve().parents[2])).resolve()
+)
 
 
 def deny(reason: str) -> None:

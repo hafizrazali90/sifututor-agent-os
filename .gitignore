@@ -50,14 +50,20 @@ plugins/*
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/monitor-production-logs.md
+!.claude/hooks/
+.claude/hooks/*
+!.claude/hooks/*.py
 .mcp.json
 .pytest_cache/
+__pycache__/
+*.pyc
 live/
 .workflow-rollout/
 
 # Product repos stay independent nested Git repositories.
 creative-hub/
 finch-inbox/
+kelas/
 lls/
 lls-frontend/
 lls-mobile/

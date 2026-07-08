@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -u
 
-ROOT="/Users/hafizrazali/Projects/Sifututor"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PROJECTS=(
+  kelas
   sifu-tutor
   ripple-suite
   sifututor_tutor
@@ -30,9 +32,16 @@ SKILLS=(
 )
 
 failures=0
+warnings=0
+existing_projects=()
 
 pass() {
   printf 'PASS %-24s %s\n' "$1" "$2"
+}
+
+warn() {
+  printf 'WARN %-24s %s\n' "$1" "$2"
+  warnings=$((warnings + 1))
 }
 
 fail() {
@@ -75,7 +84,8 @@ echo
 echo "Projects"
 for project in "${PROJECTS[@]}"; do
   dir="$ROOT/$project"
-  [[ -d "$dir" ]] || { fail "$project" "directory missing"; continue; }
+  [[ -d "$dir" ]] || { warn "$project" "directory missing; skipped"; continue; }
+  existing_projects+=("$project")
   [[ -f "$dir/AGENTS.md" ]] && ag="AGENTS" || ag="missing AGENTS"
   [[ -f "$dir/CLAUDE.md" ]] && cl="CLAUDE" || cl="missing CLAUDE"
   [[ -f "$dir/.claude/tasks/active.json" ]] && ac="active" || ac="missing active"
@@ -91,6 +101,10 @@ for project in "${PROJECTS[@]}"; do
       || fail "$project active json" "invalid"
   fi
 done
+
+if [[ "${#existing_projects[@]}" -eq 0 ]]; then
+  fail "projects" "no product project directories found"
+fi
 
 echo
 echo "Codex skills"
@@ -119,7 +133,7 @@ rm -f /tmp/sifututor-session-map-doctor.html
 
 echo
 echo "All-project guard sweep"
-for project in "${PROJECTS[@]}"; do
+for project in "${existing_projects[@]}"; do
   if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
     pass "$project guard" "passed"
   else
@@ -131,49 +145,55 @@ echo
 echo "Codex prompt visibility"
 if command -v codex >/dev/null 2>&1; then
   prompt_file="$(mktemp)"
-  if codex debug prompt-input '$quick-check' >"$prompt_file" 2>/dev/null &&
-    grep -q "quick-check" "$prompt_file" &&
-    grep -q "save-session" "$prompt_file"; then
-    pass "codex skills" "visible in prompt input"
+  if codex debug prompt-input '$quick-check' >"$prompt_file" 2>/dev/null; then
+    if grep -q "quick-check" "$prompt_file" &&
+      grep -q "save-session" "$prompt_file"; then
+      pass "codex skills" "visible in prompt input"
+    else
+      fail "codex skills" "not visible in prompt input"
+    fi
   else
-    fail "codex skills" "not visible in prompt input"
+    warn "codex cli" "installed but debug prompt-input failed; repair global Codex install"
   fi
   rm -f "$prompt_file"
 else
-  fail "codex cli" "not found"
+  warn "codex cli" "not found; skipped live Codex prompt visibility"
 fi
 
 echo
 echo "Claude parent config"
-python3 - "$ROOT" <<'PY'
+python3 - "$ROOT" "${existing_projects[@]}" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
-projects = [
-    "sifu-tutor", "ripple-suite", "sifututor_tutor", "sifututor_parent",
-    "lls", "lls-frontend", "lls-mobile", "creative-hub", "team-inbox",
-    "finch-inbox",
-]
-settings = json.loads((root / ".claude/settings.json").read_text())
+projects = sys.argv[2:]
+settings_path = root / ".claude/settings.json"
+if not settings_path.is_file():
+    print("NO_ROOT_SETTINGS")
+    raise SystemExit(2)
+settings = json.loads(settings_path.read_text())
 missing = [p for p in projects if p not in settings.get("additionalDirectories", [])]
 if missing:
     print("MISSING " + ", ".join(missing))
     raise SystemExit(1)
 print("OK")
 PY
-if [[ $? -eq 0 ]]; then
+claude_status=$?
+if [[ "$claude_status" -eq 0 ]]; then
   pass "claude dirs" "all projects present"
+elif [[ "$claude_status" -eq 2 ]]; then
+  warn "claude dirs" "root .claude/settings.json missing; project-level Claude settings checked above"
 else
   fail "claude dirs" "missing projects"
 fi
 
 echo
 if [[ "$failures" -eq 0 ]]; then
-  echo "WORKFLOW DOCTOR: PASS"
+  echo "WORKFLOW DOCTOR: PASS ($warnings warning(s))"
   exit 0
 fi
 
-echo "WORKFLOW DOCTOR: FAIL ($failures issue(s))"
+echo "WORKFLOW DOCTOR: FAIL ($failures issue(s), $warnings warning(s))"
 exit 1

@@ -6,7 +6,7 @@ matcher = "^Bash$"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-pre-tool-use.py'
+command = 'python3 scripts/agent-checks/codex-pre-tool-use.py'
 timeout = 30
 statusMessage = "Checking Sifututor Bash guardrails"
 
@@ -15,7 +15,7 @@ matcher = "^Bash$"
 
 [[hooks.PostToolUse.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-post-tool-use.py'
+command = 'python3 scripts/agent-checks/codex-post-tool-use.py'
 timeout = 10
 statusMessage = "Recording Bash result"
 
@@ -24,7 +24,7 @@ matcher = "^(startup|resume|clear|compact)$"
 
 [[hooks.SessionStart.hooks]]
 type = "command"
-command = "python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py"
+command = "python3 scripts/agent-checks/codex-lifecycle-hook.py"
 timeout = 10
 statusMessage = "Loading Sifututor session context"
 
@@ -33,7 +33,7 @@ matcher = ".*"
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = "python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py"
+command = "python3 scripts/agent-checks/codex-lifecycle-hook.py"
 timeout = 10
 statusMessage = "Adding Sifututor prompt context"
 
@@ -42,7 +42,7 @@ matcher = "^(manual|auto)$"
 
 [[hooks.PreCompact.hooks]]
 type = "command"
-command = "python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py"
+command = "python3 scripts/agent-checks/codex-lifecycle-hook.py"
 timeout = 10
 statusMessage = "Preparing Sifututor compaction reminder"
 
@@ -51,6 +51,6 @@ matcher = ".*"
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = "python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py"
+command = "python3 scripts/agent-checks/codex-lifecycle-hook.py"
 timeout = 10
 statusMessage = "Checking Sifututor session closeout"

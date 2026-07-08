@@ -13,7 +13,9 @@ from typing import Any
 import urllib.request
 
 
-WORKSPACE = Path("/Users/hafizrazali/Projects/Sifututor")
+_THIS_FILE = globals().get("__file__")
+_DEFAULT_WORKSPACE = Path(_THIS_FILE).resolve().parents[2] if _THIS_FILE else Path.cwd()
+WORKSPACE = Path(os.environ.get("SIFUTUTOR_AGENT_OS_ROOT", _DEFAULT_WORKSPACE)).resolve()
 SESSION_MAP_DIR = WORKSPACE / ".agent-os" / "session-maps"
 CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "https://koda.tutorla.tech/mcp"
@@ -22,6 +24,7 @@ KODA_TIMEOUT = 10
 KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
 PROJECTS = {
+    "kelas",
     "sifu-tutor",
     "ripple-suite",
     "sifututor_tutor",
@@ -34,6 +37,9 @@ PROJECTS = {
     "finch-inbox",
 }
 PROJECT_ALIASES = {
+    "kelas": "kelas",
+    "kelasapp": "kelas",
+    "kelas-app": "kelas",
     "sifututor_parent": "sifututor_parent",
     "sifututor-parent": "sifututor_parent",
     "parent-app": "sifututor_parent",

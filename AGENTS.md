@@ -36,6 +36,7 @@ Active projects:
 
 | Project | Purpose |
 | --- | --- |
+| `kelas` | Kelasapp learning platform |
 | `sifu-tutor` | Laravel SIMS rebuild |
 | `ripple-suite` | Next.js dashboard rebuild |
 | `sifututor_tutor` | React Native tutor app |

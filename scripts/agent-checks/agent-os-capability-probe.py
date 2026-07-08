@@ -72,7 +72,7 @@ def check_koda() -> dict[str, str]:
     if not koda.is_file():
         return record("koda", "not_connected", "scripts/agent-checks/koda missing")
 
-    result = run_command([str(koda), "health"], timeout=15)
+    result = run_command(["bash", str(koda), "health"], timeout=15)
     if result.returncode == 0:
         return record("koda", "available", "direct Koda CLI health passed")
     return record("koda", "fallback", "Koda CLI exists but health did not pass", "use documented fallback/report path")

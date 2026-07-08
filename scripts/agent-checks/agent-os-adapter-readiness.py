@@ -57,6 +57,7 @@ REQUIRED_CLAUDE_HOOKS = [
 ]
 
 REQUIRED_CLAUDE_PROJECTS = [
+    "kelas",
     "ripple-suite",
     "sifu-tutor",
     "sifututor_tutor",
@@ -92,19 +93,34 @@ def run_command(command: list[str], timeout: int = 120) -> subprocess.CompletedP
     )
 
 
-def file_check(check_id: str, adapter: str, path: Path, detail: str | None = None) -> CheckResult:
+def file_check(
+    check_id: str,
+    adapter: str,
+    path: Path,
+    detail: str | None = None,
+    *,
+    required: bool = True,
+) -> CheckResult:
     return CheckResult(
         id=check_id,
         adapter=adapter,
         passed=path.is_file(),
         detail=detail or str(path.relative_to(ROOT)),
+        required=required,
     )
 
 
 def check_shared_core() -> list[CheckResult]:
+    root_claude = ROOT / "CLAUDE.md"
     results: list[CheckResult] = [
         file_check("SH-001", "shared", ROOT / "AGENTS.md", "root AGENTS.md present"),
-        file_check("SH-002", "shared", ROOT / "CLAUDE.md", "root CLAUDE.md present"),
+        file_check(
+            "SH-002",
+            "shared",
+            root_claude,
+            "root CLAUDE.md present for full umbrella workspace",
+            required=root_claude.is_file(),
+        ),
     ]
     for index, playbook in enumerate(REQUIRED_PLAYBOOKS, start=3):
         results.append(
@@ -116,6 +132,21 @@ def check_shared_core() -> list[CheckResult]:
             )
         )
     return results
+
+
+def project_claude_dirs() -> list[Path]:
+    projects: list[Path] = []
+    for path in sorted(ROOT.iterdir(), key=lambda item: item.name):
+        if not path.is_dir() or path.name.startswith("."):
+            continue
+        if (path / "AGENTS.md").is_file() and (path / ".claude/settings.json").is_file():
+            projects.append(path)
+    return projects
+
+
+def hook_keys_present(settings: dict[str, Any]) -> bool:
+    hooks = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
+    return all(key in hooks for key in ["UserPromptSubmit", "PreToolUse", "PostToolUse"])
 
 
 def check_codex_adapter() -> list[CheckResult]:
@@ -163,7 +194,116 @@ def check_codex_adapter() -> list[CheckResult]:
     return results
 
 
+def check_developer_claude_adapter() -> list[CheckResult]:
+    results: list[CheckResult] = [
+        file_check(
+            "CL-001",
+            "claude",
+            CLAUDE_SETTINGS,
+            "root Claude settings present for full umbrella workspace",
+            required=False,
+        ),
+        file_check(
+            "CL-002",
+            "claude",
+            ROOT / "CLAUDE.md",
+            "root Claude umbrella reference present for full umbrella workspace",
+            required=False,
+        ),
+    ]
+
+    for index, hook in enumerate(REQUIRED_CLAUDE_HOOKS, start=30):
+        hook_path = ROOT / hook
+        results.append(
+            CheckResult(
+                id=f"CL-{index:03d}",
+                adapter="claude",
+                passed=hook_path.is_file(),
+                detail=f"{hook} present for project-level bridge",
+            )
+        )
+
+    compile_result = run_command([sys.executable, "-m", "py_compile", *REQUIRED_CLAUDE_HOOKS])
+    results.append(
+        CheckResult(
+            id="CL-040",
+            adapter="claude",
+            passed=compile_result.returncode == 0,
+            detail="shared Claude hook scripts compile",
+            warnings=[] if compile_result.returncode == 0 else (compile_result.stderr or compile_result.stdout).splitlines()[-3:],
+        )
+    )
+
+    projects = project_claude_dirs()
+    results.append(
+        CheckResult(
+            id="CL-D001",
+            adapter="claude",
+            passed=bool(projects),
+            detail="at least one project-level Claude settings file present",
+        )
+    )
+
+    for index, project in enumerate(projects, start=2):
+        settings_path = project / ".claude/settings.json"
+        settings: dict[str, Any] = {}
+        parsed = False
+        try:
+            settings = json.loads(settings_path.read_text())
+            parsed = True
+        except json.JSONDecodeError:
+            parsed = False
+        results.append(
+            CheckResult(
+                id=f"CL-D{index:03d}",
+                adapter="claude",
+                passed=parsed,
+                detail=f"{project.name} Claude settings JSON parses",
+            )
+        )
+        results.append(
+            CheckResult(
+                id=f"CL-D{index + 40:03d}",
+                adapter="claude",
+                passed=parsed and hook_keys_present(settings),
+                detail=f"{project.name} Claude hooks configured",
+            )
+        )
+        results.append(
+            CheckResult(
+                id=f"CL-D{index + 80:03d}",
+                adapter="claude",
+                passed=(project / ".claude/hooks/run-shared-hook.sh").is_file(),
+                detail=f"{project.name} shared hook bridge present",
+            )
+        )
+
+    parity = (PLAYBOOK_DIR / "agent-os-parity-contract.md").read_text()
+    registry = (PLAYBOOK_DIR / "agent-os-skill-registry.md").read_text()
+    for check_id, marker in [
+        ("CL-041", "/task-router"),
+        ("CL-042", "/verify"),
+        ("CL-043", "/qa"),
+        ("CL-044", "/review"),
+        ("CL-045", "/commit"),
+        ("CL-046", "/save-session"),
+    ]:
+        results.append(
+            CheckResult(
+                id=check_id,
+                adapter="claude",
+                passed=marker in parity and marker in registry,
+                detail=f"Claude adapter marker documented: {marker}",
+            )
+        )
+
+    return results
+
+
 def check_claude_adapter() -> list[CheckResult]:
+    if not CLAUDE_SETTINGS.is_file():
+        return check_developer_claude_adapter()
+
     results: list[CheckResult] = [
         file_check("CL-001", "claude", CLAUDE_SETTINGS, "Claude settings present"),
         file_check("CL-002", "claude", ROOT / "CLAUDE.md", "Claude umbrella reference present"),
