@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use when Hafiz asks Codex for code review, pre-commit review, risk review, or adversarial quality checks in the Sifututor workspace. Must follow docs/agent-playbooks/review.md.
+description: Use when Hafiz asks Codex for code review, pre-commit review, risk review, or adversarial quality checks in the Sifututor workspace. For SIMS UI/UX visual review use sims-ui-audit alongside this. Must follow docs/agent-playbooks/review.md.
 ---
 
 # Review
@@ -14,6 +14,12 @@ Read and follow:
 
 ```text
 docs/agent-playbooks/review.md
+```
+
+For `sifu-tutor` browser UI/UX changes, also read and apply:
+
+```text
+docs/agent-playbooks/sims-ui-audit.md
 ```
 
 If no issue is found, say that clearly and still mention any remaining test gap

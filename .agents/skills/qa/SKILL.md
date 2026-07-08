@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Use when Hafiz asks Codex for QA, regression evidence, smoke testing, visual QA, or route-level quality checks in the Sifututor workspace. Must follow docs/agent-playbooks/qa.md.
+description: Use when Hafiz asks Codex for QA, regression evidence, smoke testing, visual QA, or route-level quality checks in the Sifututor workspace. For SIMS UI/UX visual audit use sims-ui-audit alongside this. Must follow docs/agent-playbooks/qa.md.
 ---
 
 # QA
@@ -26,9 +26,11 @@ when `AGENTS.md`, `CLAUDE.md`, or `CODEX-WORKFLOW.md` requires them.
 2. Pick the QA tier from the playbook.
 3. Run the strongest feasible automated checks.
 4. Add manual or browser evidence when the changed surface requires it.
-5. For bugfix/hotfix work, explicitly state the old failure mode and how the
+5. For `sifu-tutor` browser UI/UX QA, also run `$sims-ui-audit` or follow
+   `docs/agent-playbooks/sims-ui-audit.md` inside the QA report.
+6. For bugfix/hotfix work, explicitly state the old failure mode and how the
    regression is now covered.
-6. Report using the playbook's `QA - PASS | FAIL | PARTIAL` shape.
+7. Report using the playbook's `QA - PASS | FAIL | PARTIAL` shape.
 
 ## Human-Facing Alias
 

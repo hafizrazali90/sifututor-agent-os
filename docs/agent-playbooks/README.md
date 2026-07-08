@@ -59,6 +59,7 @@ Use these when the user asks for:
 - task routing or session start: [task-router.md](task-router.md)
 - verification or Gate 2A: [verify.md](verify.md)
 - QA or regression evidence: [qa.md](qa.md)
+- SIMS UI/UX screenshot-backed audit: [sims-ui-audit.md](sims-ui-audit.md)
 - related-impact audits after bugfixes: [related-impact-audit.md](related-impact-audit.md)
 - test coverage manifest enforcement: [test-coverage.md](test-coverage.md)
 - staging and committing: [commit.md](commit.md)
@@ -96,6 +97,8 @@ Use these when the user asks for:
 | Codex | `$verify` | [verify.md](verify.md) |
 | Claude Code | `/qa` | [qa.md](qa.md) |
 | Codex | `$qa` | [qa.md](qa.md) |
+| Claude Code | `/sims-ui-audit` plus `ux-reviewer` where available | [sims-ui-audit.md](sims-ui-audit.md) |
+| Codex | `$sims-ui-audit` | [sims-ui-audit.md](sims-ui-audit.md) |
 | Claude/Codex | TESTING.md coverage check | [test-coverage.md](test-coverage.md) |
 | Claude Code | `/commit` | [commit.md](commit.md) |
 | Codex | `$commit` | [commit.md](commit.md) |
@@ -159,6 +162,7 @@ before Codex answers.
 | bug, broken behavior, failing test, root cause | `$diagnose` |
 | verify, run checks, prove it works, Gate 2A | `$verify` |
 | QA, smoke, regression, visual/manual check | `$qa` |
+| SIMS UI/UX audit, screenshot review, visual design-system consistency | `$sims-ui-audit` |
 | review, audit, pre-commit risk check | `$review` |
 | quick check, health check, workflow doctor | `$quick-check` |
 | commit, stage, prepare commit | `$commit` |

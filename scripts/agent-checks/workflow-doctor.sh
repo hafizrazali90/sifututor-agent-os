@@ -20,6 +20,7 @@ SKILLS=(
   task-router
   verify
   qa
+  sims-ui-audit
   commit
   save-session
   handoff

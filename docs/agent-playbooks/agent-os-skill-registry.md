@@ -156,6 +156,7 @@ skill.
 | `$commit` | Commit | Preparing or creating a local commit. | `.agents/skills/commit/SKILL.md` | `docs/agent-playbooks/commit.md` | `/commit` | Push, merge, deploy, PR, `--no-verify`, secrets, `.env*`, or `live/`. |
 | `$product-design` | Product Design | Brainstorming, workflow design, PRD, UX spec, backend contract, build prompts, or major redesign. | `.agents/skills/product-design/SKILL.md` | `docs/agent-playbooks/product-design.md` | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | Ordinary narrow bugfixes, small copy edits, or implementation before approval. |
 | `$workflow-improvement` | Workflow Improvement | Improving Agent OS behavior, making future agents handle something better, resolving workflow drift, or cleaning up docs/skills/hooks/evals/Koda consistency. | `.agents/skills/workflow-improvement/SKILL.md` | `docs/agent-playbooks/agent-os-improvement-loop.md` | `/workflow-improvement` later or natural-language workflow improvement | Ordinary product bugs, related-impact audits after product fixes, or hook automation before the playbook/eval shape is clear. |
+| `$sims-ui-audit` | SIMS UI Audit | Auditing `sifu-tutor` browser UI/UX, screenshots, spacing/density, disabled states, tables, filters, modals, popouts, sidebar/navigation, or design-system consistency before Hafiz review. | `.agents/skills/sims-ui-audit/SKILL.md` | `docs/agent-playbooks/sims-ui-audit.md` | `/sims-ui-audit` plus `ux-reviewer` where available | Replacing the SIMS design system docs, broad product redesign, or backend-only verification. |
 
 ## Continuation Skills
 
@@ -217,6 +218,18 @@ $workflow-improvement
 -> update the smallest coherent set
 -> run Agent OS checks
 -> close out with what future agents should do differently
+```
+
+SIMS UI/UX visual work:
+
+```text
+$task-router
+-> implementation or review target
+-> $verify
+-> $sims-ui-audit
+-> $qa
+-> $review
+-> $commit
 ```
 
 Session map update:
