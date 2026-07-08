@@ -259,6 +259,21 @@ deploy, safe smoke checks, read-only monitoring, and final release reporting,
 but it stops before rollback, new fixes, destructive action, critical-lane
 widening, or business risk acceptance unless those were explicitly included.
 
+## Project Dispatcher Adapters
+
+Global Claude dispatcher skills route project-specific work to these adapters
+when they can identify the active project. The adapters are thin bridges; the
+shared playbooks and project `AGENTS.md`/`CLAUDE.md` files remain the source of
+truth.
+
+| Project | Adapter skills | Purpose |
+| --- | --- | --- |
+| `sifu-tutor` | `sifu-task-router`, `sifu-verify`, `sifu-qa`, `sifu-commit`, `sifu-save-session` | SIMS Laravel workflow routing and proof. |
+| `ripple-suite` | `ripple-task-router`, `ripple-verification-before-completion`, `ripple-qa`, `ripple-commit`, `ripple-save-session` | Ripple Next.js workflow routing and proof. |
+| `sifututor_tutor` | `rn-task-router`, `rn-verify`, `rn-qa`, `rn-commit`, `rn-save-session` | Tutor React Native workflow routing and proof. |
+| `sifututor_parent` | `parent-task-router`, `parent-verify`, `parent-qa`, `parent-commit`, `parent-save-session` | Parent React Native workflow routing and proof. |
+| `lls` | `lls-task-router`, `lls-verify`, `lls-qa`, `lls-commit`, `lls-save-session` | Learnest Laravel workflow routing and proof. |
+
 For incidents, use [`incident-workflow.md`](incident-workflow.md). Plain
 meaning: production/staging breakage, serious monitoring regressions, or blocked
 users require protection-first triage, severity/impact, mitigation choices,

@@ -1,6 +1,6 @@
 # Claude/Codex Parity Status
 
-Last updated: 2026-05-26
+Last updated: 2026-07-08
 
 ## Completed Baseline
 
@@ -11,7 +11,7 @@ All active workspace projects now have the shared Claude/Codex baseline:
 | `sifu-tutor` | yes | yes | yes | Active bugfix `bugfix-20260524-4023`, next step `fix` |
 | `ripple-suite` | yes | yes | yes | No active task |
 | `sifututor_tutor` | yes | yes | yes | Active feature `tut-auth-firstrun-rebuild`, next step `generate_tests` |
-| `sifututor_parent` | yes | yes | yes | No active task |
+| `sifututor_parent` | yes | yes | yes | No active task; parent-* workflow adapters available |
 | `lls` | yes | yes | yes | Migrated from Superpowers-only to standard task state |
 | `lls-frontend` | yes | yes | yes | Has dedicated frontend workflow skills |
 | `lls-mobile` | yes | yes | yes | Shared playbooks only; Flutter-specific skills not created yet |
