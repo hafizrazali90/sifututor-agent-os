@@ -78,6 +78,11 @@ Use it only as read-only reference.
 - Never make broad cleanup or adjacent refactors unless explicitly requested.
 - If requirements conflict, stop and ask for clarification.
 - If a task touches payments, commission, auth, migrations, or mobile API contracts, halt for human review before commit.
+- After any staging or production deploy in any Sifututor project, smoke-test the
+  actual changed user-facing functionality before calling the release done.
+  Generic route availability alone is not enough when a safe changed-workflow
+  smoke is possible; if it is not possible, name the exact blocker and strongest
+  evidence gathered instead.
 - At the start of meaningful multi-step work, explain what done means in plain
   language before asking for or inferring an autopilot boundary. Examples:
   diagnosed only, fixed locally, committed, PR opened, staging verified,

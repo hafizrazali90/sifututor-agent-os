@@ -74,11 +74,12 @@ reported symptom.
   capture. Human QA is for judgment, sign-off, credentials/data that are truly
   unavailable, or destructive/business decisions; it is not a substitute for
   agent-run evidence.
-- After any staging or production deploy, smoke-test the actual changed
-  user-facing functionality, not only generic route availability. Route-only
-  checks are acceptable only when a safe login, test account, or representative
-  data is unavailable; report that limitation clearly and state the strongest
-  functional evidence gathered instead.
+- After any staging or production deploy in any Sifututor project, smoke-test
+  the actual changed user-facing functionality before calling the release done.
+  Generic route availability alone is not enough when a safe changed-workflow
+  smoke is possible. Route-only checks are acceptable only when a safe login,
+  test account, or representative data is unavailable; report that limitation
+  clearly and state the strongest functional evidence gathered instead.
 - `ripple-suite`: use Playwright smoke and the route tier from
   `CODEX-WORKFLOW.md`; protect SIMS read-only behavior and Neon writes.
 - `sifututor_tutor` and `sifututor_parent`: use Jest/unit tests for logic,

@@ -8,6 +8,13 @@ Plain meaning: merged is not live. Deployed is not automatically healthy. A
 release is only trustworthy when the agent can name the exact state reached and
 what evidence proves it.
 
+Project-wide release rule: after any staging or production deploy in any
+Sifututor project, changed-workflow smoke is mandatory before the release is
+called done. Generic route availability can support the report, but it does not
+replace a safe smoke of the actual user-facing functionality that changed. If a
+changed-workflow smoke cannot be run safely, name the blocker and the strongest
+evidence gathered instead.
+
 ## State Ladder
 
 Use these words exactly when the distinction matters:
@@ -33,7 +40,7 @@ say so directly.
 | `proceed until production deployed` | Preflight, confirm source commit, deploy production after approval, verify deployed state. | Calling it healthy/live-accepted without smoke/monitoring. |
 | `proceed until production smoke checked` | Production deploy path plus safe production smoke checks. | Monitoring sign-off and final business acceptance. |
 | `proceed until production monitored` | Production deploy path, smoke checks, read-only logs/alerts/monitoring, final state report. | New fixes, rollback, destructive action, critical-lane widening, or business acceptance if risk remains. |
-| `deploy only` | Run only the approved deploy and verify deployed state. | Smoke/monitoring unless the boundary includes them. |
+| `deploy only` | Run the approved deploy, verify deployed state, and run the mandatory changed-workflow smoke when safe. | Monitoring unless the boundary includes it. |
 | `monitor only` | Read-only production logs, alerts, uptime, and known regression patterns. | Deploy, mutation, issue resolution, or production writes. |
 
 If Hafiz says a loose phrase such as `release this`, `ship it`, or `finish until
