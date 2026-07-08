@@ -43,6 +43,19 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Promote to:** PRD
 - **Links:** `Sifututor/sifu-tutor#1637`, `Sifututor/sifu-tutor#1640`, `Sifututor/sifu-tutor#1648`, Koda `mem_5b825d408b45`, `sifu-tutor/docs/features/class-lifecycle-option-c/phase-4-readiness.md`
 
+### SIMS-CLASS-LIFECYCLE-001.A1 — Planning Reservation Ledger For Future Scheduling
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** adjacent
+- **Parent:** SIMS-CLASS-LIFECYCLE-001
+- **End goal:** Scheduled future classes reserve quota through a dedicated planning reservation ledger instead of using hidden draft invoice rows as the temporary bucket.
+- **Why it matters:** Issue #1683 uses a hidden recurring draft invoice as the short-term fix for tutors who schedule ahead after quota is planning-full. That is safe for the current schema, but the cleaner long-term model is shadow planning data that becomes real invoice membership only when a class is attended or verified.
+- **Source:** Hafiz billing allocator timing-gap session, 2026-07-08.
+- **Next action:** When Option C resumes, design a reservation table/ledger contract covering create, cancel, reschedule, attended/verify conversion, admin visibility, parent visibility, allocator handoff, and migration from hidden draft buckets.
+- **Promote to:** PRD
+- **Links:** `Sifututor/sifu-tutor#1683`, `sifu-tutor/docs/features/class-lifecycle-option-c/prd.md`, `sifu-tutor/docs/features/billing-cycle-revamp/DECISIONS-AND-OPERATIONS.md`
+
 ### SIMS-NOTIF-MATCH-001 — Shared Tutor Candidate Ranking For Opportunity Notifications
 
 - **Project:** sifu-tutor
