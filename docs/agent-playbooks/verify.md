@@ -52,6 +52,10 @@ and unchecked.
   `sifu-tutor/docs/ui-ux/quality-gate.md` in addition to tests. Report which
   SIMS UI/UX docs were followed when the work changes page layout, components,
   visual styling, staff-facing copy, or browser interaction.
+- Verification for `sifu-tutor` UI-visible work is not commit-ready until the
+  later QA/review evidence includes screenshot-backed UI/UX checks or an
+  explicit blocker. Machine checks alone prove the code compiles; they do not
+  prove the page matches the SIMS UI system.
 - Verification should prove both the machine part and the human journey when a
   real user depends on the behavior. Unit/API tests prove the engine; browser,
   mobile, API smoke, screenshots, or read-only state checks prove the workflow

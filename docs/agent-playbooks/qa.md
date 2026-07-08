@@ -67,6 +67,11 @@ reported symptom.
   accessibility/state, and review-checklist docs. Report any token drift,
   missing loading/empty/error states, unclear critical-action copy, or invented
   one-off patterns as QA findings.
+- For `sifu-tutor` UI-visible changes, use the project `ux-reviewer` subagent
+  when Claude is available, or perform the same screenshot-backed review from
+  `sifu-tutor/docs/ui-ux/review-and-qa-checklist.md` in Codex. QA is incomplete
+  if changed modals, dropdowns, disabled controls, dense tables, or empty states
+  are skipped without a named blocker.
 - Agents must not hand off checks that they can safely run themselves. Before
   asking Hafiz, staff, or another human to verify, exhaust the available
   non-destructive evidence channels in this order: automated tests, Playwright
