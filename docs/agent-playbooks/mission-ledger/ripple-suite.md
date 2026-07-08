@@ -5,6 +5,59 @@ follow-ups.
 
 ## Missions
 
+### RS-SETTINGS-001 — Finish Settings and module form-control polish
+
+- **Project:** ripple-suite
+- **Status:** paused
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Settings, CRM Settings, PV QuickBooks/COA, and Collection
+  settings use consistent compact navigation and 40px normal form controls
+  without turning real row actions into oversized buttons.
+- **Why it matters:** Slice B fixed the Settings information architecture, but
+  the forms inside the selected sections still feel uneven compared with the
+  stronger ledger and toolbar pages.
+- **Source:** Settings form-control audit and CRM polish session, 2026-07-08
+- **Next action:** Promote the first child slice, "Settings form-control
+  polish", when Hafiz wants to resume.
+- **Promote to:** GitHub issue if the next slice is execution-ready
+- **Links:** `ripple-suite/docs/audits/2026-07-08-settings-form-control-audit.md`,
+  `Sifututor/ripple-suite#178`, local commit `1281d46`
+
+### RS-SETTINGS-001.1 — Standardize core Settings form controls
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** task
+- **Parent:** RS-SETTINGS-001
+- **End goal:** General, Operations, Finance, and AI settings use a shared
+  normal-control rhythm around 40px while compact chips and row actions stay
+  compact.
+- **Why it matters:** The Settings IA is now correct, but the selected form
+  content still has one-off 36-38px controls and inconsistent vertical rhythm.
+- **Source:** Settings form-control audit, 2026-07-08
+- **Next action:** Add the smallest shared settings control class/helper, apply
+  it to the core settings tabs, and protect it with focused E2E/visual evidence.
+- **Promote to:** GitHub issue
+- **Links:** `ripple-suite/docs/audits/2026-07-08-settings-form-control-audit.md`
+
+### RS-SETTINGS-001.2 — Clean up CRM Settings dense forms
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** task
+- **Parent:** RS-SETTINGS-001
+- **End goal:** CRM Settings feels less cramped across Remarks, Follow-up
+  Rules, Round Robin, PIC Exclusions, Lead Sources, Working Days, inactivity
+  threshold, and polling without changing the CRM feature model.
+- **Why it matters:** CRM Settings remains one of the densest settings surfaces
+  after the broader CRM toolbar and interaction-trust polish.
+- **Source:** Settings form-control audit, 2026-07-08
+- **Next action:** Audit the CRM Settings subsections, normalize primary
+  controls, and keep true row actions compact.
+- **Promote to:** GitHub issue
+- **Links:** `ripple-suite/docs/audits/2026-07-08-settings-form-control-audit.md`
+
 ### RS-RECON-001 — Make Ripple reconciliation reliable and staff-safe
 
 - **Project:** ripple-suite
@@ -70,6 +123,37 @@ follow-ups.
   combined amount equals bank transaction, and safe staff confirmation flow.
 - **Promote to:** PRD or GitHub issue
 - **Links:** none yet
+
+### RS-RECON-001.4 — Repair Ripple Playwright auth setup for verification
+
+- **Project:** ripple-suite
+- **Status:** done
+- **Type:** adjacent
+- **Parent:** RS-RECON-001
+- **End goal:** Ripple Playwright API/smoke tests can authenticate and run the
+  actual test bodies instead of failing during global setup, with an
+  authenticated production smoke lane available for deploy proof.
+- **Why it matters:** During the Maybank M2E payer-name repair, production and
+  browser verification succeeded, but local Playwright checks could not prove
+  the route because `tests/global.setup.ts` received 404 from `/api/auth/login`.
+  Future reconciliation changes need reliable local journey proof before
+  commit, PR, and deploy.
+- **Result:** GitHub issue `Sifututor/ripple-suite#174` and PR
+  `Sifututor/ripple-suite#175` added configurable Playwright auth state,
+  configurable auth verification route, `npm run test:prod-auth-smoke`, and a
+  permanent `@prod-auth-smoke` Playwright spec. Production deployed merge
+  commit `f3e91261`; authenticated production smoke passed against
+  `https://ripple.admin.sifututor.my` and captured the live Customer Receipts
+  table screenshot.
+- **Source:** Codex Maybank M2E payer-name repair save-session, 2026-07-01;
+  Ripple authenticated smoke deploy session, 2026-07-07.
+- **Next action:** Optional hardening: create a dedicated low-permission SIMS
+  smoke user and map it to Ripple's narrow smoke role so future smoke tests do
+  not rely on the temporary admin smoke credential.
+- **Promote to:** closed; optional hardening can become a GitHub issue when the
+  dedicated account is ready to create.
+- **Links:** `Sifututor/ripple-suite#168`, `Sifututor/ripple-suite#169`,
+  `Sifututor/ripple-suite#174`, `Sifututor/ripple-suite#175`
 
 ### RS-RECEIPT-001 — Make receipt proof preview clear and inspectable
 
