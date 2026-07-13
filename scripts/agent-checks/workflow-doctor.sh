@@ -75,11 +75,16 @@ check_file "parity status" "$ROOT/docs/agent-playbooks/parity-status.md"
 
 echo
 echo "Agent OS health"
-if "$ROOT/scripts/agent-checks/agent-os-health.sh" >/dev/null 2>&1; then
+health_out="$(mktemp)"
+health_err="$(mktemp)"
+if "$ROOT/scripts/agent-checks/agent-os-health.sh" >"$health_out" 2>"$health_err"; then
   pass "agent os health" "passed"
 else
   fail "agent os health" "failed"
+  grep '^FAIL ' "$health_out" | sed -n '1,8p' || true
+  sed -n '1,4p' "$health_err" || true
 fi
+rm -f "$health_out" "$health_err"
 
 echo
 echo "Projects"
@@ -134,13 +139,15 @@ rm -f /tmp/sifututor-session-map-doctor.html
 
 echo
 echo "All-project guard sweep"
-for project in "${existing_projects[@]}"; do
-  if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
-    pass "$project guard" "passed"
-  else
-    fail "$project guard" "failed"
-  fi
-done
+if [[ "${#existing_projects[@]}" -gt 0 ]]; then
+  for project in "${existing_projects[@]}"; do
+    if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
+      pass "$project guard" "passed"
+    else
+      fail "$project guard" "failed"
+    fi
+  done
+fi
 
 echo
 echo "Codex prompt visibility"
@@ -163,7 +170,12 @@ fi
 
 echo
 echo "Claude parent config"
-python3 - "$ROOT" "${existing_projects[@]}" <<'PY'
+if [[ "${#existing_projects[@]}" -gt 0 ]]; then
+  claude_projects=("${existing_projects[@]}")
+else
+  claude_projects=()
+fi
+python3 - "$ROOT" "${claude_projects[@]}" <<'PY'
 import json
 import sys
 from pathlib import Path

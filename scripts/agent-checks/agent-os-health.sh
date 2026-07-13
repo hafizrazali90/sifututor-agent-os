@@ -117,7 +117,11 @@ check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-r
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 check_file "Codex SIMS UI audit skill" "$ROOT/.agents/skills/sims-ui-audit/SKILL.md"
-check_file "Claude SIMS UI audit skill" "$ROOT/sifu-tutor/.claude/skills/sims-ui-audit/SKILL.md"
+if [[ -d "$ROOT/sifu-tutor" ]]; then
+  check_file "Claude SIMS UI audit skill" "$ROOT/sifu-tutor/.claude/skills/sims-ui-audit/SKILL.md"
+else
+  warn "Claude SIMS UI audit skill" "sifu-tutor not cloned; skipped for scoped staff workspace"
+fi
 
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >$TMP_DIR/agent-os-eval-runner.out 2>$TMP_DIR/agent-os-eval-runner.err; then
   eval_summary="$(tail -1 $TMP_DIR/agent-os-eval-runner.out 2>/dev/null || true)"

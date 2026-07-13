@@ -122,6 +122,7 @@
     "generated_files": [
       ".claude/settings.json",
       ".claude/hooks/README.md",
+      ".claude/hooks/run-shared-hook.sh",
       ".claude/tasks/active.json",
       ".claude/tasks/SCHEMA.md",
       ".claude/tasks/archive/.gitkeep"
