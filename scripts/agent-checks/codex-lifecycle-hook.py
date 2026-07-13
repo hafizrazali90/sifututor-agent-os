@@ -12,6 +12,8 @@ import sys
 from typing import Any
 import urllib.request
 
+from koda_contract import capability_report
+
 
 _THIS_FILE = globals().get("__file__")
 _DEFAULT_WORKSPACE = Path(_THIS_FILE).resolve().parents[2] if _THIS_FILE else Path.cwd()
@@ -21,8 +23,8 @@ CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "https://koda.tutorla.tech/mcp"
 KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
 KODA_TIMEOUT = 10
-KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
+KODA_HEALTH_PROJECT = "sifututor"
 PROJECTS = {
     "kelas",
     "sifu-tutor",
@@ -275,6 +277,17 @@ def koda_error(body: str, content_type: str) -> str:
     return ""
 
 
+def koda_health_search_arguments() -> dict:
+    """Exercise the canonical project filter during every startup health check."""
+
+    return {
+        "query": "Codex Koda startup health check",
+        "tags": KODA_HEALTH_TAGS,
+        "project": KODA_HEALTH_PROJECT,
+        "limit": 5,
+    }
+
+
 def koda_headers() -> tuple[dict, str]:
     api_key = os.environ.get("KODA_API_KEY", "")
     if not api_key:
@@ -470,19 +483,25 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     except Exception as exc:  # noqa: BLE001
         return False, details + [f"Koda tools/list returned malformed response: {exc}"]
 
-    missing_tools = sorted(KODA_REQUIRED_TOOLS - tool_names)
-    if missing_tools:
-        return False, details + [f"Koda missing required tools: {', '.join(missing_tools)}"]
-    details.append("Koda required tools are available")
+    capabilities = capability_report(tool_names)
+    if capabilities["missing_required"]:
+        return False, details + [
+            f"Koda missing required core tools: {', '.join(capabilities['missing_required'])}"
+        ]
+    for tier, tier_status in capabilities["tiers"].items():
+        if tier_status["missing"]:
+            details.append(
+                f"Koda {tier} capability tier is partial; missing: {', '.join(tier_status['missing'])}"
+            )
+        else:
+            details.append(f"Koda {tier} capability tier is available")
+    if capabilities["unexpected"]:
+        details.append(f"Koda also exposes unclassified tools: {', '.join(capabilities['unexpected'])}")
 
     search_response, search_error = koda_tool_call(
         session,
         "memory_search",
-        {
-            "query": "Codex Koda startup health check",
-            "tags": KODA_HEALTH_TAGS,
-            "limit": 5,
-        },
+        koda_health_search_arguments(),
         request_id=3,
     )
     if search_error:
@@ -490,7 +509,7 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     search_payload = parse_tool_content(search_response)
     if not isinstance(search_payload, list):
         return False, details + ["Koda memory_search did not return a memory list"]
-    details.append("Koda memory_search read check passed")
+    details.append("Koda project-scoped memory_search read check passed")
 
     if not write:
         return True, details
