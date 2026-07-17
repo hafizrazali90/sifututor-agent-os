@@ -4,6 +4,32 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 
 ## Missions
 
+### SIMS-BACKUP-DR-001 — Reliable SIMS Backup And Disaster Recovery
+
+- **Project:** sifu-tutor
+- **Status:** promoted
+- **Type:** mission
+- **Parent:** none
+- **End goal:** SIMS database records, uploaded files, and server/account configuration have separate off-server backups, monitored retention, and proven restore paths without filling the production disk.
+- **Why it matters:** The 2026-07-12 local cPanel backup filled the production disk and disrupted WHM and every mobile API surface. The current design discussion has selected six-hour database backups, Wasabi as primary with OneDrive temporarily secondary, tiered database retention, and daily incremental upload backup plus a weekly account/configuration backup.
+- **Source:** Hafiz and Codex SIMS backup design discussion, 2026-07-13.
+- **Next action:** Slices 0–4 and disk-monitoring Slice 7 are merged, deployed, smoke-checked, and monitored in production; Slice 7 closed at `375b62b95` through PR #1714. The live disk check reports the expected 81% warning, its BetterStack heartbeat passed controlled failure/recovery proof, the database and uploaded-file backup heartbeats are up, and the future configuration/full-account heartbeats remain paused to avoid false alerts. Resume one separately approved remaining slice under #1697: Slice 5 configuration package, Slice 6 full-account package, or Slice 8 retention/restore work. Keep live-file optimization in child mission `SIMS-BACKUP-DR-001.A1` as future design work.
+- **Promote to:** PRD
+- **Links:** `sifu-tutor/docs/features/backup-disaster-recovery/prd.md`, `sifu-tutor/docs/features/backup-disaster-recovery/build-prompts.md`, `Sifututor/sifu-tutor#1697`, `Sifututor/sifu-tutor#1698`, Koda `mem_a62330809b28`, Koda `mem_7433526c84fc`
+
+### SIMS-BACKUP-DR-001.A1 — Audit And Optimize SIMS Live File Storage
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** research
+- **Parent:** SIMS-BACKUP-DR-001
+- **End goal:** Verify whether SIMS uploaded-file storage is already organized efficiently and design any justified improvements to naming, duplication, compression, retention, serving, deletion, and direct Wasabi storage without risking historical documents.
+- **Why it matters:** SIMS currently holds about 55 GB across roughly 223,000 uploaded files. Moving live uploads directly to Wasabi is a promising future option, but it should be treated as a separate storage architecture project after the current backup system is made safe and after existing file behavior is audited rather than assumed.
+- **Source:** Hafiz backup brainstorm, 2026-07-13.
+- **Next action:** Later run a read-only file-storage audit covering directory conventions, file types and size distribution, duplicates, orphan detection, database references, public/private access rules, deletion behavior, and compatibility requirements before recommending migration or cleanup.
+- **Promote to:** PRD
+- **Links:** none
+
 ### SIMS-BILLING-ALLOC-LEGACY-001 — Paid/Legacy Billing Allocation Backlog
 
 - **Project:** sifu-tutor
@@ -52,7 +78,7 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **End goal:** Scheduled future classes reserve quota through a dedicated planning reservation ledger instead of using hidden draft invoice rows as the temporary bucket.
 - **Why it matters:** Issue #1683 uses a hidden recurring draft invoice as the short-term fix for tutors who schedule ahead after quota is planning-full. That is safe for the current schema, but the cleaner long-term model is shadow planning data that becomes real invoice membership only when a class is attended or verified.
 - **Source:** Hafiz billing allocator timing-gap session, 2026-07-08.
-- **Next action:** When Option C resumes, design a reservation table/ledger contract covering create, cancel, reschedule, attended/verify conversion, admin visibility, parent visibility, allocator handoff, and migration from hidden draft buckets.
+- **Next action:** When Option C resumes, design a reservation table/ledger contract covering create, cancel, reschedule, attended/verify conversion, admin visibility, parent visibility, allocator handoff, and migration from hidden draft buckets. Include an attendance timing guard before allowing deeper future scheduling: tutors should not be able to mark far-future scheduled classes as attended just because planning capacity exists. The backend should define the allowed attendance window, for example class date is today/past or within an approved start-time grace window.
 - **Promote to:** PRD
 - **Links:** `Sifututor/sifu-tutor#1683`, `sifu-tutor/docs/features/class-lifecycle-option-c/prd.md`, `sifu-tutor/docs/features/billing-cycle-revamp/DECISIONS-AND-OPERATIONS.md`
 
@@ -146,3 +172,16 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Next action:** Open a GitHub issue for Finance/Admin alerting on `mismatch_review`, plus an Operations Centre pending-payment-review section with safe manual resolution steps.
 - **Promote to:** GitHub issue
 - **Links:** `Sifututor/sifu-tutor#1609`, production deploy `696cb0704`
+
+### SIMS-DEPLOY-SAFETY-001 — Migration-Backed Release Ordering
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Production deploys that add public/API code depending on new tables avoid any window where live requests can hit the new code before the required migration has run.
+- **Why it matters:** PR #1690 deployed safely after migration/import, but production logged brief `app_text_versions` missing-table errors during the window between code pull and migration. The app recovered and smoke passed, yet the release process should avoid that class of transient public API error.
+- **Source:** Codex PR #1690 app-text production deployment, 2026-07-10.
+- **Next action:** Review the production deploy playbook for migration-backed public APIs; consider a two-phase deploy, maintenance window, pre-created compatible tables, or route-safe fallback before code that references new tables is exposed.
+- **Promote to:** GitHub issue
+- **Links:** `Sifututor/sifu-tutor#1690`, production deploy `e7795dccf`, Koda `mem_5142b503a88e`, Koda `mem_ef97d14fb34b`

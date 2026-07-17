@@ -60,3 +60,31 @@ that span more than one project.
   into reusable tooling when the design stabilizes.
 - **Links:** [session map playbook](../../agent-playbooks/session-map.md),
   [session map template](../../agent-playbooks/templates/session-map.md)
+
+### AO-RUNTIME-001 — Evaluate Omnigent as staff-distributable Agent OS runtime
+
+- **Project:** cross-project
+- **Status:** paused
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Decide whether Omnigent (Databricks open-source meta-harness)
+  becomes the installable, updatable, platform-agnostic runtime that carries
+  the Agent OS workflow for Hafiz and staff, replacing per-machine
+  harness-specific setups.
+- **Why it matters:** Hafiz wants one chat-first program anyone can install
+  that follows his workflow and connects to any LLM. Omnigent is the only
+  existing tool combining harness-agnosticism, server-enforced policies
+  (gates staff cannot bypass), and web/phone access, but it is alpha and the
+  gate-compatibility question is unproven.
+- **Source:** Hafiz request, 2026-07-13 (Omnigent research session)
+- **Next action:** When Hafiz gives the go: 2-week pilot — self-host the
+  Omnigent server on a KVM, connect Koda via MCP, encode ONE route (bugfix,
+  with gates) as a YAML agent + policy, run the mandatory gate-compatibility
+  test, verify Claude/Codex subscription auth, then give two staff one real
+  QA task each. Control comparison: same route in Goose desktop (stable
+  fallback); OpenCode as the decentralized alternative.
+- **Promote to:** GitHub issue in the umbrella repo when the pilot starts;
+  feeds the public llm-agent-os brief's research comparison either way.
+- **Links:** [omnigent repo](https://github.com/omnigent-ai/omnigent),
+  Koda mem_227cab004cef (research), mem_750a3a6858f6 (tooling vision),
+  mem_a91d4eed0f1d (advisory lesson)

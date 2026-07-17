@@ -17,7 +17,7 @@ import sys
 import urllib.request
 import urllib.error
 
-KODA_URL = "http://178.105.120.34:3848/mcp"
+KODA_URL = "https://koda.tutorla.tech/mcp"
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
 MIN_PROMPT_LEN = 10
 
