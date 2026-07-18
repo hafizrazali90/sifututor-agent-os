@@ -13,7 +13,7 @@ echo "=== cPanel AutoSSL Status Check ==="
 TARGET="${1:-}"
 if [[ "$TARGET" == "--staging" ]]; then
   SSH_ALIAS="webvoyager"
-  SERVER_LABEL="WebVoyager staging (139.162.57.42)"
+  SERVER_LABEL="WebVoyager staging (151.246.1.218)"
 else
   SSH_ALIAS="production"
   SERVER_LABEL="Production (151.246.1.164)"

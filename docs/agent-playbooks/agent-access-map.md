@@ -192,7 +192,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | Field | Value |
 |-------|-------|
 | **Conf file** | `cpanel-admin.conf` |
-| **Base URL** | `https://139.162.57.42:2087` (WebVoyager WHM) |
+| **Base URL** | `https://151.246.1.218:2087` (WebVoyager WHM) |
 | **Username** | `root` |
 | **Allowed actions** | `approved-cpanel-actions-only` |
 | **Purpose** | Manage staging server: SSL installs, vhost config, AutoSSL, cPanel accounts |
@@ -210,7 +210,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Conf file** | `server-ssh.conf` |
 | **Production alias** | `production` → `151.246.1.164:19199` |
 | **Production app dir** | `/home/sifututortutorla/public_html` |
-| **Staging alias** | `webvoyager` → `139.162.57.42:19199` |
+| **Staging alias** | `webvoyager` → `151.246.1.218:19199` |
 | **Purpose** | SSH read access: read logs, check config, verify app state, SSL cert inspection |
 | **Tier** | auto-read for non-destructive reads; write-tier for any file modification |
 | **Hafiz approval** | Not required for reads; required for writes, restarts, or any command that changes server state |

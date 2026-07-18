@@ -13,14 +13,27 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **End goal:** SIMS database records, uploaded files, and server/account configuration have separate off-server backups, monitored retention, and proven restore paths without filling the production disk.
 - **Why it matters:** The 2026-07-12 local cPanel backup filled the production disk and disrupted WHM and every mobile API surface. The current design discussion has selected six-hour database backups, Wasabi as primary with OneDrive temporarily secondary, tiered database retention, and daily incremental upload backup plus a weekly account/configuration backup.
 - **Source:** Hafiz and Codex SIMS backup design discussion, 2026-07-13.
-- **Next action:** Slices 0–4 and disk-monitoring Slice 7 are merged, deployed, smoke-checked, and monitored in production; Slice 7 closed at `375b62b95` through PR #1714. The live disk check reports the expected 81% warning, its BetterStack heartbeat passed controlled failure/recovery proof, the database and uploaded-file backup heartbeats are up, and the future configuration/full-account heartbeats remain paused to avoid false alerts. Resume one separately approved remaining slice under #1697: Slice 5 configuration package, Slice 6 full-account package, or Slice 8 retention/restore work. Keep live-file optimization in child mission `SIMS-BACKUP-DR-001.A1` as future design work.
+- **Next action:** Slices 0–4 and disk-monitoring Slice 7 are merged, deployed, smoke-checked, and monitored in production; Slice 7 closed at `375b62b95` through PR #1714. The live disk check reports the expected 81% warning, its BetterStack heartbeat passed controlled failure/recovery proof, the uploaded-file backup heartbeat is believed up, and the future configuration/full-account heartbeats remain paused to avoid false alerts. On 2026-07-18, production database backup credentials were restored enough for the official `db:backup --no-email --no-onedrive --keep-local` path to verify a Wasabi backup, but the database backup BetterStack heartbeat URL returned 404 and the BetterStack API listed zero heartbeats. Resolve `SIMS-BACKUP-DR-001.1` before treating database backup monitoring as healthy. Resume one separately approved remaining slice under #1697: Slice 5 configuration package, Slice 6 full-account package, or Slice 8 retention/restore work. Keep live-file optimization in child mission `SIMS-BACKUP-DR-001.A1` as future design work.
 - **Promote to:** PRD
 - **Links:** `sifu-tutor/docs/features/backup-disaster-recovery/prd.md`, `sifu-tutor/docs/features/backup-disaster-recovery/build-prompts.md`, `Sifututor/sifu-tutor#1697`, `Sifututor/sifu-tutor#1698`, Koda `mem_a62330809b28`, Koda `mem_7433526c84fc`
+
+### SIMS-BACKUP-DR-001.1 — Restore SIMS Database Backup Heartbeat Monitor
+
+- **Project:** sifu-tutor
+- **Status:** paused
+- **Type:** task
+- **Parent:** SIMS-BACKUP-DR-001
+- **End goal:** The production database backup command can create and verify a Wasabi backup and successfully deliver its BetterStack heartbeat.
+- **Why it matters:** The backup command now verifies the remote backup, but the configured BetterStack heartbeat endpoint returns 404. Without a live heartbeat monitor, a silent missed backup may not alert the team.
+- **Source:** Codex production backup credential repair, 2026-07-18.
+- **Next action:** Create or restore a BetterStack heartbeat for SIMS production database backups, update `/root/.config/sifututor/agent-access/betterstack-sims-db-backup-heartbeat.conf` with the new heartbeat URL using mode 600, then rerun `php artisan db:backup --no-email --no-onedrive --keep-local --run-id=01KXRKZFRKASP2W5D8FZ37S7EJ` or a fresh run and confirm `heartbeat_result` is sent.
+- **Promote to:** GitHub issue
+- **Links:** BetterStack heartbeat API docs; production proof run `01KXRKZFRKASP2W5D8FZ37S7EJ`
 
 ### SIMS-BACKUP-DR-001.A1 — Audit And Optimize SIMS Live File Storage
 
 - **Project:** sifu-tutor
-- **Status:** captured
+- **Status:** triaged
 - **Type:** research
 - **Parent:** SIMS-BACKUP-DR-001
 - **End goal:** Verify whether SIMS uploaded-file storage is already organized efficiently and design any justified improvements to naming, duplication, compression, retention, serving, deletion, and direct Wasabi storage without risking historical documents.
@@ -111,15 +124,15 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 ### SIMS-NOTIF-MATCH-001.A2 — Production Failed Notification Job Follow-Up
 
 - **Project:** sifu-tutor
-- **Status:** captured
+- **Status:** done
 - **Type:** adjacent
 - **Parent:** SIMS-NOTIF-MATCH-001
 - **End goal:** Production failed notification jobs are classified and handled without blindly retrying stale or confusing notifications.
-- **Why it matters:** During the 2026-06-17 request-amendment production release, production stayed healthy on the new SHA, but `failed_jobs` remained at 54 and pending jobs were about 16k, mostly notification-related. Failed count did not increase during the release monitor window, so this was not caused by PR #1579, but it still needs a safe queue-cleanup policy.
-- **Source:** Codex request-amendment production deployment closeout, 2026-06-17; reconfirmed during profile-features production deployment closeout later the same day.
-- **Next action:** Run a read-only failed-job classification by job type, notification type, created time, and likely user-facing risk; do not retry or delete until Hafiz approves a cleanup plan.
+- **Why it matters:** The production investigation separated 787 historical failure records from healthy future-delayed reminder rows. The hotfix corrected payment-mail retry semantics, added provider-call deadlines and duplicate protection, cleaned stale reminder sources, recovered all 728 affected payment emails, and removed the obsolete stuck worker without blindly retrying old serialized jobs.
+- **Source:** Codex request-amendment production deployment closeout, 2026-06-17; superseded by the production queue reliability diagnosis and PR #1746 on 2026-07-18.
+- **Next action:** Closed for production and staging reliability. PR #1746 is live at `a58f4818c`; 728/728 replacement emails completed with zero new target failures; obsolete worker PID `2297006` was removed under exact approval. PR #1748 was corrected and merged, and the exact staging deployment line is live-checked at `0af99c92c`. Keep historical failed-row deletion/archive as a separate destructive decision.
 - **Promote to:** GitHub issue
-- **Links:** `Sifututor/sifu-tutor#1579`, `Sifututor/sifu-tutor#1580`, production deploys `213c1b020`, `652023846`
+- **Links:** `Sifututor/sifu-tutor#1742`, `Sifututor/sifu-tutor#1746`, `Sifututor/sifu-tutor#1748`, `.agent-os/session-maps/2026-07-18-164340-codex-production-queue-reliability.md`, earlier context `Sifututor/sifu-tutor#1579`, `Sifututor/sifu-tutor#1580`
 
 ### SIMS-TUTOR-PROFILE-001 — Tutor Profile And Service Preference Reliability
 
@@ -172,6 +185,19 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Next action:** Open a GitHub issue for Finance/Admin alerting on `mismatch_review`, plus an Operations Centre pending-payment-review section with safe manual resolution steps.
 - **Promote to:** GitHub issue
 - **Links:** `Sifututor/sifu-tutor#1609`, production deploy `696cb0704`
+
+### SIMS-FIUU-RETRY-001 — Status-Aware Retry Across All SIMS Payments
+
+- **Project:** sifu-tutor
+- **Status:** captured
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Every FIUU payment flow owned by SIMS uses a consistent, customer-friendly retry contract: a 15-minute hosted checkout, immediate retry only after a verified failure or cancellation, protection while payment is paid/pending/unknown, a separate 30-minute safety fallback, and clear countdown/status UI.
+- **Why it matters:** Tutor commitment-fee staging UAT showed that closing or abandoning FIUU can leave customers facing a confusing 30-minute lock. Fixing only that page would leave parent commitment fees, invoice links, Pay All, direct invoice payment, and other SIMS-owned FIUU entry points with inconsistent retry and duplicate-payment protection.
+- **Source:** Hafiz decision during tutor commitment-fee payment-link UAT, 2026-07-17.
+- **Next action:** Start a dedicated future product-design and implementation session for the complete cross-SIMS FIUU retry programme; do not include it in the current Tutor Commitment Fee release/UAT.
+- **Promote to:** PRD and GitHub issue in that dedicated future session
+- **Links:** `.agent-os/session-maps/2026-07-17-172051-codex-tutor-commitment-fee-links.md`
 
 ### SIMS-DEPLOY-SAFETY-001 — Migration-Backed Release Ordering
 
