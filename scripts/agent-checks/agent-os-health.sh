@@ -95,6 +95,7 @@ check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-inst
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
 check_file "Agent OS eval runner" "$ROOT/scripts/agent-checks/agent-os-eval-runner.py"
 check_file "Agent OS response shape" "$ROOT/scripts/agent-checks/agent-os-response-shape-runner.py"
+check_file "Agent OS transcript retrospective" "$ROOT/scripts/agent-checks/agent-os-transcript-retrospective.py"
 check_file "Agent OS workflow examples" "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py"
 check_file "Agent OS state fixtures" "$ROOT/scripts/agent-checks/agent-os-state-fixture-runner.py"
 check_file "Agent OS session map check" "$ROOT/scripts/agent-checks/session-map-check.py"
@@ -145,6 +146,16 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-response-shape.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-response-shape.out $TMP_DIR/agent-os-response-shape.err
+
+if python3 "$ROOT/scripts/agent-checks/agent-os-transcript-retrospective.py" --self-test >$TMP_DIR/agent-os-transcript-retrospective.out 2>$TMP_DIR/agent-os-transcript-retrospective.err; then
+  transcript_summary="$(tail -1 $TMP_DIR/agent-os-transcript-retrospective.out 2>/dev/null || true)"
+  pass "Agent OS transcript safety" "${transcript_summary:-passed}"
+else
+  fail "Agent OS transcript safety" "privacy/filter/dedup self-test failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-transcript-retrospective.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-transcript-retrospective.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-transcript-retrospective.out $TMP_DIR/agent-os-transcript-retrospective.err
 
 if "$ROOT/scripts/agent-checks/agent-os-workflow-example-runner.py" >$TMP_DIR/agent-os-workflow-examples.out 2>$TMP_DIR/agent-os-workflow-examples.err; then
   workflow_example_summary="$(tail -1 $TMP_DIR/agent-os-workflow-examples.out 2>/dev/null || true)"

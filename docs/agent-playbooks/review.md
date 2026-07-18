@@ -4,8 +4,12 @@ Use this for code review, pre-commit review, or adversarial quality checks.
 
 ## Review Stance
 
-Lead with findings. Prioritize correctness, regressions, security, missing
-tests, workflow violations, and user-facing behavior. Keep summaries secondary.
+Prioritize findings: correctness, regressions, security, missing tests,
+workflow violations, and user-facing behavior. Internally, review findings
+first so important risks are not diluted. In Hafiz-facing chat, first give the
+short product/user story—who uses the workflow, what happens now, what should
+happen, and why it matters—then lead with the highest-priority finding. Keep
+generic summaries secondary.
 
 Use [agent-os-evidence-model.md](agent-os-evidence-model.md) when judging
 whether the agent gathered enough proof before handing work to Hafiz or staff.
@@ -132,6 +136,18 @@ The chat review must explain:
 - gaps, unknowns, or decisions that still need Hafiz's judgment
 - the recommended decision: approve, request changes, QA first, hold, or merge-ready
 
+Default explanation order:
+
+```text
+What this page/feature is -> who uses it -> current flow -> intended flow ->
+highest-priority findings -> evidence -> recommendation.
+```
+
+When Hafiz asks to go one by one, review only one feature/fix/finding using
+that order, explain its improvement and tradeoff, then stop for `go next`.
+Do not dump the remaining findings as a preview unless one of them is an urgent
+security, production, or data-risk blocker.
+
 If there are blocking findings, start with those in plain language before the
 summary. Code-level file references should appear as proof for a finding or in a
 technical appendix, but Hafiz should not need to read the diff unless he asks or
@@ -188,6 +204,12 @@ are prompts for meaning, not rigid ceremony.
 
 ```text
 PR review:
+
+What this is:
+- <page, feature, or workflow in plain language>
+
+Who uses it and why:
+- <user goal and current/expected flow>
 
 Recommendation:
 - <approve | request changes | QA first | hold | merge-ready>

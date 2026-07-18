@@ -32,6 +32,8 @@ Codex should be ready when:
 - `.agents/skills/*/SKILL.md` wrappers point to shared playbooks;
 - `scripts/agent-checks/codex-lifecycle-hook.py` routes prompts correctly;
 - behavior trace checks pass;
+- the prompt adapter includes the shared explanation-first, pre-implementation
+  preview, one-by-one, and meaningful-work close-out reminders;
 - health, workflow doctor, and validation loop pass;
 - Koda direct helper works for memory search/store/update.
 
@@ -52,6 +54,10 @@ Claude should be ready when:
 - Claude hooks exist for Koda context, branch validation, conventional commits,
   test coverage, and friction logging;
 - hook scripts compile;
+- the shared prompt bridge emits the explanation-first, pre-implementation
+  preview, and close-out reminders even when Koda memory is unavailable;
+- active instruction files contain no embedded credential assignments and
+  point to scoped access instead;
 - Claude adapter names are documented in the parity contract and skill
   registry;
 - live Claude extension or CLI prompts follow the same route, approval,
@@ -100,6 +106,16 @@ Run these prompts against each adapter when checking live behavior:
 | `Save this session for another agent.` | Preserve current state, evidence, next action, and durable Koda lessons. |
 
 Different wording is fine. Different behavior is not.
+
+For a broad real-session comparison, run:
+
+```bash
+python3 scripts/agent-checks/agent-os-transcript-retrospective.py
+```
+
+Its default report is aggregate-only. Raw conversations must remain local and
+must not be committed or copied into Koda. Use the counts to select manual
+review candidates; do not treat phrase matching by itself as proof of failure.
 
 ## Live Transcript Drift Checks
 

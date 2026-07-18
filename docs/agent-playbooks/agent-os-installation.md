@@ -156,6 +156,11 @@ scripts/agent-checks/workflow-doctor.sh
 scripts/agent-checks/pre-commit-guard.sh
 ```
 
+When the Agent OS is checked from an isolated Git worktree, product project
+directories are not copied into that worktree. The doctor reports those
+project-level checks as warnings and still verifies the shared core. In the
+normal umbrella workspace, missing all product directories remains a failure.
+
 From the target product repo:
 
 ```bash
