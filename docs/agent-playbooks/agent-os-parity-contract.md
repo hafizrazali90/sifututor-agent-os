@@ -77,6 +77,7 @@ questions, decisions, evidence, and stopping points match.
 | Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
 | Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
 | Workflow Improvement | `/workflow-improvement` later or natural-language workflow improvement | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
+| SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
 
 ## Product Design Special Case
 

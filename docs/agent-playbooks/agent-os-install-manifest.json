@@ -37,6 +37,7 @@
     "docs/agent-playbooks/agent-os-governance.md",
     "docs/agent-playbooks/agent-os-improvement-loop.md",
     "docs/agent-playbooks/agent-os-evidence-model.md",
+    "docs/agent-playbooks/sims-ui-audit.md",
     "docs/agent-playbooks/agent-os-state-model.md",
     "docs/agent-playbooks/agent-os-enforcement-drift.md",
     "docs/agent-playbooks/session-map.md",
@@ -87,6 +88,7 @@
     ".agents/skills/task-router/SKILL.md",
     ".agents/skills/verify/SKILL.md",
     ".agents/skills/qa/SKILL.md",
+    ".agents/skills/sims-ui-audit/SKILL.md",
     ".agents/skills/review/SKILL.md",
     ".agents/skills/commit/SKILL.md",
     ".agents/skills/save-session/SKILL.md",
@@ -121,6 +123,7 @@
     "generated_files": [
       ".claude/settings.json",
       ".claude/hooks/README.md",
+      ".claude/hooks/run-shared-hook.sh",
       ".claude/tasks/active.json",
       ".claude/tasks/SCHEMA.md",
       ".claude/tasks/archive/.gitkeep"

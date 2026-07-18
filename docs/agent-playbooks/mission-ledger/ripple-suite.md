@@ -155,6 +155,35 @@ follow-ups.
 - **Links:** `Sifututor/ripple-suite#168`, `Sifututor/ripple-suite#169`,
   `Sifututor/ripple-suite#174`, `Sifututor/ripple-suite#175`
 
+### RS-RECON-001.5 — Prevent silent one-cent receipt amount mismatches
+
+- **Project:** ripple-suite
+- **Status:** done
+- **Type:** adjacent
+- **Parent:** RS-RECON-001
+- **End goal:** Ripple preserves the staff-entered receipt amount exactly and
+  warns clearly when it differs from the uploaded proof or matched bank amount,
+  including a RM0.01 difference.
+- **Why it matters:** RCPT-1481 stored RM787.49 while its proof and matched bank
+  row showed RM787.50. The current matching tolerance accepted the difference,
+  which later produced a false unused credit and a confusing reversal workflow.
+- **Source:** RCPT-1481 production repair, 2026-07-15
+- **Result:** Reproduced safely against the production-equivalent source. A
+  single `ArrowDown` press while the native `number` amount field remains
+  focused changes RM787.50 to RM787.49; the split request then submits RM630.00
+  invoice allocation plus RM157.49 excess, exactly matching RCPT-1481's
+  original audit pattern. The uploaded file does not alter the amount. Issue
+  #188 now blocks ArrowUp, ArrowDown, and focused-wheel stepping, normalizes
+  Customer Receipt money fields to two decimals, and requires explicit UI and
+  API acknowledgement for bank differences of RM0.01 or more with audit
+  metadata. PR #189 merged as `14bed6d5`, deployed to KVM8 production, and the
+  authenticated non-mutating browser smoke proved both safeguards live.
+- **Next action:** Closed. Keep the permanent browser/API regressions and audit
+  the separately parked Collection Receipt, Record Payment, and Apply Credit
+  number inputs only through a future issue if Hafiz chooses that scope.
+- **Promote to:** closed via GitHub issue #188
+- **Links:** `Sifututor/ripple-suite#188`, `Sifututor/ripple-suite#189`, `.agent-os/session-maps/2026-07-15-184327-codex-ripple-issue-188-prod.md`, `.agent-os/session-maps/2026-07-15-160312-codex-ripple-rcpt-1481-repair.md`
+
 ### RS-RECEIPT-001 — Make receipt proof preview clear and inspectable
 
 - **Project:** ripple-suite

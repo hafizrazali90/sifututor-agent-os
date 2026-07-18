@@ -121,7 +121,7 @@ Host production
   IdentityFile ~/.ssh/id_ed25519
 
 Host webvoyager
-  HostName 139.162.57.42
+  HostName 151.246.1.218
   Port 19199
   User root
   IdentityFile ~/.ssh/id_ed25519
@@ -258,7 +258,7 @@ work, discussion — stay at the umbrella root.
 | Directory | Stack | Skills prefix | Status |
 | --- | --- | --- | --- |
 | `ripple-suite/` | Next.js 15 + Neon Postgres | `ripple-*` | Active rebuild |
-| `sifu-tutor/` | Laravel 11 + MariaDB (SIMS) | `sifu-*` | Active rebuild |
+| `sifu-tutor/` | Laravel 11 + MySQL 8.4 (SIMS) | `sifu-*` | Active rebuild |
 | `sifututor_tutor/` | React Native | `rn-*` | Active rebuild |
 | `lls/` | Laravel 11 (Learnest backend) | `lls-*` | Active |
 | `lls-frontend/` | React 18 SPA | (generic fallback) | Active |

@@ -307,7 +307,7 @@ def check_claude_common_runtime() -> list[CheckResult]:
     return results
 
 
-def check_developer_claude_adapter() -> list[CheckResult]:
+def check_developer_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
     results: list[CheckResult] = [
         file_check(
             "CL-001",
@@ -382,6 +382,7 @@ def check_developer_claude_adapter() -> list[CheckResult]:
                 adapter="claude",
                 passed=parsed and hook_keys_present(settings),
                 detail=f"{project.name} Claude hooks configured",
+                required=strict_project_hooks,
             )
         )
         results.append(
@@ -390,6 +391,7 @@ def check_developer_claude_adapter() -> list[CheckResult]:
                 adapter="claude",
                 passed=(project / ".claude/hooks/run-shared-hook.sh").is_file(),
                 detail=f"{project.name} shared hook bridge present",
+                required=strict_project_hooks,
             )
         )
 
@@ -416,9 +418,9 @@ def check_developer_claude_adapter() -> list[CheckResult]:
     return results
 
 
-def check_claude_adapter() -> list[CheckResult]:
+def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
     if not CLAUDE_SETTINGS.is_file():
-        return check_developer_claude_adapter()
+        return check_developer_claude_adapter(strict_project_hooks=strict_project_hooks)
 
     results: list[CheckResult] = [
         file_check("CL-001", "claude", CLAUDE_SETTINGS, "Claude settings present"),
@@ -591,12 +593,17 @@ def main() -> int:
         action="store_true",
         help="fail when --live-claude cannot prove every Claude live trace",
     )
+    parser.add_argument(
+        "--strict-project-hooks",
+        action="store_true",
+        help="fail instead of warn when cloned project repos lack Claude hook wiring",
+    )
     args = parser.parse_args()
 
     results: list[CheckResult] = []
     results.extend(check_shared_core())
     results.extend(check_codex_adapter())
-    results.extend(check_claude_adapter())
+    results.extend(check_claude_adapter(strict_project_hooks=args.strict_project_hooks))
     if args.live_claude or args.require_live_claude:
         results.extend(check_optional_live_claude(require_live=args.require_live_claude))
     return summarize(results, args.json)

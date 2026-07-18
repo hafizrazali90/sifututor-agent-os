@@ -57,6 +57,10 @@ and unchecked.
   `sifu-tutor/docs/ui-ux/quality-gate.md` in addition to tests. Report which
   SIMS UI/UX docs were followed when the work changes page layout, components,
   visual styling, staff-facing copy, or browser interaction.
+- For `sifu-tutor` UI/UX work that will be shown to Hafiz, treat
+  [sims-ui-audit.md](sims-ui-audit.md) as the bridge between machine proof and
+  visual review readiness. Verification may pass while the UI audit is still
+  pending; report that as the next evidence step.
 - Verification for `sifu-tutor` UI-visible work is not commit-ready until the
   later QA/review evidence includes screenshot-backed UI/UX checks or an
   explicit blocker. Machine checks alone prove the code compiles; they do not

@@ -31,6 +31,9 @@ classify, resume, or create work.
    visual QA, read `sifu-tutor/docs/ui-ux/README.md` before routing the build or
    review. Then read the relevant files it points to plus the nearest
    `sifu-tutor/docs/features/<feature>/` docs.
+   If the prompt asks for a visual audit, screenshot review, design-system
+   consistency check, or whether the page looks right, route the evidence step
+   through [sims-ui-audit.md](sims-ui-audit.md).
 9. If the user is brainstorming, redesigning, asking for a PRD/UX spec/build
    prompts, or describing a new cross-module workflow, route to
    [product-design.md](product-design.md) before implementation. Use it only

@@ -50,7 +50,7 @@ release proof need to be stronger than ordinary UI changes.
 | Main source docs | `ripple-suite/AGENTS.md`, `ripple-suite/CLAUDE.md`, `GOALS.md`, `TESTING.md`, `AI-RULES.md`, `CODEX-WORKFLOW.md`, `CONTEXT.md`, `docs/INDEX.md`, `docs/guides/`, `docs/deployment/infrastructure.md`. |
 | Active task state | `.claude/tasks/active.json` exists; active task was `null` when checked. |
 | Important modules | Matching, profiles, roles, usage, rating, accounts, reconciliation, knowledge, tutor-payments, collection, CRM, PV, settings, help, releases. |
-| Known local conventions | Read `GOALS.md` first; read `TESTING.md` before dashboard/API/sync/finance/operations behavior changes; use TDD for feature/bugfix/hotfix work; keep module `spec.md` files current; add every new API route to `src/middleware.ts` permissions; branch names include GitHub issue number for coding work. |
+| Known local conventions | Read `GOALS.md` first; read `TESTING.md` before dashboard/API/sync/finance/operations behavior changes; use TDD for feature/bugfix/hotfix work; keep module `spec.md` files current; add every new API route to `src/proxy.ts` with the narrowest matching prefix above broad fallbacks; branch names include GitHub issue number for coding work. |
 
 ## Commands
 
@@ -88,7 +88,7 @@ current repo manifests or docs. It does not mean the full command was run.
 | Browser/dashboard UI | `TESTING.md` row identified, focused Playwright/browser evidence, screenshot or human-journey proof where useful, and loading/error/empty states. |
 | Finance/reconciliation/accounts/PV/tutor payments | Read-only diagnosis first, focused tests, API/E2E proof, idempotency/error evidence, SIMS/Ripple parity review where relevant, and release communication if staff behavior changes. |
 | SIMS data access | Prove SIMS queries are read-only and include `deleted_at IS NULL` on every SIMS table. |
-| Route/API permission changes | `src/middleware.ts` `ROUTE_PERMISSIONS` updated and permission tests or smoke evidence included. |
+| Route/API permission changes | `src/proxy.ts` route permission gateway updated with the narrowest matching prefix above broad fallbacks, plus permission tests or smoke evidence included. |
 | Migrations/production DB changes | Migration SQL with safe guards, staging application proof, explicit production migration approval, production application proof, and monitoring/smoke evidence. |
 | Release/deploy | Branch/SHA, KVM8 deploy proof, smoke, PM2/HTTP/API/browser evidence, and monitoring/log review where relevant. |
 
@@ -100,7 +100,7 @@ implementation when the task changes behavior or risk.
 | Lane | Why it is sensitive | Required approval/evidence |
 | --- | --- | --- |
 | SIMS MySQL access | SIMS is source-of-truth and must be read-only from Ripple. | Prove no SIMS writes, `deleted_at IS NULL` filters, and safe query paths. |
-| Auth/RBAC/route permissions | New API routes can 403 or expose sensitive staff/finance data. | Update `src/middleware.ts`, run permission/API tests, and review access impact. |
+| Auth/RBAC/route permissions | New API routes can 403 or expose sensitive staff/finance data. | Update `src/proxy.ts`, run permission/API tests, and review access impact. |
 | Accounts/reconciliation/payment receipts/PV/tutor payments | Money records, finance workflows, SIMS sync, QuickBooks/FIUU/bank evidence, and staff decisions can be affected. | Read-only diagnosis, focused approval, API/E2E/unit proof, negative cases, audit trail. |
 | Tutor payment SIMS write-back | Can change payment state across systems. | Explicit approval, sync evidence, rollback/repair thinking, and monitoring. |
 | KVM8 PostgreSQL migrations | Production deploy script does not automatically apply all production migrations. | Staging migration proof, explicit production migration approval, production apply proof. |

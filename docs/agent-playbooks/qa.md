@@ -62,6 +62,10 @@ reported symptom.
 - `sifu-tutor`: use Pest for backend behavior, Playwright smoke for UI or
   browser-visible bugfixes, and manual QA references in `docs/` when the module
   has a checklist. Financial modules need human review before commit.
+- For `sifu-tutor` browser UI/UX changes, run
+  [sims-ui-audit.md](sims-ui-audit.md) as part of QA before asking Hafiz to
+  review. This applies to small-change routes too when the changed surface is
+  visual.
 - `sifu-tutor` UI/UX QA must also check `sifu-tutor/docs/ui-ux/quality-gate.md`
   plus the relevant surface-map, design-system, page/component/content,
   accessibility/state, and review-checklist docs. Report any token drift,

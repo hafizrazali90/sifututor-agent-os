@@ -170,6 +170,8 @@ production state changes still require explicit current-session approval.
    state coverage, invented one-off UI patterns, token drift, unclear
    critical-action copy, or missing browser/screenshot evidence as review
    findings.
+   Use [sims-ui-audit.md](sims-ui-audit.md) when the review needs a dedicated
+   visual/screenshot audit.
 6. Treat "human should check this" as a finding unless Playwright, API, CLI, or
    server-side evidence is genuinely unavailable or unsafe. The review should
    push the agent to gather its own non-destructive evidence first.

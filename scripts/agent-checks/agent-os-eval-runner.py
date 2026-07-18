@@ -253,6 +253,19 @@ CASES = [
         "why": "Backend/unit proof alone should not close real user workflows.",
     },
     {
+        "id": "AO-186",
+        "prompt": "Run a SIMS UI/UX audit with screenshots before I review this page.",
+        "skill": "$sims-ui-audit",
+        "reason_contains": "SIMS UI/UX audit",
+        "actions_contain": [
+            "sims-ui-audit.md",
+            "sifu-tutor/docs/ui-ux",
+            "screenshots or browser states",
+            "Report findings before summary",
+        ],
+        "why": "SIMS visual QA should use the first-class UI audit wrapper before Hafiz review.",
+    },
+    {
         "id": "AO-065",
         "prompt": "The agent says done after changed files locally but not pushed.",
         "skill": "$task-router",

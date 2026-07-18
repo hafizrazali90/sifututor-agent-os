@@ -641,6 +641,9 @@ def nontrivial_prompt(prompt: str) -> bool:
         "verify",
         "qa",
         "review",
+        "ui audit",
+        "visual qa",
+        "screenshot",
         "diagnose",
         "save",
         "handoff",
@@ -772,7 +775,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         )
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs|sims-ui-audit)\b",
         normalized,
     )
     if direct_skill:
@@ -784,6 +787,54 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Read the skill body, then the linked shared playbook before acting.",
             ],
             "User explicitly invoked a Codex workflow skill.",
+        )
+
+    ui_audit_patterns = (
+        "sims ui",
+        "sims ui/ux",
+        "ui/ux audit",
+        "ui audit",
+        "visual qa",
+        "visual audit",
+        "screenshot review",
+        "review screenshot",
+        "screenshots before",
+        "spacing",
+        "density",
+        "disabled button",
+        "disabled state",
+        "table fit",
+        "filter layout",
+        "modal padding",
+        "dropdown styling",
+        "design system consistency",
+    )
+    ui_surface_patterns = (
+        "sifu-tutor",
+        "sims",
+        "admin ui",
+        "browser ui",
+        "page",
+        "modal",
+        "dropdown",
+        "table",
+        "filter",
+        "sidebar",
+        "screenshot",
+    )
+    if any(pattern in normalized for pattern in ui_audit_patterns) and any(
+        pattern in normalized for pattern in ui_surface_patterns
+    ):
+        return (
+            "$sims-ui-audit",
+            [
+                "Use $sims-ui-audit for SIMS browser UI/UX visual judgment.",
+                "Read docs/agent-playbooks/sims-ui-audit.md before judging the UI.",
+                "Read the relevant sifu-tutor/docs/ui-ux/ source-of-truth docs named by that playbook.",
+                "Inspect screenshots or browser states for the changed page, including modals, dropdowns, filters, tables, disabled states, and responsive states when in scope.",
+                "Report findings before summary; fix in-scope UI blockers before asking Hafiz to review.",
+            ],
+            "Prompt asks for SIMS UI/UX audit or screenshot-backed visual QA.",
         )
 
     if "approve" in normalized and "commit" in normalized and "push" in normalized:
@@ -1309,8 +1360,8 @@ def main() -> int:
                     "Close-out default: after meaningful work, make the final answer self-contained with what changed, how it was checked, the highest proven state, what remains, one recommended next action, and whether Hafiz needs to decide anything.",
                     "Standing task access: when Hafiz asks Codex to finish a task end-to-end, use the narrowest required local agent-access files/tools without asking another permission question; never print secrets, read repo .env*, or use unrelated access.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
-                    "Available skills: $task-router, $product-design, $verify, $qa, $commit, $save-session, $handoff, $snapshot, $session-map, $diagnose, $review.",
-                    "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
+                    "Available skills: $task-router, $product-design, $verify, $qa, $sims-ui-audit, $commit, $save-session, $handoff, $snapshot, $session-map, $diagnose, $review.",
+                    "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. SIMS UI path adds $sims-ui-audit before Hafiz review or commit. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
                 ]
             ),
         )
@@ -1334,7 +1385,7 @@ def main() -> int:
                 "Check whether any follow-up, adjacent task, paused decision, or bigger-goal link should be captured in the Mission Ledger; search/open only the relevant project file.",
             ]
         action_text = "\n".join(f"- {action}" for action in actions)
-        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$review", "$commit", "$session-map"}
+        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$sims-ui-audit", "$review", "$commit", "$session-map"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""
         memory_section = memory_text or "\n".join(
             [
