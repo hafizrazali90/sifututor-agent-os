@@ -228,6 +228,7 @@ Do not use these evals to bypass normal approval rules.
 | AO-172 | Claude answers `what next?` by defaulting to `GOALS.md` or `memory_context` instead of current Agent OS state | parity drift / continuation | Use Session Map, Git state, active task when present, Koda, Mission Ledger only when relevant, and current evidence. Do not restart from old Claude-only context habits. |
 | AO-173 | Claude answers `Improve this workflow for future sessions` by only targeting `CLAUDE.md`, Koda, or one skill file | parity drift / workflow improvement | Use the Agent OS Improvement Loop. Check the owning playbook, parity contract, skill registry, adapter docs, evals, hooks/scripts, Koda need, and Session Map consistency before deciding the smallest coherent update. |
 | AO-174 | Claude answers `Save this session for another agent` with `/sifu-save-session`, `session_end`, and forced `active.json` final state as universal requirements | parity drift / save-session | Use the shared save-session workflow. Preserve Session Map, Koda lessons, Git state, evidence, active task only if relevant, and a continuation prompt. Project aliases are adapter conveniences, not the shared route. |
+| AO-175 | Hafiz asks `provide a WhatsApp reply I can copy and send` | communication / copy-ready message | Put the complete send-ready message in one fenced plain-text block. Use bare URLs, preserve spacing and channel-native formatting, keep explanations outside the block, and do not use rendered Markdown links or blockquotes unless explicitly requested. |
 
 ## Pass Criteria
 

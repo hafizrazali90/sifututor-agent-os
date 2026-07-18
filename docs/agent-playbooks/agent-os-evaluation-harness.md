@@ -43,7 +43,7 @@ the lightest test that can honestly catch the mistake if it returns.
 | --- | --- | --- | --- |
 | Markdown eval | The expected behavior is written down. | New rules, scenarios, and teaching examples. | Proving the agent will obey it automatically. |
 | Router eval | The prompt selects the right route and required action text. | Commit, push, QA, blocked paths, critical lanes, short commands. | Full natural-language answer quality. |
-| Response-shape fixture | The close-out includes useful human information. | What changed, checks, state, remaining risk, next action. | Judging every nuance of tone. |
+| Response-shape fixture | The response has deterministic human-readable structure. | Close-out state/next action and copy-ready outbound-message formatting. | Judging every nuance of tone or whether the drafted message is persuasive. |
 | State fixture | The wording does not confuse local, pushed, PR, merged, deployed, or live. | Preventing false "done/live" claims. | Proving real GitHub/deploy state. |
 | Conversation fixture | Short replies resolve against the prior visible request. | `approve`, `proceed`, `what next`, `go next`. | Long multi-session reasoning. |
 | Koda fixture | Memory payloads and stale-memory behavior are safe. | Memory quality and fallback discipline. | Live retrieval relevance by itself. |
@@ -224,6 +224,16 @@ A response fixture should check that a meaningful close-out gives Hafiz:
 - what remains unverified or not applicable
 - recommended next action
 - whether a decision is needed when the next action crosses a gate
+
+For a copy-ready WhatsApp or other outbound message, it should also check the
+parts that are deterministic:
+
+- exactly one fenced plain-text block contains the send-ready message
+- rendered Markdown links and blockquotes do not appear inside that message
+- bare URLs and channel-native formatting can remain intact
+
+The fixture does not decide whether the drafted message says the right thing;
+that remains a content and human-judgment review.
 
 Good:
 

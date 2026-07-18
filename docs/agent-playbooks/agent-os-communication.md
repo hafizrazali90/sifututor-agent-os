@@ -254,6 +254,65 @@ Avoid:
 Running workflow phase. Status pending. Proceeding to next gate.
 ```
 
+## Copy-Ready Outbound Messages
+
+When Hafiz asks for a WhatsApp reply, a message to a developer or staff member,
+or any equivalent text he wants to copy and send, the output must be copy-safe
+by default.
+
+Put the complete send-ready message inside one fenced `text` block. Inside that
+block:
+
+- use bare URLs such as `https://example.com/pr/123`
+- preserve the intended blank lines, bullets, numbering, and paragraph breaks
+- use the destination channel's native formatting, such as WhatsApp `*bold*`
+- do not use rendered Markdown links such as `[PR #123](https://example.com)`
+- do not use Markdown blockquotes unless Hafiz explicitly wants quoted text
+
+Keep any explanation, warning, or alternative wording outside the block. The
+message inside the block must be complete enough to copy without editing or
+reconstructing content from the surrounding answer.
+
+This applies to WhatsApp and to phrases such as:
+
+```text
+give me a copy-paste reply
+write a message to my dev
+provide a send-ready handoff
+draft something I can send to staff
+```
+
+If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
+format, use that requested format instead. The default remains copy-safe plain
+text.
+
+Good:
+
+````text
+Copy and send this:
+
+```text
+*Malay Content Localisation is live.*
+
+Backend PR:
+https://github.com/example/project/pull/123
+
+- Please complete native-device UAT.
+- Share the results here when finished.
+```
+````
+
+Avoid:
+
+```text
+> *Malay Content Localisation is live.*
+>
+> [Backend PR](https://github.com/example/project/pull/123)
+```
+
+The second version may look neat in chat, but copying it can include quote
+markers or Markdown link syntax that Hafiz did not intend to send.
+
 ## Teaching Industry Terms
 
 Hafiz wants to learn useful terminology, but not be buried under it.
