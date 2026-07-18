@@ -103,7 +103,11 @@ for project in "${PROJECTS[@]}"; do
 done
 
 if [[ "${#existing_projects[@]}" -eq 0 ]]; then
-  fail "projects" "no product project directories found"
+  if [[ -f "$ROOT/.git" ]]; then
+    warn "projects" "standalone Git worktree; product project checks skipped"
+  else
+    fail "projects" "no product project directories found"
+  fi
 fi
 
 echo
@@ -133,13 +137,17 @@ rm -f /tmp/sifututor-session-map-doctor.html
 
 echo
 echo "All-project guard sweep"
-for project in "${existing_projects[@]}"; do
-  if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
-    pass "$project guard" "passed"
-  else
-    fail "$project guard" "failed"
-  fi
-done
+if [[ "${#existing_projects[@]}" -eq 0 ]]; then
+  warn "project guards" "no product projects in this checkout; skipped"
+else
+  for project in "${existing_projects[@]}"; do
+    if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
+      pass "$project guard" "passed"
+    else
+      fail "$project guard" "failed"
+    fi
+  done
+fi
 
 echo
 echo "Codex prompt visibility"
@@ -162,7 +170,11 @@ fi
 
 echo
 echo "Claude parent config"
-python3 - "$ROOT" "${existing_projects[@]}" <<'PY'
+claude_args=("$ROOT")
+if [[ "${#existing_projects[@]}" -gt 0 ]]; then
+  claude_args+=("${existing_projects[@]}")
+fi
+python3 - "${claude_args[@]}" <<'PY'
 import json
 import sys
 from pathlib import Path

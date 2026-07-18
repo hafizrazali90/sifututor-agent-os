@@ -59,6 +59,7 @@
     "scripts/agent-checks/agent-os-install.sh",
     "scripts/agent-checks/agent-os-eval-runner.py",
     "scripts/agent-checks/agent-os-response-shape-runner.py",
+    "scripts/agent-checks/agent-os-transcript-retrospective.py",
     "scripts/agent-checks/agent-os-workflow-example-runner.py",
     "scripts/agent-checks/agent-os-state-fixture-runner.py",
     "scripts/agent-checks/session-map-check.py",

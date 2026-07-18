@@ -109,6 +109,60 @@ Common chains:
 | Memory behavior wrong | `agent-os-memory.md`, memory architecture, Koda fixtures, Koda search/update |
 | Hook behavior wrong | hook dispatcher doc, fixture first, hook code second |
 
+## Real-Session Retrospective
+
+Use real Claude/Codex transcripts when Hafiz asks for a broad Agent OS audit or
+when deterministic fixtures pass but the same daily-use friction continues.
+This is an evidence source, not a new source of truth.
+
+Run the privacy-safe aggregate first:
+
+```bash
+python3 scripts/agent-checks/agent-os-transcript-retrospective.py
+```
+
+The retrospective must:
+
+- inventory the full requested transcript scope instead of sampling only easy
+  or recent files;
+- stream large JSONL records and avoid loading whole histories into memory;
+- separate human prompts from hooks, scheduled prompts, compaction summaries,
+  skill injections, tool results, and forwarded message drafts;
+- deduplicate replayed Codex rollovers/forks before comparing counts;
+- redact credentials, email addresses, URLs, tokens, and local paths before any
+  excerpt is persisted;
+- use aggregate trends to find candidates, then manually review representative
+  high-signal turns before declaring a root cause;
+- compare recent behavior with older periods so already-fixed drift is not
+  presented as current failure.
+
+Raw conversations must never be committed, copied into Koda, pasted into an
+issue, or used as a routine health-check artifact. Optional redacted detail
+reports are local diagnostic evidence only. Transcript availability also
+differs by adapter and machine, so the retrospective is on-demand evidence;
+its self-test belongs in health, but a full history scan does not.
+
+Report coverage and depth separately:
+
+```text
+Coverage: every available transcript file was parsed, filtered, and
+deduplicated.
+
+Depth: aggregate patterns were measured and representative high-signal turns
+were manually reviewed.
+```
+
+Do not say every transcript was fully analyzed, semantically reviewed, or read
+word-for-word unless that stronger review actually happened. Full corpus
+processing is not the same as manual semantic review of every conversation.
+
+When redacted local details are enabled, use the retrospective's deduplicated
+`manual_review_ranking` to choose session-level review candidates. The score is
+triage only, not a failure verdict. Read correction, repeat-friction,
+explanation, stop/redirect, and paired agent-response evidence in context; mix
+high-ranked historical sessions with recent sessions so one old long-running
+chat does not dominate the conclusions.
+
 ## Required Explanation Before Editing
 
 Before changing durable Agent OS files, explain:
@@ -164,6 +218,7 @@ For hook or dispatcher changes, also run:
 
 ```bash
 scripts/agent-checks/agent-os-conversation-fixture-runner.py
+python3 scripts/agent-checks/agent-os-transcript-retrospective.py --self-test
 ```
 
 For skill registry, parity, or installer changes, also run:
