@@ -146,6 +146,47 @@ CASES = [
     },
 ]
 
+COPY_READY_CASES = [
+    {
+        "id": "WM-001",
+        "name": "copy-safe WhatsApp message",
+        "text": (
+            "Copy and send this:\n\n```text\n*Localisation is live.*\n\n"
+            "Backend PR:\nhttps://github.com/example/project/pull/123\n\n"
+            "- Please complete native-device UAT.\n```"
+        ),
+        "should_pass": True,
+        "why": "A send-ready message should use one text block, a bare URL, and channel-native formatting.",
+    },
+    {
+        "id": "WM-002",
+        "name": "rendered Markdown link inside copy block",
+        "text": (
+            "```text\nBackend PR:\n"
+            "[PR #123](https://github.com/example/project/pull/123)\n```"
+        ),
+        "should_pass": False,
+        "why": "Rendered Markdown link syntax becomes copy noise in WhatsApp.",
+    },
+    {
+        "id": "WM-003",
+        "name": "blockquote instead of copy block",
+        "text": "> *Localisation is live.*\n> https://github.com/example/project/pull/123",
+        "should_pass": False,
+        "why": "A Markdown blockquote is not the required copy-safe plain-text block.",
+    },
+    {
+        "id": "WM-004",
+        "name": "message split across copy blocks",
+        "text": (
+            "```text\n*Localisation is live.*\n```\n"
+            "```text\nhttps://github.com/example/project/pull/123\n```"
+        ),
+        "should_pass": False,
+        "why": "The complete send-ready message must be copyable from one block.",
+    },
+]
+
 
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", value.lower()).strip()
@@ -158,6 +199,20 @@ def missing_groups(text: str) -> list[str]:
         for group, snippets in REQUIRED_GROUPS.items()
         if not any(snippet in normalized for snippet in snippets)
     ]
+
+
+def copy_ready_violations(text: str) -> list[str]:
+    text_blocks = re.findall(r"```(?:text|plain)?\n(.*?)```", text, flags=re.DOTALL)
+    if len(text_blocks) != 1:
+        return ["expected exactly one fenced plain-text block"]
+
+    message = text_blocks[0]
+    violations = []
+    if re.search(r"\[[^\]]+\]\(https?://[^)]+\)", message):
+        violations.append("rendered Markdown link inside message")
+    if any(line.lstrip().startswith(">") for line in message.splitlines()):
+        violations.append("Markdown blockquote inside message")
+    return violations
 
 
 def run(verbose: bool = False) -> int:
@@ -178,8 +233,25 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
-    passed = len(CASES) - len(failures)
-    print(f"agent-os-response-shape-runner: {passed}/{len(CASES)} passed")
+    for case in COPY_READY_CASES:
+        violations = copy_ready_violations(case["text"])
+        passed_shape = not violations
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if violations:
+                print("  violations: " + ", ".join(violations))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
+    total = len(CASES) + len(COPY_READY_CASES)
+    passed = total - len(failures)
+    print(f"agent-os-response-shape-runner: {passed}/{total} passed")
     if failures:
         print("failed: " + ", ".join(failures))
         return 1

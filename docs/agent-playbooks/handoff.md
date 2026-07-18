@@ -55,6 +55,21 @@ Check first: <git status / files / docs / evidence>.
 Do not change: <boundaries>.
 ```
 
+## Copy-Safe Human Handoffs
+
+When Hafiz asks for a handoff message he will send to a developer, staff member,
+or another person, follow the copy-ready outbound-message rule in
+[agent-os-communication.md](agent-os-communication.md):
+
+- put the complete send-ready message in one fenced plain-text block
+- use bare URLs instead of rendered Markdown links
+- preserve blank lines, bullets, and channel-native formatting
+- keep agent explanations outside the block
+
+This is different from the continuation pack above. A continuation pack records
+working state for the next agent; a copy-safe human handoff is the exact message
+Hafiz can paste into WhatsApp or another destination.
+
 ## Output Shape
 
 ```text

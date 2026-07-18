@@ -186,6 +186,13 @@ print credentials to the terminal or to files.
   words.
 - Keep formal labels inside commits, QA notes, save-session reports, and agent
   handoffs when they are useful for traceability.
+- When Hafiz asks for a WhatsApp reply, a copy-paste message, or other
+  send-ready text, put the complete message in one fenced plain-text block so
+  copying preserves the intended content. Use bare URLs, preserve blank lines
+  and bullets, and use the destination channel's native markers such as
+  WhatsApp `*bold*`. Keep explanations outside the block. Do not use Markdown
+  links or blockquotes inside the copy-ready message unless Hafiz explicitly
+  requests that format.
 
 ## Branches And Commits
 

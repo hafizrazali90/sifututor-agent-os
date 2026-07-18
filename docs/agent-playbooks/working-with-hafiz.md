@@ -62,6 +62,7 @@ These preferences were stated by Hafiz on 2026-06-04.
 | What done means | Hafiz needs to know the practical end goal before deciding how far the agent should continue. | Explain what "done" means for the task: diagnosed only, fixed locally, committed, PR opened, staging verified, production live, or production monitored. Explain why, then let Hafiz approve a tighter or wider boundary. |
 | Recommended path | Hafiz should not need to remember the workflow steps. | Suggest the stop point and path, such as diagnose -> fix -> test -> QA/review -> commit -> PR -> staging -> production monitoring, adjusted to the task risk. |
 | Task-scoped access | When Hafiz asks the agent to finish a task end-to-end, the agent should use required scoped access without another permission prompt. | Use the narrowest relevant local access file/tool, never print secrets, and continue through required verify, QA, deploy, smoke, or monitoring unless the next action is destructive or outside the task. |
+| Copy-ready messages | WhatsApp replies and similar send-ready drafts should copy cleanly without Markdown noise. | Put the complete message in one fenced plain-text block, use bare URLs and channel-native formatting, and keep explanations outside the block. |
 
 ## How To Interpret Short Commands
 
@@ -620,6 +621,12 @@ payment state.
 
 The goal is for Hafiz to understand the implementation direction like code
 translated into English, not to memorize Agent OS terminology.
+
+For WhatsApp replies, developer/staff messages, and equivalent copy-paste
+requests, follow the copy-ready outbound-message rule in
+[agent-os-communication.md](agent-os-communication.md). The send-ready content
+belongs in one plain-text fenced block with bare URLs; explanations stay
+outside it.
 
 Minimum content:
 
