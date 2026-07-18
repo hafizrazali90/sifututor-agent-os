@@ -4,10 +4,10 @@ koda-context-injector.py — UserPromptSubmit hook
 Searches Koda Memory for relevant context based on the user's prompt and injects
 top memories as additionalContext before Claude processes the message.
 
-Hard constraints (all failures are silent — never block the user's prompt):
-- 2s network timeout — if Koda is slow, exit 0 with no output
-- Silent skip if KODA_API_KEY env var is missing
-- Silent skip if response is malformed
+Hard constraints (memory failures are silent and never block the user's prompt):
+- 2s network timeout — if Koda is slow, skip memory context
+- Skip memory context if KODA_API_KEY is missing or a response is malformed
+- Still emit the shared communication reminders for a non-trivial human prompt
 - Silent skip if prompt is short (< 10 chars) — likely not a real task
 """
 
@@ -20,6 +20,36 @@ import urllib.error
 KODA_URL = "https://koda.tutorla.tech/mcp"
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
 MIN_PROMPT_LEN = 10
+CLOSEOUT_REMINDER = (
+    "Agent OS close-out reminder: after meaningful work, make the final answer "
+    "self-contained with what changed, how it was checked, the highest proven "
+    "state, what remains, one recommended next action, and whether Hafiz needs "
+    "to decide anything."
+)
+EXPLANATION_REMINDER = (
+    "Agent OS explanation-first reminder: for bugs, PRs, features, or unfamiliar "
+    "technical topics, explain who uses the workflow, what happens now, what "
+    "should happen, and why it matters before findings or code. Before non-trivial "
+    "implementation, explain the intended build, real options, recommendation, and "
+    "evidence plan in English once; after approval, continue inside the agreed "
+    "boundary without re-asking. If Hafiz asks "
+    "to go one by one, cover one item with its effect, improvement, evidence, "
+    "and decision, then stop before the next item unless he approved an "
+    "autonomous walkthrough."
+)
+
+
+def _emit_context(memory_context=""):
+    sections = [
+        section
+        for section in (memory_context, EXPLANATION_REMINDER, CLOSEOUT_REMINDER)
+        if section
+    ]
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "additionalContext": "\n\n".join(sections)
+        }
+    }))
 
 
 # All 9 Sifututor project names + aliases — used to detect project intent in
@@ -100,7 +130,8 @@ def main():
 
     api_key = os.environ.get("KODA_API_KEY", "")
     if not api_key:
-        sys.exit(0)
+        _emit_context()
+        return
 
     # Detect project intent — if user mentioned a specific project, we'll
     # boost relevance by running an additional tag-filtered search.
@@ -153,7 +184,8 @@ def main():
         "id": 1,
     })
     if not init_body or not session_id:
-        sys.exit(0)
+        _emit_context()
+        return
 
     # Step 2: send the initialized notification (some MCP servers require it)
     _post(
@@ -178,7 +210,8 @@ def main():
     )
 
     if not body:
-        sys.exit(0)
+        _emit_context()
+        return
 
     body = _unwrap_sse(body, content_type)
 
@@ -242,7 +275,8 @@ def main():
         merged.append(mem)
 
     if not merged:
-        sys.exit(0)
+        _emit_context()
+        return
 
     # Format top 5 (or 7 if we had a project boost — more cross-project signal)
     limit = 7 if project_memories else 5
@@ -259,17 +293,14 @@ def main():
             bullets.append(f"- ({mem_id}{tag_str}) {snippet}")
 
     if not bullets:
-        sys.exit(0)
+        _emit_context()
+        return
 
     header = "Relevant Koda memories (search-injected — verify before relying on):"
     if detected_project:
         header = f"Relevant Koda memories (detected project: {detected_project}; cross-project + tag-boosted):"
     context = header + "\n" + "\n".join(bullets)
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "additionalContext": context
-        }
-    }))
+    _emit_context(context)
 
 
 if __name__ == "__main__":

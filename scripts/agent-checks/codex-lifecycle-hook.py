@@ -12,6 +12,8 @@ import sys
 from typing import Any
 import urllib.request
 
+from koda_contract import capability_report
+
 
 _THIS_FILE = globals().get("__file__")
 _DEFAULT_WORKSPACE = Path(_THIS_FILE).resolve().parents[2] if _THIS_FILE else Path.cwd()
@@ -21,8 +23,8 @@ CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
 KODA_URL = "https://koda.tutorla.tech/mcp"
 KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
 KODA_TIMEOUT = 10
-KODA_REQUIRED_TOOLS = {"memory_search", "memory_store", "memory_context", "session_start"}
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
+KODA_HEALTH_PROJECT = "sifututor"
 PROJECTS = {
     "kelas",
     "sifu-tutor",
@@ -275,6 +277,17 @@ def koda_error(body: str, content_type: str) -> str:
     return ""
 
 
+def koda_health_search_arguments() -> dict:
+    """Exercise the canonical project filter during every startup health check."""
+
+    return {
+        "query": "Codex Koda startup health check",
+        "tags": KODA_HEALTH_TAGS,
+        "project": KODA_HEALTH_PROJECT,
+        "limit": 5,
+    }
+
+
 def koda_headers() -> tuple[dict, str]:
     api_key = os.environ.get("KODA_API_KEY", "")
     if not api_key:
@@ -470,19 +483,25 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     except Exception as exc:  # noqa: BLE001
         return False, details + [f"Koda tools/list returned malformed response: {exc}"]
 
-    missing_tools = sorted(KODA_REQUIRED_TOOLS - tool_names)
-    if missing_tools:
-        return False, details + [f"Koda missing required tools: {', '.join(missing_tools)}"]
-    details.append("Koda required tools are available")
+    capabilities = capability_report(tool_names)
+    if capabilities["missing_required"]:
+        return False, details + [
+            f"Koda missing required core tools: {', '.join(capabilities['missing_required'])}"
+        ]
+    for tier, tier_status in capabilities["tiers"].items():
+        if tier_status["missing"]:
+            details.append(
+                f"Koda {tier} capability tier is partial; missing: {', '.join(tier_status['missing'])}"
+            )
+        else:
+            details.append(f"Koda {tier} capability tier is available")
+    if capabilities["unexpected"]:
+        details.append(f"Koda also exposes unclassified tools: {', '.join(capabilities['unexpected'])}")
 
     search_response, search_error = koda_tool_call(
         session,
         "memory_search",
-        {
-            "query": "Codex Koda startup health check",
-            "tags": KODA_HEALTH_TAGS,
-            "limit": 5,
-        },
+        koda_health_search_arguments(),
         request_id=3,
     )
     if search_error:
@@ -490,7 +509,7 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     search_payload = parse_tool_content(search_response)
     if not isinstance(search_payload, list):
         return False, details + ["Koda memory_search did not return a memory list"]
-    details.append("Koda memory_search read check passed")
+    details.append("Koda project-scoped memory_search read check passed")
 
     if not write:
         return True, details
@@ -1337,6 +1356,8 @@ def main() -> int:
                     active_summary,
                     *koda_lines,
                     "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
+                    "Explanation-first default: for bugs, PRs, features, or unfamiliar technical topics, explain who uses the workflow, current behavior, expected behavior, and why it matters before findings or code. Before non-trivial implementation, explain the intended build, real options, recommendation, and evidence plan in English once; after approval, continue inside the agreed boundary without re-asking. If Hafiz asks to go one by one, cover one item with its effect, improvement, evidence, and decision, then stop before the next unless he approved an autonomous walkthrough.",
+                    "Close-out default: after meaningful work, make the final answer self-contained with what changed, how it was checked, the highest proven state, what remains, one recommended next action, and whether Hafiz needs to decide anything.",
                     "Standing task access: when Hafiz asks Codex to finish a task end-to-end, use the narrowest required local agent-access files/tools without asking another permission question; never print secrets, read repo .env*, or use unrelated access.",
                     "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
                     "Available skills: $task-router, $product-design, $verify, $qa, $sims-ui-audit, $commit, $save-session, $handoff, $snapshot, $session-map, $diagnose, $review.",
@@ -1385,6 +1406,8 @@ def main() -> int:
                     action_text,
                     memory_section,
                     "Communication default: start with a plain-language explanation and practical meaning, then provide technical file/test/workflow detail.",
+                    "Explanation-first default: for bugs, PRs, features, or unfamiliar technical topics, explain who uses the workflow, current behavior, expected behavior, and why it matters before findings or code. Before non-trivial implementation, explain the intended build, real options, recommendation, and evidence plan in English once; after approval, continue inside the agreed boundary without re-asking. If Hafiz asks to go one by one, cover one item with its effect, improvement, evidence, and decision, then stop before the next unless he approved an autonomous walkthrough.",
+                    "Close-out default: after meaningful work, make the final answer self-contained with what changed, how it was checked, the highest proven state, what remains, one recommended next action, and whether Hafiz needs to decide anything.",
                     "Standing task access: if the current task already requires scoped access for verify, QA, deploy, smoke, or monitoring, use the narrowest required access without another approval prompt; keep secrets hidden and stay inside the task.",
                     "Do not bypass the selected skill. Read its SKILL.md and the linked docs/agent-playbooks/ file before acting.",
                     "Critical lanes require Phase A diagnosis before implementation: auth, payments, invoices, commissions, migrations, deployment, and mobile API contracts.",

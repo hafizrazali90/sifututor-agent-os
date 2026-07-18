@@ -132,6 +132,9 @@ expecting every model/tool to expose identical UI.
 | Evals mostly test Codex routing | We can prove Codex hook behavior better than live Claude extension behavior. | Use `agent-os-adapter-readiness.py` for wiring, behavior trace for deterministic Codex routing, and live Claude prompts only as optional evidence until the extension has a stable non-interactive test path. |
 | Hook behavior differs by tool | Claude and Codex lifecycle hooks are not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
 | Claude adapter overfits old task-state mechanics | Live Claude transcript tests showed safe but rigid answers that required `active.json`, Claude-only gate fields, or old command names for every workflow. | Treat `active.json`, Claude hooks, and project slash commands as adapter helpers. The shared behavior comes from `AGENTS.md`, this contract, and the playbooks. |
+| Real sessions still omit a usable close-out | Transcript retrospective found both adapters often checked work but left Hafiz to ask what remains or what next. | Keep the shared close-out contract in the communication owner, inject the same compact reminder through both prompt adapters, and protect it with response-shape fixtures. |
+| Agents explain findings before the user story | Real transcripts repeatedly show Hafiz asking what the feature/issue actually is, what the user does, and to review one item at a time. | Keep explanation order in the communication/review owners, inject the same explanation-first and one-by-one reminder through both adapters, and protect representative shapes with fixtures/evals. |
+| Browser proof can come from the wrong checkout or stale port | Real UI sessions showed correct code being judged through an old worktree, server, sidebar shell, or local port. | Require target-identity proof in verification and QA before either adapter treats screenshots/browser evidence as proof. |
 | Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
 | Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |
 
@@ -208,6 +211,8 @@ Compare the answer against these behavior points:
 | State language | Both agents distinguish local, committed, pushed, PR open, merged, deployed, live checked, and accepted / closed. |
 | Memory and task routing | Both agents store durable lessons in Koda, current session story in the Session Map, and execution work in GitHub/task state where appropriate. |
 | Close-out | Both agents explain what changed, how checked, what remains, and the recommended next step in plain language. |
+| Explanation order | Both agents explain the user/business story and current-versus-expected flow before technical findings; both honor one-by-one review pacing when requested. |
+| Target identity | Both agents prove the URL/environment, serving source, branch/worktree, and commit/version before trusting browser, screenshot, staging, or production evidence. |
 
 Allowed adapter differences:
 

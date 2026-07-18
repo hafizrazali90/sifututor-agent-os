@@ -43,7 +43,7 @@ the lightest test that can honestly catch the mistake if it returns.
 | --- | --- | --- | --- |
 | Markdown eval | The expected behavior is written down. | New rules, scenarios, and teaching examples. | Proving the agent will obey it automatically. |
 | Router eval | The prompt selects the right route and required action text. | Commit, push, QA, blocked paths, critical lanes, short commands. | Full natural-language answer quality. |
-| Response-shape fixture | The close-out includes useful human information. | What changed, checks, state, remaining risk, next action. | Judging every nuance of tone. |
+| Response-shape fixture | The response has deterministic human-readable structure. | Close-out state/next action and copy-ready outbound-message formatting. | Judging every nuance of tone or whether the drafted message is persuasive. |
 | State fixture | The wording does not confuse local, pushed, PR, merged, deployed, or live. | Preventing false "done/live" claims. | Proving real GitHub/deploy state. |
 | Conversation fixture | Short replies resolve against the prior visible request. | `approve`, `proceed`, `what next`, `go next`. | Long multi-session reasoning. |
 | Koda fixture | Memory payloads and stale-memory behavior are safe. | Memory quality and fallback discipline. | Live retrieval relevance by itself. |
@@ -52,6 +52,7 @@ the lightest test that can honestly catch the mistake if it returns.
 | Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
 | Behavior trace | The agent picks the expected route, first move, approval boundary, and evidence markers for common prompts. | Claude/Codex parity review points and workflow predictability. | Subjective quality of the full answer. |
 | Adapter readiness | Codex and Claude are wired to the shared Agent OS core. | Setup confidence before daily use or handoff. | Proving the live extension always behaves correctly. |
+| Transcript retrospective | Aggregate real-session behavior is measured after filtering injections and replayed history. | Finding repeated daily-use drift that deterministic fixtures miss. | Product truth, exact intent from keyword counts, or a routine health gate. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
 | Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
 | Scenario Lab | Realistic Hafiz work moments are checked at the route/proof/boundary level. | Daily-work readiness, approval boundaries, tool discipline, and cross-layer behavior. | Real production safety, subjective acceptance, or full live LLM answer quality. |
@@ -86,6 +87,18 @@ The adapter readiness runner checks whether Codex and Claude are set up to use
 the Agent OS. It proves wiring, not perfect obedience. Treat live extension
 behavior as a separate proof level.
 
+For a broad daily-use audit, run the aggregate transcript retrospective after
+the deterministic checks:
+
+```bash
+python3 scripts/agent-checks/agent-os-transcript-retrospective.py
+```
+
+Treat signal counts as triage, not verdicts. A phrase such as `done`, `approve`,
+or `what next` can be legitimate in context. Manually inspect representative
+redacted high-signal turns before changing an owner, and never make health
+depend on the presence of local conversation history.
+
 Counted in the score:
 
 - router and behavior evals
@@ -103,6 +116,8 @@ Not counted yet:
 
 - subjective tone quality beyond response-shape fixtures
 - full real Claude-vs-Codex answer comparison
+- full transcript retrospective scans, because history availability, size, and
+  privacy differ by machine
 - live connector quality beyond local probes and on-demand capability checks
 - live Koda retrieval quality, which is run on demand because it depends on the
   current memory service
@@ -225,6 +240,16 @@ A response fixture should check that a meaningful close-out gives Hafiz:
 - recommended next action
 - whether a decision is needed when the next action crosses a gate
 
+For a copy-ready WhatsApp or other outbound message, it should also check the
+parts that are deterministic:
+
+- exactly one fenced plain-text block contains the send-ready message
+- rendered Markdown links and blockquotes do not appear inside that message
+- bare URLs and channel-native formatting can remain intact
+
+The fixture does not decide whether the drafted message says the right thing;
+that remains a content and human-judgment review.
+
 Good:
 
 ```text
@@ -259,6 +284,7 @@ scripts/agent-checks/agent-os-workflow-example-runner.py
 scripts/agent-checks/agent-os-state-fixture-runner.py
 scripts/agent-checks/agent-os-behavior-trace-runner.py
 scripts/agent-checks/agent-os-adapter-readiness.py
+python3 scripts/agent-checks/agent-os-transcript-retrospective.py --self-test
 python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3
 python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90
 scripts/agent-checks/agent-os-health.sh

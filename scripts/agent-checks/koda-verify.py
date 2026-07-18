@@ -17,6 +17,8 @@ import socket
 import platform
 from datetime import datetime, timezone
 
+from koda_contract import ALL_KODA_TOOLS, capability_report
+
 KODA_URL = "https://koda.tutorla.tech/mcp"
 GREEN  = "\033[92m"
 RED    = "\033[91m"
@@ -28,6 +30,116 @@ def ok(msg):    print(f"  {GREEN}✓{RESET} {msg}")
 def fail(msg):  print(f"  {RED}✗{RESET} {msg}"); sys.exit(1)
 def warn(msg):  print(f"  {YELLOW}!{RESET} {msg}")
 def header(msg): print(f"\n{BOLD}{msg}{RESET}")
+
+
+def api_key_status_message(_api_key: str) -> str:
+    """Confirm presence without printing any credential-derived characters."""
+
+    return "KODA_API_KEY is set"
+
+
+def parse_tool_content(response: dict):
+    content = response.get("result", {}).get("content", []) if isinstance(response, dict) else []
+    text = next(
+        (item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"),
+        "",
+    )
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return text
+
+
+def ensure_confirmation_memory(
+    headers: dict,
+    session_id: str,
+    tool_names: set[str],
+    *,
+    machine: str,
+    system_info: str,
+    timestamp: str,
+) -> tuple[str, str]:
+    """Update one setup sentinel, or store it once when none exists."""
+
+    tags = ["umbrella", "koda-setup", "onboarding"]
+    content = (
+        f"Koda setup verified on {timestamp}. "
+        f"Machine: {machine} ({system_info}). "
+        "VS Code + Claude Code + Codex + Koda direct MCP confirmed working."
+    )
+    why = "Staff onboarding verification — confirms Koda is reachable from this machine"
+    search_payload = {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+            "name": "memory_search",
+            "arguments": {
+                "query": "Koda setup verified",
+                "tags": tags,
+                "limit": 10,
+            },
+        },
+        "id": 3,
+    }
+    search_result, _ = post(search_payload, headers, session_id)
+    memories = parse_tool_content(search_result)
+    existing = next(
+        (
+            memory for memory in (memories if isinstance(memories, list) else [])
+            if isinstance(memory, dict)
+            and memory.get("id")
+            and ("koda-setup" in (memory.get("tags") or []) or "Koda setup verified" in (memory.get("content") or ""))
+        ),
+        None,
+    )
+
+    if existing and "memory_update" in tool_names:
+        update_payload = {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+                "name": "memory_update",
+                "arguments": {
+                    "id": existing["id"],
+                    "content": content,
+                    "tags": tags,
+                    "source": "auto-captured",
+                    "why": why,
+                },
+            },
+            "id": 4,
+        }
+        update_result, _ = post(update_payload, headers, session_id)
+        if isinstance(update_result, dict) and "result" in update_result:
+            return str(existing["id"]), "updated"
+        return str(existing["id"]), "already present"
+
+    if existing:
+        return str(existing["id"]), "already present"
+
+    store_payload = {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+            "name": "memory_store",
+            "arguments": {
+                "category": "fact",
+                "content": content,
+                "tags": tags,
+                "source": "auto-captured",
+                "why": why,
+                "project": "sifututor",
+            },
+        },
+        "id": 4,
+    }
+    store_result, _ = post(store_payload, headers, session_id)
+    payload = parse_tool_content(store_result)
+    if isinstance(payload, dict) and payload.get("id"):
+        return str(payload["id"]), "stored"
+    return "unknown", "store failed"
 
 
 def _raw_post(payload: dict, headers: dict, session_id: str = "") -> tuple[str, str, str]:
@@ -84,7 +196,7 @@ def main():
             "    export KODA_API_KEY=<your-key-from-hafiz>\n\n"
             "  Then run: source ~/.zshrc && python3 koda-verify.py"
         )
-    ok(f"KODA_API_KEY is set ({api_key[:8]}...)")
+    ok(api_key_status_message(api_key))
 
     headers = {"Authorization": f"Bearer {api_key}"}
 
@@ -116,13 +228,19 @@ def main():
         {"jsonrpc": "2.0", "method": "tools/list", "id": 2},
         headers, session_id
     )
+    tools = set()
     if isinstance(tools_result, dict) and "result" in tools_result:
         tools = {t["name"] for t in tools_result["result"].get("tools", [])}
-        required = {"memory_store", "memory_search", "memory_context", "session_start"}
-        missing = required - tools
-        if missing:
-            fail(f"Missing tools: {missing}")
-        ok(f"All required tools available ({len(tools)} total)")
+        capabilities = capability_report(tools)
+        if capabilities["missing_required"]:
+            fail(f"Missing required core tools: {', '.join(capabilities['missing_required'])}")
+        for tier, tier_status in capabilities["tiers"].items():
+            if tier_status["missing"]:
+                warn(f"{tier} capability tier partial — missing: {', '.join(tier_status['missing'])}")
+            else:
+                ok(f"{tier} capability tier available")
+        if tools == ALL_KODA_TOOLS:
+            ok(f"Current Koda tool contract available ({len(tools)} total)")
     else:
         warn("Could not list tools — continuing anyway")
 
@@ -132,38 +250,18 @@ def main():
     system_info = f"{platform.system()} {platform.release()}"
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    store_payload = {
-        "jsonrpc": "2.0",
-        "method": "tools/call",
-        "params": {
-            "name": "memory_store",
-            "arguments": {
-                "category": "fact",
-                "content": (
-                    f"Koda setup verified on {timestamp}. "
-                    f"Machine: {machine} ({system_info}). "
-                    f"VS Code + Claude Code + Koda MCP confirmed working."
-                ),
-                "tags": ["umbrella", "koda-setup", "onboarding"],
-                "source": "user-stated",
-                "why": "Staff onboarding verification — confirms Koda MCP is reachable from this machine",
-            },
-        },
-        "id": 3,
-    }
-    store_result, _ = post(store_payload, headers, session_id)
-    if isinstance(store_result, dict) and "result" in store_result:
-        content = store_result["result"].get("content", [{}])
-        mem_text = content[0].get("text", "") if content else ""
-        try:
-            mem_data = json.loads(mem_text)
-            mem_id = mem_data.get("id", "stored")
-        except Exception:
-            mem_id = "stored"
-        ok(f"Confirmation sent — memory {mem_id}")
+    mem_id, action = ensure_confirmation_memory(
+        headers,
+        session_id,
+        tools,
+        machine=machine,
+        system_info=system_info,
+        timestamp=timestamp,
+    )
+    if action == "store failed":
+        warn("Could not store setup confirmation")
     else:
-        err = store_result.get("error", {}).get("message", "unknown") if isinstance(store_result, dict) else str(store_result)
-        warn(f"Could not store confirmation: {err}")
+        ok(f"Confirmation {action} — memory {mem_id}")
 
     # ── Done ─────────────────────────────────────────
     print(f"\n{GREEN}{BOLD}{'='*50}{RESET}")

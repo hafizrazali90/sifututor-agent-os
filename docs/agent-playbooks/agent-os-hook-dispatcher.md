@@ -79,6 +79,8 @@ For a non-trivial prompt, `UserPromptSubmit` can add:
 - required actions,
 - relevant Koda memories,
 - communication defaults,
+- an explanation-first, pre-implementation preview, and one-by-one walkthrough reminder,
+- a compact meaningful-work close-out reminder,
 - standing task access reminder,
 - critical-lane reminder.
 
@@ -90,6 +92,12 @@ Sifututor workflow dispatcher:
 - Selected workflow skill: $product-design.
 - Reason: Prompt is asking for product design...
 ```
+
+Claude receives the same explanation-first, pre-implementation preview, and close-out behavior through the shared
+`.claude/hooks/koda-context-injector.py` prompt bridge. Memory lookup may fail
+silently, but both non-trivial-prompt communication reminders must still be emitted.
+This is adapter parity at the behavior boundary; the two hook mechanisms do
+not need identical internal code.
 
 ## Dispatch Inputs
 
@@ -237,6 +245,8 @@ Run the focused checks first:
 ```bash
 scripts/agent-checks/agent-os-conversation-fixture-runner.py
 scripts/agent-checks/agent-os-eval-runner.py
+scripts/agent-checks/agent-os-response-shape-runner.py
+scripts/agent-checks/agent-os-adapter-readiness.py
 scripts/agent-checks/agent-os-health.sh
 ```
 

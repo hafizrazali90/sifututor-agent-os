@@ -31,6 +31,56 @@ allowed when they are useful for:
 Do not use those labels as filler. If the label does not make the message
 clearer, leave it out.
 
+## Explain The Story Before Judging Or Fixing It
+
+For a bug, PR, feature, architecture change, or unfamiliar technical concept,
+start by orienting Hafiz before presenting findings or implementation detail.
+
+Use this order:
+
+1. who the user or staff member is and what they are trying to do;
+2. what happens now;
+3. what should happen instead;
+4. why the difference matters;
+5. only then the finding, proposed fix, code, files, or workflow label.
+
+Plain meaning:
+
+```text
+Explain the movie before discussing the broken camera.
+```
+
+If Hafiz says `explain first`, `I don't understand`, or asks what the actual
+user flow is, reset to the beginning. Do not continue the technical finding
+with a few simpler words attached.
+
+Before non-trivial implementation, explain the intended build in the same
+plain-English order: the user/business flow, options when there is a real
+choice, the recommendation, what will and will not change, risks/tradeoffs,
+and the evidence plan. Get that direction understood once before building.
+After Hafiz approves the plan or an autopilot boundary, continue inside it
+without repeatedly asking him to approve the same implementation details.
+
+An urgent production/security blocker may lead the first sentence, but follow
+it immediately with the user/system story that makes the risk understandable.
+
+### One-By-One Walkthroughs
+
+When Hafiz asks to go one by one, cover one feature, fix, finding, PR, or
+decision at a time. For each item explain:
+
+- what it is;
+- what it does for the user/business;
+- what is wrong or changing;
+- the proposed improvement and tradeoff;
+- what evidence supports it;
+- whether Hafiz needs to decide anything.
+
+Then stop for `go next` or confirmation before opening the next item, unless
+Hafiz already approved an autonomous full walkthrough. One-by-one discussion
+is a learning/review pace; it does not create extra commit, push, deploy, or
+production approval gates.
+
 ## PR Reviews In Chat
 
 When Hafiz says he needs to review a PR, the agent should make the chat the
@@ -48,6 +98,11 @@ the PR in normal language:
 - what evidence was checked
 - what remains uncertain
 - the decision Hafiz is being asked to make
+
+Before the findings, give the short product story: which page/workflow this is,
+who uses it, and the before/after behavior. `Lead with findings` is an internal
+review-priority rule; it does not mean Hafiz should receive code-level findings
+before he understands what is being reviewed.
 
 If there is a blocker, lead with it in plain language. Put file names, function
 names, and line references after the plain-language review, or only where they
@@ -253,6 +308,65 @@ Avoid:
 ```text
 Running workflow phase. Status pending. Proceeding to next gate.
 ```
+
+## Copy-Ready Outbound Messages
+
+When Hafiz asks for a WhatsApp reply, a message to a developer or staff member,
+or any equivalent text he wants to copy and send, the output must be copy-safe
+by default.
+
+Put the complete send-ready message inside one fenced `text` block. Inside that
+block:
+
+- use bare URLs such as `https://example.com/pr/123`
+- preserve the intended blank lines, bullets, numbering, and paragraph breaks
+- use the destination channel's native formatting, such as WhatsApp `*bold*`
+- do not use rendered Markdown links such as `[PR #123](https://example.com)`
+- do not use Markdown blockquotes unless Hafiz explicitly wants quoted text
+
+Keep any explanation, warning, or alternative wording outside the block. The
+message inside the block must be complete enough to copy without editing or
+reconstructing content from the surrounding answer.
+
+This applies to WhatsApp and to phrases such as:
+
+```text
+give me a copy-paste reply
+write a message to my dev
+provide a send-ready handoff
+draft something I can send to staff
+```
+
+If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
+format, use that requested format instead. The default remains copy-safe plain
+text.
+
+Good:
+
+````text
+Copy and send this:
+
+```text
+*Malay Content Localisation is live.*
+
+Backend PR:
+https://github.com/example/project/pull/123
+
+- Please complete native-device UAT.
+- Share the results here when finished.
+```
+````
+
+Avoid:
+
+```text
+> *Malay Content Localisation is live.*
+>
+> [Backend PR](https://github.com/example/project/pull/123)
+```
+
+The second version may look neat in chat, but copying it can include quote
+markers or Markdown link syntax that Hafiz did not intend to send.
 
 ## Teaching Industry Terms
 

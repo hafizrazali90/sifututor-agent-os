@@ -92,6 +92,12 @@ Release proof says the right version reached the right place.
 
 The agent must report the highest proven state, not the hoped-for state.
 
+Technical UAT or an agent-run user-story walkthrough can prove journey behavior,
+but it is not automatically Hafiz's product acceptance. Call work
+`accepted / closed` only when Hafiz or the named business owner performed or
+explicitly accepted the relevant product/user-story walkthrough. Until then,
+say `journey proof passed; owner acceptance still waiting`.
+
 Examples:
 
 | Do not say | Say instead |
@@ -115,6 +121,46 @@ Recommended next: <next action>.
 This keeps Hafiz from having to translate test output into practical status.
 The agent should say whether work is ready for commit, PR, staging QA, deploy,
 live check, or Hafiz acceptance.
+
+## Evidence Target Identity
+
+Before treating browser, screenshot, staging, or production evidence as proof,
+confirm that the checked target is actually running the intended change.
+
+For local UI work with multiple ports or worktrees, record:
+
+- the exact URL and environment checked;
+- the serving process or dev-server identity;
+- the source checkout/worktree and branch;
+- the commit/SHA or explicit local-dirty state;
+- whether the process was restarted or rebuilt after the change.
+
+For staging or production, record the deployed SHA/version and confirm the
+changed workflow on that environment. A correct-looking screenshot from the
+wrong checkout, stale process, old theme shell, or different port is not proof
+of the current change.
+
+Plain meaning:
+
+```text
+Before judging the picture, prove which version took the picture.
+```
+
+If target identity cannot be proved, report the browser/visual evidence as
+inconclusive and name the strongest code/test evidence that still exists.
+
+## Operational Content Proof
+
+Before publishing staff/customer-facing copy that explains current product
+behavior, verify the current owning source rather than relying on an old chat,
+memory, draft, or one application's UI alone.
+
+For cross-system behavior, name the contract boundary and check every owner
+that contributes to the claim. Examples include SIMS as the operational API,
+Ripple as the customer-facing ledger, and the parent/tutor app as the mobile
+presentation. If those sources disagree, surface and resolve each
+contradiction before drafting the final message. A polished message is not
+evidence that its product claims are current.
 
 ## Agent-As-Tester Rule
 

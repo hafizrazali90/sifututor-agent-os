@@ -6,7 +6,9 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass, field
 import json
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from typing import Any
@@ -17,6 +19,13 @@ PLAYBOOK_DIR = ROOT / "docs" / "agent-playbooks"
 SKILL_DIR = ROOT / ".agents" / "skills"
 CLAUDE_SETTINGS = ROOT / ".claude" / "settings.json"
 CODEX_CONFIG = ROOT / ".codex" / "config.toml"
+GLOBAL_CLAUDE_INSTRUCTIONS = Path.home() / ".claude" / "CLAUDE.md"
+ACTIVE_ADAPTER_INSTRUCTIONS = (
+    GLOBAL_CLAUDE_INSTRUCTIONS,
+    ROOT / "CLAUDE.md",
+    ROOT / "AGENTS.md",
+    ROOT / ".codex" / "config.toml",
+)
 
 
 REQUIRED_PLAYBOOKS = [
@@ -81,11 +90,19 @@ class CheckResult:
     warnings: list[str] = field(default_factory=list)
 
 
-def run_command(command: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def run_command(
+    command: list[str],
+    timeout: int = 120,
+    *,
+    input_text: str | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         command,
         cwd=ROOT,
         text=True,
+        input=input_text,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         timeout=timeout,
@@ -191,6 +208,102 @@ def check_codex_adapter() -> list[CheckResult]:
             warnings=[] if behavior.returncode == 0 else (behavior.stderr or behavior.stdout).splitlines()[-3:],
         )
     )
+    codex_prompt = run_command(
+        [sys.executable, "scripts/agent-checks/codex-lifecycle-hook.py"],
+        input_text=json.dumps(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "prompt": "Save this session for another agent.",
+                "cwd": str(ROOT),
+            }
+        ),
+    )
+    codex_output = codex_prompt.stdout if codex_prompt.returncode == 0 else ""
+    closeout_markers = (
+        "Close-out default:",
+        "Explanation-first default:",
+        "who uses the workflow",
+        "intended build",
+        "evidence plan in English once",
+        "go one by one",
+        "highest proven state",
+        "recommended next action",
+        "whether Hafiz needs to decide",
+    )
+    results.append(
+        CheckResult(
+            id="CX-031",
+            adapter="codex",
+            passed=all(marker in codex_output for marker in closeout_markers),
+            detail="Codex prompt adapter emits the shared communication reminders",
+            warnings=[]
+            if codex_prompt.returncode == 0
+            else (codex_prompt.stderr or codex_prompt.stdout).splitlines()[-3:],
+        )
+    )
+    return results
+
+
+def check_claude_common_runtime() -> list[CheckResult]:
+    credential_assignment = re.compile(
+        r"(?im)^\s*(?:[-*]\s*)?(?:db credentials?|admin login|api key|access token|password)"
+        r"\s*[:=]\s*(?!<|see\b|scoped\b|none\b|not\b)\S+"
+    )
+    instruction_files = [path for path in ACTIVE_ADAPTER_INSTRUCTIONS if path.is_file()]
+    unsafe_instruction_files = [
+        path
+        for path in instruction_files
+        if credential_assignment.search(path.read_text(errors="replace"))
+    ]
+    results = [
+        CheckResult(
+            id="CL-047",
+            adapter="claude",
+            passed=not unsafe_instruction_files,
+            detail="active Claude/Codex instructions contain no credential-shaped assignments",
+            required=bool(instruction_files),
+        )
+    ]
+    detector_self_test = bool(
+        credential_assignment.search("DB credentials: fixture-user / fixture-password")
+    ) and not credential_assignment.search("DB credentials: scoped access registry")
+    results.append(
+        CheckResult(
+            id="CL-049",
+            adapter="claude",
+            passed=detector_self_test,
+            detail="credential-assignment detector catches synthetic values and allows scoped references",
+        )
+    )
+
+    bridge_env = dict(os.environ)
+    bridge_env.pop("KODA_API_KEY", None)
+    bridge = run_command(
+        [sys.executable, ".claude/hooks/koda-context-injector.py"],
+        input_text=json.dumps({"user_prompt": "Please improve this workflow comprehensively"}),
+        env=bridge_env,
+    )
+    bridge_output = bridge.stdout if bridge.returncode == 0 else ""
+    bridge_markers = (
+        "Agent OS close-out reminder",
+        "Agent OS explanation-first reminder",
+        "who uses the workflow",
+        "intended build",
+        "evidence plan in English once",
+        "go one by one",
+        "highest proven state",
+        "recommended next action",
+        "whether Hafiz needs to decide",
+    )
+    results.append(
+        CheckResult(
+            id="CL-048",
+            adapter="claude",
+            passed=all(marker in bridge_output for marker in bridge_markers),
+            detail="Claude prompt bridge emits shared communication guidance without Koda",
+            warnings=[] if bridge.returncode == 0 else (bridge.stderr or bridge.stdout).splitlines()[-3:],
+        )
+    )
     return results
 
 
@@ -235,12 +348,14 @@ def check_developer_claude_adapter(*, strict_project_hooks: bool) -> list[CheckR
     )
 
     projects = project_claude_dirs()
+    product_workspace_present = any((ROOT / project).is_dir() for project in REQUIRED_CLAUDE_PROJECTS)
     results.append(
         CheckResult(
             id="CL-D001",
             adapter="claude",
             passed=bool(projects),
             detail="at least one project-level Claude settings file present",
+            required=product_workspace_present,
         )
     )
 
@@ -299,6 +414,7 @@ def check_developer_claude_adapter(*, strict_project_hooks: bool) -> list[CheckR
             )
         )
 
+    results.extend(check_claude_common_runtime())
     return results
 
 
@@ -384,6 +500,7 @@ def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
             )
         )
 
+    results.extend(check_claude_common_runtime())
     return results
 
 

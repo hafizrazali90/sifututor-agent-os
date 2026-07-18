@@ -48,6 +48,11 @@ and unchecked.
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
   environment when safe credentials and representative data are available.
+- Before counting browser, screenshot, staging, or production evidence, prove
+  the checked target identity. For local UI work, name the URL, serving process,
+  worktree/checkout, branch, commit or local-dirty state, and restart/rebuild
+  state. For deployed work, confirm the deployed SHA/version. A stale port or
+  wrong checkout cannot prove the intended implementation.
 - For `sifu-tutor` UI-visible changes, verify against
   `sifu-tutor/docs/ui-ux/quality-gate.md` in addition to tests. Report which
   SIMS UI/UX docs were followed when the work changes page layout, components,
@@ -109,6 +114,7 @@ Gate 2A:
 - implementation works: yes/no/partial
 - highest proven state: <changed locally | committed locally | ready for commit | ready for PR | deployed to staging | deployed to production | live checked | accepted / closed>
 - proof layers reached: <code proof | journey proof | release proof>
+- target identity: <URL/environment, process, worktree/branch, commit/version, restart/rebuild>
 - TESTING.md row checked: yes/no/not applicable
 - permanent E2E regression: added/updated/not feasible/not user-facing
 - changed user workflows and their permanent E2E files: <list or explicit exception>

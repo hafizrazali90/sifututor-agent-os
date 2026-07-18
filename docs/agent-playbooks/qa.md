@@ -76,6 +76,19 @@ reported symptom.
   `sifu-tutor/docs/ui-ux/review-and-qa-checklist.md` in Codex. QA is incomplete
   if changed modals, dropdowns, disabled controls, dense tables, or empty states
   are skipped without a named blocker.
+- Visual QA must inspect the complete interactive surface, not only the page
+  shell. Check embedded forms, third-party widgets, browser/native controls,
+  submit buttons, focus/hover/disabled/error/loading states, and inherited
+  colors/tokens. A correct surrounding page does not prove an embedded control
+  follows the active design system.
+- Before accepting local browser or screenshot evidence, prove target identity:
+  exact URL, serving process, checkout/worktree, branch, commit or local-dirty
+  state, and restart/rebuild state. For staging/production, confirm the deployed
+  SHA/version. Evidence from a stale port, wrong checkout, or old UI shell is
+  inconclusive even when the screenshot itself looks correct.
+- Technical UAT and agent-run user-story checks prove journey behavior; they do
+  not prove Hafiz's product acceptance. Report these states separately until
+  Hafiz or the named owner completes or explicitly accepts the walkthrough.
 - Agents must not hand off checks that they can safely run themselves. Before
   asking Hafiz, staff, or another human to verify, exhaust the available
   non-destructive evidence channels in this order: automated tests, Playwright
@@ -161,6 +174,9 @@ TESTING.md:
 
 SIMS UI/UX:
 - <docs checked, findings, or not applicable>
+
+Target identity:
+- <URL/environment, process, worktree/branch, commit or local-dirty state, restart/rebuild>
 
 Blockers:
 - none | <list>

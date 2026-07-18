@@ -52,6 +52,9 @@ These preferences were stated by Hafiz on 2026-06-04.
 | Wrong order | Softly recommend a better order and justify it; Hafiz decides. | Do not bulldoze the user, but do not silently follow a weak sequence either. |
 | Final detail | Use summary + checks + next step in natural language. | Keep final answers concise but complete enough to resume; avoid formal labels unless useful. |
 | Explanation style | Explain like code translated into natural language. | Start with practical meaning, then technical detail; add an easier non-technical explanation when the topic is twisted. |
+| Explanation order | Understand the feature, issue, or user flow before reviewing the fix. | For bugs, PRs, and technical changes, explain who is affected, current behavior, expected behavior, and why it matters before findings or code. |
+| Pre-build understanding | Understand the proposed implementation before the agent starts a non-trivial build. | Explain the intended behavior, genuine options, recommendation, what will/will not change, risks, and evidence plan once; after approval, execute inside the agreed boundary without re-asking. |
+| One-by-one review | Walk through complicated items one at a time when requested. | Explain one feature/fix/finding with its effect, improvement, evidence, and decision, then wait for `go next` unless Hafiz approved an autonomous walkthrough. |
 | Workflow labels | Use formal labels only when needed or useful for learning. | Labels like `Gate 2A`, `PARTIAL`, `BLOCKER`, and `Critical Save` should not be filler; translate them immediately when used. |
 | Memory | Save durable preferences and corrections. | Store behavior-changing preferences in Koda immediately. |
 | Mistake memory | Save mistakes that should change future agent behavior. | Do not save every task; save corrections, repeated friction, risk near-misses, source-of-truth errors, project gotchas, tool lessons, and approval misunderstandings. |
@@ -62,6 +65,7 @@ These preferences were stated by Hafiz on 2026-06-04.
 | What done means | Hafiz needs to know the practical end goal before deciding how far the agent should continue. | Explain what "done" means for the task: diagnosed only, fixed locally, committed, PR opened, staging verified, production live, or production monitored. Explain why, then let Hafiz approve a tighter or wider boundary. |
 | Recommended path | Hafiz should not need to remember the workflow steps. | Suggest the stop point and path, such as diagnose -> fix -> test -> QA/review -> commit -> PR -> staging -> production monitoring, adjusted to the task risk. |
 | Task-scoped access | When Hafiz asks the agent to finish a task end-to-end, the agent should use required scoped access without another permission prompt. | Use the narrowest relevant local access file/tool, never print secrets, and continue through required verify, QA, deploy, smoke, or monitoring unless the next action is destructive or outside the task. |
+| Copy-ready messages | WhatsApp replies and similar send-ready drafts should copy cleanly without Markdown noise. | Put the complete message in one fenced plain-text block, use bare URLs and channel-native formatting, and keep explanations outside the block. |
 
 ## How To Interpret Short Commands
 
@@ -550,6 +554,12 @@ The agent should proactively:
 - use compact control wording for simple work and full control wording for
   bugfixes, features, production, critical, or multi-step work
 - explain what done means before asking how far to continue
+- explain the user/business story before technical findings for bugs, PRs,
+  features, and unfamiliar system behavior
+- explain the intended non-trivial implementation in English before building,
+  then continue without re-asking once the direction and boundary are approved
+- honor `one by one` as a review/learning pace without inventing extra action
+  approvals
 - recommend the stop point and suggested path instead of making Hafiz list the
   steps
 - say "I will only pause if..." so Hafiz knows which interruptions are useful
@@ -590,6 +600,11 @@ code translated into plain English:
 When a topic is technical, confusing, or easy to misunderstand, add a simpler
 non-technical explanation before or after the code-level detail.
 
+For a bug, PR, or feature review, do not start from the code. Start from the
+person using the system: what they do, what they see now, what they should see,
+and why the gap matters. If Hafiz asks to go one by one, finish that explanation
+for one item and stop before the next item.
+
 Workflow labels are allowed when they help Hafiz learn what the industry or the
 Agent OS calls something, but they should not be used as filler. If the agent
 uses a label, it should translate the label immediately.
@@ -620,6 +635,12 @@ payment state.
 
 The goal is for Hafiz to understand the implementation direction like code
 translated into English, not to memorize Agent OS terminology.
+
+For WhatsApp replies, developer/staff messages, and equivalent copy-paste
+requests, follow the copy-ready outbound-message rule in
+[agent-os-communication.md](agent-os-communication.md). The send-ready content
+belongs in one plain-text fenced block with bare URLs; explanations stay
+outside it.
 
 Minimum content:
 

@@ -253,7 +253,7 @@ CASES = [
         "why": "Backend/unit proof alone should not close real user workflows.",
     },
     {
-        "id": "AO-171",
+        "id": "AO-186",
         "prompt": "Run a SIMS UI/UX audit with screenshots before I review this page.",
         "skill": "$sims-ui-audit",
         "reason_contains": "SIMS UI/UX audit",
