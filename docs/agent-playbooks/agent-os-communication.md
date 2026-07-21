@@ -341,6 +341,49 @@ If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
 format, use that requested format instead. The default remains copy-safe plain
 text.
 
+### Recipient-Specific PR And Release Close-Out
+
+When an agent reviews or improves someone else's PR and the work reaches a
+meaningful outward state such as pushed, merged, deployed, live checked, or
+accepted, the close-out must identify who needs to receive the result.
+
+Do not ask who the recipients are at the start of every session. Infer them
+from the issue, PR author, reporter, affected user, and current conversation.
+Ask Hafiz only when the intended recipient is genuinely unclear.
+
+Use one message per distinct audience:
+
+| Audience | Message purpose |
+| --- | --- |
+| Staff, reporter, or user | Short, non-technical explanation of what happened, whether it is live, and what they should do next. |
+| Developer whose PR was reviewed or improved | One integrated continuation of their PR that teaches what changed and requests independent verification. |
+
+Separate audiences may receive separate messages. Do not send two disconnected
+messages to the same developer: one generic incident report followed by a
+separate review report makes the relationship to their PR unclear.
+
+The developer message should include, when applicable:
+
+1. the PR or task they originally worked on and what it attempted;
+2. the confirmed staff report, ticket, TREQ, or acceptance context;
+3. what the reviewer kept, changed, or added;
+4. why the final implementation or evidence decision was made;
+5. what the original submission missed or proved too weakly;
+6. the highest final state and the evidence that supports it;
+7. a request for the developer to independently verify the final work and
+   reply with evidence; and
+8. the reusable lesson the developer should add to their own AI checklist.
+
+Be factual and instructional rather than accusatory. Credit correct diagnosis
+or implementation first, then name the missing proof or engineering step
+precisely. Never invent the intake source. If the conversation only confirms a
+staff report and a TREQ, say `original staff report` and `TREQ`; do not infer a
+channel such as Tawk, Planner, email, or WhatsApp from a typo.
+
+This handoff is not a substitute for GitHub evidence, QA, release notes, or
+issue state. It translates the verified engineering record for the people who
+need to act on or learn from it.
+
 Good:
 
 ````text

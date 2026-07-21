@@ -201,6 +201,83 @@ COPY_READY_CASES = [
     },
 ]
 
+RELEASE_HANDOFF_CASES = [
+    {
+        "id": "RH-001",
+        "name": "integrated developer PR close-out",
+        "audiences": ["developer"],
+        "confirmed_sources": ["staff report", "treq"],
+        "text": (
+            "Developer message:\n```text\nHi, update on your PR #1751. We reviewed your "
+            "fix and improved it before merging and deploying it. We added the "
+            "production-shaped TREQ case because the original evidence was incomplete "
+            "and missing permanent browser coverage. The final fix is live and the "
+            "staff report now shows the correct balance. Please independently verify "
+            "the final PR and reply with verification evidence. Add this acceptance, "
+            "related-impact, E2E, and release-proof lesson to your AI checklist.\n```"
+        ),
+        "should_pass": True,
+        "why": "A developer handoff should continue their PR story, teach the delta, and request independent evidence.",
+    },
+    {
+        "id": "RH-002",
+        "name": "generic incident message disconnected from developer PR",
+        "audiences": ["developer"],
+        "confirmed_sources": ["staff report", "treq"],
+        "text": (
+            "Developer message:\n```text\nThe class-count issue is fixed and live. "
+            "The staff report now shows the correct balance.\n```"
+        ),
+        "should_pass": False,
+        "why": "A generic incident result does not tell the developer what review changed, what was missed, or what to verify.",
+    },
+    {
+        "id": "RH-003",
+        "name": "invented Tawk source",
+        "audiences": ["developer"],
+        "confirmed_sources": ["staff report", "treq"],
+        "text": (
+            "Developer message:\n```text\nHi, update on your PR #1751. We reviewed your "
+            "fix and improved it because the original proof was incomplete and missing "
+            "E2E coverage. The Tawk report is now resolved and the final fix is deployed. "
+            "Please independently verify it, reply with verification evidence, and add "
+            "the lesson to your AI checklist.\n```"
+        ),
+        "should_pass": False,
+        "why": "The handoff must not invent a report channel that the confirmed context did not name.",
+    },
+    {
+        "id": "RH-004",
+        "name": "two disconnected messages to one developer",
+        "audiences": ["developer"],
+        "confirmed_sources": ["staff report", "treq"],
+        "text": (
+            "Developer message 1:\n```text\nThe issue is fixed and live.\n```\n"
+            "Developer message 2:\n```text\nWe reviewed your PR and added missing tests. "
+            "Please independently verify and reply with evidence.\n```"
+        ),
+        "should_pass": False,
+        "why": "One developer should receive one integrated continuation, not two disconnected messages.",
+    },
+    {
+        "id": "RH-005",
+        "name": "separate staff and developer audiences",
+        "audiences": ["staff", "developer"],
+        "confirmed_sources": ["staff report", "treq"],
+        "text": (
+            "Staff message:\n```text\nThe class balance issue has been corrected and is "
+            "live. Please try the schedule again and tell us if the number is still wrong.\n```\n"
+            "Developer message:\n```text\nHi, update on your PR #1751. We reviewed your "
+            "fix and improved it before it was merged and deployed. We added the real TREQ "
+            "case because the original evidence was incomplete and missing permanent E2E. "
+            "The final result is live. Please independently verify the final work, reply "
+            "with verification evidence, and add the lesson to your AI checklist.\n```"
+        ),
+        "should_pass": True,
+        "why": "Different audiences should receive separate messages with the right level of detail.",
+    },
+]
+
 EXPLANATION_CASES = [
     {
         "id": "EX-001",
@@ -331,6 +408,51 @@ def copy_ready_violations(text: str) -> list[str]:
     return violations
 
 
+def release_handoff_violations(case: dict[str, object]) -> list[str]:
+    text = str(case["text"])
+    normalized = normalize(text)
+    messages = re.findall(r"```(?:text|plain)?\n(.*?)```", text, flags=re.DOTALL)
+    audiences = [str(audience) for audience in case["audiences"]]
+    violations = []
+
+    if len(messages) != len(audiences):
+        violations.append("expected one copy-ready message per distinct audience")
+
+    if len(audiences) > 1:
+        for audience in audiences:
+            if f"{audience} message" not in normalized:
+                violations.append(f"missing {audience} audience label")
+
+    message_text = normalize(" ".join(messages))
+    confirmed_sources = {
+        normalize(str(source)) for source in case.get("confirmed_sources", [])
+    }
+    source_terms = ("tawk", "planner", "email report", "whatsapp report")
+    for source in source_terms:
+        if source in message_text and source not in confirmed_sources:
+            violations.append(f"unconfirmed report source: {source}")
+
+    if "developer" in audiences:
+        required_groups = {
+            "original PR context": ("your pr", "original pr", "pr #"),
+            "review action": ("we reviewed", "reviewed your", "review changed"),
+            "review delta": ("we added", "we improved", "review changed"),
+            "reason": ("because", "why"),
+            "original gap": ("missing", "missed", "incomplete"),
+            "final state": ("merged", "deployed", "live"),
+            "independent verification": ("independently verify", "please verify"),
+            "verification evidence": ("verification evidence", "reply with evidence"),
+            "AI learning": ("ai checklist", "ai workflow"),
+        }
+        violations.extend(
+            f"missing {name}"
+            for name, markers in required_groups.items()
+            if not any(marker in message_text for marker in markers)
+        )
+
+    return violations
+
+
 def explanation_violations(case: dict[str, object]) -> list[str]:
     normalized = normalize(str(case["text"]))
     if case["kind"] == "explanation_first":
@@ -440,6 +562,22 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
+    for case in RELEASE_HANDOFF_CASES:
+        violations = release_handoff_violations(case)
+        passed_shape = not violations
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if violations:
+                print("  violations: " + ", ".join(violations))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
     for case in EXPLANATION_CASES:
         violations = explanation_violations(case)
         passed_shape = not violations
@@ -456,7 +594,12 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
-    total = len(CASES) + len(COPY_READY_CASES) + len(EXPLANATION_CASES)
+    total = (
+        len(CASES)
+        + len(COPY_READY_CASES)
+        + len(RELEASE_HANDOFF_CASES)
+        + len(EXPLANATION_CASES)
+    )
     passed = total - len(failures)
     print(f"agent-os-response-shape-runner: {passed}/{total} passed")
     if failures:
