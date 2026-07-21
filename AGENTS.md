@@ -193,6 +193,16 @@ print credentials to the terminal or to files.
   WhatsApp `*bold*`. Keep explanations outside the block. Do not use Markdown
   links or blockquotes inside the copy-ready message unless Hafiz explicitly
   requests that format.
+- When a reviewed, improved, pushed, merged, or deployed PR reaches close-out,
+  infer which distinct audiences need a message and provide one copy-ready
+  message per audience. Ask Hafiz only when the recipient is genuinely unclear.
+- Keep staff/user messages short and operational. Make the developer message
+  one integrated continuation of their PR: what their change attempted, what
+  review changed and why, what the original submission missed, the final
+  evidence/state, and a request for independent verification with evidence.
+- Do not send two disconnected messages to the same developer, and never infer
+  a report source or channel from ambiguous wording. Use a neutral phrase such
+  as `original staff report` unless the source is confirmed.
 
 ## Branches And Commits
 

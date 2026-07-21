@@ -61,6 +61,32 @@ that span more than one project.
 - **Links:** [session map playbook](../../agent-playbooks/session-map.md),
   [session map template](../../agent-playbooks/templates/session-map.md)
 
+### AO-LEDGER-001.3 — Add recipient-specific release close-out handoffs
+
+- **Project:** cross-project
+- **Status:** done
+- **Type:** task
+- **Parent:** AO-LEDGER-001
+- **End goal:** Every reviewed, improved, merged, or deployed PR closes with a
+  copy-ready message for each relevant audience without making Hafiz reconstruct
+  the technical story himself.
+- **Why it matters:** Staff need a short operational explanation, while the
+  developer needs one integrated continuation of their PR that explains what
+  review changed, why it changed, what their submission missed, what final
+  evidence passed, and what they must independently verify and teach their AI
+  workflow.
+- **Source:** Hafiz correction during PR #1751 close-out, 2026-07-21
+- **Next action:** Use the rule in the next reviewed or improved PR close-out
+  and refine it only if real-session evidence shows another repeatable gap.
+- **Promote to:** GitHub issue #23; implemented in the shared Agent OS contract,
+  communication/review/release playbooks, and executable response fixtures
+- **Links:** [issue #23](https://github.com/hafizrazali90/sifututor-agent-os/issues/23),
+  [PR #1751](https://github.com/Sifututor/sifu-tutor/pull/1751),
+  [communication owner](../../agent-playbooks/agent-os-communication.md),
+  [review playbook](../../agent-playbooks/review.md),
+  `scripts/agent-checks/agent-os-response-shape-runner.py`, Koda
+  `mem_2421d7aecd53`
+
 ### FINCH-SIMS-001 — Selective Finch↔SIMS integration for Sifu Edu tenant only
 
 - **Project:** cross-project (finch-inbox + ripple-suite + sifu-tutor)

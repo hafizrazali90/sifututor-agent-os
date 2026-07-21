@@ -97,6 +97,7 @@ asks whether work is safe to approve.
 | State confusion | Is the work only changed locally, committed, pushed, PR-open, merged, deployed, live checked, or accepted? | The report implies a higher state than Git/PR/deploy/QA evidence proves. |
 | Critical-lane boundary | Did auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract behavior change? | Read-only diagnosis, approval, reviewer, or safe evidence is missing. |
 | Release communication | Do staff/users need changelog, help text, What's New, or operational notice? | A relevant staff-facing change has no release communication and no reason it is unnecessary. |
+| Recipient handoff | Did review materially improve another developer's PR, or do distinct staff/user and developer audiences need the result? | The close-out omits the relevant audience, sends disconnected messages to one developer, fails to request independent developer verification, or invents an unconfirmed report source. |
 | Generated files | Were generated files edited manually instead of changing the source? | A generated artifact was hand-edited without project rules saying it is human-maintained. |
 | Visible UI quality | If UI changed, does it look coherent and match the project pattern? | The changed UI has obvious layout, copy, state, accessibility, or consistency issues that are in scope or unreported. |
 | Lint/test/flaky checks | Are failures caused by this change, pre-existing, unrelated, or flaky? | Failures caused by the change remain, or unrelated failures are hidden instead of reported and routed. |
@@ -192,12 +193,19 @@ production state changes still require explicit current-session approval.
    `CHANGELOG.md` entry, affected module help updates, and a What's New release
    entry or seed script. If any item is intentionally not needed, the PR or
    final answer must say why.
-10. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
+10. When review materially changes another developer's PR, plan one integrated
+    developer close-out using the Recipient-Specific PR And Release Close-Out
+    section in [agent-os-communication.md](agent-os-communication.md). It must
+    explain the final delta and reasoning, name missing evidence fairly, state
+    the highest proven release state, and request independent verification with
+    evidence. Produce separate messages only for distinct audiences, and use
+    only confirmed report/ticket sources.
+11. For multi-fix sessions, treat a missing or stale Session Release Ledger as a
    review finding. Before push, merge, PR, or deploy, verify every session fix
    is classified as local-only, pushed, PR-open, merged, deployed, or excluded.
-11. Run the Review And Risk Checkpoint before saying the work is safe for the
+12. Run the Review And Risk Checkpoint before saying the work is safe for the
     next state.
-12. Report findings by severity with file and line references where possible.
+13. Report findings by severity with file and line references where possible.
 
 ## PR Chat Output Shape
 

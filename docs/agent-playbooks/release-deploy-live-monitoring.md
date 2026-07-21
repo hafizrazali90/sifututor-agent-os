@@ -112,6 +112,15 @@ Release state:
 - Decision needed: <yes/no and exact decision>.
 ```
 
+After the release state is proven, apply Recipient-Specific PR And Release
+Close-Out from [agent-os-communication.md](agent-os-communication.md). Infer
+the relevant audiences and prepare one copy-ready message per distinct
+audience. If another developer's PR was materially improved, their single
+integrated message must explain the final delta and reasoning, identify what
+the original evidence missed, state the verified release result, and request
+their independent verification with evidence. Use only confirmed ticket or
+report sources.
+
 ## Monitoring Window
 
 Use the smallest honest window:
