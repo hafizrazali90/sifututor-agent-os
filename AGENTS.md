@@ -120,7 +120,7 @@ Use it only as read-only reference.
 Before declaring that a credential, tool, or infrastructure check is unavailable,
 consult `docs/agent-playbooks/agent-access-map.md`. It documents all approved
 access lanes with tier, allowed operations, Hafiz approval requirement, and a safe
-verification command for each. The current registry has 21 lanes: 20 scoped
+verification command for each. The current registry has 22 lanes: 21 scoped
 agent-access conf files plus the Microsoft 365 read-only env lane.
 
 Wrapper scripts for common checks live in `scripts/agent-access/`:
