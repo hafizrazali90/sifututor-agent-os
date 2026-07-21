@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 21 lanes — 20 scoped files under
+Current registry count: 22 lanes — 21 scoped files under
 `~/.config/sifututor/agent-access/` plus the Microsoft 365 read-only env lane at
 `~/.config/sifututor/m365-readonly.env`.
 
@@ -351,6 +351,36 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 
 ---
 
+### 22. `ripple-staging-smoke` — Ripple Staging Authenticated Luna QA
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `ripple-staging-smoke.conf` |
+| **Base URL** | `https://ripple-staging.tutorla.tech` |
+| **Purpose** | Reusable authenticated staging QA with separate Luna Superadmin and restricted identities |
+| **Tier** | write on staging only |
+| **Hafiz approval** | Required before authenticated journeys that create or change staging data; read-only login and GET checks may be reused after the task boundary is approved |
+| **Safe verification** | `scripts/agent-access/check-ripple-staging-auth.sh` |
+| **Allowed operations** | Luna staging login, role/permission checks, temporary conversation creation and mode selection, dashboard/settings redaction checks, Eval access checks; clean up temporary rows |
+| **Session cache** | Playwright auth states may be cached only under the external mode-700 `agent-access/runtime/` directory; files must be mode 600, revalidated through `/api/auth/me`, and expire from reuse after 15 minutes |
+| **Forbidden** | Never use on production; never print or commit credentials, cookies, or tokens; never send a paid AI request unless separately approved; never leave temporary conversations or Eval runs behind |
+
+Expected variable names:
+
+```bash
+RIPPLE_STAGING_BASE_URL=...
+RIPPLE_STAGING_SUPERADMIN_EMAIL=...
+RIPPLE_STAGING_SUPERADMIN_PASSWORD=...
+RIPPLE_STAGING_RESTRICTED_EMAIL=...
+RIPPLE_STAGING_RESTRICTED_PASSWORD=...
+```
+
+Set `RIPPLE_STAGING_FORCE_RELOGIN=1` for the first smoke after changing either
+QA credential or Ripple role/permission assignment. Respect the login limiter;
+do not restart the app or bypass the control to force an immediate run.
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -367,6 +397,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | `backup-readonly` | `backup-readonly.conf` | auto-read | Never |
 | `wasabi-ripple-storage-scoped` (reads) | `wasabi-ripple-storage-scoped.conf` | auto-read | Never |
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
+| `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
 | `server-ssh` (writes) | `server-ssh.conf` | write | Yes — state command |
@@ -390,6 +421,7 @@ never print secret values.
 | `agent-access-doctor.sh` | All lanes — connectivity and config presence |
 | `check-st-admin-cert.sh` | SSL cert for `st.admin.sifututor.my` (expiry, issuer, SANs) |
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
+| `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |
