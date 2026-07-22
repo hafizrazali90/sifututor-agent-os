@@ -90,7 +90,7 @@ that span more than one project.
 ### AO-DELEGATION-001 — Operationalize Codex-to-Claude Max delegation
 
 - **Project:** cross-project
-- **Status:** active
+- **Status:** done
 - **Type:** mission
 - **Parent:** none
 - **End goal:** Codex can delegate repository-heavy implementation, testing,
@@ -103,25 +103,24 @@ that span more than one project.
 - **Source:** Hafiz correction and approval, 2026-07-21. Parent CF #1768,
   Ripple Luna #201, referral #1718, and the Billing Guide supplemental pilot
   supplied the implementation evidence.
-- **Current state:** Hafiz approved the smallest implementation packet, now
-  owned by GitHub issue #25 and the isolated
-  `feat/claude-delegation-watchdog` worktree. Local proof is complete: the
-  existing handoff/autonomous/runtime owners define the contract; the runner
-  proves Claude Max auth, safe ignored runtime paths, worktree ownership, and
+- **Current state:** The smallest implementation packet is complete through
+  GitHub issue #25 and merged PR #26 at `7adfa8f`. The existing
+  handoff/autonomous/runtime owners define the contract; the runner proves
+  Claude Max auth, safe ignored runtime paths, worktree ownership, and
   metadata-only evidence; nine deterministic worker fixtures pass; the real
   local Max preflight passes; and the full Agent OS validation reaches 254/254.
-  The 14-file packet is committed locally on
-  `feat/claude-delegation-watchdog` and is not pushed. Independent Codex review
-  and all normal approval gates remain. Quantitative net Codex savings remain
-  unavailable and must not be estimated.
-- **Next action:** Ask Hafiz whether to push the local commit to GitHub.
-- **Do not do yet:** Do not push, merge, deploy, mutate production, add a new
-  skill/blocking hook, or mix Luna product follow-ups into this Agent OS
-  implementation without a new exact approval.
+  Independent Codex review and all normal approval gates remain part of the
+  workflow. Quantitative net Codex savings remain unavailable and must not be
+  estimated.
+- **Next action:** None required. Tune thresholds or reporting only when future
+  real pilots provide evidence that a change is needed.
+- **Do not do yet:** Do not add automatic merge/deploy, a new skill/blocking
+  hook, or Luna product follow-ups without a separate issue and approval.
 - **Promote to:** Promoted to umbrella GitHub issue #25 on 2026-07-22.
 - **Links:** `.agent-os/session-maps/2026-07-21-225940-codex-claude-three-pilot-reconciliation.md`,
   Koda `mem_61f13ce52269`, Koda `mem_5dd96ba87cf4`,
-  https://github.com/hafizrazali90/sifututor-agent-os/issues/25
+  https://github.com/hafizrazali90/sifututor-agent-os/issues/25,
+  https://github.com/hafizrazali90/sifututor-agent-os/pull/26
 
 ### FINCH-SIMS-001 — Selective Finch↔SIMS integration for Sifu Edu tenant only
 
