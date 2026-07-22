@@ -78,8 +78,11 @@
     "scripts/agent-checks/agent-os-validation-loop.py",
     "scripts/agent-checks/agent-os-scenario-lab-runner.py",
     "scripts/agent-checks/agent-os-behavior-trace-runner.py",
+    "scripts/agent-checks/agent-os-claude-delegation.py",
+    "scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py",
     "scripts/agent-checks/agent-os-koda-retrieval-quality.py",
     "scripts/agent-checks/agent-os-adapter-readiness.py",
+    "docs/agent-playbooks/templates/claude-delegation-job.json",
     "docs/agent-playbooks/templates/live-evidence-probe-report.md",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/workflow-doctor.sh"

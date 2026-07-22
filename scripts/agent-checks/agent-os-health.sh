@@ -114,6 +114,9 @@ check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parit
 check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-validation-loop.py"
 check_file "Agent OS scenario lab" "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py"
 check_file "Agent OS behavior trace" "$ROOT/scripts/agent-checks/agent-os-behavior-trace-runner.py"
+check_file "Claude delegation runner" "$ROOT/scripts/agent-checks/agent-os-claude-delegation.py"
+check_file "Claude delegation fixtures" "$ROOT/scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py"
+check_file "Claude delegation template" "$ROOT/docs/agent-playbooks/templates/claude-delegation-job.json"
 check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py"
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
@@ -296,6 +299,16 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-behavior-trace.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-behavior-trace.out $TMP_DIR/agent-os-behavior-trace.err
+
+if "$ROOT/scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py" >$TMP_DIR/agent-os-claude-delegation.out 2>$TMP_DIR/agent-os-claude-delegation.err; then
+  claude_delegation_summary="$(tail -1 $TMP_DIR/agent-os-claude-delegation.out 2>/dev/null || true)"
+  pass "Claude delegation fixtures" "${claude_delegation_summary:-passed}"
+else
+  fail "Claude delegation fixtures" "preflight/watchdog/evidence fixtures failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-claude-delegation.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-claude-delegation.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-claude-delegation.out $TMP_DIR/agent-os-claude-delegation.err
 
 if "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py" >$TMP_DIR/agent-os-adapter-readiness.out 2>$TMP_DIR/agent-os-adapter-readiness.err; then
   adapter_readiness_summary="$(tail -1 $TMP_DIR/agent-os-adapter-readiness.out 2>/dev/null || true)"
