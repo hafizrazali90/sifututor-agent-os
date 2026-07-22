@@ -52,6 +52,10 @@ CHECKS = [
     Check("conversation fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-conversation-fixture-runner.py"))),
     Check("parity fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-parity-fixture-runner.py"))),
     Check("behavior traces", (sys.executable, str(SCRIPT_DIR / "agent-os-behavior-trace-runner.py"))),
+    Check(
+        "Claude delegation fixtures",
+        (sys.executable, str(SCRIPT_DIR / "agent-os-claude-delegation-fixture-runner.py")),
+    ),
     Check("adapter readiness", (sys.executable, str(SCRIPT_DIR / "agent-os-adapter-readiness.py"))),
     Check("workflow examples", (sys.executable, str(SCRIPT_DIR / "agent-os-workflow-example-runner.py"))),
     Check("scenario lab", (sys.executable, str(SCRIPT_DIR / "agent-os-scenario-lab-runner.py"), "--target", "0.90")),

@@ -87,6 +87,42 @@ that span more than one project.
   `scripts/agent-checks/agent-os-response-shape-runner.py`, Koda
   `mem_2421d7aecd53`
 
+### AO-DELEGATION-001 — Operationalize Codex-to-Claude Max delegation
+
+- **Project:** cross-project
+- **Status:** active
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Codex can delegate repository-heavy implementation, testing,
+  QA, review, and approved release work to Claude Max to reduce Codex usage,
+  while preserving or improving quality, approval safety, visibility, and
+  independent verification.
+- **Why it matters:** Hafiz has an available Claude Max subscription and wants
+  to use it efficiently without allowing background work to stop silently or
+  lowering product/release confidence.
+- **Source:** Hafiz correction and approval, 2026-07-21. Parent CF #1768,
+  Ripple Luna #201, referral #1718, and the Billing Guide supplemental pilot
+  supplied the implementation evidence.
+- **Current state:** Hafiz approved the smallest implementation packet, now
+  owned by GitHub issue #25 and the isolated
+  `feat/claude-delegation-watchdog` worktree. Local proof is complete: the
+  existing handoff/autonomous/runtime owners define the contract; the runner
+  proves Claude Max auth, safe ignored runtime paths, worktree ownership, and
+  metadata-only evidence; nine deterministic worker fixtures pass; the real
+  local Max preflight passes; and the full Agent OS validation reaches 254/254.
+  The 14-file packet is committed locally on
+  `feat/claude-delegation-watchdog` and is not pushed. Independent Codex review
+  and all normal approval gates remain. Quantitative net Codex savings remain
+  unavailable and must not be estimated.
+- **Next action:** Ask Hafiz whether to push the local commit to GitHub.
+- **Do not do yet:** Do not push, merge, deploy, mutate production, add a new
+  skill/blocking hook, or mix Luna product follow-ups into this Agent OS
+  implementation without a new exact approval.
+- **Promote to:** Promoted to umbrella GitHub issue #25 on 2026-07-22.
+- **Links:** `.agent-os/session-maps/2026-07-21-225940-codex-claude-three-pilot-reconciliation.md`,
+  Koda `mem_61f13ce52269`, Koda `mem_5dd96ba87cf4`,
+  https://github.com/hafizrazali90/sifututor-agent-os/issues/25
+
 ### FINCH-SIMS-001 — Selective Finch↔SIMS integration for Sifu Edu tenant only
 
 - **Project:** cross-project (finch-inbox + ripple-suite + sifu-tutor)

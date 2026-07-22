@@ -170,6 +170,29 @@ When a loop makes things worse:
 
 ## Progress Reporting
 
+### Delegated Worker Progress
+
+When a bounded packet is delegated to Claude, use the Claude Max supervision
+path in `handoff.md` instead of spending Codex/Claude tokens asking the worker
+whether it is still alive.
+
+- The local watchdog heartbeat owns process visibility.
+- `working_silent` means alive and quiet; it is not automatically failure.
+- `stalled` means the configured no-output threshold was crossed; it is an
+  alert for the supervising Codex/human, not permission to restart.
+- `waiting_setup` means authentication, trust, or MCP preparation must be fixed
+  before a fresh launch.
+- A live worktree lock prevents two workers from editing the same worktree,
+  even when their human lane-owner labels differ.
+- Usage is copied only when the Claude stream exposes counters; otherwise it is
+  recorded as `unavailable`.
+- Claude's handback is builder evidence. Independent Codex review remains the
+  acceptance step.
+
+Use the normal user-facing progress cadence for meaningful phase changes and
+real interventions. The heartbeat itself is machine state and should not spam
+Hafiz's chat.
+
 Keep progress updates short.
 
 Use this shape:
