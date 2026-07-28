@@ -11,24 +11,50 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Type:** mission
 - **Parent:** none
 - **End goal:** SIMS database records, uploaded files, and server/account configuration have separate off-server backups, monitored retention, and proven restore paths without filling the production disk.
-- **Why it matters:** The 2026-07-12 local cPanel backup filled the production disk and disrupted WHM and every mobile API surface. The current design discussion has selected six-hour database backups, Wasabi as primary with OneDrive temporarily secondary, tiered database retention, and daily incremental upload backup plus a weekly account/configuration backup.
+- **Why it matters:** The 2026-07-12 and 2026-07-19 local cPanel backups filled the production disk and disrupted WHM, Redis-backed application work, logging, and API/control-panel availability. The current design uses six-hour database backups, Wasabi as primary with OneDrive temporarily secondary, tiered database retention, and daily incremental upload backups while off-server account/configuration recovery is completed.
 - **Source:** Hafiz and Codex SIMS backup design discussion, 2026-07-13.
-- **Next action:** Slices 0–4 and disk-monitoring Slice 7 are merged, deployed, smoke-checked, and monitored in production; Slice 7 closed at `375b62b95` through PR #1714. The live disk check reports the expected 81% warning, its BetterStack heartbeat passed controlled failure/recovery proof, the uploaded-file backup heartbeat is believed up, and the future configuration/full-account heartbeats remain paused to avoid false alerts. On 2026-07-18, production database backup credentials were restored enough for the official `db:backup --no-email --no-onedrive --keep-local` path to verify a Wasabi backup, but the database backup BetterStack heartbeat URL returned 404 and the BetterStack API listed zero heartbeats. Resolve `SIMS-BACKUP-DR-001.1` before treating database backup monitoring as healthy. Resume one separately approved remaining slice under #1697: Slice 5 configuration package, Slice 6 full-account package, or Slice 8 retention/restore work. Keep live-file optimization in child mission `SIMS-BACKUP-DR-001.A1` as future design work.
+- **Next action:** Core mission is done. All layered lanes (database, uploads, account home, configuration, account metadata) and the composed recovery point are deployed and proven on production as of 2026-07-28: `recovery-point:compose` succeeded (run `01KYKQTJBJBA0TMGPQ633GAR4Y`), all 7 components verified (6 `remote_verified`, plus `secret_recovery` `verified`), and the remote manifest/runtime objects were independently exact-version GET/HEAD verified (checksum/size, GOVERNANCE retention to 2026-10-26). All 6 BetterStack heartbeats and 3 endpoint monitors are unpaused and `up`. Getting there required 3 real fixes discovered only by running the deployed command for the first time: a scoped Wasabi IAM `GetObjectVersion` addition (database/uploads credentials), #1811/PR #1813 (account_metadata freshness threshold, cron-grounded), and #1816/PR #1817 (secret_recovery freshness threshold, a weaker/borrowed assumption per independent review, plus a production evidence-file reference-scheme correction). Documentation-only PR #1820 saved both required production-smoke reports without redeploying runtime code. Remaining work is follow-up, not core-mission-blocking: see `SIMS-BACKUP-DR-001.2` (progress telemetry), `SIMS-BACKUP-DR-001.3` (database credential scope tightening), and existing `SIMS-BACKUP-DR-001.A1` (live-file optimization). Queue-worker mutex backlog from the original July 19 incident is unrelated and still needs a separate approved repair.
 - **Promote to:** PRD
-- **Links:** `sifu-tutor/docs/features/backup-disaster-recovery/prd.md`, `sifu-tutor/docs/features/backup-disaster-recovery/build-prompts.md`, `Sifututor/sifu-tutor#1697`, `Sifututor/sifu-tutor#1698`, Koda `mem_a62330809b28`, Koda `mem_7433526c84fc`
+- **Links:** `sifu-tutor/docs/features/backup-disaster-recovery/prd.md`, `sifu-tutor/docs/features/backup-disaster-recovery/build-prompts.md`, `Sifututor/sifu-tutor#1697`, `Sifututor/sifu-tutor#1698`, `Sifututor/sifu-tutor#1811`, `Sifututor/sifu-tutor#1816`, `Sifututor/sifu-tutor#1820`, Koda `mem_a62330809b28`, Koda `mem_18d2c2d5068b`, Koda `mem_286b4aed36fe`, Koda `mem_7433526c84fc`
 
-### SIMS-BACKUP-DR-001.1 — Restore SIMS Database Backup Heartbeat Monitor
+### SIMS-BACKUP-DR-001.1 — Prove SIMS Backup Scheduler And Heartbeat Recovery
 
 - **Project:** sifu-tutor
-- **Status:** paused
+- **Status:** done
 - **Type:** task
 - **Parent:** SIMS-BACKUP-DR-001
-- **End goal:** The production database backup command can create and verify a Wasabi backup and successfully deliver its BetterStack heartbeat.
-- **Why it matters:** The backup command now verifies the remote backup, but the configured BetterStack heartbeat endpoint returns 404. Without a live heartbeat monitor, a silent missed backup may not alert the team.
-- **Source:** Codex production backup credential repair, 2026-07-18.
-- **Next action:** Create or restore a BetterStack heartbeat for SIMS production database backups, update `/root/.config/sifututor/agent-access/betterstack-sims-db-backup-heartbeat.conf` with the new heartbeat URL using mode 600, then rerun `php artisan db:backup --no-email --no-onedrive --keep-local --run-id=01KXRKZFRKASP2W5D8FZ37S7EJ` or a fresh run and confirm `heartbeat_result` is sent.
+- **End goal:** The scheduled production database and uploaded-file backup commands create and remotely verify fresh Wasabi recovery points and keep their BetterStack heartbeats healthy after the July 19 disk-full incident.
+- **Why it matters:** The latest database and uploaded-file manifests are remote-verified and recorded sent heartbeats, but later scheduled cycles were missed during the disk-full/Redis incident, leaving both BetterStack monitors down. Without fresh scheduler proof, a silent missed backup may not alert the team.
+- **Source:** Codex production backup credential repair and July 19 disk-full recovery, 2026-07-18 to 2026-07-19.
+- **Next action:** None — closed 2026-07-28. All 6 BetterStack heartbeats (Database, Uploads, Disk, Account Home, Configuration, Composed Recovery) confirmed `up` and unpaused; all 3 endpoint monitors `up`. No monitor created or deleted.
 - **Promote to:** GitHub issue
-- **Links:** BetterStack heartbeat API docs; production proof run `01KXRKZFRKASP2W5D8FZ37S7EJ`
+- **Links:** BetterStack heartbeat API docs; production proof run `01KXRKZFRKASP2W5D8FZ37S7EJ`; final proof run `01KYKQTJBJBA0TMGPQ633GAR4Y`
+
+### SIMS-BACKUP-DR-001.2 — Safe Upload-Backup Progress Telemetry
+
+- **Project:** sifu-tutor
+- **Status:** triaged
+- **Type:** research
+- **Parent:** SIMS-BACKUP-DR-001
+- **End goal:** Operators can read processed-objects count, total, percentage, and ETA for a running upload backup without listing filenames, exposing secrets, running a second heavy scan, or keeping an AI session actively polling for hours.
+- **Why it matters:** The July 19 supervised upload run's rclone log stayed empty because stats were emitted below the configured log level, leaving only a time-based estimate during a multi-hour operation. There was no safe way to check live progress without re-scanning or exposing more than intended.
+- **Source:** SIMS backup production close-out session, 2026-07-28.
+- **Next action:** Design a small mode-600 status record or sanitized monitoring metric (processed/total/percentage/ETA only), define update frequency and cleanup, and preserve the existing low CPU/bandwidth safety limits. Related Agent OS lesson: multi-hour external operations should use a background/recheck workflow instead of an agent session actively polling in real time; a request to "stop watching" should stop only the watcher, not the underlying production job, unless explicitly asked.
+- **Promote to:** GitHub issue
+- **Links:** none yet
+
+### SIMS-BACKUP-DR-001.3 — Tighten Database Backup Credential IAM Scope
+
+- **Project:** sifu-tutor
+- **Status:** triaged
+- **Type:** task
+- **Parent:** SIMS-BACKUP-DR-001
+- **End goal:** The `sims-production-backup-uploader` Wasabi IAM policy is scoped to `sims/database/*` only, matching its description, instead of the current broader `sims/*`.
+- **Why it matters:** Discovered while diagnosing composed recovery on 2026-07-28: this credential's resource scope already covered all of `sims/*` before this session touched anything. This session only added `s3:GetObjectVersion` to the existing scope per Hafiz's explicit approval and did not widen it further, but the pre-existing breadth itself does not match least-privilege intent and should be tightened separately.
+- **Source:** SIMS backup production close-out session, 2026-07-28.
+- **Next action:** Confirm no other automation depends on this credential reading outside `sims/database/*`, then narrow the IAM policy's resource ARNs to `sims/database/*` only, and re-prove the database backup lane still succeeds.
+- **Promote to:** GitHub issue
+- **Links:** none yet
 
 ### SIMS-BACKUP-DR-001.A1 — Audit And Optimize SIMS Live File Storage
 
