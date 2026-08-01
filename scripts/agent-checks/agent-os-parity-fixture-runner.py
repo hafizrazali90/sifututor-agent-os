@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import re
 
@@ -201,7 +202,41 @@ BEHAVIOR_FIXTURES = [
         "scenario": "workflow improvement request",
         "snippets": ["Agent OS Improvement Loop", "classify the mistake", "connected docs"],
     },
+    {
+        "id": "BP-014",
+        "scenario": "a required check cannot be run in this session",
+        "snippets": [
+            "report it as not run",
+            "never claim an exact state that was not observed",
+            "unrun",
+        ],
+    },
+    {
+        "id": "BP-015",
+        "scenario": "worktree/branch/issue identity before staging",
+        "snippets": [
+            "worktree, branch, and issue/PR identity",
+            "before staging",
+            "Ordinary discussion does not need this step",
+        ],
+    },
 ]
+
+
+# Claude adapters whose installed presence can be spot-checked when a Claude
+# adapter root is supplied. Real enforcement of the installed adapter *content*
+# lives in agent-os-claude-adapter-check.py; this runner only proves that a
+# Claude alias promised by the docs is not markdown-only.
+#
+# This is deliberately opt-in: repo fixtures must stay portable across machines
+# and CI, so they must not depend unconditionally on a developer's home
+# directory. Supply --claude-adapter-root or CLAUDE_ADAPTER_HOME to enable it.
+CLAUDE_ADAPTER_SKILLS = {
+    "Task Router": "task-router",
+    "Commit": "commit",
+    "Save Session": "save-session",
+    "Workflow Improvement": "workflow-improvement",
+}
 
 
 def read(path: Path) -> str:
@@ -316,7 +351,89 @@ def check_behavior_fixtures(texts: dict[str, str]) -> list[str]:
     return errors
 
 
-def run(verbose: bool = False) -> int:
+def check_installed_claude_adapters(adapter_root: Path) -> list[str]:
+    """Confirm each promised Claude adapter exists under the supplied root.
+
+    Closes the "alias exists only in markdown" gap without hard-coding a
+    developer home: the caller decides which adapter root to inspect.
+    """
+    errors = []
+    for workflow_name, skill_dir in sorted(CLAUDE_ADAPTER_SKILLS.items()):
+        skill_path = adapter_root / "skills" / skill_dir / "SKILL.md"
+        if not skill_path.is_file():
+            errors.append(
+                f"{workflow_name}: docs promise a Claude adapter but no installed "
+                f"skill file exists at {skill_path}"
+            )
+    return errors
+
+
+ADAPTER_SELF_TEST_CASES = [
+    {
+        "name": "complete adapter root passes",
+        "present": sorted(CLAUDE_ADAPTER_SKILLS.values()),
+        "expect_errors": False,
+    },
+    {
+        "name": "markdown-only workflow-improvement alias fails",
+        "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "workflow-improvement"],
+        "expect_errors": True,
+        "expect_substring": "workflow-improvement",
+    },
+    {
+        "name": "missing save-session adapter fails",
+        "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "save-session"],
+        "expect_errors": True,
+        "expect_substring": "save-session",
+    },
+    {
+        "name": "empty adapter root fails for every promised adapter",
+        "present": [],
+        "expect_errors": True,
+        "expect_substring": "task-router",
+    },
+]
+
+
+def run_adapter_self_test() -> int:
+    """Portable self-test for check_installed_claude_adapters.
+
+    Uses synthetic temp roots so the negative case is permanent and does not
+    depend on any real machine state.
+    """
+    import tempfile
+
+    all_ok = True
+    print("agent-os-parity-fixture-runner -- installed Claude adapter self-test (synthetic roots)")
+    for case in ADAPTER_SELF_TEST_CASES:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            for skill_dir in case["present"]:
+                skill_path = root / "skills" / skill_dir / "SKILL.md"
+                skill_path.parent.mkdir(parents=True, exist_ok=True)
+                skill_path.write_text("synthetic self-test fixture\n")
+            errors = check_installed_claude_adapters(root)
+
+        problems = []
+        if bool(errors) != case["expect_errors"]:
+            problems.append(f"expected errors={case['expect_errors']}, got {errors}")
+        expect_substring = case.get("expect_substring")
+        if expect_substring and not any(expect_substring in error for error in errors):
+            problems.append(f"expected an error mentioning {expect_substring!r}, got {errors}")
+
+        status = "PASS" if not problems else "FAIL"
+        print(f"{status} {case['name']}")
+        for problem in problems:
+            print(f"  - {problem}")
+        if problems:
+            all_ok = False
+
+    overall = "PASS" if all_ok else "FAIL"
+    print(f"adapter self-test: {overall} ({len(ADAPTER_SELF_TEST_CASES)} cases)")
+    return 0 if all_ok else 1
+
+
+def run(verbose: bool = False, claude_adapter_root: Path | None = None) -> int:
     required_files = (PARITY_CONTRACT, SKILL_REGISTRY, EVAL_DOC, COVERAGE_MAP, AGENTS, HEALTH)
     missing_files = [path for path in required_files if not path.is_file()]
     if missing_files:
@@ -341,6 +458,14 @@ def run(verbose: bool = False) -> int:
     failures.extend(check_supporting_docs(texts))
     failures.extend(check_behavior_fixtures(texts))
 
+    adapter_note = "installed Claude adapter presence: not checked (no adapter root supplied)"
+    if claude_adapter_root is not None:
+        adapter_failures = check_installed_claude_adapters(claude_adapter_root)
+        failures.extend(adapter_failures)
+        adapter_note = (
+            f"installed Claude adapter presence: checked against {claude_adapter_root}"
+        )
+
     if verbose or failures:
         for failure in failures:
             print(f"FAIL {failure}")
@@ -360,14 +485,38 @@ def run(verbose: bool = False) -> int:
         f"{checked}/{checked} workflows and "
         f"{behavior_checked}/{behavior_checked} behavior fixtures passed"
     )
+    print(f"agent-os-parity-fixture-runner: {adapter_note}")
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Agent OS Claude/Codex parity fixture checks.")
     parser.add_argument("--verbose", action="store_true", help="print detailed parity fixture output")
+    parser.add_argument(
+        "--claude-adapter-root",
+        help=(
+            "optional Claude adapter root (for example ~/.claude) to confirm that "
+            "documented Claude aliases exist as installed skill files. Defaults to "
+            "the CLAUDE_ADAPTER_HOME environment variable when set; otherwise the "
+            "check is skipped so this runner stays portable."
+        ),
+    )
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help=(
+            "run the portable synthetic-root self-test for the installed Claude "
+            "adapter presence check instead of the repo parity checks"
+        ),
+    )
     args = parser.parse_args()
-    return run(verbose=args.verbose)
+
+    if args.self_test:
+        return run_adapter_self_test()
+
+    root_value = args.claude_adapter_root or os.environ.get("CLAUDE_ADAPTER_HOME")
+    adapter_root = Path(root_value).expanduser() if root_value else None
+    return run(verbose=args.verbose, claude_adapter_root=adapter_root)
 
 
 if __name__ == "__main__":

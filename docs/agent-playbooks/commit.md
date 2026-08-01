@@ -20,7 +20,34 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 
 ## Before Staging
 
-1. Run the shared guard from the project:
+1. Confirm the target identity before touching the index:
+
+   ```text
+   Worktree:
+   Branch:
+   Issue/PR this work belongs to:
+   ```
+
+   Run the safe discovery when tools are available:
+
+   ```bash
+   git rev-parse --show-toplevel
+   git status --short --branch
+   git worktree list
+   ```
+
+   If a command cannot be run in this session, name it and report it as not
+   run. Do not state an exact worktree, branch, or clean/dirty state that was
+   not actually observed.
+
+   This matters most when more than one worktree, branch, agent, or issue is in
+   play. Use [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md)
+   for the fuller stranded-work check before push, PR, merge, deploy, or save.
+
+   This step is for real commit preparation. Ordinary discussion, workflow
+   explanation, or a question about a past commit does not need it.
+
+2. Run the shared guard from the project:
 
    ```bash
    ../scripts/agent-checks/pre-commit-guard.sh
@@ -32,9 +59,9 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    scripts/agent-checks/pre-commit-guard.sh
    ```
 
-2. Read workflow state:
+3. Read workflow state:
    - state-file projects: `.claude/tasks/active.json` and referenced task file
-3. Confirm required `verify`, `qa`, `regression_test`, `review`, or
+4. Confirm required `verify`, `qa`, `regression_test`, `review`, or
    `defect_analysis` steps are complete for the route.
    - For user-facing feature, bugfix, hotfix, or small-change work, confirm the
      permanent E2E regression decision is complete: added, updated, or not
@@ -43,7 +70,7 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
      confirm the exact permanent E2E file that covers it. If any changed
      workflow has no permanent E2E and no explicit accepted exception, stop
      before commit.
-4. Confirm release communication for staff-facing changes before staging:
+5. Confirm release communication for staff-facing changes before staging:
    - `CHANGELOG.md` has a plain-English entry for what changed.
    - Relevant module help content in `src/modules/<module>/lib/help.ts` is
      updated when staff need new guidance, changed wording, or changed steps.
@@ -55,18 +82,18 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    - If the changelog or release-note artifact is generated in that project,
      edit the source-of-truth release note or generator input instead of
      hand-editing generated output.
-5. If the session contains multiple fixes, update the Session Release Ledger
+6. If the session contains multiple fixes, update the Session Release Ledger
    and confirm no intended fix is stranded on another branch or local-only
    commit.
-6. Apply the Review And Risk Checkpoint from [review.md](review.md). Plain
+7. Apply the Review And Risk Checkpoint from [review.md](review.md). Plain
    meaning: before saving the commit, confirm the change is scoped, evidenced,
    honest about state, not hiding critical-lane risk, not missing relevant
    release communication, and not confusing multi-fix session state.
-7. Apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain meaning: before
+8. Apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain meaning: before
    committing, make one final honesty pass over scope, proof, missing evidence,
    state, approval boundary, and recommended next action.
-8. Review `git status --short`, `git diff`, and `git diff --staged`.
-9. Ask the user to approve the exact staged file list unless already approved.
+9. Review `git status --short`, `git diff`, and `git diff --staged`.
+10. Ask the user to approve the exact staged file list unless already approved.
 
 ## Message Format
 

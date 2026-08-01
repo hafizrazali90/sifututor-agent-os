@@ -381,8 +381,567 @@ EXPLANATION_CASES = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Save-session close-out shape (2026-08-01 issue-30 correction).
+#
+# These fixtures are grounded in the four real failures found by the live
+# VS Code extension retest: the save level was never chosen, the honest ending
+# state was never named, a required guard was silently omitted instead of being
+# reported as unrun, and repo/worktree identity was asserted without discovery.
+#
+# The rules below are deliberately marker-based rather than broad regex, so
+# ordinary prose is not rejected for wording alone.
+# ---------------------------------------------------------------------------
+
+SAVE_LEVEL_MARKERS = ("quick save", "normal save", "critical save")
+ENDING_STATE_MARKERS = ("ending state", "current state:")
+ENDING_STATE_VALUES = ("continue", "save only", "park", "hand off", "close")
+GUARD_SUBJECT_MARKERS = ("guard", "pre-commit", "checks")
+GUARD_STATUS_MARKERS = ("passed", "failed", "not run", "unverified", "could not run")
+REPO_IDENTITY_MARKERS = ("worktree", "branch")
+KODA_WRITE_MARKERS = ("koda: stored", "koda: updated", "stored in koda", "saved to koda")
+PROJECT_TAG_MARKERS = (
+    "project tag",
+    "sifututor",
+    "codex-parity",
+    "sifu-tutor",
+    "ripple-suite",
+    "sifututor_tutor",
+    "sifututor_parent",
+    "lls",
+    "lls-frontend",
+    "lls-mobile",
+    "creative-hub",
+    "team-inbox",
+    "finch-inbox",
+)
+NEXT_ACTION_MARKERS = ("recommended next", "next action", "next step")
+
+# A named unrun check contradicts a blanket "everything passed" claim. Both
+# lists are short and literal so valid prose is not caught by accident.
+UNRUN_MARKERS = ("not run", "could not run", "unable to run", "unverified")
+BLANKET_CLAIM_MARKERS = (
+    "all checks passed",
+    "everything passed",
+    "fully verified",
+    "everything is verified",
+)
+
+# 2026-08-01 issue-30 acceptance correction: connected save-session
+# behaviors that response shape alone previously did not check at all --
+# a Session Map "not needed" claim with no discovery step, a save report
+# with no active-task line, and a Koda-unavailable claim with no named
+# fallback all passed the old marker set.
+SESSION_MAP_NOT_NEEDED_MARKERS = (
+    "session map: not needed",
+    "session map not needed",
+    "session map: none needed",
+)
+SESSION_MAP_SEARCH_MARKERS = (
+    ".agent-os/session-maps",
+    "checked the session map location",
+    "searched the session map location",
+    "no matching session map",
+    "no active session map found",
+    "found no session map",
+)
+MEANINGFUL_SAVE_LEVEL_MARKERS = ("normal save", "critical save")
+ACTIVE_TASK_LABEL_MARKERS = ("active task:",)
+
+# 2026-08-01 TEST 3 rerun failures: a save report is allowed to say "not
+# checked" for a source it never inspected, but the Mission Ledger and
+# remote-branch facts are required-discovery items, not optional ones --
+# saying they were left unchecked/unverified is itself the violation, not an
+# excuse. This is a narrow, explicit-phrase check, not a blanket "must
+# always mention Mission Ledger/remote state" requirement.
+MISSION_LEDGER_UNCHECKED_MARKERS = (
+    "mission ledger: not checked",
+    "mission ledger not checked",
+    "mission ledger: unknown",
+    "mission ledger relevance unknown",
+    "mission ledger was not checked",
+    "did not check the mission ledger",
+    "left the mission ledger unchecked",
+)
+REMOTE_BRANCH_CARRIED_FORWARD_MARKERS = (
+    "carried forward, not re-checked",
+    "carried-forward, not re-checked",
+    "not re-checked this turn",
+    "carried forward from an earlier turn",
+    "treat that specific fact as carried-forward",
+)
+KODA_UNAVAILABLE_MARKERS = (
+    "koda unavailable",
+    "koda mcp unavailable",
+    "koda: not run",
+    "koda not run",
+    "koda failed",
+    "koda save failed",
+)
+
+# 2026-08-01 independent-review correction: merely naming "workspace helper"
+# or the helper path is not evidence the fallback was actually used -- the
+# original SV-015 text named the helper while explicitly saying it "was not
+# used," and still passed. Detection must distinguish three honest shapes:
+# the helper was actually used (read-only), no helper/MCP exists and an
+# honest fallback artifact/path was named instead, or neither happened.
+#
+# 2026-08-01 second independent-review correction: a generic "used the
+# workspace helper" claim does not prove which helper operation ran, and
+# "used scripts/agent-checks/koda health" is not evidence of the required
+# search/dedup lookup at all -- `koda health` calls
+# `koda_health_check(write=True)` and updates the dedicated health memory;
+# it is a write, not a read-only search. Only phrases that name the
+# search/read operation specifically count as use evidence now.
+KODA_FALLBACK_USE_MARKERS = (
+    "scripts/agent-checks/koda search",
+    "used the helper's search path",
+    "used the helper's read path",
+    "used the helper's read-only path",
+    "performed a read-only koda lookup through the approved helper",
+)
+KODA_FALLBACK_ARTIFACT_MARKERS = (
+    "handoff note",
+    "repo doc note",
+    "fallback saved in",
+)
+KODA_FALLBACK_NEGATION_MARKERS = (
+    "not used",
+    "was not used",
+    "did not use",
+    "declined to use",
+    "skipped the helper",
+)
+# Deliberately excludes a bare "no helper" marker: "no approved workspace
+# helper is available" is a legitimate case-4 statement (no permitted helper
+# exists), not a claim that an available helper was skipped. Conflating the
+# two would wrongly reject an honest no-helper-plus-fallback-artifact report.
+
+SAVE_SESSION_CASES = [
+    {
+        "id": "SV-001",
+        "name": "honest save with an unrun guard",
+        "text": (
+            "SESSION SAVED - Sifututor Agent OS. Normal Save. Worktree: "
+            "agent-os-claude-parity-phase-one on branch "
+            "chore/agent-os-claude-parity-phase-one, dirty with the ten approved "
+            "files. Guards: pre-commit-guard.sh not run, because commands were "
+            "prohibited in this session. Koda: stored with the sifututor project "
+            "tag. Session Map: current. Active task: none. Mission Ledger: no "
+            "new follow-up. Ending state: Save Only. Recommended next action: "
+            "approve running the shared guard."
+        ),
+        "should_pass": True,
+        "why": "An unrunnable check must be named and labeled unrun, not dropped.",
+    },
+    {
+        "id": "SV-002",
+        "name": "guard actually run and passed",
+        "text": (
+            "SESSION SAVED - Sifututor Agent OS. Critical Save. Worktree and "
+            "branch confirmed by git status: chore/agent-os-claude-parity-phase-one, "
+            "seven files modified. Guards: the shared pre-commit guard passed. "
+            "Koda: stored with the codex-parity project tag. Session Map: "
+            "updated. Active task: none. Mission Ledger: skipped. Ending "
+            "state: Hand Off. Recommended next: Codex independent review."
+        ),
+        "should_pass": True,
+        "why": "A complete save names level, repo identity, guard result, tag, ending state, and next action.",
+    },
+    {
+        "id": "SV-003",
+        "name": "no save level chosen",
+        "text": (
+            "SESSION SAVED. Worktree and branch confirmed. Guards: pre-commit "
+            "guard passed. Koda: stored with the sifututor project tag. Ending "
+            "state: Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "The save level tells the next agent how much of the close-out contract applies.",
+    },
+    {
+        "id": "SV-004",
+        "name": "no honest ending state",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "Without an ending state, Hafiz cannot tell whether the work is closed, parked, or handed off.",
+    },
+    {
+        "id": "SV-005",
+        "name": "guard silently omitted",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Koda: stored with the sifututor project tag. Ending state: "
+            "Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "The 2026-08-01 retest failure: the shared guard was never named at all, run or not.",
+    },
+    {
+        "id": "SV-006",
+        "name": "repo identity never established",
+        "text": (
+            "SESSION SAVED. Normal Save. Guards: pre-commit guard not run. "
+            "Koda: stored with the sifututor project tag. Ending state: Save "
+            "Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "The 2026-08-01 retest failure: the save never named the worktree or branch it applied to.",
+    },
+    {
+        "id": "SV-007",
+        "name": "blanket pass claim beside a named unrun check",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. All checks passed. The live extension retest was not run. "
+            "Koda: stored with the sifututor project tag. Ending state: Close. "
+            "Recommended next action: none."
+        ),
+        "should_pass": False,
+        "why": "Saying everything passed while naming an unrun check overclaims proven state.",
+    },
+    {
+        "id": "SV-008",
+        "name": "Koda write with no project tag",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored a lesson "
+            "tagged agent-os and workflow. Ending state: Save Only. Recommended "
+            "next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "A domain tag such as agent-os is not a project tag; every memory needs one.",
+    },
+    {
+        "id": "SV-009",
+        "name": "project tag cannot hide inside another word",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored a lesson "
+            "about workflow skills tagged agent-os. Ending state: Save Only. "
+            "Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "The project tag lls must not match as a substring inside the unrelated word skills.",
+    },
+    {
+        "id": "SV-010",
+        "name": "Session Map not needed without discovery",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: not needed. Active task: "
+            "none. Ending state: Close. Recommended next action: none."
+        ),
+        "should_pass": False,
+        "why": (
+            "The 2026-08-01 acceptance failure: an existing Session Map was missed "
+            "because 'not needed' was asserted without ever searching for one."
+        ),
+    },
+    {
+        "id": "SV-011",
+        "name": "Session Map not needed with discovery stated",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: not needed; checked the "
+            "session map location under .agent-os/session-maps and found no "
+            "matching session map. Active task: none. Ending state: Close. "
+            "Recommended next action: none."
+        ),
+        "should_pass": True,
+        "why": "A 'not needed' claim is honest once the search was actually stated.",
+    },
+    {
+        "id": "SV-012",
+        "name": "Normal Save missing active-task status",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Ending state: Save "
+            "Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": "A meaningful save must say the active task and next step, or explicitly say none.",
+    },
+    {
+        "id": "SV-013",
+        "name": "Normal Save with explicit active-task none",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Active task: none. "
+            "Ending state: Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": True,
+        "why": "Explicitly saying active task: none satisfies the honest-reporting requirement.",
+    },
+    {
+        "id": "SV-014",
+        "name": "Koda unavailable without naming the fallback",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda unavailable this "
+            "session. Session Map: current. Active task: none. Ending state: "
+            "Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "The 2026-08-01 acceptance gap: Koda was reported unavailable with no "
+            "named fallback path, so the reader cannot tell if a documented "
+            "workaround was even considered."
+        ),
+    },
+    {
+        "id": "SV-015",
+        "name": "Koda unavailable and helper named but deliberately not used",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda unavailable this "
+            "session; the approved documented workspace helper "
+            "scripts/agent-checks/koda was not used because this was a "
+            "search/read-only dry run. Session Map: current. Active task: "
+            "none. Ending state: Save Only. Recommended next action: review "
+            "the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "2026-08-01 independent-review defect: naming the helper while "
+            "explicitly saying it was not used contradicts the corrected "
+            "adapter, which requires using the helper's search/read path for "
+            "a dry run when it is available/permitted. Mentioning the helper "
+            "name is not evidence it was actually used."
+        ),
+    },
+    {
+        "id": "SV-016",
+        "name": "Koda unavailable and helper's search/read path actually used",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda MCP unavailable "
+            "this session; used the documented workspace helper "
+            "scripts/agent-checks/koda search for a read-only lookup, and "
+            "the result is reported honestly here. No memory was stored or "
+            "updated, because this was a search/read-only dry run. Session "
+            "Map: current. Active task: none. Ending state: Save Only. "
+            "Recommended next action: review the diff."
+        ),
+        "should_pass": True,
+        "why": (
+            "The true positive control: the helper's search/read path was "
+            "actually used, the result is reported honestly, and no store/"
+            "update happened because it was a dry run."
+        ),
+    },
+    {
+        "id": "SV-017",
+        "name": "Koda unavailable, no permitted helper, honest fallback artifact named",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda unavailable this "
+            "session, and no approved workspace helper is available in this "
+            "environment. Koda save failed: fallback saved in a handoff note "
+            "instead. Session Map: current. Active task: none. Ending state: "
+            "Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": True,
+        "why": (
+            "When neither MCP nor a permitted helper exists, naming the "
+            "honest fallback artifact/path is still valid, per save-session.md's "
+            "fallback path."
+        ),
+    },
+    {
+        "id": "SV-018",
+        "name": "Koda unavailable and only the helper's health operation ran",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda MCP unavailable "
+            "this session; ran scripts/agent-checks/koda health to confirm "
+            "connectivity. Session Map: current. Active task: none. Ending "
+            "state: Save Only. Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "2026-08-01 second independent-review defect: `koda health` calls "
+            "koda_health_check(write=True) and updates the dedicated health "
+            "memory. It is a write, not the required read-only search/dedup "
+            "lookup, so it must not count as fallback-use evidence."
+        ),
+    },
+    {
+        "id": "SV-019",
+        "name": "Koda unavailable with a generic unspecified helper-use claim",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda unavailable this "
+            "session; used the workspace helper. Session Map: current. "
+            "Active task: none. Ending state: Save Only. Recommended next "
+            "action: review the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "A generic 'used the workspace helper' claim does not say which "
+            "operation ran; it could mean health, store, update, or search. "
+            "Only an explicit search/read-operation claim counts as evidence."
+        ),
+    },
+    {
+        "id": "SV-020",
+        "name": "Mission Ledger reported as not checked",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Active task: none. "
+            "Mission Ledger: not checked this turn. Ending state: Save Only. "
+            "Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "2026-08-01 TEST 3 rerun failure: the Mission Ledger is a required "
+            "discovery item, not an optional one -- reporting it as unchecked "
+            "is the violation, not a valid honest answer."
+        ),
+    },
+    {
+        "id": "SV-021",
+        "name": "Mission Ledger actually checked and reported",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Active task: none. "
+            "Mission Ledger: checked the relevant project ledger; no new "
+            "follow-up is warranted. Ending state: Save Only. Recommended "
+            "next action: review the diff."
+        ),
+        "should_pass": True,
+        "why": "Actually checking the ledger and reporting a concrete outcome satisfies the requirement.",
+    },
+    {
+        "id": "SV-022",
+        "name": "remote-branch state reported as carried-forward instead of fresh",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Active task: none. "
+            "Push: not re-checked this turn, so treat that specific fact as "
+            "carried-forward from an earlier turn. Ending state: Save Only. "
+            "Recommended next action: review the diff."
+        ),
+        "should_pass": False,
+        "why": (
+            "2026-08-01 TEST 3 rerun failure: fresh reconciled Git state was "
+            "requested; reusing an earlier turn's remote-branch fact instead "
+            "of reverifying it now is the violation."
+        ),
+    },
+    {
+        "id": "SV-023",
+        "name": "remote-branch state freshly reverified this turn",
+        "text": (
+            "SESSION SAVED. Normal Save. Worktree and branch confirmed by git "
+            "status. Guards: pre-commit guard passed. Koda: stored with the "
+            "sifututor project tag. Session Map: current. Active task: none. "
+            "Push: verified fresh this turn via git ls-remote; no remote "
+            "branch exists yet. Ending state: Save Only. Recommended next "
+            "action: review the diff."
+        ),
+        "should_pass": True,
+        "why": "Freshly reverifying remote-branch state this turn satisfies the requirement.",
+    },
+]
+
+
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", value.lower()).strip()
+
+
+def contains_project_tag(text: str) -> bool:
+    """Match a project tag as a token, not as part of another word."""
+    return any(
+        re.search(rf"(?<![a-z0-9_]){re.escape(marker)}(?![a-z0-9_])", text)
+        for marker in PROJECT_TAG_MARKERS
+    )
+
+
+def save_session_violations(case: dict[str, object]) -> list[str]:
+    normalized = normalize(str(case["text"]))
+    violations = []
+
+    if not any(marker in normalized for marker in SAVE_LEVEL_MARKERS):
+        violations.append("missing save level")
+
+    has_ending_label = any(marker in normalized for marker in ENDING_STATE_MARKERS)
+    has_ending_value = any(value in normalized for value in ENDING_STATE_VALUES)
+    if not (has_ending_label and has_ending_value):
+        violations.append("missing honest ending state")
+
+    has_guard_subject = any(marker in normalized for marker in GUARD_SUBJECT_MARKERS)
+    has_guard_status = any(marker in normalized for marker in GUARD_STATUS_MARKERS)
+    if not (has_guard_subject and has_guard_status):
+        violations.append("missing guard/check status (including 'not run')")
+
+    if not any(marker in normalized for marker in REPO_IDENTITY_MARKERS):
+        violations.append("missing worktree/branch identity")
+
+    if any(marker in normalized for marker in KODA_WRITE_MARKERS):
+        if not contains_project_tag(normalized):
+            violations.append("Koda write without a project tag")
+
+    if not any(marker in normalized for marker in NEXT_ACTION_MARKERS):
+        violations.append("missing recommended next action")
+
+    if any(marker in normalized for marker in UNRUN_MARKERS) and any(
+        marker in normalized for marker in BLANKET_CLAIM_MARKERS
+    ):
+        violations.append("blanket pass claim despite a named unrun check")
+
+    if any(marker in normalized for marker in SESSION_MAP_NOT_NEEDED_MARKERS):
+        if not any(marker in normalized for marker in SESSION_MAP_SEARCH_MARKERS):
+            violations.append(
+                "Session Map claimed not needed without stating a search of "
+                "the relevant session-map location"
+            )
+
+    if any(marker in normalized for marker in MEANINGFUL_SAVE_LEVEL_MARKERS):
+        if not any(marker in normalized for marker in ACTIVE_TASK_LABEL_MARKERS):
+            violations.append("missing explicit active-task status ('active task: ...' or 'active task: none')")
+
+    if any(marker in normalized for marker in MISSION_LEDGER_UNCHECKED_MARKERS):
+        violations.append(
+            "Mission Ledger reported as not checked/unknown instead of actually "
+            "being inspected before reporting"
+        )
+
+    if any(marker in normalized for marker in REMOTE_BRANCH_CARRIED_FORWARD_MARKERS):
+        violations.append(
+            "remote-branch/push state reported as carried-forward/stale instead "
+            "of freshly reverified this turn"
+        )
+
+    if any(marker in normalized for marker in KODA_UNAVAILABLE_MARKERS):
+        helper_negated = any(marker in normalized for marker in KODA_FALLBACK_NEGATION_MARKERS)
+        helper_used = any(marker in normalized for marker in KODA_FALLBACK_USE_MARKERS)
+        artifact_named = any(marker in normalized for marker in KODA_FALLBACK_ARTIFACT_MARKERS)
+        if helper_negated:
+            violations.append(
+                "Koda unavailable and the workspace helper was explicitly not "
+                "used; the corrected adapter requires using the helper's "
+                "search/read path for a dry run when it is available/permitted"
+            )
+        elif not (helper_used or artifact_named):
+            violations.append(
+                "Koda reported unavailable without evidence the workspace "
+                "helper's search/read path was actually used, or naming an "
+                "honest fallback artifact/path"
+            )
+
+    return violations
 
 
 def missing_groups(text: str) -> list[str]:
@@ -578,6 +1137,22 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
+    for case in SAVE_SESSION_CASES:
+        violations = save_session_violations(case)
+        passed_shape = not violations
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if violations:
+                print("  violations: " + ", ".join(violations))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
     for case in EXPLANATION_CASES:
         violations = explanation_violations(case)
         passed_shape = not violations
@@ -598,6 +1173,7 @@ def run(verbose: bool = False) -> int:
         len(CASES)
         + len(COPY_READY_CASES)
         + len(RELEASE_HANDOFF_CASES)
+        + len(SAVE_SESSION_CASES)
         + len(EXPLANATION_CASES)
     )
     passed = total - len(failures)

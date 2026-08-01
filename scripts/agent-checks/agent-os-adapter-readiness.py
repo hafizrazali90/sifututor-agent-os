@@ -504,6 +504,80 @@ def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
     return results
 
 
+def check_claude_installed_adapter() -> list[CheckResult]:
+    """Run the phase-one installed-adapter check against the REAL ~/.claude files.
+
+    This complements check_claude_adapter/check_developer_claude_adapter,
+    which only inspect repo-tracked marker files: this check reads the actual
+    installed global CLAUDE.md, task-router, commit, save-session, and
+    workflow-improvement adapter bodies that govern live Claude behavior on
+    this machine. A documented alias with no installed file is a hard failure
+    here. Phase-one scope plus the 2026-08-01 issue-30 correction only -- see
+    agent-os-claude-adapter-check.py's module docstring.
+    """
+    proc = run_command(
+        [sys.executable, "scripts/agent-checks/agent-os-claude-adapter-check.py", "--json"]
+    )
+    warnings: list[str] = []
+    passed = proc.returncode == 0
+    try:
+        payload = json.loads(proc.stdout)
+        passed = bool(payload.get("passed")) and proc.returncode == 0
+        if not passed:
+            for result in payload.get("results", []):
+                for error in result.get("errors", []):
+                    warnings.append(f"{result.get('adapter')}: {error}")
+    except json.JSONDecodeError:
+        passed = False
+        warnings.append((proc.stderr or proc.stdout or "no output").strip()[-500:])
+
+    return [
+        CheckResult(
+            id="CL-050",
+            adapter="claude",
+            passed=passed,
+            detail=(
+                "installed Claude global adapters pass the phase-one "
+                "linkage/drift check (CLAUDE.md, task-router, commit, "
+                "save-session, and workflow-improvement skills; a missing "
+                "installed file fails here; not full parity)"
+            ),
+            warnings=warnings[:10],
+        )
+    ]
+
+
+def check_claude_installed_adapter_self_test() -> list[CheckResult]:
+    """Run agent-os-claude-adapter-check.py's own durable synthetic-fixture
+    self-test, so readiness/health fail if the checker's negation-scoping
+    logic itself regresses -- even while the real installed adapters happen
+    to look safe. This is distinct from CL-050, which checks the actual
+    installed adapter files. Phase-one scope only.
+    """
+    proc = run_command(
+        [sys.executable, "scripts/agent-checks/agent-os-claude-adapter-check.py", "--self-test"]
+    )
+    passed = proc.returncode == 0
+    warnings: list[str] = []
+    if not passed:
+        warnings.append((proc.stdout or proc.stderr or "no output").strip()[-2000:])
+
+    return [
+        CheckResult(
+            id="CL-051",
+            adapter="claude",
+            passed=passed,
+            detail=(
+                "installed-adapter checker's own synthetic-fixture self-test "
+                "passes (proves the negation-scoping/detection logic itself "
+                "across all five checked adapters, including the save-session "
+                "and workflow-improvement correction fixtures; phase one only)"
+            ),
+            warnings=warnings[:10],
+        )
+    ]
+
+
 def check_optional_live_claude(require_live: bool) -> list[CheckResult]:
     live = run_command(
         [
@@ -604,6 +678,8 @@ def main() -> int:
     results.extend(check_shared_core())
     results.extend(check_codex_adapter())
     results.extend(check_claude_adapter(strict_project_hooks=args.strict_project_hooks))
+    results.extend(check_claude_installed_adapter())
+    results.extend(check_claude_installed_adapter_self_test())
     if args.live_claude or args.require_live_claude:
         results.extend(check_optional_live_claude(require_live=args.require_live_claude))
     return summarize(results, args.json)

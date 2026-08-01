@@ -63,14 +63,39 @@ Every memory must include:
 
 - `category`: `decision`, `lesson`, `rule`, `preference`, or `fact`
 - `source`: `user-stated`, `auto-captured`, or `correction`
-- at least one project tag, usually `sifututor`
+- at least one project tag from the approved project list below
 - a short `why` explaining why future sessions need it
 
-For Agent OS memories, prefer tags such as:
+## Project Tags Versus Domain Tags
+
+These are two different things. Every memory needs a project tag. Domain tags
+are optional extras that never replace it.
+
+| Tag kind | Purpose | Required? | Allowed values |
+| --- | --- | --- | --- |
+| Project tag | Says which product or workspace the lesson belongs to. | Yes, at least one. | The project list in [save-session.md](save-session.md): `sifu-tutor`, `ripple-suite`, `sifututor_tutor`, `sifututor_parent`, `lls`, `lls-frontend`, `lls-mobile`, `creative-hub`, `team-inbox`, `finch-inbox`, `sifututor`, `codex-parity`. |
+| Domain tag | Says what the lesson is about. | No, but usually helpful. | Free-form topic tags such as `agent-os`, `router`, `workflow`, `memory`, `guardrails`, `koda`, `payment`, `qa`. |
+
+For umbrella Agent OS work that is not owned by one product, use `sifututor`
+or `codex-parity` as the project tag.
+
+Plain meaning:
+
+```text
+A domain tag such as agent-os, payment, or qa is not a project tag. A memory
+tagged only agent-os is missing its required project tag.
+```
+
+`umbrella` is not a valid project tag. Do not invent new project tags; if a new
+project genuinely needs one, add it to the save-session project list first.
+
+For Agent OS memories, a good tag set looks like:
 
 ```text
 sifututor, agent-os, router, workflow, memory, guardrails, koda
 ```
+
+Here `sifututor` is the required project tag and the rest are domain tags.
 
 ## Source Selection
 
@@ -224,8 +249,10 @@ Git stores the proof.
 
 New Agent OS memories should prefer sharper tags:
 
-- project tag, such as `sifututor`
+- project tag, such as `sifututor` (required; see Project Tags Versus Domain
+  Tags above)
 - domain tag, such as `agent-os`, `payment`, `qa`, `router`, or `koda`
+  (optional; never a substitute for the project tag)
 - lifecycle tag, such as `lifecycle-active`, `lifecycle-superseded`,
   `lifecycle-stale`, or `lifecycle-archived`
 - risk tag, such as `risk-critical`, `risk-normal`, or `risk-low`

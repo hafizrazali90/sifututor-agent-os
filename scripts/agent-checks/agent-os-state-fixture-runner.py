@@ -171,8 +171,117 @@ CASES = [
 ]
 
 
+# 2026-08-01 issue-30 acceptance correction: a close-out can name the right
+# state words (checked above) while still stating a Git dirty-file total that
+# disagrees with the actual enumerated file list -- the exact live failure
+# from this session's own transcript. These cases are generic synthetic
+# paths, not issue #30's real files, so the fixture stays reusable.
+NUMBER_WORDS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+    "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+}
+COUNT_WORD_PATTERN = "|".join(sorted(NUMBER_WORDS, key=len, reverse=True))
+
+GIT_COUNT_CASES = [
+    {
+        "id": "GC-001",
+        "name": "aggregate total contradicts enumerated evidence",
+        "porcelain": [
+            " M scripts/example/module-a.py",
+            " M scripts/example/module-b.py",
+            " M scripts/example/module-c.py",
+            " M scripts/example/module-d.py",
+            " M scripts/example/module-e.py",
+            " M scripts/example/module-f.py",
+            " M scripts/example/module-g.py",
+            "?? scripts/example/module-h.py",
+        ],
+        "report_text": (
+            "Dirty state: six modified plus one untracked path, nothing "
+            "currently staged."
+        ),
+        "should_pass": False,
+        "why": (
+            "The report undercounts: git porcelain enumerates seven modified "
+            "paths, but the close-out claims six."
+        ),
+    },
+    {
+        "id": "GC-002",
+        "name": "aggregate total matches enumerated evidence",
+        "porcelain": [
+            " M scripts/example/module-a.py",
+            " M scripts/example/module-b.py",
+            " M scripts/example/module-c.py",
+            " M scripts/example/module-d.py",
+            " M scripts/example/module-e.py",
+            " M scripts/example/module-f.py",
+            " M scripts/example/module-g.py",
+            "?? scripts/example/module-h.py",
+        ],
+        "report_text": (
+            "Dirty state: seven modified plus one untracked path, matching "
+            "the enumerated file list, nothing currently staged."
+        ),
+        "should_pass": True,
+        "why": "The stated total agrees with the enumerated evidence, so the aggregate is proven.",
+    },
+]
+
+
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", value.lower()).strip()
+
+
+def parse_count_token(token: str) -> int | None:
+    if token.isdigit():
+        return int(token)
+    return NUMBER_WORDS.get(token.lower())
+
+
+def enumerated_git_counts(porcelain_lines: list[str]) -> tuple[int, int]:
+    modified = sum(1 for line in porcelain_lines if line[:2] in (" M", "M ", "MM"))
+    untracked = sum(1 for line in porcelain_lines if line.startswith("??"))
+    return modified, untracked
+
+
+def claimed_git_counts(text: str) -> tuple[int | None, int | None]:
+    normalized = normalize(text)
+    modified = None
+    untracked = None
+    modified_match = re.search(
+        rf"(\d+|{COUNT_WORD_PATTERN})\s+modified", normalized
+    )
+    if modified_match:
+        modified = parse_count_token(modified_match.group(1))
+    untracked_match = re.search(
+        rf"(\d+|{COUNT_WORD_PATTERN})\s+untracked", normalized
+    )
+    if untracked_match:
+        untracked = parse_count_token(untracked_match.group(1))
+    return modified, untracked
+
+
+def validate_git_count_case(case: dict) -> tuple[bool, list[str]]:
+    errors: list[str] = []
+    enum_modified, enum_untracked = enumerated_git_counts(case["porcelain"])
+    claimed_modified, claimed_untracked = claimed_git_counts(case["report_text"])
+
+    if claimed_modified is None:
+        errors.append("report does not state a modified-file count")
+    elif claimed_modified != enum_modified:
+        errors.append(
+            f"claimed {claimed_modified} modified but porcelain enumerates {enum_modified}"
+        )
+
+    if claimed_untracked is None:
+        errors.append("report does not state an untracked-file count")
+    elif claimed_untracked != enum_untracked:
+        errors.append(
+            f"claimed {claimed_untracked} untracked but porcelain enumerates {enum_untracked}"
+        )
+
+    return not errors, errors
 
 
 def has_negated_phrase(text: str, phrase: str) -> bool:
@@ -265,8 +374,24 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
-    passed = len(CASES) - len(failures)
-    print(f"agent-os-state-fixture-runner: {passed}/{len(CASES)} passed")
+    for case in GIT_COUNT_CASES:
+        passed_shape, errors = validate_git_count_case(case)
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if errors:
+                print("  errors: " + "; ".join(errors))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
+    total = len(CASES) + len(GIT_COUNT_CASES)
+    passed = total - len(failures)
+    print(f"agent-os-state-fixture-runner: {passed}/{total} passed")
     if failures:
         print("failed: " + ", ".join(failures))
         return 1
