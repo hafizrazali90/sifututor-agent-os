@@ -76,8 +76,28 @@ questions, decisions, evidence, and stopping points match.
 | Session Map | `/session-map` or natural-language update | `$session-map` | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
 | Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
 | Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
-| Workflow Improvement | `/workflow-improvement` later or natural-language workflow improvement | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
+| Workflow Improvement | `/workflow-improvement` (installed global Claude adapter skill) | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
 | SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
+
+### A Listed Adapter Must Actually Be Installed
+
+A Claude command name in this table is a claim that the adapter exists on the
+machine, not a plan.
+
+```text
+If this contract or the skill registry names a Claude adapter, the installed
+adapter file must exist and must point at the shared playbook. An alias that
+exists only in markdown is parity drift, not parity.
+```
+
+Real installed-path enforcement lives in
+`scripts/agent-checks/agent-os-claude-adapter-check.py`, which reads the actual
+global adapter files, and in its readiness wiring. Repo-only fixtures cannot
+prove this on their own, because they must stay portable across machines and
+CI.
+
+If a Claude adapter is genuinely not built yet, say so in this table as an
+explicit stated exception. Do not list the command as if it were live.
 
 ## Product Design Special Case
 
@@ -135,6 +155,9 @@ expecting every model/tool to expose identical UI.
 | Real sessions still omit a usable close-out | Transcript retrospective found both adapters often checked work but left Hafiz to ask what remains or what next. | Keep the shared close-out contract in the communication owner, inject the same compact reminder through both prompt adapters, and protect it with response-shape fixtures. |
 | Agents explain findings before the user story | Real transcripts repeatedly show Hafiz asking what the feature/issue actually is, what the user does, and to review one item at a time. | Keep explanation order in the communication/review owners, inject the same explanation-first and one-by-one reminder through both adapters, and protect representative shapes with fixtures/evals. |
 | Browser proof can come from the wrong checkout or stale port | Real UI sessions showed correct code being judged through an old worktree, server, sidebar shell, or local port. | Require target-identity proof in verification and QA before either adapter treats screenshots/browser evidence as proof. |
+| Claude adapter alias existed only in markdown | The parity contract and registry named a Claude workflow-improvement command that was never installed, so live retests had no adapter to use. | Install the thin global adapter, keep the registry/contract honest about installed versus stated exception, and enforce real installed paths in `agent-os-claude-adapter-check.py`. |
+| Claude save-session adapter carried heavy local ritual | The installed save-session adapter demanded session-lifecycle calls, broad doc updates, and universal active-task ceremony that the shared playbook never required. | Keep the global adapter thin: point at `save-session.md`, keep only useful project dispatch, and prove the linkage with the installed-adapter check. |
+| Unrunnable checks were silently omitted | A live retest prohibited commands, and the agent neither named the shared guard nor labeled it unrun. | Require BP-014 behavior: name the exact check and report it as not run instead of dropping it or overclaiming. |
 | Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
 | Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |
 
@@ -171,6 +194,8 @@ must produce even when their command names differ.
 | BP-011 | A project has `.claude/tasks/active.json` | Read it as workflow state when the project uses it, but do not treat it as the only truth. Cross-check chat, Git, Session Map, Koda, GitHub, Planner, and current files based on the question being answered. |
 | BP-012 | A project or session does not have a relevant active task file | Do not invent `active.json` fields or block ordinary discussion/docs work on missing gate values. Use the route playbook, current evidence, and approval boundary instead. |
 | BP-013 | Claude uses project-specific slash commands such as `/sifu-save-session` | Treat them as adapter conveniences only. The shared workflow name is `/save-session`, `$save-session`, or natural-language "save session", and all must follow `save-session.md`. |
+| BP-014 | A required check, guard, or discovery command cannot be run in this session | Run the safe check when tools are available. Otherwise name the exact check and report it as not run or unverified. Never claim an exact state that was not observed, and never say all checks passed while a named check is unrun. |
+| BP-015 | Work is prepared for staging, commit, push, PR, or save | State the worktree, branch, and issue/PR identity from real discovery before staging. If discovery could not run, say so instead of asserting a branch or clean/dirty state. Ordinary discussion does not need this step. |
 
 ## Adapter Helper Boundaries
 

@@ -155,7 +155,7 @@ skill.
 | `$review` | Review | Code review, risk review, PR review, pre-commit review, or pre-push/deploy risk check. | `.agents/skills/review/SKILL.md` | `docs/agent-playbooks/review.md` | `/review` | Quietly fixing findings without scope/approval when review-only was requested. |
 | `$commit` | Commit | Preparing or creating a local commit. | `.agents/skills/commit/SKILL.md` | `docs/agent-playbooks/commit.md` | `/commit` | Push, merge, deploy, PR, `--no-verify`, secrets, `.env*`, or `live/`. |
 | `$product-design` | Product Design | Brainstorming, workflow design, PRD, UX spec, backend contract, build prompts, or major redesign. | `.agents/skills/product-design/SKILL.md` | `docs/agent-playbooks/product-design.md` | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | Ordinary narrow bugfixes, small copy edits, or implementation before approval. |
-| `$workflow-improvement` | Workflow Improvement | Improving Agent OS behavior, making future agents handle something better, resolving workflow drift, or cleaning up docs/skills/hooks/evals/Koda consistency. | `.agents/skills/workflow-improvement/SKILL.md` | `docs/agent-playbooks/agent-os-improvement-loop.md` | `/workflow-improvement` later or natural-language workflow improvement | Ordinary product bugs, related-impact audits after product fixes, or hook automation before the playbook/eval shape is clear. |
+| `$workflow-improvement` | Workflow Improvement | Improving Agent OS behavior, making future agents handle something better, resolving workflow drift, or cleaning up docs/skills/hooks/evals/Koda consistency. | `.agents/skills/workflow-improvement/SKILL.md` | `docs/agent-playbooks/agent-os-improvement-loop.md` | `/workflow-improvement` (installed global Claude adapter skill) | Ordinary product bugs, related-impact audits after product fixes, or hook automation before the playbook/eval shape is clear. |
 | `$sims-ui-audit` | SIMS UI Audit | Auditing `sifu-tutor` browser UI/UX, screenshots, spacing/density, disabled states, tables, filters, modals, popouts, sidebar/navigation, or design-system consistency before Hafiz review. | `.agents/skills/sims-ui-audit/SKILL.md` | `docs/agent-playbooks/sims-ui-audit.md` | `/sims-ui-audit` plus `ux-reviewer` where available | Replacing the SIMS design system docs, broad product redesign, or backend-only verification. |
 
 ## Continuation Skills
@@ -271,6 +271,29 @@ meaning: "proceed until production monitored" can include preflight, explicit
 deploy, safe smoke checks, read-only monitoring, and final release reporting,
 but it stops before rollback, new fixes, destructive action, critical-lane
 widening, or business risk acceptance unless those were explicitly included.
+
+## Global Claude Adapter Skills
+
+The "Claude equivalent" column above is a claim about installed files, not a
+roadmap. A named Claude command must exist as an installed global adapter under
+`~/.claude/skills/<name>/SKILL.md`, or the registry must say plainly that it is
+a stated exception.
+
+These global Claude adapters are thin bridges. They say when to use the
+workflow, keep Claude-specific mechanics such as project dispatch, and point at
+the shared playbook as the source of truth. They must not restate or override
+the playbook's routing, gates, evidence standard, or state model.
+
+| Claude adapter | Installed path | Shared source of truth | Status |
+| --- | --- | --- | --- |
+| `/task-router` | `~/.claude/skills/task-router/SKILL.md` | `task-router.md` | Installed thin adapter. |
+| `/commit` | `~/.claude/skills/commit/SKILL.md` | `commit.md` | Installed thin adapter. |
+| `/save-session` | `~/.claude/skills/save-session/SKILL.md` | `save-session.md` | Installed thin adapter. |
+| `/workflow-improvement` | `~/.claude/skills/workflow-improvement/SKILL.md` | `agent-os-improvement-loop.md` | Installed thin adapter. |
+
+Installed-path enforcement for these adapters lives in
+`scripts/agent-checks/agent-os-claude-adapter-check.py` and its readiness
+wiring, not in the portable repo fixtures.
 
 ## Project Dispatcher Adapters
 
