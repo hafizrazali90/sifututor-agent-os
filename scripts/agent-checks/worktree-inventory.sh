@@ -68,7 +68,10 @@ while IFS= read -r worktree; do
     untracked="$(printf '%s\n' "$status" | awk 'substr($0,1,2) == "??" {count++} END {print count+0}')"
   fi
 
-  upstream="$(git -C "$worktree" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || true)"
+  upstream=""
+  if [[ "$branch" != "detached" ]]; then
+    upstream="$(git -C "$worktree" for-each-ref --format='%(upstream:short)' "refs/heads/$branch")"
+  fi
   ahead="unknown"
   behind="unknown"
   if [[ -n "$upstream" ]]; then
