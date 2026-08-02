@@ -186,6 +186,25 @@ Recommended next:
 Do not force this shape into every casual answer.
 Use it when the work is multi-step, stateful, risky, or easy to lose.
 
+## Delegated Worker Runtime
+
+For Codex-supervised Claude Max work, keep two liveness signals separate:
+
+```text
+watchdog heartbeat -> the local supervisor is alive
+worker event time -> Claude last emitted observable activity
+```
+
+This distinction prevents a quiet Claude worker from disappearing in silence
+without spending model tokens on repeated status prompts. Use
+`scripts/agent-checks/agent-os-claude-delegation.py status` and the state table
+in `handoff.md`.
+
+Do not translate `stalled` into automatic recovery. Report the state, preserve
+the evidence, and let the supervising Codex or human decide whether setup,
+retry, or a fresh job is safe. A `finished` worker is ready for independent
+review, not automatically accepted or ready for release.
+
 ## Session Map Reliability
 
 Session Map is useful only if the current section is current.

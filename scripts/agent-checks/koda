@@ -8,7 +8,7 @@ HELPER="$ROOT/scripts/agent-checks/codex-lifecycle-hook.py"
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/agent-checks/koda health
+  scripts/agent-checks/koda health [--write-check]
   scripts/agent-checks/koda search '<json-args>'
   scripts/agent-checks/koda store '<json-args>'
   scripts/agent-checks/koda update '<json-args>'
@@ -20,6 +20,8 @@ Examples:
 
 Notes:
   - Do not pass secrets, raw tokens, .env values, or private payloads.
+  - health is read-only by default; use --write-check only for startup/setup verification.
+  - store performs an exact-content duplicate preflight and skips an existing memory.
   - Use this CLI as the Codex-first Koda path in this workspace.
 EOF
 }
@@ -34,7 +36,15 @@ shift
 
 case "$command" in
   health)
-    python3 "$HELPER" --check-koda
+    if [[ $# -gt 1 || ( $# -eq 1 && "$1" != "--write-check" ) ]]; then
+      usage
+      exit 2
+    fi
+    if [[ $# -eq 1 ]]; then
+      python3 "$HELPER" --check-koda --write-check
+    else
+      python3 "$HELPER" --check-koda
+    fi
     ;;
   search)
     if [[ $# -ne 1 ]]; then

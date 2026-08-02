@@ -87,6 +87,41 @@ that span more than one project.
   `scripts/agent-checks/agent-os-response-shape-runner.py`, Koda
   `mem_2421d7aecd53`
 
+### AO-DELEGATION-001 — Operationalize Codex-to-Claude Max delegation
+
+- **Project:** cross-project
+- **Status:** done
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Codex can delegate repository-heavy implementation, testing,
+  QA, review, and approved release work to Claude Max to reduce Codex usage,
+  while preserving or improving quality, approval safety, visibility, and
+  independent verification.
+- **Why it matters:** Hafiz has an available Claude Max subscription and wants
+  to use it efficiently without allowing background work to stop silently or
+  lowering product/release confidence.
+- **Source:** Hafiz correction and approval, 2026-07-21. Parent CF #1768,
+  Ripple Luna #201, referral #1718, and the Billing Guide supplemental pilot
+  supplied the implementation evidence.
+- **Current state:** The smallest implementation packet is complete through
+  GitHub issue #25 and merged PR #26 at `7adfa8f`. The existing
+  handoff/autonomous/runtime owners define the contract; the runner proves
+  Claude Max auth, safe ignored runtime paths, worktree ownership, and
+  metadata-only evidence; nine deterministic worker fixtures pass; the real
+  local Max preflight passes; and the full Agent OS validation reaches 254/254.
+  Independent Codex review and all normal approval gates remain part of the
+  workflow. Quantitative net Codex savings remain unavailable and must not be
+  estimated.
+- **Next action:** None required. Tune thresholds or reporting only when future
+  real pilots provide evidence that a change is needed.
+- **Do not do yet:** Do not add automatic merge/deploy, a new skill/blocking
+  hook, or Luna product follow-ups without a separate issue and approval.
+- **Promote to:** Promoted to umbrella GitHub issue #25 on 2026-07-22.
+- **Links:** `.agent-os/session-maps/2026-07-21-225940-codex-claude-three-pilot-reconciliation.md`,
+  Koda `mem_61f13ce52269`, Koda `mem_5dd96ba87cf4`,
+  https://github.com/hafizrazali90/sifututor-agent-os/issues/25,
+  https://github.com/hafizrazali90/sifututor-agent-os/pull/26
+
 ### FINCH-SIMS-001 — Selective Finch↔SIMS integration for Sifu Edu tenant only
 
 - **Project:** cross-project (finch-inbox + ripple-suite + sifu-tutor)

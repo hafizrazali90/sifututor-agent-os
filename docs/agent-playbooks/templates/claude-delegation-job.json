@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "job_id": "issue-000-safe-local-pilot",
+  "goal": "Describe the one bounded outcome Claude should produce.",
+  "approved_stop_point": "local proof",
+  "forbidden_actions": [
+    "commit",
+    "push",
+    "open or merge a PR",
+    "deploy",
+    "production mutation",
+    "destructive cleanup",
+    "read secrets or .env files",
+    "modify live/"
+  ],
+  "worktree": "/absolute/path/to/dedicated-worktree",
+  "branch": "fix/replace-with-task-branch",
+  "lane_owner": "codex-session-or-human-owner",
+  "required_proof": [
+    "focused checks",
+    "changed-file inventory",
+    "structured handback for independent Codex review"
+  ],
+  "required_mcp_servers": [],
+  "reporting_cadence_seconds": 60,
+  "stall_after_seconds": 180,
+  "poll_interval_seconds": 0.5,
+  "brief_file": "/absolute/path/to/.agent-os/delegations/issue-000-brief.md",
+  "handback_file": "/absolute/path/to/.agent-os/delegations/issue-000-state/handback.md",
+  "state_dir": "/absolute/path/to/.agent-os/delegations/issue-000-state",
+  "claude_args": [
+    "--print",
+    "--verbose",
+    "--output-format",
+    "stream-json",
+    "--include-partial-messages",
+    "--permission-mode",
+    "auto"
+  ]
+}

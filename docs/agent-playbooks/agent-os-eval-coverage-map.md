@@ -51,6 +51,7 @@ be automated next.
 | Conversation fixtures | CV-001, CV-002, CV-003, CV-004, CV-005, CV-006, CV-007, CV-008, CV-009 | Treating short replies such as `approve`, `proceed`, `go next`, or `what next` as isolated text instead of resolving them against visible prior context. |
 | Parity fixtures | Structural parity runner | Losing the shared playbook, Claude adapter, Codex adapter, Product Design phase mapping, Plane exception rule, or parity health wiring. |
 | Behavior traces | BT-001 through BT-004 | Codex chooses the expected workflow route, first move, approval boundary, and evidence language for common Hafiz prompts; optional live Claude mode can compare Claude's structured trace without making normal health depend on live LLM output. Checked by `scripts/agent-checks/agent-os-behavior-trace-runner.py` and the validation loop. |
+| Claude delegation reliability | DF-001 through DF-009; AO-190 through AO-198 | Launching without Claude Max readiness, leaking identity/API-key state into evidence, silent worker stalls, first-run setup waits, stale completion, dead supervision, worktree lane contention, invented usage savings, raw-output persistence, skipped independent Codex review, or automatic production authority. Checked by `scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py` using a deterministic fake CLI, so health consumes no Claude tokens. |
 | Adapter readiness | SH, CX, and CL readiness checks | Claiming Codex or Claude is set up without proving the shared core, Codex config/skills, Claude settings/hooks, adapter markers, and deterministic behavior checks. Checked by `scripts/agent-checks/agent-os-adapter-readiness.py`; live Claude behavior remains optional evidence because extension/CLI limits can be external. |
 | Workflow example structure | AO-138 | Leaving a workflow section without scenario examples or a scenario matrix. Checked by `scripts/agent-checks/agent-os-workflow-example-runner.py` and health. |
 | Validation loop | Executable harness score | Hiding scattered Agent OS failures across separate scripts. Checked by `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`, which combines executable checks into one readiness score. |
@@ -74,7 +75,8 @@ These are important but not honest as simple router-classifier tests yet.
 | Lane escalation | AO-055, AO-056, AO-057, AO-058, AO-061, AO-062, AO-063 | Needs task details, product surface, and sometimes test data or credentials. |
 | Build handoff quality | AO-104 | Needs real feature/bug context, codebase entry points, risks, and evidence plan. A simple router fixture cannot prove a build-ready brief is complete. |
 | Enforcement layer choice | AO-105, AO-157 | Needs the specific rule, repeated-failure history, danger level, and automation feasibility. A simple router fixture cannot honestly choose the best enforcement strength. The enforcement promotion path defines the manual decision now. |
-| Agent OS improvement loop | AO-109, AO-110, AO-111 | Needs the specific workflow mistake, owning source, connected docs/skills/hooks/evals/Koda state, and Hafiz-approved behavior change. A simple router fixture can help later, but full correctness needs context-aware review. |
+| Agent OS improvement loop | AO-109, AO-110, AO-111, AO-199 | AO-199 has an executable routing fixture for workflow-efficiency prompts. The broader cases still need the specific workflow mistake, owning source, connected docs/skills/hooks/evals/Koda state, and Hafiz-approved behavior change. |
+| Quoted report routing | AO-200, AO-201 | Executable routing fixtures prove that negative evidence inside a pasted final report does not become a bypass, commit, or push request, while a direct instruction following the report still controls the route. |
 | Related impact audit | AO-112, AO-113, AO-114 | Needs the actual root cause, related code surface, risk lane, and scope boundary. A simple router fixture cannot prove whether the related search was sufficient. |
 | Bugfix and feature scenario quality | AO-133, AO-134 | Needs real task context, risk lane, user impact, product surface, and available evidence. A simple router fixture cannot honestly decide whether the agent chose the right workflow weight. |
 | Verify, QA, and review scenario quality | AO-135, AO-136, AO-137 | Needs real work type, changed surface, available tools/data, evidence already gathered, release state, and next-state boundary. A simple router fixture cannot honestly prove whether the agent gathered enough proof for the claimed state. |
@@ -125,7 +127,7 @@ When adding or changing an eval:
 6. Run `scripts/agent-checks/agent-os-eval-runner.py --self-test`.
 7. Run `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`.
 8. Run `python3 scripts/agent-checks/agent-os-validation-loop.py --target 0.90 --max-rounds 3`.
-9. Run `scripts/agent-checks/agent-os-health.sh`.
+9. Run `scripts/agent-checks/workflow-doctor.sh` as the one full completion sweep; it runs Agent OS health internally.
 
 Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
 deciding which layer should own a new harness case.

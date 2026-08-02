@@ -195,23 +195,30 @@ Cleanup condition:
 | `save-session.md` | Preserve worktree/branch/local-only commit state before ending. |
 | `no-mistakes-lite.md` | Final honesty pass before claiming ready/done/outbound state. |
 
-## Future Automation
+## Read-Only Inventory Helper
 
-Do not install a treehouse-style manager yet.
-
-First, use this playbook in real work. If repeated confusion remains, add a
-small local script that prints active worktrees, branches, dirty state,
-ahead/behind state, PR links when available, and suggested cleanup candidates.
-
-Possible later script:
+The manual rule proved useful and repeated discovery became noisy. Use the
+small read-only inventory helper instead of assembling the same state with many
+separate commands:
 
 ```text
 scripts/agent-checks/worktree-inventory.sh
 ```
 
+For current GitHub PR evidence as well:
+
+```bash
+git fetch origin
+scripts/agent-checks/worktree-inventory.sh --with-pr
+```
+
+The helper never stages, commits, pushes, removes, or prunes. Remote-branch
+presence is based on local remote refs, so fetch first whenever freshness
+matters. PR queries are read-only and opt-in so ordinary local inventory stays
+fast.
+
 Plain version:
 
 ```text
-Use simple Git worktrees now.
-Automate the inventory only after the manual rule proves useful.
+Use one inventory command to prove worktree state; keep all mutations explicit.
 ```
