@@ -401,6 +401,80 @@ def koda_direct_cli(tool_name: str, arguments: dict[str, Any]) -> int:
     return 0
 
 
+def canonical_memory_content(value: object) -> str:
+    """Normalize memory text for exact-content duplicate detection."""
+
+    return re.sub(r"\s+", " ", str(value or "").casefold()).strip()
+
+
+def koda_store_deduplicated(arguments: dict[str, Any]) -> int:
+    """Store through Koda only when no exact-content memory already exists."""
+
+    content = str(arguments.get("content") or "").strip()
+    if not content:
+        print("KODA DIRECT FAIL: memory_store requires non-empty content", file=sys.stderr)
+        return 1
+
+    session, init_error = koda_initialize("codex-koda-deduplicated-store")
+    if init_error:
+        print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
+        return 1
+
+    search_arguments: dict[str, Any] = {"query": content[:500], "limit": 20}
+    if arguments.get("project"):
+        search_arguments["project"] = arguments["project"]
+
+    search_response, search_error = koda_tool_call(
+        session,
+        "memory_search",
+        search_arguments,
+        request_id=2,
+    )
+    if search_error:
+        print(
+            f"KODA DIRECT FAIL: duplicate preflight failed; memory was not stored: {search_error}",
+            file=sys.stderr,
+        )
+        return 1
+
+    target = canonical_memory_content(content)
+    search_payload = parse_tool_content(search_response)
+    if not isinstance(search_payload, list):
+        print(
+            "KODA DIRECT FAIL: duplicate preflight did not return a memory list; memory was not stored",
+            file=sys.stderr,
+        )
+        return 1
+
+    for memory in search_payload:
+        if not isinstance(memory, dict):
+            continue
+        if canonical_memory_content(memory.get("content")) != target:
+            continue
+        print(
+            json.dumps(
+                {
+                    "status": "skipped_exact_duplicate",
+                    "existing_id": memory.get("id") or "unknown",
+                    "next": "use koda update when the canonical memory needs sharper wording",
+                }
+            )
+        )
+        return 0
+
+    store_response, store_error = koda_tool_call(
+        session,
+        "memory_store",
+        arguments,
+        request_id=3,
+    )
+    if store_error:
+        print(f"KODA DIRECT FAIL: {store_error}", file=sys.stderr)
+        return 1
+    print_koda_tool_result(store_response)
+    return 0
+
+
 def parse_tool_content(response: dict) -> object:
     content = response.get("result", {}).get("content", [])
     text = ""
@@ -717,6 +791,37 @@ def discussion_prompt(normalized: str) -> bool:
     return any(re.search(pattern, normalized) for pattern in discussion_patterns)
 
 
+def report_only_prompt(normalized: str) -> bool:
+    """Detect pasted evidence reports that do not ask the agent to act."""
+
+    report_markers = (
+        "final report",
+        "follow-up report",
+        "save-session dry run",
+        "dry run, nothing written",
+        "guards and checks, in order",
+    )
+    evidence_markers = (
+        "nothing staged",
+        "nothing was staged",
+        "nothing committed",
+        "nothing was committed",
+        "nothing pushed",
+        "nothing was pushed",
+        "bypass: none",
+        "no bypass",
+    )
+    direct_request = re.search(
+        r"(?:^|[.!?]\s+)(?:please\s+)?(?:commit|push|deploy|merge|implement|fix|apply|run|create|open)\b",
+        normalized,
+    )
+    return (
+        any(marker in normalized for marker in report_markers)
+        and any(marker in normalized for marker in evidence_markers)
+        and direct_request is None
+    )
+
+
 def commit_prompt(normalized: str) -> bool:
     """Return True only for commit preparation/execution intent."""
 
@@ -738,6 +843,13 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
 
     lower = prompt.lower()
     normalized = re.sub(r"\s+", " ", lower).strip()
+
+    if report_only_prompt(normalized):
+        return (
+            "",
+            [],
+            "Prompt is a quoted or pasted report with no direct action request.",
+        )
 
     if re.search(r"(^|\s|/|\\)\.env($|\b|[./_-])", normalized) or re.search(r"(^|\s|/|\\)live(/|\\)", normalized):
         return (
@@ -775,7 +887,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         )
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs|sims-ui-audit)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs|sims-ui-audit|workflow-improvement)\b",
         normalized,
     )
     if direct_skill:
@@ -787,6 +899,28 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Read the skill body, then the linked shared playbook before acting.",
             ],
             "User explicitly invoked a Codex workflow skill.",
+        )
+
+    workflow_efficiency_patterns = (
+        "anything redundant",
+        "workflow redundancy",
+        "reduce workflow",
+        "simplify workflow",
+        "streamline workflow",
+        "speed up our agent os",
+        "speed up our dev",
+        "improve agent os workflow",
+        "improve the agent os workflow",
+    )
+    if any(pattern in normalized for pattern in workflow_efficiency_patterns):
+        return (
+            "$workflow-improvement",
+            [
+                "Use $workflow-improvement to remove repeated work from the Agent OS.",
+                "Preserve safety gates and remove duplicate execution, state reads, or documentation instead.",
+                "Add focused fixtures before changing hooks or shared workflow behavior.",
+            ],
+            "Prompt asks for Agent OS workflow efficiency improvement.",
         )
 
     ui_audit_patterns = (
@@ -1296,7 +1430,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
 
 def main() -> int:
     if "--check-koda" in sys.argv:
-        ok, details = koda_health_check(write=True)
+        ok, details = koda_health_check(write="--write-check" in sys.argv)
         status = "PASS" if ok else "FAIL"
         print(f"KODA {status}")
         for detail in details:
@@ -1317,7 +1451,7 @@ def main() -> int:
         if error:
             print(f"KODA DIRECT FAIL: {error}", file=sys.stderr)
             return 1
-        return koda_direct_cli("memory_store", arguments)
+        return koda_store_deduplicated(arguments)
 
     if "--koda-update-json" in sys.argv:
         arguments, error = read_json_arg_or_stdin("--koda-update-json")
@@ -1390,7 +1524,7 @@ def main() -> int:
         memory_section = memory_text or "\n".join(
             [
                 "Relevant Koda memories: none injected.",
-                "Koda startup health should have caught this. Before non-trivial work, run `python3 scripts/agent-checks/codex-lifecycle-hook.py --check-koda` from the umbrella root and repair Koda if it fails.",
+                "Trust the SessionStart Koda health result for this session. Do not rerun Koda health after every prompt; recheck only after a reported failure, configuration change, or long resume.",
             ]
         )
         emit_context(

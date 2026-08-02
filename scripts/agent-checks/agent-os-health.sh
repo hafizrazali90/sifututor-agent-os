@@ -91,6 +91,7 @@ check_file "Agent OS scenario lab" "$ROOT/docs/agent-playbooks/agent-os-scenario
 check_file "related impact audit" "$ROOT/docs/agent-playbooks/related-impact-audit.md"
 check_file "live evidence template" "$ROOT/docs/agent-playbooks/templates/live-evidence-probe-report.md"
 check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
+check_file "worktree inventory" "$ROOT/scripts/agent-checks/worktree-inventory.sh"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"

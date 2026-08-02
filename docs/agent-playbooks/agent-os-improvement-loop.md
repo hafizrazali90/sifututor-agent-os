@@ -205,27 +205,43 @@ Do not:
 
 ## Checks
 
-For documentation and skill-wrapper changes:
+Run focused checks while editing, then one full owner at completion. Do not run
+`agent-os-health.sh` immediately before `workflow-doctor.sh`: the doctor already
+runs health internally, and health already runs the deterministic eval and
+fixture suite.
+
+For documentation and skill-wrapper changes, the completion sweep is:
 
 ```bash
 git diff --check
-scripts/agent-checks/agent-os-eval-runner.py --self-test
-scripts/agent-checks/agent-os-health.sh
 scripts/agent-checks/workflow-doctor.sh
 ```
 
-For hook or dispatcher changes, also run:
+For hook or dispatcher changes, run these focused checks during development:
 
 ```bash
 scripts/agent-checks/agent-os-conversation-fixture-runner.py
+scripts/agent-checks/agent-os-eval-runner.py
 python3 scripts/agent-checks/agent-os-transcript-retrospective.py --self-test
 ```
 
-For skill registry, parity, or installer changes, also run:
+For Koda helper changes, run:
+
+```bash
+python3 -m unittest discover -s scripts/agent-checks -p 'test_codex_koda_integration.py'
+scripts/agent-checks/agent-os-koda-fixture-runner.py
+```
+
+For skill registry, parity, or installer changes, run this focused check while
+editing:
 
 ```bash
 scripts/agent-checks/agent-os-parity-fixture-runner.py
 ```
+
+At completion, `workflow-doctor.sh` is the only full sweep. Run
+`agent-os-health.sh` alone only when the project/environment sweep performed by
+the doctor is intentionally unnecessary.
 
 Before commit:
 
