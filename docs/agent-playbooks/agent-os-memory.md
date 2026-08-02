@@ -121,6 +121,7 @@ Koda CLI commands:
 
 ```bash
 scripts/agent-checks/koda health
+scripts/agent-checks/koda health --write-check
 scripts/agent-checks/koda search '{"query":"<topic>","tags":["sifututor"],"limit":5}'
 scripts/agent-checks/koda store '{"category":"lesson","content":"<memory>","project":"sifututor","source":"auto-captured","tags":["sifututor","agent-os"],"why":"<why future sessions need this>"}'
 scripts/agent-checks/koda update '{"id":"mem_XXXX","content":"<safe corrected memory>","source":"correction","tags":["sifututor","agent-os"],"why":"<why this memory was corrected>"}'
@@ -130,6 +131,16 @@ Use the Koda CLI as the Codex-first memory path in this workspace. It uses the
 same MCP HTTP endpoint and `KODA_API_KEY`, but avoids the chat-level
 `mcp__memory` wrapper. Do not install the Codex `memory` MCP unless Hafiz
 explicitly reverses this decision. Do not print or paste secret values.
+
+`koda health` is read-only. SessionStart owns the once-per-session read/write
+probe; use `koda health --write-check` only for startup/setup repair or when the
+write path itself must be proved. Do not rerun health after every prompt.
+
+`koda store` performs an exact-content search first. If the same normalized
+content already exists, it returns the canonical memory ID and skips the new
+write. Use `koda update` when the existing memory needs correction or sharper
+wording. Similar-but-not-exact memories still require the normal human dedup
+decision.
 
 ## Executable Memory Discipline Check
 

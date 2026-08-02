@@ -16,10 +16,14 @@ sys.path.insert(0, str(HERE))
 
 
 def load_script(name: str, filename: str):
-    spec = importlib.util.spec_from_file_location(name, HERE / filename)
+    path = HERE / filename
+    source = path.read_text()
+    entrypoint = "\nraise SystemExit(main())"
+    if entrypoint in source:
+        source = source.split(entrypoint, 1)[0]
+    spec = importlib.util.spec_from_loader(name, loader=None)
     module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(module)
+    exec(compile(source, str(path), "exec"), module.__dict__)
     return module
 
 
@@ -59,6 +63,76 @@ class KodaContractTests(unittest.TestCase):
         args = lifecycle.koda_health_search_arguments()
         self.assertEqual(args["project"], "sifututor")
         self.assertIn("tags", args)
+
+    def test_check_koda_is_read_only_by_default(self):
+        with (
+            patch.object(sys, "argv", ["codex-lifecycle-hook.py", "--check-koda"]),
+            patch.object(lifecycle, "koda_health_check", return_value=(True, [])) as health,
+        ):
+            self.assertEqual(lifecycle.main(), 0)
+        health.assert_called_once_with(write=False)
+
+    def test_check_koda_write_probe_is_explicit(self):
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["codex-lifecycle-hook.py", "--check-koda", "--write-check"],
+            ),
+            patch.object(lifecycle, "koda_health_check", return_value=(True, [])) as health,
+        ):
+            self.assertEqual(lifecycle.main(), 0)
+        health.assert_called_once_with(write=True)
+
+    def test_exact_duplicate_store_is_skipped(self):
+        arguments = {
+            "category": "lesson",
+            "content": "Use one full Agent OS health sweep after focused checks.",
+            "project": "sifututor",
+            "source": "auto-captured",
+            "tags": ["sifututor", "agent-os"],
+            "why": "Avoid repeating the same deterministic suite.",
+        }
+        duplicate = {
+            "id": "mem_existing",
+            "content": "  use one FULL agent os health sweep after focused checks. ",
+        }
+        with (
+            patch.object(lifecycle, "koda_initialize", return_value=({"headers": {}, "session_id": "x"}, "")),
+            patch.object(
+                lifecycle,
+                "koda_tool_call",
+                return_value=(tool_response([duplicate]), ""),
+            ) as tool_call,
+            patch.object(lifecycle, "print", create=True),
+        ):
+            self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
+        self.assertEqual(tool_call.call_count, 1)
+        self.assertEqual(tool_call.call_args.args[1], "memory_search")
+
+    def test_unique_memory_is_stored_after_duplicate_preflight(self):
+        arguments = {
+            "category": "lesson",
+            "content": "Use the read-only worktree inventory before release state reporting.",
+            "project": "sifututor",
+            "source": "auto-captured",
+            "tags": ["sifututor", "agent-os"],
+            "why": "One inventory command avoids inconsistent manual discovery.",
+        }
+        responses = [
+            (tool_response([]), ""),
+            (tool_response({"id": "mem_new"}), ""),
+        ]
+        with (
+            patch.object(lifecycle, "koda_initialize", return_value=({"headers": {}, "session_id": "x"}, "")),
+            patch.object(lifecycle, "koda_tool_call", side_effect=responses) as tool_call,
+            patch.object(lifecycle, "print_koda_tool_result"),
+        ):
+            self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
+        self.assertEqual(
+            [call.args[1] for call in tool_call.call_args_list],
+            ["memory_search", "memory_store"],
+        )
 
 
 class KodaVerifierTests(unittest.TestCase):
