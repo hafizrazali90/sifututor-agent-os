@@ -394,6 +394,31 @@ Use this rhythm during normal work:
 Do not update the map after every small chat reply. Update it when the practical
 state changes.
 
+## Native Omnigent Chat Link
+
+When the current chat is running inside the native Omnigent Agent OS workspace,
+link the exact Session Map after creating or selecting it:
+
+```bash
+agent-os-link-continuity \
+  .agent-os/session-maps/<exact-session-map>.md \
+  --workspace-root /absolute/path/to/Sifututor
+```
+
+Run this only after the normal Session Map rules have identified one exact map.
+Do not pass the latest file, a guessed title match, an absolute map path, or a
+path outside `.agent-os/session-maps/`.
+
+The helper gets the current Omnigent chat identity from Omnigent itself,
+validates the source-relative map against the Agent OS workspace, and updates
+only that chat's `agent_os.session_map` label. It does not create, copy, or edit
+the Session Map or Mission Ledger. Re-running it for the same map is safe and
+lets a resumed chat repair a missing link.
+
+If the helper or Omnigent session identity is unavailable, keep working from
+the Session Map normally and report that the native chat link was not run.
+Never claim the link exists from an unrun or failed command.
+
 ## Where It Should Live
 
 For now, keep session maps in one of these places:
