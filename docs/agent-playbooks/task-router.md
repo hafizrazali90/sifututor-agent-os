@@ -79,6 +79,14 @@ agent-os-set-understanding \
   --finish-line "<practical outcome>"
 ```
 
+Initialize the separate current-proof display honestly before implementation:
+
+```bash
+agent-os-set-proven-state \
+  --state "Routed; implementation not started" \
+  --evidence "Task Router completed; no implementation evidence exists yet"
+```
+
 Use the project name already selected by this playbook, such as
 `sifu-tutor`, `ripple-suite`, or `umbrella`. Use the route name already selected
 by the routing model, such as `bugfix`, `review`, `feature`, or
@@ -115,6 +123,11 @@ critical-lane, or destructive actions.
 If the helper or native coordinates are unavailable, continue with the normal
 task-router report and say the visible native summary was not updated. Never
 claim it was set when the command did not run.
+
+The finish line is the target. Current proof is a separate evidence-backed
+state and must be updated at meaningful boundaries through the State Model
+rules. Never use the finish-line text itself as evidence that the task reached
+that outcome.
 
 ## Intent Routing Model
 

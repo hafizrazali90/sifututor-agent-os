@@ -168,6 +168,29 @@ CASES = [
         "should_pass": False,
         "why": "Deploy claims need source/release evidence before the agent can call them deployed.",
     },
+    {
+        "id": "ST-015",
+        "name": "pushed progress stays below pr finish line",
+        "text": (
+            "Finish line: pr open. Highest proven state: pushed. Remote commit abc123 "
+            "exists, but no PR exists. The finish line is not reached. "
+            "Recommended next: open the PR after approval."
+        ),
+        "expected_state": "pushed",
+        "should_pass": True,
+        "why": "A higher finish line is a target, not a false claim that the current proof reached it.",
+    },
+    {
+        "id": "ST-016",
+        "name": "pushed progress falsely claims pr finish line reached",
+        "text": (
+            "Finish line: pr open. Highest proven state: pushed. Remote commit abc123 "
+            "exists and the finish line is reached."
+        ),
+        "expected_state": "pushed",
+        "should_pass": False,
+        "why": "The finish line cannot be called reached while current proof is still lower.",
+    },
 ]
 
 
@@ -297,9 +320,22 @@ def observed_states(text: str) -> list[str]:
     return [state for state in STATE_ORDER if state in normalized]
 
 
+def labeled_state(text: str, label: str) -> str | None:
+    choices = "|".join(
+        sorted((re.escape(state) for state in STATE_ORDER), key=len, reverse=True)
+    )
+    match = re.search(rf"\b{re.escape(label)}:\s*({choices})\b", text)
+    return match.group(1) if match else None
+
+
+def without_finish_line_clause(text: str) -> str:
+    return re.sub(r"\bfinish line:\s*[^.]+\.?", "", text)
+
+
 def validate_case(case: dict) -> tuple[bool, list[str]]:
     normalized = normalize(case["text"])
-    states = observed_states(normalized)
+    evidence_text = without_finish_line_clause(normalized)
+    states = observed_states(evidence_text)
     errors = []
 
     expected_state = case["expected_state"]
@@ -315,7 +351,7 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
         if not contains_text(normalized, snippet):
             errors.append(f"missing required evidence snippet: {snippet}")
 
-    if "done." in normalized and not states:
+    if "done." in evidence_text and not states:
         errors.append("uses vague done without target state")
 
     if expected_state in ("done locally", "committed locally"):
@@ -332,7 +368,7 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
         phrases = ()
 
     for phrase in phrases:
-        if phrase in normalized and not has_negated_phrase(normalized, phrase):
+        if phrase in evidence_text and not has_negated_phrase(evidence_text, phrase):
             if phrase == expected_state:
                 continue
             if expected_state == "live smoke passed":
@@ -346,6 +382,21 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
             if expected_state == "merged" and phrase == "merged":
                 continue
             errors.append(f"implies further state without proof: {phrase}")
+
+    finish_line = labeled_state(normalized, "finish line")
+    current_state = labeled_state(normalized, "highest proven state")
+    if finish_line and current_state:
+        finish_rank = STATE_ORDER.index(finish_line)
+        current_rank = STATE_ORDER.index(current_state)
+        reached = bool(re.search(r"\bfinish line\s+(?:is\s+)?reached\b", normalized))
+        not_reached = bool(
+            re.search(r"\bfinish line\s+(?:is\s+)?not\s+reached\b", normalized)
+        )
+        if current_rank < finish_rank:
+            if reached:
+                errors.append("claims finish line reached above current proof")
+            elif not not_reached:
+                errors.append("does not say the higher finish line remains unreached")
 
     if expected_state == "live smoke passed":
         for phrase in ("deployed", "smoke check passed", "smoke passed"):

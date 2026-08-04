@@ -423,6 +423,35 @@ accepted / closed
 Do not use "done" alone when a user could reasonably think it means shipped or
 live.
 
+## Native Workspace Proven State
+
+When the current native Agent OS chat exposes Omnigent's task-scoped
+coordinates, keep its visible current proof aligned with fresh owner evidence:
+
+```bash
+agent-os-set-proven-state \
+  --state "<strongest honestly proven state>" \
+  --evidence "<short source or check that proves it>"
+```
+
+Update it after a meaningful state change such as local verification, commit,
+push, PR open, merge, deploy, live check, monitoring, or accepted close-out.
+Do not update it merely because the agent plans to reach that state.
+
+The task finish line and current proof have different jobs:
+
+```text
+Finish line = where Hafiz and the orchestrator agreed to stop.
+Current proof = how far fresh Git, GitHub, deploy, QA, or monitoring evidence
+actually proves the task has travelled.
+```
+
+If current proof is lower than the finish line, say the finish line is not
+reached and name the next evidence-producing action. Never infer a higher state
+from chat wording, UI status, Koda, the finish-line label, or an agent's own
+earlier claim. If the helper or native coordinates are unavailable, report that
+the visible current proof was not updated; never claim the command ran.
+
 Plain meaning:
 
 ```text

@@ -115,6 +115,12 @@ The backend test passed, but the browser journey is still unproven. This is
 ready for code confidence, not ready for user-workflow confidence.
 ```
 
+For a native Agent OS task with a visible finish line, compare that target with
+fresh owner evidence during this honesty pass. When the strongest state changes,
+run `agent-os-set-proven-state` with a short evidence pointer. Do not call the
+finish line reached while current proof is lower. If the helper was unavailable
+or did not confirm its update, say the visible current proof remains unchanged.
+
 ## Relationship To Existing Playbooks
 
 No-mistakes-lite does not replace the existing playbooks.
