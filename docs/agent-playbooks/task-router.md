@@ -63,6 +63,50 @@ classify, resume, or create work.
     isolated task. Use [mission-ledger.md](mission-ledger.md), but search first
     and read only the relevant project section.
 
+## Native Workspace Understanding
+
+Starting work in the native Agent OS workspace must still feel like opening a
+normal chat. Do not put a project/workflow form in front of Hafiz.
+
+After identifying the active project and workflow, and before delegating or
+starting significant implementation, make the route visible when the current
+chat exposes Omnigent's task-scoped coordinates:
+
+```bash
+agent-os-set-understanding \
+  --project <project> \
+  --workflow <workflow>
+```
+
+Use the project name already selected by this playbook, such as
+`sifu-tutor`, `ripple-suite`, or `umbrella`. Use the route name already selected
+by the routing model, such as `bugfix`, `review`, `feature`, or
+`workflow-improvement`. Do not invent a second classifier just for the UI.
+
+If the request is materially ambiguous, keep the conservative route visible
+and include exactly one short question:
+
+```bash
+agent-os-set-understanding \
+  --project umbrella \
+  --workflow triage \
+  --question "Which product should this change?"
+```
+
+Ask the same practical question in the conversation and wait only when the
+answer could change scope, risk, product meaning, or approval. Do not mark an
+ordinary low-impact uncertainty as blocked.
+
+The helper takes no session-id argument and changes only the current chat's
+bounded `agent_os.*` route labels. The Worker Sidebar is a visible reflection
+of this router decision, not a new task database. Hafiz may correct the project
+or workflow there; that correction is saved to the same task and sent into the
+same orchestrator conversation. Treat the correction as fresh user evidence.
+
+If the helper or native coordinates are unavailable, continue with the normal
+task-router report and say the visible native summary was not updated. Never
+claim it was set when the command did not run.
+
 ## Intent Routing Model
 
 Use [agent-os-routing-model.md](agent-os-routing-model.md) for Agent OS prompt
