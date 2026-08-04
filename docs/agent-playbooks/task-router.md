@@ -217,6 +217,74 @@ Important routing principles:
 - Push, deploy, merge, PR, critical-lane, destructive, secret, and production
   actions still need their stricter gates.
 
+## Cross-Project Today Briefing
+
+Use this route when Hafiz asks:
+
+```text
+What do I need to do today?
+What is unfinished?
+Who is waiting for me?
+What needs my approval?
+What can be deferred?
+```
+
+The briefing is a first-mate read model, not another task database. Build one
+bounded snapshot from the umbrella workspace:
+
+```bash
+python3 scripts/agent-checks/agent-os-today-snapshot.py \
+  --include-planner \
+  --include-github
+```
+
+The helper reads local Session Maps, active-task files, Mission Ledger, and Git
+state once, then invokes one bounded read-only Planner collector and one
+bounded GitHub PR search. Reuse that result for the briefing. Do not repeat the
+same source query item by item.
+
+After the snapshot, allow no more than three targeted follow-up checks. Use
+them only when a mutable claim can change today's order or whether Hafiz
+actually needs to decide something. Examples: a top PR may need a fresh review
+decision, or a reported Planner symptom may need current technical evidence
+before it becomes a production-repair proposal.
+
+Every item must show:
+
+- the owning source;
+- evidence confidence: `verified`, `trusted`, `reported`, `historical`, or
+  `unverified`;
+- freshness: current/recent/stale/unavailable plus the checked time when
+  known;
+- who owns the next move;
+- one recommended action;
+- whether approval is needed now, later, or remains unknown.
+
+Return these five attention groups in this order:
+
+1. **Needs Hafiz now** — a real decision or approval boundary only Hafiz owns.
+2. **Waiting on staff** — another person must review, test, reply, or finish
+   evidence.
+3. **Agent can continue** — read-only diagnosis, planning, review, or other
+   approved work the agent can perform now.
+4. **Monitor** — current evidence worth watching, including reported symptoms
+   that are not yet verified engineering facts.
+5. **Deferred** — intentionally paused or future work with a clear return
+   condition.
+
+Approval timing must be literal:
+
+```text
+Read-only preparation, diagnosis, evidence collection, and drafting do not
+need approval. Ask only immediately before the exact write, release,
+production, access, critical-lane implementation, or destructive action.
+```
+
+Do not say `approve preparation`, `approve read-only diagnosis`, or treat a
+Planner report as a proven root cause. If a source is unavailable, retain the
+last useful candidate only when it is clearly labelled stale; never turn an
+unavailable source into an empty or all-clear claim.
+
 ## State-File Projects
 
 Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and

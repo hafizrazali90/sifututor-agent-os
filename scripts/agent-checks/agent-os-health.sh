@@ -108,6 +108,8 @@ check_file "Agent OS capability probe" "$ROOT/scripts/agent-checks/agent-os-capa
 check_file "Agent OS Google Drive probe" "$ROOT/scripts/agent-checks/agent-os-google-drive-probe.py"
 check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-probe.py"
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
+check_file "Agent OS today snapshot" "$ROOT/scripts/agent-checks/agent-os-today-snapshot.py"
+check_file "Agent OS today fixtures" "$ROOT/scripts/agent-checks/test_agent_os_today_snapshot.py"
 check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os-production-logs-probe.py"
 check_file "Agent OS live evidence report" "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
@@ -260,6 +262,16 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-live-evidence-report.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-live-evidence-report.out $TMP_DIR/agent-os-live-evidence-report.err
+
+if python3 -m unittest scripts/agent-checks/test_agent_os_today_snapshot.py >$TMP_DIR/agent-os-today-snapshot.out 2>$TMP_DIR/agent-os-today-snapshot.err; then
+  today_snapshot_summary="$(tail -2 $TMP_DIR/agent-os-today-snapshot.out 2>/dev/null | head -1 || true)"
+  pass "Agent OS today snapshot" "${today_snapshot_summary:-fixtures passed}"
+else
+  fail "Agent OS today snapshot" "bounded snapshot/Planner/response fixtures failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-today-snapshot.out 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-today-snapshot.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-today-snapshot.out $TMP_DIR/agent-os-today-snapshot.err
 
 if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >$TMP_DIR/agent-os-conversation-fixtures.out 2>$TMP_DIR/agent-os-conversation-fixtures.err; then
   conversation_fixture_summary="$(tail -1 $TMP_DIR/agent-os-conversation-fixtures.out 2>/dev/null || true)"

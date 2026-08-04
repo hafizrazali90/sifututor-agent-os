@@ -380,6 +380,36 @@ EXPLANATION_CASES = [
     },
 ]
 
+TODAY_BRIEFING_CASES = [
+    {
+        "id": "TB-001",
+        "name": "bounded evidence-labelled today briefing",
+        "text": (
+            "## Needs Hafiz now\n"
+            "Source: GitHub · Confidence: verified · Freshness: checked now\n"
+            "## Waiting on staff\nNothing currently identified.\n"
+            "## Agent can continue\nRead-only diagnosis can continue without approval.\n"
+            "## Monitor\nPlanner report · Confidence: reported · Freshness: checked now\n"
+            "## Deferred\nMission Ledger item · Confidence: trusted · Freshness: recent\n"
+            "Approval rule: read-only preparation does not need approval; ask immediately "
+            "before the exact write, release, production, access, or destructive action."
+        ),
+        "should_pass": True,
+        "why": "A today briefing should separate attention ownership and expose evidence, freshness, and the real approval boundary.",
+    },
+    {
+        "id": "TB-002",
+        "name": "flat priority list with false preparation approval",
+        "text": (
+            "## Priorities\n"
+            "Approve preparation of credential rotations.\n"
+            "Planner says the issue is real."
+        ),
+        "should_pass": False,
+        "why": "A flat list hides who owns the next move, treats reported intake as proof, and asks approval too early.",
+    },
+]
+
 
 # ---------------------------------------------------------------------------
 # Save-session close-out shape (2026-08-01 issue-30 correction).
@@ -1138,6 +1168,52 @@ def explanation_violations(case: dict[str, object]) -> list[str]:
     return violations
 
 
+def today_briefing_violations(text: str) -> list[str]:
+    normalized = normalize(text)
+    violations = []
+    required_groups = (
+        "needs hafiz now",
+        "waiting on staff",
+        "agent can continue",
+        "monitor",
+        "deferred",
+    )
+    for group in required_groups:
+        if not re.search(rf"(?m)^##\s+{re.escape(group)}\s*$", text, flags=re.IGNORECASE):
+            violations.append(f"missing attention group: {group}")
+
+    if "source:" not in normalized:
+        violations.append("missing owning source")
+    if not any(
+        f"confidence: {level}" in normalized
+        for level in ("verified", "trusted", "reported", "historical", "unverified")
+    ):
+        violations.append("missing confidence/evidence label")
+    if "freshness:" not in normalized:
+        violations.append("missing freshness label")
+
+    if re.search(
+        r"\bapprove\s+(?:the\s+)?(?:preparation|read-only|diagnosis|review|plan|planning)\b",
+        normalized,
+    ):
+        violations.append("asks approval for preparation/read-only work")
+
+    has_no_approval_rule = any(
+        marker in normalized
+        for marker in (
+            "read-only preparation does not need approval",
+            "read-only diagnosis can continue without approval",
+        )
+    )
+    has_action_boundary = "before the exact" in normalized and any(
+        marker in normalized
+        for marker in ("write", "release", "production", "access", "destructive")
+    )
+    if not (has_no_approval_rule and has_action_boundary):
+        violations.append("missing honest approval timing rule")
+    return violations
+
+
 def run(verbose: bool = False) -> int:
     failures = []
     for case in CASES:
@@ -1220,12 +1296,29 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
+    for case in TODAY_BRIEFING_CASES:
+        violations = today_briefing_violations(case["text"])
+        passed_shape = not violations
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if violations:
+                print("  violations: " + ", ".join(violations))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
     total = (
         len(CASES)
         + len(COPY_READY_CASES)
         + len(RELEASE_HANDOFF_CASES)
         + len(SAVE_SESSION_CASES)
         + len(EXPLANATION_CASES)
+        + len(TODAY_BRIEFING_CASES)
     )
     passed = total - len(failures)
     print(f"agent-os-response-shape-runner: {passed}/{total} passed")

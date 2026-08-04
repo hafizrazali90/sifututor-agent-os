@@ -443,6 +443,22 @@ gates.
 Do not change Planner card state, assignment, priority, or content unless Hafiz
 explicitly asks in the current session.
 
+## Cross-Project Today Briefings
+
+When Hafiz asks what needs him today, what is unfinished, who is waiting, or
+what can be deferred, use the bounded briefing route in
+`docs/agent-playbooks/task-router.md`. Run
+`scripts/agent-checks/agent-os-today-snapshot.py` once with its Planner and
+GitHub options, reuse that snapshot, and perform at most three targeted
+follow-up checks that can change today's order. Do not query Planner once per
+card.
+
+Return `Needs Hafiz now`, `Waiting on staff`, `Agent can continue`, `Monitor`,
+and `Deferred`. Show source, confidence, and freshness for each item. Read-only
+preparation does not need approval; ask only immediately before the exact
+write, release, production, access, critical-lane implementation, or
+destructive action.
+
 ## Project-Specific Rules
 
 Before editing code in a sub-project, read that project's `AGENTS.md` if it
