@@ -7,7 +7,11 @@ classify, resume, or create work.
 
 1. Identify the active project from cwd and user prompt.
 2. Read the project `AGENTS.md`; if absent, read project `CLAUDE.md`.
-3. Search Koda memory for the task topic when available.
+3. Search Koda memory for the task topic. Follow
+   [agent-os-memory.md](agent-os-memory.md): use the exposed MCP when stable,
+   otherwise use the approved workspace helper's
+   `scripts/agent-checks/koda search` path without asking Hafiz to configure or
+   expose a credential.
 4. Check workflow state before editing.
 5. If the session is resuming after a long pause, compact, branch switch,
    remote reconciliation, or possible outside edits, run a quick reconciliation

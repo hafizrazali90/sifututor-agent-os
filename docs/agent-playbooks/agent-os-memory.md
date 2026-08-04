@@ -164,6 +164,12 @@ Agent defaults:
 | Staff or general chat LLM | no Koda write access by default; use docs/local notes unless approved |
 | Automation/scripts | CLI-first |
 
+When Claude's Koda MCP is missing or unavailable inside a workspace session,
+use the approved workspace helper's `scripts/agent-checks/koda search` path for
+the required read-only lookup. The helper owns credential handling. Never ask
+Hafiz to set, paste, export, or expose `KODA_API_KEY`, and never treat a missing
+chat-level MCP tool as proof that Koda itself is unavailable.
+
 If a memory is found to contain a secret, raw token, credential, or private
 payload, update or remove it immediately through the safe path. Do not quote the
 secret in chat, docs, commits, or follow-up memories.
