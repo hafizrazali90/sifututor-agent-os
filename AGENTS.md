@@ -396,13 +396,17 @@ Koda is the shared memory layer across Claude and Codex.
 
 For non-trivial tasks:
 
-1. Search Koda memory at task start if the MCP tool is available.
+1. Search Koda memory at task start. Follow
+   `docs/agent-playbooks/agent-os-memory.md`: use the exposed MCP when stable,
+   otherwise use the approved `scripts/agent-checks/koda search` helper.
 2. Store user corrections immediately with `source: "correction"`.
 3. Store non-obvious implementation lessons before reporting complete.
 4. Every stored memory must include at least one project tag.
 5. `source` must be one of `user-stated`, `auto-captured`, or `correction`.
 
 Do not store secrets, credentials, raw tokens, or ephemeral state.
+Do not ask Hafiz to set, paste, export, or expose `KODA_API_KEY`; the approved
+workspace helper handles Koda access internally.
 
 ## Mission And Status Tracking
 
