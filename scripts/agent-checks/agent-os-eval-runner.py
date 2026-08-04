@@ -344,6 +344,28 @@ CASES = [
         "actions_contain": ["pre-commit guard", "exact file list", "do not push"],
         "why": "A direct request following report evidence must still control the route.",
     },
+    {
+        "id": "AO-202",
+        "prompt": (
+            "Help me organize everything I need to do today. What is unfinished, "
+            "waiting for my approval, waiting on staff, and safe to defer?"
+        ),
+        "skill": "$task-router",
+        "reason_contains": "cross-project today briefing",
+        "actions_contain": [
+            "agent-os-today-snapshot.py",
+            "one bounded Planner read",
+            "verified, trusted, reported, historical, stale, or unavailable",
+            "Needs Hafiz now",
+            "Waiting on staff",
+            "Agent can continue",
+            "Monitor",
+            "Deferred",
+            "three targeted follow-up checks",
+            "read-only preparation does not need approval",
+        ],
+        "why": "Daily cross-project briefings should use one bounded shared snapshot instead of improvising dozens of repeated source calls.",
+    },
 ]
 
 

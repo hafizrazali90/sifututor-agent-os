@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -83,7 +84,61 @@ def error_code(data: dict) -> str | None:
     return None
 
 
-def build_result(env_path: Path, group_name: str, plan_name: str) -> dict:
+def sanitize_task_title(value: object) -> str:
+    """Keep a useful private title while redacting common identifiers."""
+    text = re.sub(r"https?://\S+", "[url]", str(value or ""))
+    text = re.sub(
+        r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
+        "[email]",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\b(?:sk|pk|api|token|secret|key)[-_][A-Za-z0-9_-]{16,}\b",
+        "[redacted]",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\b(?:token|api[_ -]?key|secret|password)\s*[:=]\s*\S+",
+        "[redacted]",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def summarize_tasks(tasks: list[dict], *, limit: int) -> list[dict]:
+    """Return one bounded batch of incomplete Planner card summaries."""
+    incomplete = [
+        task
+        for task in tasks
+        if int(task.get("percentComplete") or 0) < 100 and task.get("title")
+    ]
+    incomplete.sort(
+        key=lambda task: str(task.get("createdDateTime") or ""),
+        reverse=True,
+    )
+    return [
+        {
+            "task_id": str(task.get("id") or ""),
+            "title": sanitize_task_title(task.get("title")),
+            "percent_complete": int(task.get("percentComplete") or 0),
+            "created_at": task.get("createdDateTime"),
+            "due_at": task.get("dueDateTime"),
+        }
+        for task in incomplete[: max(0, limit)]
+    ]
+
+
+def build_result(
+    env_path: Path,
+    group_name: str,
+    plan_name: str,
+    *,
+    include_tasks: bool = False,
+    task_limit: int = 25,
+) -> dict:
     env = read_env(env_path)
     required = ["M365_TENANT_ID", "M365_CLIENT_ID", "M365_CLIENT_SECRET"]
     missing = [key for key in required if not env.get(key)]
@@ -181,7 +236,7 @@ def build_result(env_path: Path, group_name: str, plan_name: str) -> dict:
     tasks = get_json(
         graph_url(
             f"/planner/plans/{matching_plan.get('id')}/tasks",
-            {"$select": "id,percentComplete,createdDateTime"},
+            {"$select": "id,title,percentComplete,createdDateTime,dueDateTime"},
         ),
         token,
     )
@@ -199,7 +254,7 @@ def build_result(env_path: Path, group_name: str, plan_name: str) -> dict:
         }
 
     task_values = tasks.get("value") or []
-    return {
+    result = {
         "name": "planner",
         "state": "available",
         "method": "microsoft-graph-direct",
@@ -211,6 +266,13 @@ def build_result(env_path: Path, group_name: str, plan_name: str) -> dict:
         "write_actions": "blocked_until_explicit_approval",
         "note": "This probe prints counts/status only; it does not print Planner card content or secret values.",
     }
+    if include_tasks:
+        result["task_summaries"] = summarize_tasks(task_values, limit=task_limit)
+        result["note"] = (
+            "One bounded read returned sanitized incomplete-card summaries. "
+            "Descriptions, assignees, comments, attachments, tokens, and secret values are omitted."
+        )
+    return result
 
 
 def print_text(result: dict) -> None:
@@ -242,9 +304,26 @@ def main() -> int:
     parser.add_argument("--env", default=str(DEFAULT_ENV), help="path to m365 read-only env file")
     parser.add_argument("--group", default=DEFAULT_GROUP, help="Microsoft 365 group display name")
     parser.add_argument("--plan", default=DEFAULT_PLAN, help="Planner plan title")
+    parser.add_argument(
+        "--include-tasks",
+        action="store_true",
+        help="include one bounded batch of sanitized incomplete-card summaries",
+    )
+    parser.add_argument(
+        "--task-limit",
+        type=int,
+        default=25,
+        help="maximum sanitized incomplete-card summaries (1-50)",
+    )
     args = parser.parse_args()
 
-    result = build_result(Path(args.env).expanduser(), args.group, args.plan)
+    result = build_result(
+        Path(args.env).expanduser(),
+        args.group,
+        args.plan,
+        include_tasks=args.include_tasks,
+        task_limit=max(1, min(args.task_limit, 50)),
+    )
     if args.json:
         print(json.dumps(result, indent=2))
     else:

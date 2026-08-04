@@ -923,6 +923,33 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt asks for Agent OS workflow efficiency improvement.",
         )
 
+    today_briefing_patterns = (
+        "organize everything i need to do today",
+        "what do i need to do today",
+        "what should i do today",
+        "what should i focus on today",
+        "what needs me today",
+        "what is unfinished",
+        "waiting for my approval",
+        "waiting on staff",
+        "safe to defer",
+    )
+    if any(pattern in normalized for pattern in today_briefing_patterns):
+        return (
+            "$task-router",
+            [
+                "Use the cross-project today briefing route in task-router.md.",
+                "From the umbrella workspace, run `python3 scripts/agent-checks/agent-os-today-snapshot.py --include-planner --include-github` once and reuse that snapshot.",
+                "Use one bounded Planner read and one bounded GitHub search; do not query the same connector separately for every item.",
+                "Label each claim as verified, trusted, reported, historical, stale, or unavailable and show when it was checked.",
+                "Perform no more than three targeted follow-up checks, only when fresh evidence can change today's ordering or approval recommendation.",
+                "Return exactly these attention groups: Needs Hafiz now, Waiting on staff, Agent can continue, Monitor, and Deferred.",
+                "Read-only preparation does not need approval; ask only immediately before the exact write, release, production, access, critical-lane implementation, or destructive action.",
+                "Do not use Plane unless Hafiz explicitly asks.",
+            ],
+            "Prompt asks for a cross-project today briefing.",
+        )
+
     ui_audit_patterns = (
         "sims ui",
         "sims ui/ux",
