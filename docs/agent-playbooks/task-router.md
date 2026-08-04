@@ -75,13 +75,18 @@ chat exposes Omnigent's task-scoped coordinates:
 ```bash
 agent-os-set-understanding \
   --project <project> \
-  --workflow <workflow>
+  --workflow <workflow> \
+  --finish-line "<practical outcome>"
 ```
 
 Use the project name already selected by this playbook, such as
 `sifu-tutor`, `ripple-suite`, or `umbrella`. Use the route name already selected
 by the routing model, such as `bugfix`, `review`, `feature`, or
 `workflow-improvement`. Do not invent a second classifier just for the UI.
+Use the practical finish state already selected by the Execution Depth rules
+below, written as a short outcome such as `Local fix verified`, `PR opened`,
+`Staging verified`, or `Production monitored`. Do not turn it into a checklist
+or a promise to cross an unapproved boundary.
 
 If the request is materially ambiguous, keep the conservative route visible
 and include exactly one short question:
@@ -90,6 +95,7 @@ and include exactly one short question:
 agent-os-set-understanding \
   --project umbrella \
   --workflow triage \
+  --finish-line "Route confirmed" \
   --question "Which product should this change?"
 ```
 
@@ -98,10 +104,13 @@ answer could change scope, risk, product meaning, or approval. Do not mark an
 ordinary low-impact uncertainty as blocked.
 
 The helper takes no session-id argument and changes only the current chat's
-bounded `agent_os.*` route labels. The Worker Sidebar is a visible reflection
-of this router decision, not a new task database. Hafiz may correct the project
-or workflow there; that correction is saved to the same task and sent into the
-same orchestrator conversation. Treat the correction as fresh user evidence.
+bounded `agent_os.*` understanding labels. The Worker Sidebar is a visible
+reflection of this router decision, not a new task database. Hafiz may correct
+the project, workflow, or finish line there; that correction is saved to the
+same task and sent into the same orchestrator conversation. Treat the
+correction as fresh user evidence. The finish line records the agreed practical
+outcome; it does not grant approval for push, PR, merge, deploy, production,
+critical-lane, or destructive actions.
 
 If the helper or native coordinates are unavailable, continue with the normal
 task-router report and say the visible native summary was not updated. Never
