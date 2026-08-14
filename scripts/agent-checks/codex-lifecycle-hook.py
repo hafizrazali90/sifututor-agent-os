@@ -308,7 +308,7 @@ def koda_initialize(client_name: str = "codex-lifecycle-hook") -> tuple[dict, st
     if header_error:
         return {}, header_error
 
-    init_body, _init_type, session_id = post_koda(
+    init_body, init_type, session_id = post_koda(
         {
             "jsonrpc": "2.0",
             "method": "initialize",
@@ -321,11 +321,22 @@ def koda_initialize(client_name: str = "codex-lifecycle-hook") -> tuple[dict, st
         },
         headers,
     )
-    if not init_body or not session_id:
-        return {}, "Koda MCP initialize failed or did not return a session id"
+    if not init_body:
+        return {}, "Koda MCP initialize failed"
+    try:
+        init_response = json.loads(unwrap_sse(init_body, init_type))
+    except Exception as exc:  # noqa: BLE001 - hooks report a simple failure.
+        return {}, f"Koda MCP initialize returned malformed response: {exc}"
+    if init_response.get("error") or "result" not in init_response:
+        message = koda_error(init_body, init_type) or "missing initialize result"
+        return {}, f"Koda MCP initialize failed: {message}"
 
     post_koda({"jsonrpc": "2.0", "method": "notifications/initialized"}, headers, session_id)
-    return {"headers": headers, "session_id": session_id}, ""
+    return {
+        "headers": headers,
+        "session_id": session_id,
+        "transport": "sessionful" if session_id else "stateless",
+    }, ""
 
 
 def koda_tool_call(session: dict, name: str, arguments: dict | None = None, request_id: int = 2) -> tuple[dict, str]:
@@ -538,7 +549,9 @@ def koda_health_check(write: bool = True) -> tuple[bool, list[str]]:
     session, init_error = koda_initialize("codex-koda-health-check")
     if init_error:
         return False, details + [init_error]
-    details.append("Koda direct HTTP initialize returned a session id")
+    details.append(
+        f"Koda direct HTTP initialize passed ({session['transport']} transport)"
+    )
 
     body, content_type, _sid = post_koda(
         {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},

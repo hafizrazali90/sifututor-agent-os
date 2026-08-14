@@ -38,6 +38,14 @@ def api_key_status_message(_api_key: str) -> str:
     return "KODA_API_KEY is set"
 
 
+def connection_status_message(session_id: str) -> str:
+    """Describe the negotiated transport without requiring a legacy session."""
+
+    if session_id:
+        return f"Connected — session {session_id[:12]}..."
+    return "Connected — stateless per-request transport"
+
+
 def parse_tool_content(response: dict):
     content = response.get("result", {}).get("content", []) if isinstance(response, dict) else []
     text = next(
@@ -143,7 +151,7 @@ def ensure_confirmation_memory(
 
 
 def _raw_post(payload: dict, headers: dict, session_id: str = "") -> tuple[str, str, str]:
-    """Returns (body, content_type, session_id) — always returns session_id from response header."""
+    """Return body, content type, and an optional legacy session identifier."""
     h = dict(headers)
     if session_id:
         h["Mcp-Session-Id"] = session_id
@@ -200,7 +208,7 @@ def main():
 
     headers = {"Authorization": f"Bearer {api_key}"}
 
-    # ── Step 2: Initialize MCP session ──────────────
+    # ── Step 2: Initialize MCP transport ────────────
     header("Step 2 — Connecting to Koda")
     init_payload = {
         "jsonrpc": "2.0",
@@ -213,11 +221,11 @@ def main():
         "id": 1,
     }
     result, session_id = post(init_payload, headers)
-    if not session_id or "error" in result:
+    if "error" in result or "result" not in result:
         err = result.get("error", {}).get("message", str(result)) if isinstance(result, dict) else str(result)
         fail(f"Could not connect to Koda: {err}\n  Check that your API key is correct.")
 
-    ok(f"Connected — session {session_id[:12]}...")
+    ok(connection_status_message(session_id))
 
     # Send initialized notification (server may return 202 with empty body — ignore errors)
     _raw_post({"jsonrpc": "2.0", "method": "notifications/initialized"}, headers, session_id)
