@@ -84,6 +84,39 @@ class KodaContractTests(unittest.TestCase):
             self.assertEqual(lifecycle.main(), 0)
         health.assert_called_once_with(write=True)
 
+    def test_initialize_accepts_stateless_transport_without_session_header(self):
+        initialize = json.dumps({"jsonrpc": "2.0", "id": 1, "result": {}})
+        with (
+            patch.object(lifecycle, "koda_headers", return_value=({"Authorization": "Bearer hidden"}, "")),
+            patch.object(
+                lifecycle,
+                "post_koda",
+                side_effect=[(initialize, "application/json", ""), ("", "", "")],
+            ) as post,
+        ):
+            session, error = lifecycle.koda_initialize("stateless-test")
+
+        self.assertEqual(error, "")
+        self.assertEqual(session["session_id"], "")
+        self.assertEqual(session["transport"], "stateless")
+        self.assertEqual(post.call_count, 2)
+
+    def test_initialize_retains_legacy_session_transport(self):
+        initialize = json.dumps({"jsonrpc": "2.0", "id": 1, "result": {}})
+        with (
+            patch.object(lifecycle, "koda_headers", return_value=({"Authorization": "Bearer hidden"}, "")),
+            patch.object(
+                lifecycle,
+                "post_koda",
+                side_effect=[(initialize, "application/json", "legacy-session"), ("", "", "legacy-session")],
+            ),
+        ):
+            session, error = lifecycle.koda_initialize("sessionful-test")
+
+        self.assertEqual(error, "")
+        self.assertEqual(session["session_id"], "legacy-session")
+        self.assertEqual(session["transport"], "sessionful")
+
     def test_exact_duplicate_store_is_skipped(self):
         arguments = {
             "category": "lesson",
@@ -136,6 +169,18 @@ class KodaContractTests(unittest.TestCase):
 
 
 class KodaVerifierTests(unittest.TestCase):
+    def test_connection_message_supports_stateless_transport(self):
+        self.assertEqual(
+            verifier.connection_status_message(""),
+            "Connected — stateless per-request transport",
+        )
+
+    def test_connection_message_keeps_legacy_session_detail(self):
+        self.assertEqual(
+            verifier.connection_status_message("legacy-session-id"),
+            "Connected — session legacy-sessi...",
+        )
+
     def test_api_key_status_never_contains_credential_material(self):
         secret = "aee963b9-super-secret-value"
         message = verifier.api_key_status_message(secret)
