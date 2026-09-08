@@ -19,6 +19,11 @@ Codex magic.
 | Plugin skills | Plugin provider | `~/.codex/plugins/cache/.../skills/` | Google Docs, Sheets, Slides |
 | Custom local skills | Local/custom setup | `~/.codex/skills/` | `sifu-qa-plan-audit` |
 
+Kilo Code loads the shared `.agents/skills/` directory natively. Its
+project-specific bridge is `.kilo/agents/sifututor-agent-os.md`; that file does
+not duplicate skill procedures and must continue routing to the same wrappers
+and playbooks listed in this registry.
+
 This registry is for the first two rows: Sifututor workflow skills and their
 playbooks.
 

@@ -93,6 +93,7 @@ Use these when the user asks for:
 | --- | --- | --- |
 | Claude Code | `/task-router` or project router skill | [task-router.md](task-router.md) |
 | Codex | `$task-router` | [task-router.md](task-router.md) |
+| Kilo Code | Select `Sifututor Agent OS`; it routes through `.agents/skills/task-router/SKILL.md` | [task-router.md](task-router.md) |
 | Claude Code | `/verify` | [verify.md](verify.md) |
 | Codex | `$verify` | [verify.md](verify.md) |
 | Claude Code | `/qa` | [qa.md](qa.md) |
@@ -120,6 +121,12 @@ Use these when the user asks for:
 | Claude/Codex | `/workflow-improvement` later, `$workflow-improvement`, or "improve the workflow" | [agent-os-improvement-loop.md](agent-os-improvement-loop.md) |
 | Claude/Codex | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
 | Claude/Codex | Session Map capture/review | [session-map.md](session-map.md) |
+
+Kilo Code's thin project agent lives at
+`.kilo/agents/sifututor-agent-os.md`. Kilo natively discovers `AGENTS.md`,
+`CLAUDE.md`, and `.agents/skills/`; the adapter adds Kilo-specific provider,
+permission, Koda-helper, and explicit-guard behavior without creating a second
+workflow definition.
 
 ## Codex Hook Layer
 

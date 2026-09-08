@@ -34,6 +34,13 @@ have four visible product-design commands while Codex uses one umbrella
 `$product-design` skill. That is acceptable only if the underlying phases,
 questions, decisions, evidence, and stopping points match.
 
+Kilo Code uses one thin project agent at
+`.kilo/agents/sifututor-agent-os.md`. Kilo loads the repository `AGENTS.md`,
+`CLAUDE.md`, and `.agents/skills/` compatibility directory natively, so the
+adapter points at those shared sources instead of copying their rules. Kilo
+does not reproduce Claude or Codex lifecycle hooks; it must run the shared
+helper scripts explicitly when the playbook requires them.
+
 ## What Must Be Identical
 
 | Area | Must match across agents |
@@ -58,6 +65,22 @@ questions, decisions, evidence, and stopping points match.
 | UI | Claude, Codex, Cursor, Copilot, Gemini, or another tool can show different interfaces. |
 | Packaging | Claude may split a workflow into several commands while Codex exposes one umbrella skill. |
 | Automation strength | Hooks may differ by tool. Missing hooks must be compensated by shared scripts, playbooks, and explicit checks. |
+
+## Kilo Code Adapter Boundary
+
+Kilo is an additional model worker, not a new Agent OS source of truth. Select
+the `Sifututor Agent OS` agent in Kilo when using the configured Z.ai GLM
+Coding Plan. The adapter pins the provider/model, denies `.env*` and `live/`
+reads or edits, asks before edits, shell commands, or delegation, and points
+the model at the existing task router, skills, playbooks, Koda helper, and
+pre-commit guard.
+
+The provider credential remains in Kilo or VS Code's machine-local credential
+storage. It must never be copied into `.kilo/`, repository docs, tests, logs,
+Koda, or Git. Run
+`scripts/agent-checks/kilo-agent-os-adapter-check.py --installed` for local
+installed-path proof; the normal repository health check validates only the
+portable adapter and stays safe for CI and other machines.
 
 ## Workflow Parity Matrix
 

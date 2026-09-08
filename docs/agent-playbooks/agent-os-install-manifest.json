@@ -5,6 +5,7 @@
   "umbrella_required_files": [
     "AGENTS.md",
     ".codex/config.toml",
+    ".kilo/agents/sifututor-agent-os.md",
     "docs/agent-playbooks/agent-os.md",
     "docs/agent-playbooks/agent-os-architecture-map.md",
     "docs/agent-playbooks/agent-os-infrastructure.md",
@@ -84,6 +85,7 @@
     "scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py",
     "scripts/agent-checks/agent-os-koda-retrieval-quality.py",
     "scripts/agent-checks/agent-os-adapter-readiness.py",
+    "scripts/agent-checks/kilo-agent-os-adapter-check.py",
     "scripts/agent-checks/koda",
     "scripts/agent-checks/koda-direct.py",
     "scripts/agent-checks/codex-lifecycle-hook.py",
