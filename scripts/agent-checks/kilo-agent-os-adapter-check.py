@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -23,6 +24,7 @@ REQUIRED_AGENT_MARKERS = (
     "scripts/agent-checks/pre-commit-guard.sh",
     "critical lane",
     "text-only",
+    '"zai-vision_*": ask',
     ".env",
     "live/",
 )
@@ -68,6 +70,20 @@ def validate_installed(repo_text: str, installed_agent: Path, config_path: Path)
             "Z.ai Coding Plan chat/completions must be text-only; "
             f"remove image input from: {', '.join(sorted(image_models))}"
         )
+
+    vision_mcp = config.get("mcp", {}).get("zai-vision", {})
+    command = vision_mcp.get("command", [])
+    if vision_mcp.get("type") != "local" or vision_mcp.get("enabled") is not True:
+        fail("zai-vision MCP is not enabled as a local server")
+    if any(key in vision_mcp for key in ("environment", "env", "headers")):
+        fail("zai-vision MCP must not embed credentials in Kilo config")
+    if not isinstance(command, list) or len(command) != 1:
+        fail("zai-vision MCP must use one machine-local wrapper command")
+    wrapper = Path(command[0]).expanduser()
+    if not wrapper.is_file() or not os.access(wrapper, os.X_OK):
+        fail(f"zai-vision MCP wrapper is missing or not executable: {wrapper}")
+    if wrapper.stat().st_mode & 0o077:
+        fail(f"zai-vision MCP wrapper permissions are too broad: {wrapper}")
 
     # Kilo may keep provider credentials in VS Code's encrypted secret storage
     # rather than its JSON config. Validate the provider/model wiring here and

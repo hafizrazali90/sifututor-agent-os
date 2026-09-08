@@ -133,6 +133,13 @@ capability disabled for its models. If an image was added and Z.ai returns a
 `messages.content.type` 400 response, reload Kilo's config and start a new task
 so the retained image is not replayed from the failed conversation.
 
+For Coding Plan visual work in Kilo, install Z.ai's local Vision MCP Server and
+refer to an image saved in the workspace, such as `./screenshots/error.png`.
+Do not paste or attach it directly: Kilo otherwise sends the image block to the
+text-only model endpoint instead of calling the MCP tool. The Sifututor agent
+keeps `zai-vision_*` on `ask`; approve the specific image-analysis call in
+Kilo's permission dock rather than granting silent access to local images.
+
 ## Codex Hook Layer
 
 The umbrella repo also contains a project-local Codex hook config:
