@@ -22,6 +22,7 @@ REQUIRED_AGENT_MARKERS = (
     "scripts/agent-checks/koda search",
     "scripts/agent-checks/pre-commit-guard.sh",
     "critical lane",
+    "text-only",
     ".env",
     "live/",
 )
@@ -56,6 +57,17 @@ def validate_installed(repo_text: str, installed_agent: Path, config_path: Path)
     provider = config.get("provider", {}).get("zai", {})
     if "glm-5.3" not in provider.get("models", {}):
         fail("configured provider zai does not expose glm-5.3")
+
+    image_models = [
+        model_id
+        for model_id, model in provider.get("models", {}).items()
+        if "image" in model.get("modalities", {}).get("input", [])
+    ]
+    if image_models:
+        fail(
+            "Z.ai Coding Plan chat/completions must be text-only; "
+            f"remove image input from: {', '.join(sorted(image_models))}"
+        )
 
     # Kilo may keep provider credentials in VS Code's encrypted secret storage
     # rather than its JSON config. Validate the provider/model wiring here and
