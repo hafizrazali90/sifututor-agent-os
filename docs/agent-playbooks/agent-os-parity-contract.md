@@ -87,6 +87,12 @@ the Kilo model input modalities set to `text` and start a fresh task after an
 image-related 400 response, because the failed task retains its image part in
 conversation history.
 
+Vision remains available through Z.ai's Coding Plan Vision MCP Server. Kilo
+must pass a workspace image filename or path to the `zai-vision` tool instead
+of embedding the image in the chat message. The machine-local MCP wrapper may
+reuse Kilo's private credential store at runtime, but credentials must never be
+copied into this repository or written to logs.
+
 ## Workflow Parity Matrix
 
 | Workflow | Claude adapter | Codex adapter | Shared source | Parity requirement |
