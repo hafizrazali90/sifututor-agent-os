@@ -128,6 +128,11 @@ Kilo Code's thin project agent lives at
 permission, Koda-helper, and explicit-guard behavior without creating a second
 workflow definition.
 
+The configured Z.ai Coding Plan connection is text-only. Leave the Image
+capability disabled for its models. If an image was added and Z.ai returns a
+`messages.content.type` 400 response, reload Kilo's config and start a new task
+so the retained image is not replayed from the failed conversation.
+
 ## Codex Hook Layer
 
 The umbrella repo also contains a project-local Codex hook config:

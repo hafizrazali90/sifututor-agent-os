@@ -82,6 +82,11 @@ Koda, or Git. Run
 installed-path proof; the normal repository health check validates only the
 portable adapter and stays safe for CI and other machines.
 
+The configured Z.ai Coding Plan `chat/completions` endpoint is text-only. Keep
+the Kilo model input modalities set to `text` and start a fresh task after an
+image-related 400 response, because the failed task retains its image part in
+conversation history.
+
 ## Workflow Parity Matrix
 
 | Workflow | Claude adapter | Codex adapter | Shared source | Parity requirement |

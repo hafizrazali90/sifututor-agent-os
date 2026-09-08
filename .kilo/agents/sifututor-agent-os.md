@@ -41,6 +41,10 @@ Keep Koda reads and writes free of secrets. Use the direct helper path; do not
 ask Hafiz to reveal a Koda key and do not configure a separate Koda credential
 inside Kilo.
 
+This Z.ai Coding Plan connection is text-only. Do not attach or send image
+message blocks through this agent; describe the relevant visual details as text
+or use a provider/model endpoint that explicitly supports image input.
+
 Follow the approval, evidence, state-language, and close-out requirements in
 `AGENTS.md` and the selected playbook. A missing Kilo hook does not weaken a
 shared rule. Run the repository guard explicitly when required, including
