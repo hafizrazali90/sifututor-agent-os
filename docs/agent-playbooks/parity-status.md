@@ -1,10 +1,12 @@
-# Claude/Codex Parity Status
+# Claude/Codex/Kilo Parity Status
 
-Last updated: 2026-07-08
+Last updated: 2026-09-10
 
 ## Completed Baseline
 
-All active workspace projects now have the shared Claude/Codex baseline:
+All active workspace projects have the shared Claude/Codex baseline. Kilo is
+an umbrella-workspace adapter that consumes the same project rules and skills;
+it is not copied separately into every product repository.
 
 | Project | AGENTS.md | `.claude/tasks/active.json` | Hooks | Notes |
 | --- | --- | --- | --- | --- |
@@ -28,6 +30,8 @@ All active workspace projects now have the shared Claude/Codex baseline:
 - `docs/agent-playbooks/` is the Codex-readable equivalent of the core Claude
   skills: task routing, verify, QA, commit, and save-session.
 - `.agents/skills/` contains Codex wrappers for the shared playbooks.
+- Kilo discovers the same `.agents/skills/` wrappers natively and uses
+  `.kilo/agents/sifututor-agent-os.md` as its thin project bridge.
 - `.codex/config.toml` contains Codex project hooks for Bash guardrails,
   startup context, prompt reminders, pre-compaction reminders, and stop-time
   save-session reminders.
@@ -53,6 +57,26 @@ not part of the pushed umbrella GitHub repo.
 - `settings.json` and `active.json` files parsed successfully.
 - Stale claims such as "no `.claude` config yet" and "read CLAUDE.md first"
   were removed or updated.
+- Kilo's portable adapter, GLM text-only boundary, Vision MCP safety boundary,
+  and deterministic behavior parser are covered by repository checks.
+
+## Kilo Rollout State
+
+- Kilo Code is configured as an additional GLM worker, not as a duplicated
+  Claude Code extension.
+- The shared parity target is behavior: the same route, first move, approval
+  gates, evidence, state wording, memory discipline, and close-out. Identical
+  prose or UI is neither expected nor required.
+- The pre-hardening live baseline passed payment safety but exposed two drifts:
+  safe reads were described as state changes, and a vague staff report was
+  labelled bugfix before diagnosis.
+- Adversarial trace review also found an unnecessary approval before creating
+  the required GitHub issue after diagnosis had confirmed coding work.
+- The adapter and deterministic regressions now cover all three cases. The
+  2026-09-10 required installed/live run passed `57/57`, with all four fresh
+  GLM traces available and `0/4` behavior drift. Kilo is live-proven for this
+  sampled compliance set, not guaranteed to produce identical prose or perfect
+  behavior on every future prompt.
 
 ## Remaining Optional Hardening
 

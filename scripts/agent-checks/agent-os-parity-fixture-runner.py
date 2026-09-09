@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that Claude/Codex Agent OS parity stays wired to shared playbooks."""
+"""Check that Claude/Codex/Kilo Agent OS parity stays wired to shared playbooks."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 PLAYBOOK_DIR = ROOT / "docs" / "agent-playbooks"
 SKILL_DIR = ROOT / ".agents" / "skills"
+KILO_AGENT = ROOT / ".kilo" / "agents" / "sifututor-agent-os.md"
 
 PARITY_CONTRACT = PLAYBOOK_DIR / "agent-os-parity-contract.md"
 SKILL_REGISTRY = PLAYBOOK_DIR / "agent-os-skill-registry.md"
@@ -121,6 +122,13 @@ WORKFLOWS = [
         "codex_alias": "$workflow-improvement",
         "claude_aliases": ["/workflow-improvement"],
     },
+    {
+        "name": "SIMS UI Audit",
+        "playbook": "sims-ui-audit.md",
+        "codex_skill": "sims-ui-audit",
+        "codex_alias": "$sims-ui-audit",
+        "claude_aliases": ["/sims-ui-audit"],
+    },
 ]
 
 
@@ -148,6 +156,7 @@ REQUIRED_REVIEW_STANDARD_PHRASES = [
     "Close-out",
     "Allowed adapter differences",
     "Parity drift",
+    "Kilo",
 ]
 
 
@@ -201,6 +210,21 @@ BEHAVIOR_FIXTURES = [
         "id": "BP-010",
         "scenario": "workflow improvement request",
         "snippets": ["Agent OS Improvement Loop", "classify the mistake", "connected docs"],
+    },
+    {
+        "id": "BP-011",
+        "scenario": "active task is relevant but not exclusive truth",
+        "snippets": ["active task", "not treat it as the only truth", "Cross-check"],
+    },
+    {
+        "id": "BP-012",
+        "scenario": "no relevant active task file",
+        "snippets": ["Do not invent", "ordinary discussion", "approval boundary"],
+    },
+    {
+        "id": "BP-013",
+        "scenario": "project command is an adapter convenience",
+        "snippets": ["adapter conveniences", "shared workflow name", "save-session.md"],
     },
     {
         "id": "BP-014",
@@ -278,6 +302,11 @@ def check_workflow(workflow: dict[str, object], texts: dict[str, str]) -> list[s
             errors.append(f"{name}: {doc_name} doc does not mention {codex_alias}")
 
     parity_text = texts["parity"]
+    kilo_label = f"Native `{codex_skill}` skill"
+    if kilo_label not in parity_text:
+        errors.append(
+            f"{name}: parity contract does not mention Kilo adapter {kilo_label}"
+        )
     for alias in claude_aliases:
         if alias not in parity_text:
             errors.append(f"{name}: parity contract does not mention Claude alias {alias}")
@@ -330,6 +359,32 @@ def check_supporting_docs(texts: dict[str, str]) -> list[str]:
     if "agent-os-parity-fixture-runner.py" not in texts["health"]:
         errors.append("agent-os-health.sh must run agent-os-parity-fixture-runner.py")
 
+    return errors
+
+
+def check_kilo_adapter(texts: dict[str, str]) -> list[str]:
+    errors = []
+    if not KILO_AGENT.is_file():
+        return ["missing Kilo project adapter .kilo/agents/sifututor-agent-os.md"]
+
+    kilo_text = read(KILO_AGENT)
+    required_agent_markers = [
+        "model: zai/glm-5.3",
+        ".agents/skills/",
+        "reported symptom",
+        "diagnose",
+        "Reading files",
+        "parity contract",
+    ]
+    for marker in required_agent_markers:
+        if not contains(kilo_text, marker):
+            errors.append(f"Kilo adapter missing behavior marker: {marker}")
+
+    for doc_name in ("parity", "registry"):
+        text = texts[doc_name]
+        for marker in ("Kilo Code", ".kilo/agents/sifututor-agent-os.md", ".agents/skills/"):
+            if not contains(text, marker):
+                errors.append(f"{doc_name} doc missing Kilo marker: {marker}")
     return errors
 
 
@@ -434,7 +489,15 @@ def run_adapter_self_test() -> int:
 
 
 def run(verbose: bool = False, claude_adapter_root: Path | None = None) -> int:
-    required_files = (PARITY_CONTRACT, SKILL_REGISTRY, EVAL_DOC, COVERAGE_MAP, AGENTS, HEALTH)
+    required_files = (
+        PARITY_CONTRACT,
+        SKILL_REGISTRY,
+        EVAL_DOC,
+        COVERAGE_MAP,
+        AGENTS,
+        HEALTH,
+        KILO_AGENT,
+    )
     missing_files = [path for path in required_files if not path.is_file()]
     if missing_files:
         for path in missing_files:
@@ -457,6 +520,7 @@ def run(verbose: bool = False, claude_adapter_root: Path | None = None) -> int:
     failures.extend(check_plane_policy(texts))
     failures.extend(check_supporting_docs(texts))
     failures.extend(check_behavior_fixtures(texts))
+    failures.extend(check_kilo_adapter(texts))
 
     adapter_note = "installed Claude adapter presence: not checked (no adapter root supplied)"
     if claude_adapter_root is not None:
@@ -490,7 +554,7 @@ def run(verbose: bool = False, claude_adapter_root: Path | None = None) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run Agent OS Claude/Codex parity fixture checks.")
+    parser = argparse.ArgumentParser(description="Run Agent OS Claude/Codex/Kilo parity fixture checks.")
     parser.add_argument("--verbose", action="store_true", help="print detailed parity fixture output")
     parser.add_argument(
         "--claude-adapter-root",

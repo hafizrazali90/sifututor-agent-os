@@ -16,7 +16,7 @@ The harness should protect Hafiz from repeated workflow mistakes:
 - the agent asks Hafiz to verify something it could safely check itself
 - the agent treats Koda, Planner, GitHub, git, deploy records, and QA evidence
   as the same kind of truth
-- Claude and Codex drift apart for the same workflow
+- Claude, Codex, and Kilo drift apart for the same workflow
 - short replies such as `approve`, `proceed`, and `go next` are interpreted
   without visible context
 
@@ -49,9 +49,9 @@ the lightest test that can honestly catch the mistake if it returns.
 | Koda fixture | Memory payloads and stale-memory behavior are safe. | Memory quality and fallback discipline. | Live retrieval relevance by itself. |
 | Koda retrieval probe | Existing important memories are findable again through live Koda search. | Checking whether future sessions can recover Scenario Lab, Koda CLI, parity, and live-evidence lessons. | Routine health checks, because live service quality can vary. |
 | Capability fixture | Tool availability and approval claims stay honest. | Unknown, not connected, blocked, critical, and staff capability states. | Deep live connector behavior. |
-| Parity fixture | Claude and Codex wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
-| Behavior trace | The agent picks the expected route, first move, approval boundary, and evidence markers for common prompts. | Claude/Codex parity review points and workflow predictability. | Subjective quality of the full answer. |
-| Adapter readiness | Codex and Claude are wired to the shared Agent OS core. | Setup confidence before daily use or handoff. | Proving the live extension always behaves correctly. |
+| Parity fixture | Claude, Codex, and Kilo wiring does not drift. | Shared playbook and adapter coverage. | Full side-by-side LLM response quality. |
+| Behavior trace | The agent picks the expected route, first move, approval boundary, and evidence markers for common prompts. | Claude/Codex/Kilo parity review points and workflow predictability. | Subjective quality of the full answer. |
+| Adapter readiness | Codex, Claude, and Kilo are wired to the shared Agent OS core. | Setup confidence before daily use or handoff. | Proving the live extension always behaves correctly. |
 | Transcript retrospective | Aggregate real-session behavior is measured after filtering injections and replayed history. | Finding repeated daily-use drift that deterministic fixtures miss. | Product truth, exact intent from keyword counts, or a routine health gate. |
 | Health/doctor | The installed Agent OS wiring is present and runnable. | Required docs, scripts, skills, baseline checks. | Whether the workflow design is good. |
 | Validation loop | The executable layers can be run as one scored loop. | Daily Agent OS readiness and "are we above 90%?" checks. | Proving subjective tone, live LLM judgment, or product correctness. |
@@ -78,14 +78,21 @@ The loop is allowed to run more than once because some checks may depend on
 current local state, but it should not hide failures. If the target is not
 reached, fix the failing layer instead of lowering the score.
 
-The behavior trace runner has an optional `--live-claude` mode for comparing
-Claude CLI traces, but that mode is evidence-only. It may hit model budget,
-rate-limit, or project-context loading limits, so normal readiness should use
-the deterministic trace plus real-session review.
+The behavior trace runner has optional `--live-claude` and `--live-kilo` modes
+for comparing real CLI traces, but those modes are evidence-only. They may hit
+model budget, rate-limit, or project-context loading limits, so normal
+readiness should use deterministic traces plus real-session review.
 
-The adapter readiness runner checks whether Codex and Claude are set up to use
-the Agent OS. It proves wiring, not perfect obedience. Treat live extension
-behavior as a separate proof level.
+The adapter readiness runner checks whether Codex, Claude, and Kilo are set up
+to use the Agent OS. It proves wiring, not perfect obedience. Treat live
+extension behavior as a separate proof level.
+
+Run Kilo live evidence explicitly when needed:
+
+```bash
+python3 scripts/agent-checks/agent-os-behavior-trace-runner.py --live-kilo
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --require-installed-kilo --require-live-kilo
+```
 
 For a broad daily-use audit, run the aggregate transcript retrospective after
 the deterministic checks:
@@ -115,7 +122,7 @@ Counted in the score:
 Not counted yet:
 
 - subjective tone quality beyond response-shape fixtures
-- full real Claude-vs-Codex answer comparison
+- full real Claude-vs-Codex-vs-Kilo answer comparison
 - full transcript retrospective scans, because history availability, size, and
   privacy differ by machine
 - live connector quality beyond local probes and on-demand capability checks
@@ -155,7 +162,7 @@ Recommended order for the current Agent OS:
    needed.
 3. **Conversation state**: short replies tied to the last exact visible request.
 4. **Koda and capability discipline**: memory and tool claims stay honest.
-5. **Behavior parity**: Claude and Codex produce the same workflow decision for
+5. **Behavior parity**: Claude, Codex, and Kilo produce the same workflow decision for
    the same prompt.
 
 ## What Not To Automate Yet

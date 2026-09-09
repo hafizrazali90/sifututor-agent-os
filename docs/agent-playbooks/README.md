@@ -1,7 +1,8 @@
 # Shared Agent Playbooks
 
 These playbooks translate the Claude skill workflow into plain Markdown that
-Codex, Claude, and future agents can all read. Claude still owns the executable
+Codex, Claude, Kilo, and future agents can all read. Claude still owns the
+executable
 `.claude/skills/*/SKILL.md` commands. These files are the shared reference when
 an agent needs the same workflow but cannot invoke Claude skills directly.
 
@@ -9,7 +10,7 @@ Use these when the user asks for:
 
 - Sifututor Agent OS overview: [agent-os.md](agent-os.md)
 - Agent OS infrastructure map: [agent-os-infrastructure.md](agent-os-infrastructure.md)
-- Agent OS Claude/Codex parity contract: [agent-os-parity-contract.md](agent-os-parity-contract.md)
+- Agent OS Claude/Codex/Kilo parity contract: [agent-os-parity-contract.md](agent-os-parity-contract.md)
 - Agent OS roles and responsibilities: [agent-os-roles.md](agent-os-roles.md)
 - Agent OS multi-agent and adapter workflow: [multi-agent-adapter-workflow.md](multi-agent-adapter-workflow.md)
 - Agent OS skill registry: [agent-os-skill-registry.md](agent-os-skill-registry.md)
@@ -100,7 +101,7 @@ Use these when the user asks for:
 | Codex | `$qa` | [qa.md](qa.md) |
 | Claude Code | `/sims-ui-audit` plus `ux-reviewer` where available | [sims-ui-audit.md](sims-ui-audit.md) |
 | Codex | `$sims-ui-audit` | [sims-ui-audit.md](sims-ui-audit.md) |
-| Claude/Codex | TESTING.md coverage check | [test-coverage.md](test-coverage.md) |
+| Claude/Codex/Kilo | TESTING.md coverage check | [test-coverage.md](test-coverage.md) |
 | Claude Code | `/commit` | [commit.md](commit.md) |
 | Codex | `$commit` | [commit.md](commit.md) |
 | Claude Code | `/save-session` | [save-session.md](save-session.md) |
@@ -109,7 +110,7 @@ Use these when the user asks for:
 | Codex | `$handoff` | [handoff.md](handoff.md) |
 | Claude Code | `/snapshot` | [snapshot.md](snapshot.md) |
 | Codex | `$snapshot` | [snapshot.md](snapshot.md) |
-| Claude/Codex | `/session-map`, `$session-map`, or "update the session map" | [session-map.md](session-map.md) |
+| Claude/Codex/Kilo | `/session-map`, `$session-map`, or "update the session map" | [session-map.md](session-map.md) |
 | Claude Code | `/diagnose` | [diagnose.md](diagnose.md) |
 | Codex | `$diagnose` | [diagnose.md](diagnose.md) |
 | Claude Code | `/review` | [review.md](review.md) |
@@ -118,9 +119,9 @@ Use these when the user asks for:
 | Codex | `$product-design` | [product-design.md](product-design.md) |
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
-| Claude/Codex | `/workflow-improvement` later, `$workflow-improvement`, or "improve the workflow" | [agent-os-improvement-loop.md](agent-os-improvement-loop.md) |
-| Claude/Codex | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
-| Claude/Codex | Session Map capture/review | [session-map.md](session-map.md) |
+| Claude/Codex/Kilo | `/workflow-improvement`, `$workflow-improvement`, or "improve the workflow" | [agent-os-improvement-loop.md](agent-os-improvement-loop.md) |
+| Claude/Codex/Kilo | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
+| Claude/Codex/Kilo | Session Map capture/review | [session-map.md](session-map.md) |
 
 Kilo Code's thin project agent lives at
 `.kilo/agents/sifututor-agent-os.md`. Kilo natively discovers `AGENTS.md`,
@@ -139,6 +140,14 @@ Do not paste or attach it directly: Kilo otherwise sends the image block to the
 text-only model endpoint instead of calling the MCP tool. The Sifututor agent
 keeps `zai-vision_*` on `ask`; approve the specific image-analysis call in
 Kilo's permission dock rather than granting silent access to local images.
+
+After changing the Kilo adapter, verify portable behavior first, then explicitly
+check the installed adapter and real GLM traces when rollout evidence is needed:
+
+```bash
+python3 scripts/agent-checks/kilo-agent-os-adapter-check.py --installed
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --require-installed-kilo --require-live-kilo
+```
 
 ## Codex Hook Layer
 

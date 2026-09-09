@@ -2,12 +2,12 @@
 
 Status: draft for Sifututor Agent OS.
 
-This contract explains how Claude, Codex, and future LLM agents should behave
-the same way inside the Sifututor Agent OS.
+This contract explains how Claude, Codex, Kilo, and future LLM agents should
+behave the same way inside the Sifututor Agent OS.
 
-Plain meaning: Claude and Codex may have different buttons, commands, hooks, or
-UI affordances, but Hafiz should be able to predict the same decision flow from
-both of them.
+Plain meaning: Claude, Codex, and Kilo may have different buttons, commands,
+hooks, or UI affordances, but Hafiz should be able to predict the same decision
+flow from all three.
 
 ## Core Principle
 
@@ -60,7 +60,7 @@ helper scripts explicitly when the playbook requires them.
 
 | Area | Allowed difference |
 | --- | --- |
-| Command name | Claude can use slash commands. Codex can use `$skill` wrappers. Future agents can use another adapter. |
+| Command name | Claude can use slash commands. Codex can use `$skill` wrappers. Kilo selects the `Sifututor Agent OS` agent and invokes the same native `.agents/skills/` wrappers. Future agents can use another adapter. |
 | Internal tool | One agent may use MCP; another may use CLI or local scripts. The result and evidence standard must match. |
 | UI | Claude, Codex, Cursor, Copilot, Gemini, or another tool can show different interfaces. |
 | Packaging | Claude may split a workflow into several commands while Codex exposes one umbrella skill. |
@@ -95,23 +95,23 @@ copied into this repository or written to logs.
 
 ## Workflow Parity Matrix
 
-| Workflow | Claude adapter | Codex adapter | Shared source | Parity requirement |
-| --- | --- | --- | --- | --- |
-| Task Router | `/task-router` or project router | `$task-router` | `task-router.md` | Same route, context checks, approval boundary, next action. |
-| Diagnose | `/diagnose` | `$diagnose` | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
-| Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
-| Verify | `/verify` | `$verify` | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
-| QA | `/qa` | `$qa` | `qa.md` | Same human-journey and regression evidence standard. |
-| Review | `/review` | `$review` | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
-| Commit | `/commit` | `$commit` | `commit.md` | Same guard checks, exact file-list approval, local commit boundary. |
-| Save Session | `/save-session` | `$save-session` | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
-| Handoff | `/handoff` | `$handoff` | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
-| Snapshot | `/snapshot` | `$snapshot` | `snapshot.md` | Same pause/compact context capture. |
-| Session Map | `/session-map` or natural-language update | `$session-map` | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
-| Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
-| Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
-| Workflow Improvement | `/workflow-improvement` (installed global Claude adapter skill) | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
-| SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
+| Workflow | Claude adapter | Codex adapter | Kilo adapter | Shared source | Parity requirement |
+| --- | --- | --- | --- | --- | --- |
+| Task Router | `/task-router` or project router | `$task-router` | Native `task-router` skill | `task-router.md` | Same route, context checks, approval boundary, next action. |
+| Diagnose | `/diagnose` | `$diagnose` | Native `diagnose` skill | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
+| Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | Native `product-design` skill | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
+| Verify | `/verify` | `$verify` | Native `verify` skill | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
+| QA | `/qa` | `$qa` | Native `qa` skill | `qa.md` | Same human-journey and regression evidence standard. |
+| Review | `/review` | `$review` | Native `review` skill | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
+| Commit | `/commit` | `$commit` | Native `commit` skill | `commit.md` | Same guard checks, exact file-list approval, local commit boundary. |
+| Save Session | `/save-session` | `$save-session` | Native `save-session` skill | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
+| Handoff | `/handoff` | `$handoff` | Native `handoff` skill | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
+| Snapshot | `/snapshot` | `$snapshot` | Native `snapshot` skill | `snapshot.md` | Same pause/compact context capture. |
+| Session Map | `/session-map` or natural-language update | `$session-map` | Native `session-map` skill | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
+| Quick Check | `/quick-check` or doctor | `$quick-check` | Native `quick-check` skill | `quick-check.md` | Same health and drift check before real work. |
+| Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | Native `monitor-production-logs` skill | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
+| Workflow Improvement | `/workflow-improvement` (installed global Claude adapter skill) | `$workflow-improvement` | Native `workflow-improvement` skill | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
+| SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | Native `sims-ui-audit` skill | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
 
 ### A Listed Adapter Must Actually Be Installed
 
@@ -181,10 +181,10 @@ expecting every model/tool to expose identical UI.
 
 | Gap | Practical meaning | Recommended fix |
 | --- | --- | --- |
-| Parity contract was implied, not explicit | Hafiz had to infer whether Claude and Codex should behave the same. | Keep this contract as the single parity map. |
+| Parity contract was implied, not explicit | Hafiz had to infer whether Claude, Codex, and Kilo should behave the same. | Keep this contract as the single parity map. |
 | Product Design packaging differs | Claude shows four steps; Codex shows one umbrella skill, which can feel like less control. | Require Codex to name the current phase; optionally add Codex phase aliases later. |
-| Evals mostly test Codex routing | We can prove Codex hook behavior better than live Claude extension behavior. | Use `agent-os-adapter-readiness.py` for wiring, behavior trace for deterministic Codex routing, and live Claude prompts only as optional evidence until the extension has a stable non-interactive test path. |
-| Hook behavior differs by tool | Claude and Codex lifecycle hooks are not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
+| Live checks are not routine health gates | Real Claude and Kilo calls can consume quota or fail for external reasons. | Keep deterministic adapter checks in normal health; use explicit live flags as evidence before daily rollout or after adapter changes. |
+| Hook behavior differs by tool | Claude, Codex, and Kilo lifecycle automation is not mechanically identical. | Treat hooks as adapter helpers; enforce core rules through shared playbooks and scripts. |
 | Claude adapter overfits old task-state mechanics | Live Claude transcript tests showed safe but rigid answers that required `active.json`, Claude-only gate fields, or old command names for every workflow. | Treat `active.json`, Claude hooks, and project slash commands as adapter helpers. The shared behavior comes from `AGENTS.md`, this contract, and the playbooks. |
 | Real sessions still omit a usable close-out | Transcript retrospective found both adapters often checked work but left Hafiz to ask what remains or what next. | Keep the shared close-out contract in the communication owner, inject the same compact reminder through both prompt adapters, and protect it with response-shape fixtures. |
 | Agents explain findings before the user story | Real transcripts repeatedly show Hafiz asking what the feature/issue actually is, what the user does, and to review one item at a time. | Keep explanation order in the communication/review owners, inject the same explanation-first and one-by-one reminder through both adapters, and protect representative shapes with fixtures/evals. |
@@ -193,7 +193,7 @@ expecting every model/tool to expose identical UI.
 | Claude save-session adapter carried heavy local ritual | The installed save-session adapter demanded session-lifecycle calls, broad doc updates, and universal active-task ceremony that the shared playbook never required. | Keep the global adapter thin: point at `save-session.md`, keep only useful project dispatch, and prove the linkage with the installed-adapter check. |
 | Unrunnable checks were silently omitted | A live retest prohibited commands, and the agent neither named the shared guard nor labeled it unrun. | Require BP-014 behavior: name the exact check and report it as not run instead of dropping it or overclaiming. |
 | Traceability is file-based, not full runtime tracing | We have docs, Koda, task files, guards, and evals, but not a full run trace dashboard. | Keep lightweight file-based evidence now; consider trace logging only after the workflow stabilizes. |
-| Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or staff LLMs are not built yet. | Build future adapters from this contract only after Claude/Codex parity feels predictable. |
+| Future LLM support is conceptual | The core is model-agnostic, but adapters for Cursor, Copilot, Gemini, or other staff LLMs are not built yet. | Build future adapters from this contract after Claude/Codex/Kilo parity is predictable. |
 
 ## Parity Eval Requirements
 
@@ -202,6 +202,9 @@ Add or maintain checks that prove:
 - every workflow in the skill registry has a shared playbook,
 - every shared playbook has a Claude adapter or stated exception,
 - every shared playbook has a Codex adapter or stated exception,
+- every shared playbook has a Kilo-native skill path or stated exception,
+- the repository Kilo adapter contains no endpoint or credential and the
+  installed adapter is checked separately,
 - Product Design phase mapping remains documented,
 - commit/push/deploy gates are identical across adapters,
 - save-session produces the same durable state shape,
@@ -210,7 +213,7 @@ Add or maintain checks that prove:
 
 ## Behavioral Parity Fixtures
 
-These scenarios define the same behavior Claude, Codex, and future adapters
+These scenarios define the same behavior Claude, Codex, Kilo, and future adapters
 must produce even when their command names differ.
 
 | ID | Scenario | Expected shared behavior |
@@ -295,7 +298,7 @@ Do not patch only one agent unless the difference is truly adapter-specific.
 
 ## Decision Rule
 
-When Claude and Codex differ, ask this:
+When Claude, Codex, and Kilo differ, ask this:
 
 ```text
 Is this only a UI/tool difference, or does it change the decision, safety,

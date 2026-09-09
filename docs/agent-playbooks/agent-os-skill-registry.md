@@ -22,7 +22,8 @@ Codex magic.
 Kilo Code loads the shared `.agents/skills/` directory natively. Its
 project-specific bridge is `.kilo/agents/sifututor-agent-os.md`; that file does
 not duplicate skill procedures and must continue routing to the same wrappers
-and playbooks listed in this registry.
+and playbooks listed in this registry. The selected workflow skill should be
+invoked visibly so a reviewer can see which shared route governed the answer.
 
 This registry is for the first two rows: Sifututor workflow skills and their
 playbooks.
@@ -379,7 +380,7 @@ Run Agent OS health after registry changes.
 For the hook layer that suggests these skills, read
 [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md).
 
-For Claude/Codex command parity, read
+For Claude/Codex/Kilo command parity, read
 [agent-os-parity-contract.md](agent-os-parity-contract.md). The registry says
 what skills exist; the parity contract says which behavior must stay identical
 across agents even when the command names differ.

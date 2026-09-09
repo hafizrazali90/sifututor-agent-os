@@ -150,7 +150,7 @@ only for tiny one-shot work.
 
 Use [agent-os-improvement-loop.md](agent-os-improvement-loop.md) when Hafiz asks
 to improve the workflow, fix Agent OS behavior, make future agents handle
-something better, resolve Claude/Codex workflow drift, or clean up docs, skills,
+something better, resolve Claude/Codex/Kilo workflow drift, or clean up docs, skills,
 hooks, evals, Koda, and Session Map consistency. Plain meaning: do not patch one
 file and call the Agent OS fixed when the behavior depends on several layers.
 
