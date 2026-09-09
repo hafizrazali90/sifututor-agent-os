@@ -1,6 +1,0 @@
-433ca00373b77c6a2239f1733795a700e5d7d35a7afa1cef3e6c56ab53edca9a  ./01-Executive-Presentation/TEKUN-Executive-Stakeholder-Presentation.pdf
-435fa908851f662de260d89650dd4a96e7870859d49b53d26eae352800a0fe85  ./01-Executive-Presentation/TEKUN-Executive-Stakeholder-Presentation.html
-9cebbe50d5dfa1eb378c29d6d3a9ee7f58a77fa6cbb98a3818e2fa6e26ef3c6e  ./00-READ-ME-FIRST/TEKUN-Controlled-External-Review-Pack-Read-Me.md
-b517a228b3fe10644e46297e97b22163b9388f99693bdda5e8e74c8526dbe3ee  ./02-Controlled-Proposal/TEKUN-Controlled-External-Proposal.pdf
-baba98b1acd0d3f01e40fc46d4bd5a8f9e26e819777fc954164f8239a131f4a8  ./02-Controlled-Proposal/TEKUN-Controlled-External-Proposal.docx
-f20dd23889067bab770964ede771e52c728056c2f0e4b97e0ebe165d168114b5  ./00-READ-ME-FIRST/TEKUN-Controlled-External-Review-Pack-Read-Me.pdf

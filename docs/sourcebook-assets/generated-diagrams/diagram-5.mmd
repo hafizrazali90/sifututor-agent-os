@@ -1,9 +1,0 @@
-flowchart TB
-    O[Observe\nhealth, errors, user signals] --> D[Detect\nchange or anomaly]
-    D --> T[Triage\nimpact and ownership]
-    T --> C[Correct\nsmall, reviewed change]
-    C --> V[Verify\ncode and journey evidence]
-    V --> R[Release\ncontrolled transition]
-    R --> M[Monitor\nreal operating result]
-    M --> L[Learn\nrecord durable lesson]
-    L -. improves observation .-> O
