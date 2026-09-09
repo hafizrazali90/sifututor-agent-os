@@ -115,6 +115,7 @@ Use these when the user asks for:
 | Codex | `$review` | [review.md](review.md) |
 | Claude Code | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | [product-design.md](product-design.md) |
 | Codex | `$product-design` | [product-design.md](product-design.md) |
+| Claude/Codex | `/frontend-slides`, `$frontend-slides`, or "create an HTML presentation" | [frontend-slides.md](frontend-slides.md) |
 | Claude Code | `/quick-check` or doctor script | [quick-check.md](quick-check.md) |
 | Codex | `$quick-check` | [quick-check.md](quick-check.md) |
 | Claude/Codex | `/workflow-improvement` later, `$workflow-improvement`, or "improve the workflow" | [agent-os-improvement-loop.md](agent-os-improvement-loop.md) |
@@ -269,7 +270,7 @@ after the config changes. That is expected for local hook safety.
 | --- | --- | --- |
 | State-file workflow | `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, `sifututor_parent`, `lls` | `.claude/tasks/active.json` points to the active task file |
 | Paired frontend | `lls-frontend` | Has state workflow and dedicated frontend skills; verify with `lls` when API contracts or RTK Query slices change |
-| Shared-playbook workflow | `lls-mobile`, `creative-hub`, `team-inbox` | Has task state and hooks, but no project-specific skills yet |
+| Shared-playbook workflow | `lls-mobile`, `creative-hub` | Has task state and hooks, but no project-specific skills yet |
 | Existing custom workflow plus task pointer | `finch-inbox` | Keeps Finch workflow, adds `.claude/tasks/active.json` for parity |
 
 ## Universal Order

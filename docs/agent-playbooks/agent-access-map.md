@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 22 lanes — 21 scoped files under
+Current registry count: 24 lanes — 23 scoped files under
 `~/.config/sifututor/agent-access/` plus the Microsoft 365 read-only env lane at
 `~/.config/sifututor/m365-readonly.env`.
 
@@ -54,12 +54,14 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 |-------|-------|
 | **Conf file** | `staging-smoke.conf` |
 | **Base URL** | `https://sifu-staging.tutorla.tech` |
+| **Current host** | Hostinger KVM8 (`187.127.98.182`); SIMS staging at `/var/www/staging/sifu-tutor`. Finch/Finch-Inbox is a separate project hosted on this server, not the server name. |
 | **Purpose** | Verify SIMS staging responds and login is reachable after a deploy |
 | **Tier** | auto-read |
-| **Allowed operations** | HTTP GET/HEAD smoke requests; verify response codes |
+| **Allowed operations** | HTTP GET/HEAD smoke requests; verify response codes; authenticated browser smoke with the scoped staging account |
 | **Hafiz approval** | Not required |
 | **Safe verification** | `curl -sI https://sifu-staging.tutorla.tech/login` |
-| **Forbidden** | Do not use staging to test production-only behavior |
+| **Evidence rule** | Curl proves reachability only. Use a real browser journey before claiming login or rendered-dashboard health |
+| **Forbidden** | Do not use staging to test production-only behavior; mail and broadcasts are log-only, and FIUU/Sentry are intentionally not configured |
 
 ---
 
@@ -187,19 +189,19 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 
 ---
 
-### 11. `cpanel-admin` — cPanel / WHM Admin (Web Voyager Staging)
+### 11. `cpanel-admin` — Retired Web Voyager cPanel / WHM Lane
 
 | Field | Value |
 |-------|-------|
 | **Conf file** | `cpanel-admin.conf` |
-| **Base URL** | `https://151.246.1.218:2087` (WebVoyager WHM) |
+| **Former base URL** | `https://151.246.1.218:2087` (cancelled Web Voyager VPS; network-unreachable as of 2026-08-10) |
 | **Username** | `root` |
-| **Allowed actions** | `approved-cpanel-actions-only` |
-| **Purpose** | Manage staging server: SSL installs, vhost config, AutoSSL, cPanel accounts |
+| **Allowed actions** | None unless this lane is revalidated and Hafiz explicitly approves a new target |
+| **Purpose** | Historical record only. SIMS staging no longer uses cPanel or this host |
 | **Tier** | admin |
-| **Hafiz approval** | Required for any change; SSH + WHM API writes affect shared staging hosting |
-| **Safe verification** | `scripts/agent-access/check-cpanel-autossl.sh` |
-| **Forbidden** | Do not add/remove cPanel accounts; do not change PHP version without approval; do not touch production server (151.246.1.164) via this lane — use `server-admin` SSH instead |
+| **Hafiz approval** | Required before any attempt to reuse or repoint the lane |
+| **Safe verification** | None while retired |
+| **Forbidden** | Do not treat this as SIMS staging access; do not repoint its credential material or use it against production |
 
 ---
 
@@ -210,11 +212,13 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Conf file** | `server-ssh.conf` |
 | **Production alias** | `production` → `151.246.1.164:19199` |
 | **Production app dir** | `/home/sifututortutorla/public_html` |
-| **Staging alias** | `webvoyager` → `151.246.1.218:19199` |
+| **Staging alias** | Legacy SSH alias `finch` → KVM8 `187.127.98.182` (alias retained for compatibility; it does not name the server) |
+| **Staging app dir** | `/var/www/staging/sifu-tutor` |
+| **Retired alias** | `webvoyager` → former `151.246.1.218:19199`; cancelled and network-unreachable |
 | **Purpose** | SSH read access: read logs, check config, verify app state, SSL cert inspection |
 | **Tier** | auto-read for non-destructive reads; write-tier for any file modification |
 | **Hafiz approval** | Not required for reads; required for writes, restarts, or any command that changes server state |
-| **Safe verification** | `ssh production "echo connected && php -v"` |
+| **Safe verification** | Production: `ssh production "echo connected && php -v"`; staging: `ssh finch "test -d /var/www/staging/sifu-tutor && echo connected"` |
 | **Forbidden** | Do not run `rm`, `mv`, destructive SQL, or `systemctl stop` without approval; do not modify `.env` files; do not push code via SSH directly |
 
 ---
@@ -381,6 +385,147 @@ do not restart the app or bypass the control to force an immediate run.
 
 ---
 
+### 23. `ripple-crm-qa` — Ripple CRM Production QA Identity
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `ripple-crm-qa.conf` |
+| **Base URL** | `https://ripple.admin.sifututor.my` |
+| **Purpose** | Reusable active staff-linked identity for controlled Ripple-to-SIMS CRM production proof when a real human actor is required |
+| **Tier** | auto-read for login and read-only CRM checks; critical for any production mutation |
+| **Hafiz approval** | Not required for read-only login and GET checks inside an approved QA task. Required for every production mutation or temporary role change |
+| **Safe verification** | Log in, call `/api/auth/me`, and open a specifically approved read-only CRM record. Do not infer mutation authority from a cached token |
+| **Default authority** | Ripple local role `Staff`; SIMS role `PRODUCTION_QA`. The account must not be an eligible CX Support owner |
+| **Forbidden** | Never print or commit credentials, cookies, or tokens; never use a real customer record for a mutation; never leave temporary Ripple role elevation or capability flags enabled; never weaken SIMS's active-staff actor check |
+
+Expected variable names:
+
+```bash
+SIMS_CRM_QA_BASE_URL=...
+RIPPLE_CRM_QA_BASE_URL=...
+CRM_QA_EMAIL=...
+CRM_QA_PASSWORD=...
+```
+
+The R6 production canary proved the lane with one test-parent Request. Any
+temporary Ripple role elevation must be restored immediately, followed by a
+fresh login proving the elevated permissions are absent. Temporary auth-state
+files must be stored outside the repository and destroyed after the check.
+
+---
+
+### 24. `google-tagmanager` — Google Tag Manager (read + edit containers)
+
+| Field | Value |
+|-------|-------|
+| **Credential file** | `google-tagmanager-sa.json` (service account, preferred) or `google-tagmanager.conf` (OAuth fallback) |
+| **Auth identity** | `gtm-agent@sifututor-agent-access.iam.gserviceaccount.com` |
+| **Purpose** | Audit tags/triggers/variables; add or correct conversion tags; diagnose tracking gaps |
+| **Tier** | auto-read for listing/inspection; **write** for creating or editing any tag |
+| **Hafiz approval** | Not required to read. **Required** before creating/editing a tag or version |
+| **Setup** | Service account + add its email under GTM > Admin > Container User Management |
+| **Safe verification** | `scripts/agent-access/check-google-tagmanager.sh` |
+| **Forbidden** | The service account intentionally does **not** hold Publish rights. Never attempt to publish; Hafiz presses Publish in the GTM UI after reviewing the version. Never print the private key |
+
+### Container map (verified at runtime 07/08/2026)
+
+| Site | Container | GTM account | Agent access |
+|------|-----------|-------------|--------------|
+| `sifututor.my` | `GTM-M6SNQSL` (www.sifututor.my) | `6004805424` SifuTutor | ✅ granted |
+| `nakngaji.my` | `GTM-P4TF6S8` | different account | ❌ not yet granted |
+
+Confirmed by observing which `gtm.js?id=` request each site actually issues.
+An earlier note in this file wrongly attributed `GTM-P4TF6S8` to sifututor.my;
+it belongs to **nakngaji.my**.
+
+Known-good facts for **`GTM-P4TF6S8` (nakngaji.my)**, 07/08/2026: Google Ads
+conversion tag (`__awct`) ID `561557804` label `Ww2sCM66k4ocEKzi4osC`, GA4
+`G-0GXHPNN5VM` with a `form_submit` event tag, and a Meta Pixel
+(`2135975413908231`) base + Lead tag. All conversion tags fire from trigger 69
+"Trigger - Thank You".
+
+**Resolved 07/08/2026 (published version 17):** trigger 69 previously matched
+`contains /thank-you/`, so the Singapore thank-you page
+(`/nakngaji-singapore/student-registration-sg/`) fired none of the three
+conversion tags. Changed to `matchRegex (/thank-you/|/student-registration-sg/)`.
+Verified live: Ads, GA4 `form_submit`, and Meta `Lead` now all fire on both
+pages. Caution: that regex also matches any future URL containing those
+substrings.
+
+sifututor.my (`GTM-M6SNQSL`) uses a **separate** Google Ads account:
+conversion ID `701777403`, label `sHP_CLiawYscEPuL0c4C`, GA4 `G-94Q84XF1YY`,
+trigger on URL containing `student-sign-up-confirmation`.
+
+When verifying Meta Pixel, mask browser automation first or it will appear
+broken — see the `feedback-verify-pixels-unmask-automation` memory.
+
+Service account auth uses a JWT signed via `openssl`; no third-party Python
+packages are required.
+
+### 25. `google-ads-readonly` — Google Ads API (read-only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `google-ads-readonly.conf` |
+| **Account** | Google Ads customer for sifututor.my / nakngaji.my (conversion account `561557804`) |
+| **Purpose** | List conversion actions and their status/volume; audit campaign and conversion setup |
+| **Tier** | auto-read (read-only queries only) |
+| **Hafiz approval** | Not required to read. Any mutate/write operation is out of scope for this lane |
+| **Setup** | `scripts/agent-access/google-oauth-setup.py ads` (interactive) — **also needs a Google Ads developer token, which Google must approve** |
+| **Safe verification** | `scripts/agent-access/check-google-ads.sh` |
+| **Forbidden** | No campaign, budget, bid, or conversion mutations through this lane. Never print the developer token or refresh token |
+
+Expected variable names:
+
+```bash
+GOOGLE_ADS_CLIENT_ID=...
+GOOGLE_ADS_CLIENT_SECRET=...
+GOOGLE_ADS_REFRESH_TOKEN=...
+GOOGLE_ADS_DEVELOPER_TOKEN=...
+GOOGLE_ADS_LOGIN_CUSTOMER_ID=...
+GOOGLE_ADS_CUSTOMER_ID=...
+```
+
+**Status 07/08/2026: configured, auth verified, BLOCKED on Google approval.**
+`check-google-ads.sh` returns `Auth: OK` and lists accessible customers, but any
+data query fails with `DEVELOPER_TOKEN_NOT_APPROVED` — the token is **Test
+Access** only. Re-run the script once Basic Access is granted in Ads > Tools >
+API Center; no further setup is needed.
+
+Accessible customers seen 07/08/2026: `4906624819`, `7398479444` (Sifututor),
+`2979294698`, `4881857492`, `2036454886`, `3984457009`. Note that conversion ID
+`561557804` (used by nakngaji.my) is **not** among them — it is either under a
+different Google login or is a legacy-format conversion ID rather than a
+customer ID.
+
+`GOOGLE_ADS_LOGIN_CUSTOMER_ID` is intentionally blank (direct account access).
+Set it to the real manager/MCC number only if a query fails with a permissions
+error.
+
+Open question this lane exists to answer: is conversion action
+`TquICKHR2asaEKzi4osC` ("Nakngaji Signup | Mar 25") still referenced by any live
+campaign? Its hard-coded page snippet was removed on 07/08/2026 after being
+verified as never firing.
+
+Google Cloud project `sifututor-agent-access` (free Gmail, so no Workspace
+"Internal" option). The OAuth consent screen must stay **In production** — if it
+reverts to Testing, the refresh token expires after 7 days.
+
+---
+
+### 26. `fal-image` — fal.ai image generation for design samples
+
+| Field | Value |
+|---|---|
+| **Conf file** | `~/.config/sifututor/fal.env` (`FAL_KEY=`; owner-only, never printed, never pasted into chat) |
+| **Base URL** | `https://fal.run` (synchronous model endpoints, e.g. `fal-ai/flux/dev`) |
+| **Purpose** | Generate synthetic illustration images (for example a teacher holding a tablet) for local design samples in `docs/ai-classroom-concept/production/visual-samples/` |
+| **Tier** | write (sends a text prompt to an external service and incurs per-image cost) |
+| **Allowed operations** | Text-to-image requests with prompts that contain no personal data, no real names, no logos; download results to the local sample folder |
+| **Hafiz approval** | Given 07/09/2026 for the Kota Buku sample; re-confirm for any new use |
+| **Safe verification** | `python3 - <<'EOF'` style key-presence check that prints only whether `FAL_KEY` is set and its length |
+| **Forbidden** | Do not print or log the key; do not generate images of real people; do not use generated images externally without Hafiz's review of the specific image |
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -398,6 +543,7 @@ do not restart the app or bypass the control to force an immediate run.
 | `wasabi-ripple-storage-scoped` (reads) | `wasabi-ripple-storage-scoped.conf` | auto-read | Never |
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
+| `ripple-crm-qa` | `ripple-crm-qa.conf` | auto-read / critical | Read-only never; every production mutation or temporary role change requires approval |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
 | `server-ssh` (writes) | `server-ssh.conf` | write | Yes — state command |

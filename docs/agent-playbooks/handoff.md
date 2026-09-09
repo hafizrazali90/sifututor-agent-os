@@ -68,6 +68,44 @@ start, remain visible while quiet, return evidence, and stop at the agreed line.
 Codex still checks the result independently before the next approval gate.
 ```
 
+### Sequential Acceptance Runbook For Large Builds
+
+When the delegated job is cross-module, critical-lane, user-facing, or has a
+large requirement/UAT pack, do not hand Claude only a narrative brief. Before
+handoff, Codex must prepare one executable runbook that turns the approved
+scope into an ordered loop.
+
+The runbook must:
+
+1. name the complete authority set and state which older prompts it supersedes;
+2. give every requirement, defect and test obligation a stable ID;
+3. require a materialised acceptance ledger with one row per obligation and
+   per required matrix cell, rather than one family row standing in for many
+   unexecuted variants;
+4. sequence each implementation item as failing proof -> smallest fix ->
+   focused pass -> related-impact check -> real user/system proof -> checkpoint;
+5. prevent the next item starting until the current checkpoint is recorded;
+6. expand operation, role, feature-flag, platform, viewport, fault and recovery
+   dimensions explicitly, with `Not Applicable` allowed only with a reason;
+7. require a machine-checkable exit gate, or an equivalent deterministic
+   set-equality check, that detects missing, duplicate, failed, blocked and
+   not-run primary obligations;
+8. require every defect discovered during UAT to re-enter the same
+   fail-fix-rerun loop, followed by the affected journeys; after the last
+   change, use the evidence-freshness rules in `qa.md` to decide whether the
+   final proof needs a complete replay or a checker-backed incremental
+   campaign; and
+9. forbid a completion claim when the ledger or exit checker is not clean.
+
+For long jobs, examples and exact commands should accompany the rules. A green
+unit suite, a route-exists browser check, generated-but-unreviewed screenshots,
+or one test mapped to several materially different requirements does not
+satisfy the runbook.
+
+Codex remains responsible for checking that the runbook covers the approved
+requirement set before delegation and for independently challenging the final
+ledger, diff and evidence after Claude returns.
+
 ### Standard Job Brief
 
 Prepare two ignored local files under the delegated worktree's
@@ -157,6 +195,37 @@ The evidence report stores timestamps, state transitions, event counts, Git
 start/end state, brief/handback hashes, available usage counters, and whether a
 stall occurred. It deliberately stores no raw Claude stream content. If the CLI
 does not expose usage, record `unavailable`; never estimate savings.
+
+### Net Codex Usage Experiment
+
+When the purpose of delegation includes saving Codex usage, create one durable
+experiment record before launching the builder. Reuse the structure of
+`.agent-os/session-maps/artifacts/crm-c4b-claude-builder-usage-experiment-2026-08-05.md`
+instead of inventing a new reporting format.
+
+The record must name the baseline, target, measurement source, and final result
+for:
+
+- provider-confirmed Codex and Claude usage, or `unavailable` when the tools do
+  not expose comparable counters;
+- Codex contract/planning passes, implementation edits, interventions, routine
+  status model calls, final-review effort, and any work Codex took back;
+- Claude jobs, restarts, handback size, and bounded correction rounds;
+- wall-clock, active, blocked, and silent time when available;
+- Hafiz interruptions and approval requests;
+- defects found after handback, classified as blocking, major, minor, or none,
+  plus whether the cause was the contract, repository, data, or execution; and
+- the normal quality floor: tests, human-journey evidence, security, release
+  safety, and independent review.
+
+Transferred work is not itself proof of savings. The experiment succeeds only
+when Codex performs less implementation and avoidable rework, correction loops
+and user interruptions fall, and quality remains equal or better. Prefer one
+complete build-ready contract, one builder loop, one fresh independent Claude
+review, one narrow Codex risk/evidence review, and at most one consolidated
+correction round. If a repeated defect survives, improve the contract or a
+deterministic test before the next experiment instead of adding more ad hoc
+review turns.
 
 After `finished`, Codex must still:
 

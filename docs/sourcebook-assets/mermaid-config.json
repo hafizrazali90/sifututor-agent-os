@@ -1,0 +1,19 @@
+{
+  "theme": "base",
+  "securityLevel": "strict",
+  "flowchart": {
+    "curve": "basis",
+    "htmlLabels": true,
+    "useMaxWidth": true
+  },
+  "themeVariables": {
+    "primaryColor": "#e8f6f3",
+    "primaryTextColor": "#172033",
+    "primaryBorderColor": "#00a896",
+    "lineColor": "#176b87",
+    "secondaryColor": "#edf4f8",
+    "tertiaryColor": "#fff8e9",
+    "fontSize": "17px",
+    "fontFamily": "Inter, Segoe UI, sans-serif"
+  }
+}

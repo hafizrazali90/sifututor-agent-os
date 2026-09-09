@@ -1,0 +1,13 @@
+flowchart TB
+    L1[1. Experience channels\nagent · supervisor · management · principal · customer]
+    L2[2. Work management\nqueues · cases · communications · approvals · complaints]
+    L3[3. Authoritative collection core\nprincipals · portfolios · accounts · balances · states]
+    L4[4. Financial control\npayment evidence · reconciliation · receipts · fees]
+    L5[5. Data and integration\nprincipal feeds · messaging · payment · reporting]
+    L6[6. Intelligence\noperational · compliance · portfolio · service health]
+    L7[7. Trust and platform operations\nidentity · audit · monitoring · backup · recovery · change]
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    L7 -. supports every layer .-> L1
+    L7 -. supports every layer .-> L3
+    L7 -. supports every layer .-> L6

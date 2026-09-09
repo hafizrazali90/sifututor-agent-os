@@ -4,7 +4,7 @@ Last updated: 2026-07-08
 
 ## Completed Baseline
 
-All active workspace projects now have the shared Claude/Codex baseline:
+All baseline-enabled workspace projects have the shared Claude/Codex baseline:
 
 | Project | AGENTS.md | `.claude/tasks/active.json` | Hooks | Notes |
 | --- | --- | --- | --- | --- |
@@ -16,8 +16,14 @@ All active workspace projects now have the shared Claude/Codex baseline:
 | `lls-frontend` | yes | yes | yes | Has dedicated frontend workflow skills |
 | `lls-mobile` | yes | yes | yes | Shared playbooks only; Flutter-specific skills not created yet |
 | `creative-hub` | yes | yes | yes | Shared playbooks only |
-| `team-inbox` | yes | yes | yes | Confirm active product direction before substantial work |
 | `finch-inbox` | yes | yes | existing + tasks | Keeps Finch workflow, adds shared active task pointer |
+
+Recognized active repositories not yet adopted into the shared baseline:
+
+| Project | Current contract | Adoption state |
+| --- | --- | --- |
+| `cx-call-capture-android` | no local `AGENTS.md` or shared `active.json` | Uses umbrella safety rules; profile adoption remains separate work. |
+| `sims-owner-analytics` | project `AGENTS.md`, no shared `active.json` | Strong project safety contract exists; profile adoption remains separate work. |
 
 ## Source Of Truth
 
@@ -36,17 +42,18 @@ All active workspace projects now have the shared Claude/Codex baseline:
 
 The parent machine-local Claude config has also been audited:
 
-- `.claude/settings.json` includes all ten workspace projects in
-  `additionalDirectories`, including `finch-inbox`.
-- Parent `CLAUDE.md` includes `finch-inbox` in the project table and Koda tag
-  list.
+- `.claude/settings.json` includes all twelve active workspace projects in
+  `additionalDirectories`.
+- Parent `CLAUDE.md` includes the active projects in the project table and Koda
+  tag list.
 
 These files are intentionally local workflow configuration in this workspace,
 not part of the pushed umbrella GitHub repo.
 
 ## Verified
 
-- Shared guard passed in all ten projects.
+- Shared guard passed in all ten baseline-enabled projects. The two newly
+  registered repositories are not claimed as baseline-adopted.
 - Hook Python files compiled successfully.
 - Codex repo-local skills are visible in `codex debug prompt-input`.
 - Codex lifecycle and Bash hook scripts passed direct sample-payload tests.
@@ -56,8 +63,8 @@ not part of the pushed umbrella GitHub repo.
 
 ## Remaining Optional Hardening
 
-- Create project-specific workflow skills for `lls-mobile`, `creative-hub`, and
-  `team-inbox` only after their development cadence justifies it.
+- Create project-specific workflow skills for `lls-mobile` and `creative-hub`
+  only after their development cadence justifies it.
 - Trust/review Codex project hooks through `/hooks` when Codex prompts for it.
   Continue using `scripts/agent-checks/pre-commit-guard.sh` as the portable
   manual guard.

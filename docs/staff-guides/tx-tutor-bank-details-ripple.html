@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Internal TX staff guide for adding or updating tutor payout bank details in Ripple.">
+  <title>TX Guide: Tutor Bank Details in Ripple</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #637083;
+      --line: #dbe1ea;
+      --surface: #ffffff;
+      --soft: #f5f7fa;
+      --blue: #1264f5;
+      --blue-dark: #0b45b9;
+      --blue-soft: #eaf2ff;
+      --orange: #f05223;
+      --orange-soft: #fff2ed;
+      --green: #157347;
+      --green-soft: #eaf8f0;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --amber: #8a5200;
+      --amber-soft: #fff7df;
+      --shadow: 0 14px 40px rgba(24, 39, 75, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    a { color: var(--blue-dark); }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 3px solid rgba(18, 100, 245, 0.35);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto 56px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.97);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(135deg, var(--blue), #4e86ff);
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 750;
+    }
+
+    .brand-meta {
+      margin: 1px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      background: white;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .button.primary {
+      border-color: var(--blue);
+      color: white;
+      background: var(--blue);
+    }
+
+    .hero {
+      padding: 48px 48px 38px;
+      background:
+        radial-gradient(circle at 90% 8%, rgba(18, 100, 245, 0.12), transparent 30%),
+        linear-gradient(180deg, #fff, #f9fbff);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--blue-dark);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.05;
+      letter-spacing: -0.045em;
+    }
+
+    .lede {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: #445066;
+      font-size: 18px;
+    }
+
+    .updated {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .rule {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+      margin-top: 30px;
+      padding: 19px 20px;
+      border: 1px solid #ffc9b9;
+      border-radius: 14px;
+      background: var(--orange-soft);
+    }
+
+    .rule-icon {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--orange);
+      font-weight: 900;
+    }
+
+    .rule strong { color: #8c2d11; }
+    .rule p { margin: 2px 0 0; }
+
+    main { padding: 8px 48px 52px; }
+
+    .section {
+      padding-top: 42px;
+      scroll-margin-top: 24px;
+    }
+
+    .section + .section {
+      margin-top: 42px;
+      border-top: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .section-intro {
+      max-width: 760px;
+      margin: 9px 0 0;
+      color: var(--muted);
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .quick-card {
+      position: relative;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .quick-number,
+    .step-number {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--blue);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .quick-card h3 { margin-top: 14px; }
+    .quick-card p { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+
+    .path-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 22px;
+      padding: 20px;
+      border: 1px solid #bed3ff;
+      border-radius: 14px;
+      background: var(--blue-soft);
+    }
+
+    .path-label {
+      margin: 0 0 3px;
+      color: var(--blue-dark);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .path-card p { margin: 0; }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 15px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .step p { margin: 6px 0 0; color: #4c586b; }
+    .step ul { margin: 10px 0 0; padding-left: 20px; color: #4c586b; }
+    .step li + li { margin-top: 5px; }
+
+    .note {
+      margin-top: 13px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--amber);
+      border-radius: 6px;
+      color: #704500;
+      background: var(--amber-soft);
+      font-size: 14px;
+    }
+
+    figure {
+      margin: 28px 0 0;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--soft);
+      overflow: hidden;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: white;
+    }
+
+    figcaption {
+      padding: 13px 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .check-card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .check-card.do { background: var(--green-soft); border-color: #b8e2c9; }
+    .check-card.dont { background: var(--red-soft); border-color: #f2c2bd; }
+    .check-card h3 { display: flex; align-items: center; gap: 9px; }
+    .check-card.do h3 { color: var(--green); }
+    .check-card.dont h3 { color: var(--red); }
+    .check-card ul { margin: 14px 0 0; padding-left: 21px; }
+    .check-card li + li { margin-top: 9px; }
+
+    .trouble-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .trouble-item {
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .trouble-item p { margin: 6px 0 0; color: #4c586b; }
+
+    .privacy {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 15px;
+      margin-top: 22px;
+      padding: 20px;
+      border: 1px solid #ffc7c2;
+      border-radius: 14px;
+      background: var(--red-soft);
+    }
+
+    .privacy-badge {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 10px;
+      color: white;
+      background: var(--red);
+      font-size: 20px;
+    }
+
+    .privacy p { margin: 5px 0 0; }
+
+    .finish {
+      margin-top: 42px;
+      padding: 30px;
+      border-radius: 16px;
+      color: white;
+      background: linear-gradient(135deg, #0a47bd, #1264f5);
+    }
+
+    .finish h2 { color: white; }
+    .finish p { max-width: 720px; margin: 9px 0 20px; color: #e8f0ff; }
+    .finish .button { border-color: white; }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 48px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--soft);
+      font-size: 12px;
+    }
+
+    footer p { margin: 0; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #edf0f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 860px) {
+      .quick-grid { grid-template-columns: 1fr 1fr; }
+      .hero, main { padding-left: 28px; padding-right: 28px; }
+      footer { padding-left: 28px; padding-right: 28px; }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: 100%; margin: 0; border: 0; border-radius: 0; }
+      .topbar { align-items: flex-start; padding: 16px 18px; }
+      .brand-meta { display: none; }
+      .actions .print-button { display: none; }
+      .button { padding: 8px 11px; font-size: 13px; }
+      .hero { padding: 38px 20px 30px; }
+      main { padding: 2px 20px 40px; }
+      h1 { font-size: 38px; }
+      .lede { font-size: 16px; }
+      .quick-grid, .two-column { grid-template-columns: 1fr; }
+      .path-card, footer { align-items: flex-start; flex-direction: column; }
+      footer { padding: 20px; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 13mm; }
+      body { background: white; font-size: 10.5pt; }
+      .shell { width: 100%; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+      .topbar { padding: 0 0 14px; }
+      .actions { display: none; }
+      .hero { padding: 24px 0 18px; background: white; }
+      main { padding: 0; }
+      h1 { font-size: 30pt; }
+      h2 { font-size: 20pt; }
+      .section { padding-top: 24px; }
+      .section + .section { margin-top: 24px; }
+      .quick-grid { grid-template-columns: 1fr 1fr; }
+      .quick-card, .step, .check-card, .trouble-item, .path-card, .rule, .privacy, figure { break-inside: avoid; }
+      .finish { color: var(--ink); background: var(--blue-soft); border: 1px solid #bed3ff; }
+      .finish h2, .finish p { color: var(--ink); }
+      .finish .button { display: none; }
+      footer { margin-top: 20px; padding: 14px 0 0; background: white; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">R</div>
+        <div>
+          <p class="brand-name">Sifututor Staff Guide</p>
+          <p class="brand-meta">Ripple · Tutor Experience (TX)</p>
+        </div>
+      </div>
+      <div class="actions" aria-label="Guide actions">
+        <button class="button print-button" type="button" onclick="window.print()">Print guide</button>
+        <a class="button primary" href="https://ripple.admin.sifututor.my/tutor-payments/bank-accounts" target="_blank" rel="noopener">Open Bank Accounts</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">TX operating instruction</p>
+      <h1>Adding or updating a tutor’s bank details</h1>
+      <p class="lede">Use Ripple’s <strong>Bank Accounts</strong> page to record the bank account used for a tutor’s payout.</p>
+      <p class="updated">Last updated: 3 August 2026 · Internal use only</p>
+
+      <div class="rule" role="note">
+        <div class="rule-icon" aria-hidden="true">!</div>
+        <div>
+          <strong>The main rule</strong>
+          <p>For tutor payout bank details, use <strong>Ripple → Tutor Payments → Bank Accounts</strong>. Do not update the bank fields in <strong>SIMS → Edit Tutor</strong> for this task.</p>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <section class="section" id="short-version">
+        <h2>Short version</h2>
+        <p class="section-intro">Follow these four checks every time. The detailed instructions are below.</p>
+        <div class="quick-grid">
+          <article class="quick-card">
+            <span class="quick-number">1</span>
+            <h3>Open Bank Accounts</h3>
+            <p>Go to Tutor Payments, then select Bank Accounts.</p>
+          </article>
+          <article class="quick-card">
+            <span class="quick-number">2</span>
+            <h3>Search first</h3>
+            <p>Search using the tutor’s name or Tutor ID to avoid duplicates.</p>
+          </article>
+          <article class="quick-card">
+            <span class="quick-number">3</span>
+            <h3>Add or edit</h3>
+            <p>Edit the existing record. Use Add New only when no record exists.</p>
+          </article>
+          <article class="quick-card">
+            <span class="quick-number">4</span>
+            <h3>Check and save</h3>
+            <p>Re-check the tutor, bank and account number before saving.</p>
+          </article>
+        </div>
+
+        <div class="path-card">
+          <div>
+            <p class="path-label">Production feature</p>
+            <p><strong>Ripple → Tutor Payments → Bank Accounts</strong></p>
+            <p><a href="https://ripple.admin.sifututor.my/tutor-payments/bank-accounts" target="_blank" rel="noopener">https://ripple.admin.sifututor.my/tutor-payments/bank-accounts</a></p>
+          </div>
+          <a class="button primary" href="https://ripple.admin.sifututor.my/tutor-payments/bank-accounts" target="_blank" rel="noopener">Open feature</a>
+        </div>
+      </section>
+
+      <section class="section" id="add-details">
+        <h2>Add bank details for the first time</h2>
+        <p class="section-intro">Use this only when the tutor does not already have a bank account record in Ripple.</p>
+
+        <div class="steps">
+          <article class="step">
+            <span class="step-number">1</span>
+            <div>
+              <h3>Find the tutor before adding anything</h3>
+              <p>On <strong>Bank Accounts</strong>, search by tutor name or Tutor ID, for example <code>TUT-123456</code>.</p>
+              <div class="note"><strong>If a record appears:</strong> do not use Add New. Follow the update instructions in the next section.</div>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">2</span>
+            <div>
+              <h3>Select Add New</h3>
+              <p>The <strong>Add Bank Details</strong> form will open.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">3</span>
+            <div>
+              <h3>Complete the form carefully</h3>
+              <ul>
+                <li><strong>Tutor:</strong> choose the correct tutor and confirm the Tutor ID.</li>
+                <li><strong>Account Holder Name:</strong> enter the full name as shown on the bank account.</li>
+                <li><strong>Bank:</strong> select the tutor’s bank.</li>
+                <li><strong>Account Number:</strong> ask the tutor to re-check every digit.</li>
+                <li><strong>ID Type and ID Number:</strong> enter the correct identification details.</li>
+              </ul>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">4</span>
+            <div>
+              <h3>Select Add and confirm success</h3>
+              <p>When Ripple shows <strong>“Bank details added”</strong>, search for the tutor again and confirm the record is listed.</p>
+            </div>
+          </article>
+        </div>
+
+        <figure>
+          <img src="assets/tx-bank-accounts/bank-accounts-page.png" alt="Ripple Tutor Payments Bank Accounts page with Add New button and tutor rows hidden for privacy">
+          <figcaption>Actual Ripple staging screen — tutor rows are masked for privacy and your own login name will appear at the top right. Select <strong>Add New</strong> only after searching for an existing record.</figcaption>
+        </figure>
+
+        <figure>
+          <img src="assets/tx-bank-accounts/add-bank-details-modal.png" alt="Ripple Add Bank Details form showing Tutor, Account Holder Name, Bank, Account Number, ID Type and ID Number fields">
+          <figcaption>Actual Ripple staging screen — your own login name will appear at the top right. Check every field in the <strong>Add Bank Details</strong> form before selecting <strong>Add</strong>.</figcaption>
+        </figure>
+      </section>
+
+      <section class="section" id="update-details">
+        <h2>Update an existing bank account</h2>
+        <p class="section-intro">Use this when a tutor changes their bank, account number or account-holder details.</p>
+
+        <div class="steps">
+          <article class="step">
+            <span class="step-number">1</span>
+            <div>
+              <h3>Search for the existing record</h3>
+              <p>Use the tutor’s name or Tutor ID. Confirm that the name and Tutor ID match the tutor who requested the change.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">2</span>
+            <div>
+              <h3>Open Edit on that tutor’s row</h3>
+              <p>Do not create a second record for the same tutor.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">3</span>
+            <div>
+              <h3>Change only the confirmed details</h3>
+              <p>If the account number is changing, type the new number and ask the tutor to re-check it. If the number is not changing, leave that field blank so Ripple keeps the current number.</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">4</span>
+            <div>
+              <h3>Select Save and confirm success</h3>
+              <p>When Ripple shows <strong>“Bank details updated”</strong>, search again and check that the tutor’s record is still present.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="checks">
+        <h2>Before you save</h2>
+        <p class="section-intro">Bank information is sensitive and a wrong digit can send a payout to the wrong account.</p>
+
+        <div class="two-column">
+          <article class="check-card do">
+            <h3><span aria-hidden="true">✓</span> Do</h3>
+            <ul>
+              <li>Verify the tutor’s full name and Tutor ID.</li>
+              <li>Use the account-holder name exactly as shown by the bank.</li>
+              <li>Ask the tutor to re-check the account number digits.</li>
+              <li>Save payout bank details in Ripple Bank Accounts only.</li>
+              <li>Keep all bank information private.</li>
+            </ul>
+          </article>
+          <article class="check-card dont">
+            <h3><span aria-hidden="true">×</span> Don’t</h3>
+            <ul>
+              <li>Do not update SIMS Edit Tutor bank fields for a payout.</li>
+              <li>Do not add a second record when the tutor already exists.</li>
+              <li>Do not use Import CSV unless Accounts or an admin instructs you.</li>
+              <li>Do not share account numbers in group chats or screenshots.</li>
+              <li>Do not remove a record unless Finance or Accounts instructs you.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="privacy">
+          <div class="privacy-badge" aria-hidden="true">🔒</div>
+          <div>
+            <h3>Protect the tutor’s bank information</h3>
+            <p>Never place a full account number in a group chat, ticket title or public screenshot. If you need to report an error, share the Tutor ID and the error message, and hide the account number in any screenshot.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="troubleshooting">
+        <h2>If something is not working</h2>
+        <p class="section-intro">Try the matching instruction below. Avoid pressing Add or Save repeatedly because that may create confusion or duplicate work.</p>
+
+        <div class="trouble-list">
+          <article class="trouble-item">
+            <h3>Bank Accounts or Add New is missing</h3>
+            <p>Ask your team lead or Ripple admin to check that your Staff access includes both <strong>View Payment Slips</strong> and <strong>Edit Bank Details</strong>. After access is changed, log out of Ripple and log in again.</p>
+          </article>
+          <article class="trouble-item">
+            <h3>The tutor cannot be found</h3>
+            <p>Check the spelling and use the correct Tutor ID. Confirm that the tutor profile exists in SIMS. If the tutor still does not appear, send the Tutor ID to your team lead.</p>
+          </article>
+          <article class="trouble-item">
+            <h3>Ripple rejects the account number</h3>
+            <p>Check that it contains only digits or dashes and is between 5 and 20 characters. Also select a supported bank and complete the account-holder name.</p>
+          </article>
+          <article class="trouble-item">
+            <h3>The tutor still shows “Missing Bank” during payment review</h3>
+            <p>Open <a href="https://ripple.admin.sifututor.my/tutor-payments/review" target="_blank" rel="noopener"><strong>Ripple → Tutor Payments → Review &amp; Approve</strong></a> and refresh the page. If the warning remains, confirm that the correct tutor record was updated.</p>
+          </article>
+          <article class="trouble-item">
+            <h3>A save or network error appears</h3>
+            <p>Do not keep creating new records. Take a screenshot with the account number hidden, then send the Tutor ID and error message to your team lead or Ripple admin.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="finish">
+        <h2>Who does what?</h2>
+        <p><strong>TX</strong> collects, checks and enters the tutor’s bank details. <strong>Finance or Accounts</strong> uses the record for payment processing and approval. TX should not use other Tutor Payments actions unless specifically assigned.</p>
+        <a class="button" href="https://ripple.admin.sifututor.my/tutor-payments/bank-accounts" target="_blank" rel="noopener">Open Ripple Bank Accounts</a>
+      </section>
+    </main>
+
+    <footer>
+      <p><strong>Internal use only</strong> · Sifututor Tutor Experience</p>
+      <p>Feature: Ripple → Tutor Payments → Bank Accounts</p>
+    </footer>
+  </div>
+</body>
+</html>

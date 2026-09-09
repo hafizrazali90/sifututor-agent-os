@@ -1,6 +1,6 @@
 # Sifututor Agent OS Research Notes
 
-Last updated: 2026-07-01
+Last updated: 2026-08-03
 
 This note collects external references and design lessons for building the
 Sifututor Agent OS as a reusable development system that Hafiz can distribute
@@ -1099,3 +1099,631 @@ but the project behavior still comes from the same Sifututor Agent OS.
 - Should Plane be visible to all staff or only Hafiz and engineering leads?
 - What is the smallest safe workflow for non-technical staff to report bugs
   without touching code?
+
+## Native Agent OS Workspace UI And Foundation Comparison — 2026-08-03
+
+### Revision note (correction pass)
+
+This section was first written 2026-08-03 and is revised the same day after
+Hafiz flagged a critical omission and several factual errors. This is a
+**correction pass on the same section**, not a new independent research
+round — everything below replaces the original version of this section.
+Nothing before this heading changed.
+
+What changed in this revision:
+
+- Added **Omnigent** (`omnigent-ai/omnigent`), which prior Sifututor research
+  (Koda-backed memory, 2026-07-13) had already identified as the closest
+  direct comparable and which the original version of this section omitted.
+  Investigated from primary sources: the GitHub repo itself, `omnigent.ai`,
+  its `/docs/build/harnesses` page, and the repo's own `docs/POLICIES.md`.
+- Corrected: opencode already ships TUI, CLI, desktop, and web surfaces
+  today (verified via its own repo package list) — the original version
+  wrongly implied desktop/web were future possibilities.
+- Corrected: the Linux Foundation Agentic AI Foundation (AAIF) announcement
+  date is **2025-12-09**, not 2026-04-07 (that later date was a goose-project
+  blog post about the move, not the announcement itself).
+- Replaced "vendor-sanctioned subscription reuse" with narrower,
+  evidence-scoped wording — no primary statement from Anthropic or OpenAI
+  blessing any third-party subscription reuse was located. What is
+  documented is which tools invoke the vendor's own official CLI login
+  versus which tools reuse or reimplement the subscription's OAuth
+  themselves — a distinction now made explicit throughout this section.
+- Added an explicit distinction between **using** an official Claude/Codex
+  CLI login and **extracting, importing, or reusing** its stored
+  credentials in a separate tool — this is the central axis Hafiz's
+  requirement 8 turns on, and the original version blurred it.
+- Softened the Crush claim: general interaction patterns (a sidebar showing
+  a live diffstat, status dots) are ideas, not protected expression, and
+  may be reimplemented natively. But Crush's specific visual composition
+  (its exact layout, color system, and iconography taken together) is the
+  kind of thing trade dress/copyright law protects as "expression," not
+  just source code — so "the interaction pattern is fair to draw on" is not
+  the same claim as "the complete visual design is fair to reproduce."
+  Nothing in the original version should be read as licensing legal advice.
+- Recalculated the scored comparison against Hafiz's 13 confirmed product
+  requirements (control room, focus workspace, worker sidebar, split focus,
+  persistent identity with selectable engines, multi-agent delegation with
+  cross-model review, worktree isolation, subscription compatibility without
+  credential extraction, policies/hooks/gates, Koda/Mission Ledger
+  continuity, desktop+Telegram/phone access, editor/diff/terminal/evidence
+  surfaces, staff-distributable maintainability) instead of the original
+  generic coding-agent-quality weighting. Popularity and visual polish are
+  now minority factors, not majority ones.
+
+### In plain language first (revised)
+
+Hafiz's actual product isn't "a nicer terminal chat." It's a specific shape:
+a **Control Room** where several full task conversations stay live and
+directly replyable at once, a **Focus Workspace** for going deep on one of
+them, a **Worker Sidebar** inside that focus view showing what
+sub-agents/tools are doing, and **Split Focus** to hold several full
+workspaces open side by side — all backed by one persistent Agent OS
+identity that can drive Claude, Codex, or other engines interchangeably,
+delegate across models with visible evidence, respect Sifututor's existing
+policies/hooks/gates, stay continuous with Koda and the Mission Ledger, and
+reach Hafiz on desktop and on his phone via Telegram.
+
+Nothing found in this research is a full match to that shape. But one
+project — **Omnigent** — was purpose-built for almost exactly this problem
+(it explicitly calls itself a "meta-harness" that orchestrates Claude Code,
+Codex, Cursor, OpenCode, Hermes, and custom agents from one identity, with a
+declarative policy engine, real multi-agent delegation with cross-vendor
+review, and documented Claude/ChatGPT subscription support through the
+official `claude`/`codex` CLIs). It was missing from the first version of
+this section, which was a real gap — the recalculated scoring below has it
+ranked first by a wide margin once the comparison is weighted toward
+Hafiz's actual requirements instead of generic UI polish. It does not
+implement the four-layer Control Room/Focus/Worker-Sidebar/Split-Focus model
+by that name, and it is still "alpha," so the honest recommendation is to
+treat it as the leading **runtime candidate to fit-test**, not something to
+adopt sight unseen.
+
+### Research goal and current Agent OS requirements (revised)
+
+Original goal (unchanged): identify existing open-source coding-agent
+interfaces or architectures that could legitimately inform a native,
+LLM-agnostic Sifututor Agent OS harness.
+
+This revision adds Hafiz's 13 confirmed product requirements as the actual
+scoring target, replacing generic "is the UI nice" criteria:
+
+1. Control Room with multiple full, live, directly replyable task
+   conversations
+2. Focus Workspace for one complete task
+3. Worker Sidebar inside a focused task
+4. Split Focus for several full workspaces simultaneously
+5. Persistent Agent OS identity with selectable Codex, Claude, and other
+   engines
+6. Multi-agent delegation with visible evidence and cross-model review
+7. Smart project/worktree isolation
+8. Existing Claude/ChatGPT subscription compatibility **without copying or
+   extracting credentials**
+9. Agent OS policies, hooks, approvals, and quality gates
+10. Koda memory, Mission Ledger, and cross-project continuity
+11. Desktop plus Telegram/phone access
+12. Editor, diff, terminal, evidence, and task-state surfaces
+13. Staff-distributable architecture and long-term maintainability
+
+This does not replace the general Agent OS goal stated at the top of this
+document; it is the concrete yardstick for this specific UI/foundation
+comparison.
+
+### Research method and scoring weights (revised)
+
+Same two-pass method as the original version (general research pass, then
+direct verification), extended with a third pass specific to this
+correction:
+
+3. Primary-source investigation of Omnigent: `gh api` against
+   `omnigent-ai/omnigent` for stars/license/activity; `WebFetch` against
+   `omnigent.ai` and `omnigent.ai/docs/build/harnesses`,
+   `omnigent.ai/docs/interact/desktop`, and
+   `omnigent.ai/docs/interact/mobile`; direct reads of the repo's own
+   `README.md`, `docs/POLICIES.md`, and `docs/OMNIGENT_BOT_SETUP.md` via the
+   GitHub API; and direct visual inspection of the official
+   `docs/images/omnigent-desktop.png` and `docs/images/policy-trust-model.png`
+   screenshots downloaded from the repo.
+
+Scoring weights are now aligned to Hafiz's 13 requirements, grouped into six
+categories, instead of the original generic UI/license/momentum split:
+
+| Category | Weight | Requirements it covers |
+| --- | --- | --- |
+| A. Multi-session/workspace UI fit | 25% | 1, 2, 3, 4, 12 (Control Room, Focus Workspace, Worker Sidebar, Split Focus, editor/diff/terminal/evidence surfaces) |
+| B. Engine-agnostic identity + subscription safety | 20% | 5, 8 (selectable engines, subscription reuse without credential extraction) |
+| C. Multi-agent delegation & cross-model review | 15% | 6 |
+| D. Isolation + policy/hooks/gates | 20% | 7, 9 (worktree isolation, policies/hooks/approvals/quality gates) |
+| E. Memory/continuity | 10% | 10 (Koda, Mission Ledger, cross-project continuity) |
+| F. Distribution + access channels + maintainability | 10% | 11, 13 (desktop+Telegram/phone, staff-distributable) |
+
+This deliberately drops "popularity" and "raw visual polish" as scored
+dimensions. They still appear as supporting facts (star counts, screenshot
+descriptions) but no longer move the ranking on their own, per Hafiz's
+explicit instruction that orchestration fit, subscription safety,
+multi-session design, and policy enforcement must outweigh them.
+
+### Source-quality and verification rules (unchanged, extended)
+
+Same tiering as the rest of this document. For Omnigent specifically:
+
+- **Primary / verified this session**: `gh api` responses for
+  `omnigent-ai/omnigent` (2026-08-03); the project's own README, license
+  file, `docs/POLICIES.md`, and `docs/OMNIGENT_BOT_SETUP.md` read directly
+  from the repo; `omnigent.ai/docs/build/harnesses` fetched and quoted
+  directly; the official desktop and policy-trust-model screenshots viewed
+  directly.
+- **Secondary**: `omnigent.ai` homepage marketing copy and the
+  `/docs/interact/desktop` and `/docs/interact/mobile` pages, fetched via an
+  automated summarizer rather than read verbatim — treated as directionally
+  reliable but not quoted as verbatim primary text unless cross-confirmed
+  against the README.
+- Every claim below is tagged `[verified 2026-08-03]`, `[secondary]`, or
+  `[inference]`, same convention as the rest of this document.
+
+### Current market/category map (revised)
+
+The original three-shape map (terminal-first harnesses, vendor CLI agents,
+IDE/web-hosted agents) is missing a fourth shape that Omnigent occupies:
+
+4. **Meta-harnesses / orchestration layers** — tools that do not implement
+   their own coding-agent loop as the primary product, but instead wrap and
+   orchestrate other agents' loops (Claude Code, Codex, Cursor, OpenCode,
+   Hermes) under one identity, with a policy/sandboxing layer and multiple
+   access surfaces (terminal, web, desktop, phone). Omnigent is the clearest
+   example found. This is a structurally different category from the other
+   three — it is closer to "an operating system for agents" than "an agent."
+
+### Longlist of comparable repositories (revised)
+
+Unchanged from the original version, plus **Omnigent**
+(`omnigent-ai/omnigent`) added — the single addition this correction pass
+required.
+
+### Serious shortlist (corrected, independently verified 2026-08-03)
+
+| Project | Repo | Stars `[verified]` | Language | License SPDX `[verified]` | Last push `[verified]` | Surfaces shipping today `[verified]` |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Omnigent** | github.com/omnigent-ai/omnigent | 8,057 | Python | Apache-2.0 | 2026-08-03 (today) | Terminal/CLI, local web UI, native macOS desktop app, native iOS app, mobile web (PWA) — **status: alpha** |
+| opencode | github.com/anomalyco/opencode | 192,485 | TypeScript + Go TUI | MIT | 2026-08-03 (today) | TUI, CLI, **desktop app (beta, macOS/Windows) and web app ship today** — corrected from the original version, which implied these were future-only |
+| Crush | github.com/charmbracelet/crush | 27,034 | Go (Bubble Tea) | FSL-1.1-MIT (GitHub's detector reports `NOASSERTION` because FSL is non-standard) | 2026-08-03 (today) | Terminal only |
+| goose | github.com/aaif-goose/goose | 52,138 | Rust | Apache-2.0 | 2026-08-03 (today) | CLI, native desktop app, embeddable API |
+| OpenHands | github.com/OpenHands/OpenHands | 82,921 | TypeScript + Python | MIT | 2026-08-03 (today) | Browser web UI ("Agent Canvas"), cloud automations dashboard |
+
+Omnigent's star count (8,057) is an order of magnitude below opencode's or
+OpenHands', and its own README badge marks it `status: alpha`
+`[verified: README.md badge]`. That is a real maturity gap and is scored
+honestly below (category F) — it does not change that the project is the
+closest functional match to Hafiz's actual requirements found in this
+research.
+
+### Scored comparison table (recalculated against the 13 requirements)
+
+| Project | A. Multi-session UI (25%) | B. Engine-agnostic + subscription safety (20%) | C. Multi-agent delegation (15%) | D. Isolation + policy/gates (20%) | E. Memory/continuity (10%) | F. Distribution + maintainability (10%) | **Weighted score** |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **Omnigent** | 6 | 9 | 10 | 8 | 4 | 6 | **7.40** |
+| OpenHands | 7 | 6 | 5 | 6 | 4 | 6 | 5.90 |
+| goose | 4 | 7 | 4 | 4 | 3 | 8 | 4.90 |
+| opencode | 4 | 5 | 4 | 5 | 3 | 9 | 4.80 |
+| Crush | 5 | 5 | 2 | 2 | 3 | 5 | 3.75 |
+
+Reading this against the original (2026-08-03, pre-correction) table: under
+the old generic-quality weighting, opencode led (8.75) and Crush was second
+on raw UI polish (7.65). Under the corrected, requirements-aligned
+weighting, **the order inverts** — Omnigent leads by roughly 1.5 points and
+opencode drops to fourth. This is the direct, intended effect of scoring
+orchestration fit, subscription safety, multi-agent delegation, and policy
+enforcement instead of popularity and visual polish, per Hafiz's
+instruction. Both tables are kept in this document (the original is
+unchanged above this section) so the reasoning behind the reversal stays
+visible rather than silently overwritten.
+
+Score rationale, briefly, per category:
+
+- **A (multi-session UI)**: OpenHands scores highest here because its
+  Conversations sidebar shows multiple sessions with live status dots and
+  timestamps simultaneously `[verified, screenshot viewed]` — the closest
+  visual precedent found for "several live task conversations visible at
+  once," though whether they are all *directly replyable simultaneously in
+  one view* (Hafiz's literal Control Room requirement) was not confirmed.
+  Omnigent's desktop app shows one focused session with a project-grouped
+  sidebar to switch between sessions `[verified, screenshot viewed]`, and
+  achieves "several full workspaces at once" through **multiple native OS
+  windows** (`Cmd+N`) rather than an in-app split/grid layout
+  `[secondary, summarized from omnigent.ai/docs/interact/desktop]` — a
+  materially different mechanism from Hafiz's Split Focus concept, not a
+  literal match.
+- **B (engine-agnostic + subscription safety)**: Omnigent scores highest
+  because it documents four credential kinds including "Subscription: A
+  Claude Pro/Max or ChatGPT plan, via the official `claude` / `codex` CLIs"
+  and, for its ACP integration path, states plainly "Omnigent stores no
+  credential, so log into the agent through its own CLI first"
+  `[verified, quoted directly from README.md and
+  omnigent.ai/docs/build/harnesses]`. That is the clearest evidence found
+  anywhere in this research of a tool using the vendor's **own official
+  login flow** rather than extracting or reimplementing it. opencode scores
+  lower specifically because secondary sources report the opposite pattern:
+  Anthropic restricted third-party subscription-OAuth reuse and opencode
+  removed related support after a legal request — see the corrected
+  Subscription/OAuth section below.
+- **C (multi-agent delegation)**: Omnigent's bundled example agent **Polly**
+  is scored 10/10 because it is a direct, verified match to requirement 6:
+  it delegates coding work to sub-agents (Claude Code, Codex, or Pi) in
+  parallel git worktrees, then routes each diff to a reviewer from a
+  *different* vendor than the one that wrote it `[verified, quoted directly
+  from README.md]` — that is "multi-agent delegation with visible evidence
+  and cross-model review" almost verbatim.
+- **D (isolation + policy/gates)**: Omnigent's own `docs/POLICIES.md`
+  documents a three-tier declarative policy engine (server-wide /
+  agent-spec / session, each returning ALLOW / DENY / ASK, with session
+  policies evaluated first and able to short-circuit) `[verified, read
+  directly from docs/POLICIES.md]`, plus OS-level sandboxing (`bwrap` on
+  Linux, `seatbelt` on macOS) and optional cloud sandboxes (Modal, Daytona,
+  E2B, and others) `[verified, README.md]`. No other candidate in this
+  shortlist documents a comparably explicit, layered policy/trust model.
+- **E (memory/continuity)**: no candidate has anything resembling Koda's
+  tagged cross-session memory or the Mission Ledger. All scores in this
+  column are low and are really measuring "does the project have *any*
+  session-persistence primitive to build continuity on top of," not "does
+  it already solve this."
+- **F (distribution + maintainability)**: opencode scores highest here on
+  sheer momentum and shipping surfaces; Omnigent scores lower specifically
+  because of its alpha status and much smaller star count/community size —
+  this is the category where "popularity" legitimately still matters
+  (long-term maintainability is a real product requirement, #13), it is
+  simply no longer allowed to dominate the other five categories the way it
+  did in the original version's weighting.
+
+### Recommended best UI (visual/interaction design) — revised wording
+
+**Crush** remains the strongest single-task visual execution found (right
+sidebar with live Modified Files diffstat, LSP/MCP status dots, a fuzzy
+command palette with a System/User scope toggle — all directly viewed via
+extracted GIF frames, see the original verification above this correction).
+
+Corrected framing per Hafiz's instruction: this is a claim about
+**interaction-pattern inspiration**, not a claim that Crush's complete
+visual design is free to reproduce. Concretely:
+
+- Fair to draw on as an idea: "a persistent sidebar showing live diffstat
+  and tool/LSP status while a task is in focus" — this is a functional UI
+  pattern, not a specific protected expression.
+- Not addressed or licensed by that idea alone: Crush's actual pixels — its
+  specific color values, exact spacing, iconography, and the Charm
+  wordmark/branding — which sit under a non-standard FSL-1.1-MIT license
+  (source-available now, converts to MIT roughly two years after each
+  release) and separately under Charm's own trademark. A Sifututor-native
+  implementation should be recognizably its own design, not a close visual
+  copy of Crush's specific screens, regardless of how the underlying idea
+  is licensed.
+- This is a plain-language summary for planning purposes, not legal advice;
+  if Crush-derived visual elements are ever seriously considered for reuse
+  rather than inspiration, that needs an actual legal read of the FSL terms
+  first.
+
+### Recommended best technical foundation — revised
+
+**Omnigent** is now the best-scoring technical foundation (7.40, leading by
+~1.5 points once weighted against Hafiz's 13 requirements), for three
+concrete reasons, each tied to a specific requirement:
+
+1. It is the only candidate whose core purpose *is* orchestrating multiple
+   coding-agent engines (Claude Code, Codex, Cursor, OpenCode, Hermes, Pi,
+   and custom YAML agents) under one identity — a direct match to
+   requirement 5.
+2. It is the only candidate with a real, documented, cross-vendor
+   multi-agent delegation pattern (Polly) — a direct match to requirement 6.
+3. It is the only candidate with both a declarative, layered policy engine
+   (requirement 9) and the most explicit, evidence-backed statement found
+   anywhere in this research of authenticating through a vendor's **own
+   official CLI login** rather than extracting or reusing its stored
+   credentials (requirement 8).
+
+It does not fully satisfy requirements 1–4 and 12 as literally specified
+(no Control Room grid, no Worker Sidebar concept, Split Focus via OS windows
+rather than in-app panes) and has no Koda/Mission Ledger equivalent
+(requirement 10). Those gaps are real and are why the recommendation below
+is "fit-test as a runtime," not "adopt as the finished UI."
+
+### Best architecture fallback
+
+**goose**, unchanged from the original recommendation, for the same reason:
+its "one core, three shells" shape (Rust core driving CLI, native desktop,
+and an embeddable API from a single codebase) is Apache-2.0 and now under
+neutral Linux Foundation governance (see corrected date below), making it
+the lowest-governance-risk fallback if Omnigent's alpha status or
+architecture proves disqualifying during a fit test.
+
+### Comparison with Hafiz's current multi-chat VS Code workflow (revised)
+
+| Sifututor today | Closest researched equivalent | Gap |
+| --- | --- | --- |
+| One parent VS Code workspace, `additionalDirectories` fan-out to 10 sub-projects | None found — still true after adding Omnigent; Omnigent's "Projects" sidebar groups sessions but does not do umbrella multi-repo instruction-file dispatch | Nothing found does this |
+| Multiple concurrent Claude Code / Codex chats, one per active task | Omnigent's project-grouped, pinned session sidebar `[verified, screenshot]`, plus OpenHands' Conversations sidebar `[verified, screenshot]` | Omnigent is the closer functional analog because the *engines behind* those sessions can literally be Claude Code or Codex themselves, not just a UI that resembles the idea |
+| Dispatcher skills routing to project-specific implementations | Omnigent's per-agent YAML + policy declarations, and its build/plan-style visible mode is closer to opencode's Tab switcher | Neither is a like-for-like route-by-declared-project-intent system |
+| Hook-driven quality gates per project | Omnigent's three-tier declarative policy engine (server/agent/session, ALLOW/DENY/ASK) `[verified]` | Closest match found in this entire research pass — existing hooks (`workflow-gate.py`, `quality-gate.py`, the pre-commit guard) would need to be re-expressed as Omnigent policies, not just referenced; whether that re-expression preserves their exact blocking behavior is unverified and is listed as a required fit-test unknown below |
+| Koda cross-session memory with mandatory project tagging | Nothing found | Unchanged gap |
+| Mission Ledger | OpenHands' Automations dashboard remains the closer visual analog; Omnigent has no comparable board | Unchanged gap |
+
+### Native / Adapt / Borrow / Build gap matrix (revised, Omnigent rows added)
+
+| Capability | Status for Sifututor Agent OS | Source of truth |
+| --- | --- | --- |
+| Umbrella multi-project routing | **Native** — already exists | Unchanged |
+| Layered instruction contract | **Native** — already exists | Unchanged |
+| Visible permission/mode state per session | **Adapt** | Omnigent's ASK-verdict policy prompts are a stronger direct match than opencode's Tab switcher — a policy that returns `ASK` is functionally the same idea as Critical Lane's "explicit approval before implementation," implemented as software rather than as written convention |
+| Declarative, three-tier policy/gate engine | **Adapt or Build** | Omnigent's `docs/POLICIES.md` engine (server-wide / agent-spec / session, ALLOW/DENY/ASK) is the closest existing implementation of what this doc's hooks currently do by convention; re-expressing `workflow-gate.py`/`quality-gate.py` as Omnigent policies is the concrete adaptation path, unverified until fit-tested |
+| Cross-vendor multi-agent delegation with visible review | **Borrow (pattern) or Adopt (as runtime)** | Omnigent's Polly example agent is a working implementation of requirement 6 today, not just a pattern to imitate — if Omnigent is adopted as a runtime, Polly-style delegation could be used close to as-is |
+| Live diff/modified-files awareness during a session | **Borrow** — nothing exists yet | Crush sidebar (visual pattern only, see licensing note above) |
+| Live plan checklist during multi-step work | **Borrow** — nothing exists yet | OpenAI Codex CLI plan block |
+| Cross-project "what's scheduled / parked" dashboard | **Adapt** | OpenHands Automations dashboard |
+| Control Room (many live, directly replyable conversations in one view) | **Build** — no candidate implements this literally | Closest partial precedents: OpenHands' Conversations sidebar (visibility, not confirmed simultaneous reply) and Omnigent's multi-window model (simultaneity via OS windows, not in-app) |
+| Worker Sidebar (sub-agent/tool status inside one focused task) | **Build** — no candidate implements this literally | Closest partial precedent: Crush's LSP/MCP status dots (tool status, not sub-agent status) |
+| Split Focus (several full workspaces at once) | **Adapt** | Omnigent's `Cmd+N` multi-window pattern achieves the outcome (several full sessions visible at once) through the OS window manager rather than an in-app layout — worth evaluating as a starting point before building a custom in-app split view |
+| Subscription reuse without credential extraction | **Adapt or Adopt (as runtime)** | Omnigent's "official CLI login, we store no credential" pattern is the concrete mechanism to reuse or copy the *approach* from, not just the idea |
+| One core driving CLI + future desktop/web surface | **Build** (if going independent) or **N/A** (if adopting Omnigent, which already has this) | goose's three-surface architecture, or Omnigent's existing terminal/web/desktop/iOS surfaces if adopted as runtime |
+| Koda-tagged cross-session memory / Mission Ledger continuity | **Build** — no external equivalent found in any candidate, including Omnigent | This doc's existing memory architecture |
+
+### Exact donor project for every Borrow recommendation (revised, Omnigent donors added)
+
+| UI/architecture element worth borrowing | Exact donor | Verified how |
+| --- | --- | --- |
+| Session header showing token count / context % / running cost | opencode | Screenshot viewed directly, prior session |
+| Dim, one-line tool-call rendering | opencode | Screenshot viewed directly, prior session |
+| Tab-cycled agent mode (build / plan / general) | opencode | Screenshot viewed directly, prior session |
+| Right-sidebar Modified Files panel with live diffstat (interaction pattern only — see Crush licensing note above) | Crush | GIF frame extracted and viewed directly, prior session |
+| LSP/MCP server status as live colored dots (interaction pattern only) | Crush | GIF frame extracted and viewed directly, prior session |
+| Command palette with fuzzy search + scope toggle (interaction pattern only) | Crush | GIF frame extracted and viewed directly, prior session |
+| Live-updating plan checklist with bolded in-progress step | OpenAI Codex CLI | Screenshot viewed directly, prior session |
+| Automations dashboard (Active/Inactive card grid, schedule chips, "Run now") | OpenHands | Screenshot viewed directly, prior session |
+| Conversations list with live status dot + relative timestamp | OpenHands | Screenshot viewed directly, prior session |
+| One core, three/four shells (CLI + desktop + web + phone) architecture | Omnigent (updated donor — Omnigent already ships all four surfaces today; goose remains the fallback donor for the same idea with three surfaces) | README + `gh api`, verified this session |
+| Three-tier declarative policy engine (server-wide / agent-spec / session; ALLOW/DENY/ASK) | Omnigent | `docs/POLICIES.md`, read directly this session |
+| Cross-vendor multi-agent delegation with routed review (Polly pattern) | Omnigent | README.md, quoted directly this session |
+| Project-grouped, pinned session sidebar | Omnigent | `docs/images/omnigent-desktop.png`, viewed directly this session |
+| "Official CLI login, no credential stored" subscription auth pattern | Omnigent | README.md + `omnigent.ai/docs/build/harnesses`, quoted directly this session |
+| Multiple full workspaces open at once via OS-native windows (`Cmd+N`) | Omnigent | `omnigent.ai/docs/interact/desktop`, summarized this session — treat as secondary until independently confirmed |
+
+Same caveat as the original version applies to every row: naming the donor
+authorizes studying and reimplementing the *interaction pattern* natively,
+not copying source code, and for Crush specifically, not reproducing its
+complete visual expression either (see the Crush licensing note above).
+
+### Adopt / adapt / borrow / build / reject map (revised)
+
+| Decision | Item |
+| --- | --- |
+| **Adopt (as runtime, pending fit test)** | Omnigent — not "adopt its UI as our UI," but "adopt as the underlying multi-engine orchestration/policy/sandboxing runtime that a Sifututor-native Control Room/Focus Workspace UI could be built on top of," conditional on the fit-test unknowns listed below |
+| **Adapt** | Omnigent's policy engine, re-expressing existing hooks as Omnigent policies; Omnigent's `Cmd+N` multi-window pattern as a starting point for Split Focus |
+| **Borrow** (reimplement the interaction pattern natively, no shared code) | Every row in the donor table above except the "Adopt (as runtime)" row |
+| **Build** (net-new, nothing to borrow from) | Umbrella multi-repo project dispatch, layered `AGENTS.md` contract, Koda-tagged memory, Mission Ledger, the literal Control Room/Worker Sidebar UI layers — all already exist or are already planned in this doc and have no external equivalent, including in Omnigent |
+| **Reject** | Aider's auto-commit-per-edit convention as wholesale adoption; Roo Code (archived); Plandex (dead ~10 months); using Crush's FSL-covered source or complete visual design directly in a packaged product |
+
+### Subscription/OAuth and provider compatibility (corrected)
+
+This remains the most consequential finding in this research, now with
+narrower, evidence-scoped wording and Omnigent added.
+
+**The distinction that matters**: there is a real difference between (a) a
+tool that spawns the vendor's own official CLI binary and lets *that*
+binary perform its own login, versus (b) a tool that extracts, imports, or
+reimplements that subscription's OAuth flow inside itself so the original
+CLI is no longer involved. (a) keeps the vendor's own software as the thing
+actually authenticating. (b) is where the reported Anthropic ToS friction
+below actually occurred.
+
+- **Omnigent**: documents "Subscription: A Claude Pro/Max or ChatGPT plan,
+  via the official `claude` / `codex` CLIs" as one of four first-class
+  credential kinds, and for its ACP integration path states directly:
+  "Each ACP agent brings its own auth — Omnigent stores no credential, so
+  log into the agent through its own CLI first." Its "Native TUI" execution
+  mode is described as "Omnigent boots the vendor's own terminal UI in a
+  pane and mirrors it back." `[verified: quoted directly from README.md and
+  omnigent.ai/docs/build/harnesses, 2026-08-03]` This is architecturally
+  pattern (a) above — the official CLI does its own login; Omnigent's own
+  words are that it stores no credential itself. This is Omnigent's own
+  description of its own design, not a statement from Anthropic or OpenAI
+  approving the practice — no such vendor statement was located this
+  session for any tool.
+- **goose**: documented by goose's own project blog as supporting reuse of
+  an existing Claude, ChatGPT, or Gemini subscription via its ACP
+  integration (picking a `chatgpt_codex` provider opens a real browser
+  OAuth sign-in). `[secondary: goose-docs.ai official blog, "Use Goose with
+  Your AI Subscription," dated 2026-03-19]` Whether this is implemented as
+  pattern (a) (shelling out to the actual vendor CLI) or pattern (b) (a
+  goose-authored OAuth client talking to the provider directly) was **not
+  independently verified this session** — this is listed as an open
+  unknown below rather than asserted either way.
+- **opencode**: multiple independent secondary sources report that
+  Anthropic restricted third-party tools from using consumer-subscription
+  OAuth credentials, and that opencode removed Anthropic-subscription-auth
+  support after a legal request; community plugins attempting to route
+  around this explicitly warn that doing so violates Anthropic's consumer
+  Terms of Service. `[secondary, cross-corroborated by multiple independent
+  writeups; no single primary Anthropic statement located this session —
+  treat as high-confidence but not primary-sourced]` This reads as pattern
+  (b) — a third party's own OAuth handling of subscription credentials, not
+  the vendor's own CLI performing its own login — which is the likely
+  reason it drew a legal objection where Omnigent's "boot the vendor's own
+  CLI in a pane" approach has not (as far as this research found).
+- **Cline**: BYOK across 30+ providers via standard API keys; no
+  subscription-OAuth reuse claim found — no ToS ambiguity identified.
+  `[secondary]`
+- **Crush**: 20+ providers via standard API keys; no subscription-OAuth
+  reuse claim found. `[secondary]`
+
+Sifututor implication (corrected wording): if a native Agent OS harness
+ever needs to let staff plug in a personal or company Claude/ChatGPT
+**subscription** rather than a metered API key, **Omnigent's "boot the
+official CLI, store no credential ourselves" pattern is the most clearly
+evidence-backed low-risk mechanism found in this research** — precisely
+because it keeps the vendor's own software doing the actual authentication
+rather than a third party handling the subscription's OAuth itself. This is
+not a claim that Anthropic or OpenAI has blessed Omnigent specifically; it
+is a claim about which *architecture* (invoke the official CLI vs.
+extract/reimplement its auth) carries less apparent ToS risk based on what
+was observably restricted (opencode's approach) versus what has not been
+`[inference, based on the pattern-(a)-vs-(b) distinction above — not a
+vendor confirmation]`. Do not build or recommend a Sifututor harness that
+extracts, imports, or reimplements a Claude/Codex subscription's stored
+OAuth token outside of that vendor's own official CLI process.
+
+### Security, credential, permission, workspace-isolation, and privacy analysis (revised)
+
+- **Credential handling**: Omnigent's four-credential-kind model (API key /
+  Subscription via official CLI / Gateway / Databricks profile) is the most
+  explicit credential taxonomy found in this research
+  `[verified: README.md]`. It still stores gateway and API-key credentials
+  locally itself (same as every other candidate) — the "stores no
+  credential" claim applies specifically to the ACP/subscription path where
+  the official vendor CLI is doing the authenticating, not to every
+  credential kind Omnigent supports.
+- **Sandboxing**: two candidates now show verified sandboxing evidence.
+  OpenHands runs agent actions inside a sandboxed VM/Docker container
+  `[verified, architecture diagram viewed]`. Omnigent applies OS-level
+  sandboxing to its terminal wrappers and the `pi` harness — `bwrap` on
+  Linux (mandatory there), the built-in `seatbelt` sandbox on macOS — plus
+  optional disposable cloud sandboxes (Modal, Daytona, Islo, E2B,
+  CoreWeave, Kubernetes, Boxlite, Databricks) launched per session
+  `[verified: README.md]`. Neither opencode, Crush, nor goose showed
+  built-in sandboxing in what was reviewed — same caveat as the original
+  version: absence of a sandboxing claim in what was reviewed is not proof
+  none exists.
+- **Permission visibility**: Omnigent's ALLOW/DENY/ASK policy verdicts,
+  evaluated at server-wide, agent-spec, and session levels with session
+  policies checked first, are a more explicit and more layered version of
+  the "visible permission state" idea than opencode's Tab-cycled mode
+  `[verified: docs/POLICIES.md]`. The accompanying policy-trust-model
+  diagram in the repo shows User Policy, Developer Policy, and IT Policy as
+  three separate defensive layers around an "Agent Session," specifically
+  including a labeled "malicious injection" threat path from content inside
+  the session — evidence that prompt-injection-via-tool-output was an
+  explicit design consideration, not an afterthought
+  `[verified, diagram viewed directly]`.
+- **Workspace isolation**: Omnigent's Polly example agent runs each coding
+  sub-agent in its own parallel git worktree `[verified: README.md]` — this
+  is the first candidate in this entire research pass (across both
+  versions of this section) with a *verified, working* worktree-isolation
+  pattern rather than just a documented gap. This directly addresses
+  requirement 7 and the standing "parallel work needs isolation" gap noted
+  elsewhere in this document.
+- **Privacy**: Omnigent "collects anonymized usage data (telemetry) by
+  default," with an opt-out documented separately
+  `[verified: README.md, "Telemetry" section]` — this is a real fact to
+  weigh for any self-hosted deployment, distinct from OpenHands' broader
+  standing-OAuth-grant privacy consideration noted in the original version
+  (unchanged). Omnigent also supports OIDC single sign-on (Google, GitHub,
+  Okta, Microsoft) for multi-user team deployments and invite-only signup
+  `[verified: README.md]`, which is a stronger access-control story than
+  any other candidate reviewed if Omnigent is ever deployed as a shared
+  server for staff.
+- **Messaging-channel access**: Omnigent ships a native iOS app (a thin
+  shell around the same web UI) and a Slack integration, but **no Telegram
+  integration was found** `[secondary, summarized from
+  omnigent.ai/docs/interact/mobile — no Telegram, WhatsApp, or SMS
+  integration listed]`. This is a direct gap against requirement 11
+  ("Desktop plus Telegram/phone access") — Sifututor's existing
+  Hermes-based approach (see the Mission Ledger's Responsibility Inbox
+  work) uses Telegram specifically, which Omnigent does not currently
+  offer; Slack and native-app/web access are not substitutes for that
+  specific channel unless Hafiz is open to switching channels.
+
+### License, attribution, trademark, and fork-maintenance analysis (revised)
+
+- Omnigent is **Apache-2.0** `[verified: gh api license endpoint,
+  2026-08-03]` — fully permissive, same tier as goose, OpenHands, Cline,
+  Aider, and the vendor CLIs. No FSL-style restriction applies to it.
+- Everything stated in the original version about MIT/Apache candidates,
+  Crush's FSL-1.1-MIT status, and trademark obligations remains unchanged
+  and is not repeated here — see the equivalent section above this
+  correction. The one wording change is the Crush note above under
+  "Recommended best UI," which narrows the claim from "the design may be
+  studied and reimplemented" to the more precise "the interaction pattern
+  may be studied and reimplemented; the complete visual expression and
+  branding may not be assumed to be free to reproduce."
+- **Fork-maintenance risk for Omnigent specifically**: young project
+  (8,057 stars vs. the 50k-190k range of the other shortlisted candidates),
+  explicitly marked `alpha`, single small org (`omnigent-ai`) rather than a
+  neutral foundation. This is a materially higher governance/continuity
+  risk than goose (Linux Foundation) or opencode (very large community),
+  and is the central reason the recommendation below is "fit-test as a
+  runtime candidate," not "commit to it as the platform."
+
+### Verified facts, inferences, unknowns, and confidence (revised)
+
+**Verified this session (high confidence)**: Omnigent's star count,
+license, and activity via `gh api`; every direct quote from Omnigent's
+README.md, docs/POLICIES.md, and docs/OMNIGENT_BOT_SETUP.md; the desktop
+app and policy-trust-model screenshots, viewed directly; opencode's
+`packages/` directory listing (`tui`, `cli`, `desktop`, `web`, `console`,
+`server`, confirming all four surfaces ship today); the AAIF announcement
+date of 2025-12-09 (TechCrunch and SiliconANGLE both independently dated
+2025-12-09, cross-checked against the Linux Foundation's own press release
+title).
+
+**Secondary, cross-corroborated (medium-high confidence)**: Omnigent's
+desktop multi-window (`Cmd+N`) behavior and native iOS app / no-Telegram
+finding (summarized via an automated fetch of `omnigent.ai/docs/interact/*`
+rather than read verbatim); goose's ACP subscription-reuse feature and its
+underlying OAuth mechanism being unconfirmed; the Anthropic
+opencode-subscription-auth restriction.
+
+**Inference (this session's judgment, not a sourced fact)**: the
+recalculated scoring weights and resulting ranking; that Omnigent's
+"official CLI login" pattern carries lower ToS risk than opencode's
+reported approach — this is a reasoned comparison of two documented
+architectures, not a statement any vendor has made; which specific UI
+elements are "worth borrowing."
+
+**Unknown / not checked this session — carried forward as open items**:
+whether Omnigent's policy engine can actually reproduce the exact blocking
+behavior of Sifututor's existing hooks (`workflow-gate.py`,
+`quality-gate.py`, the pre-commit guard) without loss; whether Omnigent's
+multi-user server deployment keeps a staff Claude/ChatGPT subscription
+login fully within that vendor's consumer ToS at production scale (not just
+a single local user); whether Koda MCP and the Mission Ledger workflow can
+attach cleanly to an Omnigent session/agent; whether Omnigent's "Focus
+Workspace + multi-window Split" genuinely satisfies the literal Control
+Room requirement or would need a custom client built against Omnigent's
+REST API; Omnigent's actual contributor count, funding, and governance
+trajectory beyond what the repo itself shows.
+
+### Recommended next action (revised)
+
+Run the fit test that Sifututor's own Mission Ledger already parked for
+this exact purpose: `AO-RUNTIME-001`
+(`docs/agent-playbooks/mission-ledger/cross-project.md`), which proposes
+self-hosting an Omnigent server, connecting Koda via MCP, encoding one route
+(bugfix, with gates) as a YAML agent + policy, and explicitly running "the
+mandatory gate-compatibility test" and "subscription-auth verification"
+before trusting it with real staff work. This correction pass confirms that
+plan was pointed at the right project; nothing here should be read as
+authorization to start it — it remains paused pending Hafiz's go-ahead, per
+its own recorded status.
+
+### Exact decision Hafiz needs to make (revised)
+
+Pick one direction (or explicitly defer):
+
+1. **Fit-test path (this research's recommendation)**: approve the paused
+   `AO-RUNTIME-001` pilot — self-host Omnigent, verify hooks/gates survive
+   re-expression as Omnigent policies, verify the subscription-auth path
+   holds up under real multi-user use, then decide adopt/reject with actual
+   evidence instead of documentation claims.
+2. **Design-first path (from the original version, still available)**:
+   approve a Sifututor-native TUI, visually inspired by Crush's interaction
+   patterns (not its complete visual design) but built architecturally on
+   opencode's client/server split, with all source written natively, API-
+   key-only auth to start.
+3. **Architecture-first path (from the original version, still available)**:
+   approve goose's "one core, three shells" shape as the long-term target,
+   as the lower-governance-risk fallback if Omnigent's alpha status proves
+   disqualifying during evaluation.
+4. **Defer entirely**: keep investing in the current instructions + hooks +
+   skills layer on top of Claude Code/Codex, and revisit a native harness or
+   runtime adoption only after the credential/subscription question is
+   independently resolved.
+
+No prototype, install, clone, fork, authentication, or credential import has
+been performed for this task or this correction. This research stops here
+for Hafiz's selection.

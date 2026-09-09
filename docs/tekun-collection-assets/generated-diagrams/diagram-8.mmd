@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant C as Customer
+    participant A as Authorised representative
+    participant P as Approved payment channel
+    participant F as Principal/TCorp finance
+    participant S as Collection platform
+
+    Note over C,S: Illustrative and unconfirmed until TEKUN Corporation validates the flow
+
+    A->>C: Explain approved payment route
+    C->>P: Make payment directly
+    P->>F: Provide transaction evidence
+    F->>S: Confirm/import payment evidence
+    S->>S: Match, reconcile and update case
+    S-->>A: Stop or adjust collection action
+    S-->>F: Exception or completed reconciliation report

@@ -5,6 +5,19 @@ follow-ups.
 
 ## Missions
 
+### LLS-BBB-DOMAIN-001 — Complete BBB Custom-Domain Provisioning
+
+- **Project:** lls
+- **Status:** active
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Learnest BBB invitation and live meeting pages remain on `meet.learnest.my`, including the complete guest join flow in Safari, before Learnest generates real class links with the custom domain.
+- **Why it matters:** DNS, TLS, and the invitation page work, but the verified Safari join flow redirects to `biggerbluebutton.com`; treating the landing page as completion would expose provider URLs to students and violate the requested acceptance test.
+- **Source:** Learnest BBB custom-domain setup and Safari verification session, 2026-08-21; Hafiz assigned the continuation to developer Sufiyan.
+- **Next action:** Sufiyan should ask BiggerBlueButton support to complete or repair custom-domain provisioning, then rerun the full guest join flow in actual Safari and confirm the address remains on `meet.learnest.my` before authorizing the backend update.
+- **Promote to:** none yet
+- **Links:** Koda `mem_1493278eb42a`; no repository implementation or backend update yet.
+
 ### LLS-SIMS-LIFECYCLE-001 — Reliable SIMS Student Account Lifecycle
 
 - **Project:** lls

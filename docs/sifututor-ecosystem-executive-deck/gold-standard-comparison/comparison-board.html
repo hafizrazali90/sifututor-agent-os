@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sifututor Ecosystem — Codex × Claude Visual Comparison</title>
+  <style>
+    @font-face{font-family:Manrope;src:url("../assets/fonts/Manrope-VariableFont_wght.ttf") format("truetype");font-weight:200 800;font-display:swap}
+    :root{--ink:#111842;--blue:#2237b8;--orange:#f45124;--cyan:#53d5e5;--peach:#ffd8cb;--cream:#f3f1e8;--paper:#fff;--line:#d9d7ce;--muted:#666b79}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--cream);color:var(--ink);font-family:Manrope,Arial,sans-serif}
+    .topline{height:9px;background:linear-gradient(90deg,var(--ink) 0 55%,var(--orange) 55% 73%,var(--cyan) 73% 88%,var(--blue) 88%)}
+    header{max-width:1840px;margin:auto;padding:48px 48px 34px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(420px,.65fr);gap:44px;align-items:end}
+    .eyebrow{font-size:13px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--orange)}
+    h1{font-size:52px;line-height:1.03;letter-spacing:-.045em;margin:13px 0 16px;max-width:1000px}
+    .lede{margin:0;max-width:970px;font-size:18px;line-height:1.55;color:#4d5263}
+    .method{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:23px 25px;box-shadow:0 10px 34px rgba(17,24,66,.06)}
+    .method strong{display:block;font-size:17px;margin-bottom:10px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{border-radius:999px;background:#eef0f7;padding:8px 11px;font-size:11px;font-weight:750;letter-spacing:.02em}
+    main{max-width:1840px;margin:auto;padding:0 48px 70px}
+    .pair{padding:35px 0 45px;border-top:1px solid #cfcec5}
+    .pair-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:18px}
+    .pair-index{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:7px}
+    h2{font-size:27px;line-height:1.15;letter-spacing:-.025em;margin:0;max-width:1060px}
+    .focus{font-size:12px;font-weight:700;color:var(--muted);text-align:right;max-width:520px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    figure{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 13px 34px rgba(17,24,66,.075)}
+    .label{height:49px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid var(--line);font-size:13px;font-weight:800}
+    .label span:last-child{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.09em}
+    .codex .label{border-left:7px solid var(--blue)}
+    .claude .label{border-left:7px solid var(--cyan)}
+    figure a{display:block;background:#e9e7de}
+    figure img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain}
+    footer{max-width:1744px;margin:0 auto 54px;padding:24px 0 0;border-top:1px solid #cfcec5;display:flex;justify-content:space-between;gap:30px;color:var(--muted);font-size:12px;line-height:1.5}
+    footer strong{color:var(--ink)}
+    @media(max-width:1050px){header{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.focus{text-align:left}.pair-head{align-items:flex-start;flex-direction:column}h1{font-size:42px}}
+    @media(max-width:620px){header,main{padding-left:18px;padding-right:18px}h1{font-size:34px}.method{padding:18px}.label span:last-child{display:none}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <div class="topline"></div>
+  <header>
+    <div>
+      <div class="eyebrow">Independent design comparison · 03 slides</div>
+      <h1>Same governed content. Two visual interpretations.</h1>
+      <p class="lede">Codex and Claude received the same three-slide content contract, evidence rules and visual benchmark. Review the compositions side by side; click any slide for its full-resolution render.</p>
+    </div>
+    <aside class="method">
+      <strong>Review what materially changes comprehension</strong>
+      <div class="chips">
+        <span class="chip">Content-to-canvas ratio</span>
+        <span class="chip">Dominant visual anchor</span>
+        <span class="chip">Evidence integration</span>
+        <span class="chip">Typography hierarchy</span>
+        <span class="chip">Composition rhythm</span>
+        <span class="chip">Factual clarity</span>
+      </div>
+    </aside>
+  </header>
+  <main>
+    <section class="pair">
+      <div class="pair-head">
+        <div><div class="pair-index">Slide 01 · End-to-end operating service</div><h2>One learning need becomes a managed end-to-end service.</h2></div>
+        <div class="focus">Compare how each version joins the human journey, five-stage operating loop and real Ripple evidence.</div>
+      </div>
+      <div class="grid">
+        <figure class="codex"><div class="label"><span>Codex interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/codex/01.png" target="_blank"><img src="rendered/codex/01.png" alt="Codex end-to-end operating service slide"></a></figure>
+        <figure class="claude"><div class="label"><span>Claude interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/claude/01.png" target="_blank"><img src="rendered/claude/01.png" alt="Claude end-to-end operating service slide"></a></figure>
+      </div>
+    </section>
+    <section class="pair">
+      <div class="pair-head">
+        <div><div class="pair-index">Slide 02 · System portfolio</div><h2>Portfolio breadth comes from different systems doing different jobs.</h2></div>
+        <div class="focus">Compare portfolio scanability, central authority, subsystem roles and how actual or illustrative evidence is labelled.</div>
+      </div>
+      <div class="grid">
+        <figure class="codex"><div class="label"><span>Codex interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/codex/02.png" target="_blank"><img src="rendered/codex/02.png" alt="Codex system portfolio slide"></a></figure>
+        <figure class="claude"><div class="label"><span>Claude interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/claude/02.png" target="_blank"><img src="rendered/claude/02.png" alt="Claude system portfolio slide"></a></figure>
+      </div>
+    </section>
+    <section class="pair">
+      <div class="pair-head">
+        <div><div class="pair-index">Slide 03 · Capability-led roadmap</div><h2>Consolidate the operating spine, then multiply its value.</h2></div>
+        <div class="focus">Compare horizon readability, the reuse story and the distinction between capability gates and public commitments.</div>
+      </div>
+      <div class="grid">
+        <figure class="codex"><div class="label"><span>Codex interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/codex/03.png" target="_blank"><img src="rendered/codex/03.png" alt="Codex capability roadmap slide"></a></figure>
+        <figure class="claude"><div class="label"><span>Claude interpretation</span><span>Open full resolution ↗</span></div><a href="rendered/claude/03.png" target="_blank"><img src="rendered/claude/03.png" alt="Claude capability roadmap slide"></a></figure>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <span><strong>Fair-comparison rule:</strong> both decks were rendered at 1920×1080 with reduced motion and the same asset-loading checks.</span>
+    <span>No winner is preselected. The preferred patterns can be combined in the final presentation system.</span>
+  </footer>
+</body>
+</html>

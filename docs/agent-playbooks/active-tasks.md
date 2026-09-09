@@ -38,7 +38,11 @@ No active task at last check:
 - `lls-frontend`
 - `lls-mobile`
 - `creative-hub`
-- `team-inbox`
 - `finch-inbox`
+- `cx-call-capture-android` (no shared `active.json` pointer yet)
+- `sims-owner-analytics` (no shared `active.json` pointer yet)
+
+The retired `team-inbox` checkout is archived locally and routes to
+`finch-inbox`; it is not a separate active task target.
 
 Run `quick-check.md` commands to refresh this list.

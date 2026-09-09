@@ -36,6 +36,12 @@ This workflow should remove ambiguity, not create ceremony.
   recommended option, explain why it is recommended, and name the key tradeoff
   or risk. Do this even when Hafiz asks "what do you suggest?" so he can compare
   the choices instead of receiving only one answer.
+- Before presenting action options, establish the record's current lifecycle
+  state and whether that action still applies. Do not describe a
+  non-applicable action as merely "blocked." For example, an invoice already
+  found in QuickBooks is a reconciliation or correction case; it is not a new
+  export candidate, so explain that first instead of asking how its export
+  should be blocked. Present options only for the real next decision.
 - Mark confirmed decisions as confirmed before moving to the next decision.
 - Do not repeat already-confirmed decisions unless a later answer conflicts.
 - Keep "out of scope" explicit so build prompts do not grow quietly.

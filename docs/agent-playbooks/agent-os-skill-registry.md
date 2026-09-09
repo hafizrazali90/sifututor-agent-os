@@ -155,6 +155,8 @@ skill.
 | `$review` | Review | Code review, risk review, PR review, pre-commit review, or pre-push/deploy risk check. | `.agents/skills/review/SKILL.md` | `docs/agent-playbooks/review.md` | `/review` | Quietly fixing findings without scope/approval when review-only was requested. |
 | `$commit` | Commit | Preparing or creating a local commit. | `.agents/skills/commit/SKILL.md` | `docs/agent-playbooks/commit.md` | `/commit` | Push, merge, deploy, PR, `--no-verify`, secrets, `.env*`, or `live/`. |
 | `$product-design` | Product Design | Brainstorming, workflow design, PRD, UX spec, backend contract, build prompts, or major redesign. | `.agents/skills/product-design/SKILL.md` | `docs/agent-playbooks/product-design.md` | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | Ordinary narrow bugfixes, small copy edits, or implementation before approval. |
+| `$document-production` | Document Production | Researching, planning, drafting, rendering, reviewing, or updating a substantial professional sourcebook, strategy paper, stakeholder document, operating guide, or evidence-backed report. | `.agents/skills/document-production/SKILL.md` | `docs/agent-playbooks/document-production.md` | Natural-language route using the shared playbook; no dedicated global Claude command is installed in v1. | Tiny copy edits, product PRDs/UX specs, slide-deck editing, or external publication without approval. |
+| `$frontend-slides` | Frontend Slides | Creating, converting, redesigning, rendering, exporting, or visually checking a self-contained HTML slide presentation. | `.agents/skills/frontend-slides/SKILL.md` | `docs/agent-playbooks/frontend-slides.md` | `/frontend-slides` through the installed global symlink to the same shared skill. | Replacing document-production evidence governance, editing an existing native Google Slides deck, promising editable PowerPoint, or deploying without approval. |
 | `$workflow-improvement` | Workflow Improvement | Improving Agent OS behavior, making future agents handle something better, resolving workflow drift, or cleaning up docs/skills/hooks/evals/Koda consistency. | `.agents/skills/workflow-improvement/SKILL.md` | `docs/agent-playbooks/agent-os-improvement-loop.md` | `/workflow-improvement` (installed global Claude adapter skill) | Ordinary product bugs, related-impact audits after product fixes, or hook automation before the playbook/eval shape is clear. |
 | `$sims-ui-audit` | SIMS UI Audit | Auditing `sifu-tutor` browser UI/UX, screenshots, spacing/density, disabled states, tables, filters, modals, popouts, sidebar/navigation, or design-system consistency before Hafiz review. | `.agents/skills/sims-ui-audit/SKILL.md` | `docs/agent-playbooks/sims-ui-audit.md` | `/sims-ui-audit` plus `ux-reviewer` where available | Replacing the SIMS design system docs, broad product redesign, or backend-only verification. |
 
@@ -206,6 +208,33 @@ $product-design
 -> backend contract if needed
 -> build prompts
 -> implementation approval
+```
+
+Professional document production:
+
+```text
+$document-production
+-> document contract
+-> deep internal and online research
+-> evidence map and blueprint approval
+-> governed Markdown draft
+-> local formats and document QA
+-> independent adversarial review
+-> local acceptance
+-> $save-session
+```
+
+Web-native slide production:
+
+```text
+$document-production when research/evidence governance is required
+-> approved document blueprint or slide brief
+-> $frontend-slides
+-> assertion storyboard
+-> visual direction
+-> HTML build and local formats
+-> deterministic and slide-level visual QA
+-> local acceptance
 ```
 
 Agent OS workflow improvement:
@@ -290,6 +319,13 @@ the playbook's routing, gates, evidence standard, or state model.
 | `/commit` | `~/.claude/skills/commit/SKILL.md` | `commit.md` | Installed thin adapter. |
 | `/save-session` | `~/.claude/skills/save-session/SKILL.md` | `save-session.md` | Installed thin adapter. |
 | `/workflow-improvement` | `~/.claude/skills/workflow-improvement/SKILL.md` | `agent-os-improvement-loop.md` | Installed thin adapter. |
+| `/frontend-slides` | `~/.claude/skills/frontend-slides/SKILL.md` | `frontend-slides.md` | Installed symlink to the shared governed skill package. |
+
+`$document-production` is an explicit v1 exception: Codex has a dedicated
+wrapper, while Claude must be routed in natural language to
+`document-production.md`. Do not claim a `/document-production` Claude command
+is installed until its real global adapter exists and the installed-path check
+covers it.
 
 Installed-path enforcement for these adapters lives in
 `scripts/agent-checks/agent-os-claude-adapter-check.py` and its readiness

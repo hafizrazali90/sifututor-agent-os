@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sifututor Ecosystem — Full Design Review Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #1026a3;
+      --navy: #17144f;
+      --orange: #f45124;
+      --yellow: #f6df24;
+      --cyan: #11b9d4;
+      --cream: #f5f1e8;
+      --paper: #fffdf8;
+      --ink: #151515;
+      --muted: #6f6a76;
+      --line: rgba(23,20,79,.18);
+      --display: "Archivo Black", Arial, sans-serif;
+      --body: "DM Sans", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; }
+    body { font-family: var(--body); color: var(--ink); }
+    .viewport { position: fixed; inset: 0; overflow: hidden; }
+    .stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+    .slide { position: absolute; inset: 0; width: 1920px; height: 1080px; padding: 64px 74px 54px; overflow: hidden; visibility: hidden; opacity: 0; pointer-events: none; background: var(--cream); }
+    .slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+    .slide.blue { color: #fff; background: var(--blue); }
+    .slide::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 16px; background: linear-gradient(90deg, var(--blue) 0 68%, var(--orange) 68% 86%, var(--yellow) 86%); }
+    .slide.blue::before { background: linear-gradient(90deg, var(--yellow) 0 16%, var(--orange) 16% 34%, rgba(255,255,255,.22) 34%); }
+    img { display: block; max-width: 100%; max-height: 100%; }
+    h1, h2, h3 { font-family: var(--display); text-transform: uppercase; }
+    .board-header { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: flex-start; }
+    .board-kicker { color: var(--orange); font-size: 17px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+    .blue .board-kicker { color: var(--yellow); }
+    .board-header h1 { margin-top: 11px; max-width: 1220px; font-size: 56px; line-height: .98; letter-spacing: -.035em; }
+    .board-mark { display: flex; align-items: center; gap: 18px; }
+    .board-mark img { width: 230px; }
+    .blue .board-mark img { padding: 9px 12px; background: var(--cream); }
+    .board-count { min-width: 90px; color: var(--blue); font: 400 31px/1 var(--display); text-align: right; }
+    .blue .board-count { color: var(--yellow); }
+    .review-note { position: absolute; right: 74px; bottom: 37px; color: var(--muted); font-size: 15px; font-weight: 600; }
+    .blue .review-note { color: rgba(255,255,255,.68); }
+    .component-label { color: var(--orange); font-size: 14px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+    .blue .component-label { color: var(--yellow); }
+    .soft-card { border: 1px solid var(--line); background: rgba(255,255,255,.66); }
+
+    /* 01 Foundations */
+    .foundation-grid { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 86px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 30px; }
+    .palette-panel, .type-panel { padding: 30px; }
+    .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 22px; }
+    .swatch { height: 152px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; }
+    .swatch.light { color: var(--ink); border: 1px solid var(--line); }
+    .swatch strong { font-size: 18px; }
+    .swatch code { font-family: var(--body); font-size: 14px; opacity: .78; }
+    .principles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
+    .principle { min-height: 138px; padding: 20px; border-top: 4px solid var(--blue); background: var(--paper); }
+    .principle b { display: block; color: var(--blue); font-size: 16px; }
+    .principle p { margin-top: 12px; color: #4e4955; font-size: 16px; line-height: 1.35; }
+    .type-samples { display: grid; gap: 17px; margin-top: 22px; }
+    .type-row { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .type-role { color: var(--muted); font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .display-sample { margin-top: 7px; color: var(--blue); font: 400 44px/.98 var(--display); text-transform: uppercase; }
+    .body-sample { margin-top: 8px; max-width: 610px; font-size: 22px; line-height: 1.42; }
+    .accent-sample { margin-top: 8px; color: var(--blue); font: italic 25px/1.35 Georgia, serif; }
+    .label-sample { display: inline-block; margin-top: 9px; padding: 9px 12px; color: #fff; background: var(--orange); font-size: 14px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+
+    /* 02 Hierarchy */
+    .hierarchy-grid { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 90px; display: grid; grid-template-columns: 1.06fr .94fr; gap: 42px; }
+    .assertion-demo { position: relative; padding: 42px; border-left: 12px solid var(--blue); background: var(--paper); }
+    .assertion-demo .eyebrow { display: inline-block; padding: 10px 14px; color: #fff; background: var(--orange); font-size: 15px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+    .assertion-demo h2 { margin-top: 33px; font-size: 69px; line-height: .98; letter-spacing: -.04em; }
+    .assertion-demo h2 span { color: var(--blue); box-shadow: inset 0 -14px 0 var(--yellow); }
+    .assertion-demo > p { margin-top: 34px; max-width: 690px; color: #4b4651; font-size: 24px; line-height: 1.45; }
+    .pull-quote { margin-top: 45px; padding-top: 20px; border-top: 2px solid var(--line); color: var(--blue); font: italic 25px/1.35 Georgia, serif; }
+    .hierarchy-parts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: start; }
+    .part { min-height: 177px; padding: 22px; background: rgba(255,255,255,.68); border: 1px solid var(--line); }
+    .part.wide { grid-column: 1 / -1; min-height: 150px; }
+    .part h3 { margin-top: 15px; color: var(--navy); font-size: 23px; line-height: 1.05; }
+    .part p { margin-top: 12px; color: #5c5662; font-size: 16px; line-height: 1.35; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .chip { padding: 8px 10px 7px; border: 1px solid rgba(16,38,163,.27); color: var(--navy); background: #fff; font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+    .citation-demo { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    .citation-demo b { color: var(--blue); font: 400 23px/1 var(--display); }
+
+    /* 03 Evidence */
+    .evidence-grid { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 86px; display: grid; grid-template-columns: 1.25fr .75fr; gap: 28px; }
+    .evidence-frame { position: relative; overflow: hidden; border: 3px solid #fff; background: #fff; }
+    .evidence-frame > img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .evidence-tag { position: absolute; left: 16px; top: 16px; z-index: 2; padding: 9px 12px 8px; color: #fff; background: var(--navy); font-size: 14px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+    .actual-frame { height: 548px; }
+    .actual-caption { display: flex; justify-content: space-between; margin-top: 18px; color: rgba(255,255,255,.78); font-size: 16px; }
+    .actual-caption b { color: var(--yellow); }
+    .evidence-side { display: grid; grid-template-columns: 1.1fr .9fr; grid-template-rows: 390px 244px; gap: 20px; }
+    .human-frame { grid-column: 1 / -1; }
+    .human-frame img { object-position: center 18%; }
+    .human-frame::after { content: "HUMAN OUTCOME"; position: absolute; right: 18px; bottom: 17px; padding: 9px 12px 8px; color: #fff; background: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .08em; white-space: nowrap; }
+    .prototype-frame { padding: 16px; background: var(--paper); }
+    .prototype-frame img { object-fit: cover; object-position: top; }
+    .prototype-frame .evidence-tag { top: auto; bottom: 15px; background: var(--orange); }
+    .state-card { padding: 22px; color: var(--navy); background: var(--cream); }
+    .state-card h3 { margin-top: 14px; font-size: 24px; line-height: 1.05; }
+    .state-list { display: grid; gap: 11px; margin-top: 19px; }
+    .state-row { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; }
+    .state-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* 04 Information blocks */
+    .info-grid { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 86px; display: grid; grid-template-columns: 1.15fr .85fr; grid-template-rows: 330px 355px; gap: 24px; }
+    .timeline-card { padding: 28px; }
+    .timeline { display: grid; grid-template-columns: 1fr 68px 1fr; align-items: center; margin-top: 39px; }
+    .event { padding: 22px; border: 2px solid rgba(16,38,163,.22); background: var(--paper); }
+    .event strong { color: var(--blue); font: 400 36px/1 var(--display); }
+    .event span { display: block; margin-top: 9px; font-size: 17px; font-weight: 700; }
+    .timeline-arrow { color: var(--orange); font: 400 38px/1 var(--display); text-align: center; }
+    .metric-card { padding: 28px; background: var(--blue); color: #fff; }
+    .metric-card .big { margin-top: 24px; color: var(--yellow); font: 400 70px/.9 var(--display); }
+    .metric-card h3 { margin-top: 14px; font-size: 31px; line-height: 1.02; }
+    .metric-card p { margin-top: 17px; color: rgba(255,255,255,.76); font-size: 17px; line-height: 1.4; }
+    .system-strip { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .system-tile { position: relative; padding: 24px 20px; border: 2px solid var(--ink); background: var(--paper); }
+    .system-tile::before { content: attr(data-number); display: block; color: rgba(16,38,163,.24); font: 400 36px/1 var(--display); }
+    .system-tile h3 { margin-top: 18px; color: var(--navy); font-size: 22px; line-height: 1.04; }
+    .system-tile p { margin-top: 12px; color: #5a5560; font-size: 15px; line-height: 1.3; }
+    .status { position: absolute; left: 20px; bottom: 20px; padding: 7px 9px 6px; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .status.current { color: #fff; background: var(--blue); }
+    .status.prototype { color: #fff; background: var(--orange); }
+    .status.direction { color: var(--navy); background: var(--yellow); }
+
+    /* 05 Relationships */
+    .relationship-layout { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 86px; }
+    .journey-row { display: grid; grid-template-columns: repeat(9, auto); align-items: center; gap: 12px; }
+    .step-card { width: 288px; min-height: 206px; padding: 25px 22px; color: var(--navy); background: var(--paper); }
+    .step-card:nth-of-type(3) { background: var(--yellow); }
+    .step-card:nth-of-type(5) { background: var(--cyan); }
+    .step-number { color: rgba(16,38,163,.3); font: 400 35px/1 var(--display); }
+    .step-card h3 { margin-top: 18px; font-size: 24px; line-height: 1.03; }
+    .step-card p { margin-top: 14px; color: #4d4854; font-size: 15px; line-height: 1.3; }
+    .connector { color: var(--orange); font: 400 30px/1 var(--display); }
+    .relationship-bottom { display: grid; grid-template-columns: 1.25fr .75fr; gap: 24px; margin-top: 38px; }
+    .core-map { position: relative; min-height: 360px; padding: 28px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); }
+    .core { position: absolute; left: 50%; top: 50%; width: 260px; height: 126px; transform: translate(-50%,-50%); display: grid; place-items: center; text-align: center; color: var(--navy); background: var(--yellow); }
+    .core strong { font: 400 28px/1 var(--display); }
+    .satellite { position: absolute; min-width: 180px; padding: 15px; border: 1px solid rgba(255,255,255,.36); color: #fff; background: rgba(23,20,79,.55); text-align: center; font-size: 15px; font-weight: 800; }
+    .satellite.s1 { left: 60px; top: 70px; }
+    .satellite.s2 { right: 60px; top: 70px; }
+    .satellite.s3 { left: 60px; bottom: 60px; }
+    .satellite.s4 { right: 60px; bottom: 60px; }
+    .core-line { position: absolute; left: 50%; top: 50%; width: 420px; height: 1px; transform: translate(-50%,-50%); background: rgba(255,255,255,.42); }
+    .future-card { padding: 30px; color: var(--navy); background: var(--cream); }
+    .future-card h3 { margin-top: 16px; font-size: 31px; line-height: 1.04; }
+    .future-card p { margin-top: 18px; color: #55505b; font-size: 17px; line-height: 1.42; }
+    .future-card .chip-row { margin-top: 24px; }
+
+    /* 06 Roadmap and patterns */
+    .roadmap-layout { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 86px; display: grid; grid-template-columns: 1.25fr .75fr; gap: 26px; }
+    .roadmap-panel { padding: 28px; }
+    .horizons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 26px; }
+    .horizon { min-height: 238px; padding: 22px; border-top: 6px solid var(--blue); background: var(--paper); }
+    .horizon:nth-child(2) { border-color: var(--orange); }
+    .horizon:nth-child(3) { border-color: var(--yellow); }
+    .horizon .horizon-no { color: rgba(16,38,163,.24); font: 400 35px/1 var(--display); }
+    .horizon h3 { margin-top: 19px; color: var(--navy); font-size: 25px; }
+    .horizon p { margin-top: 15px; color: #5a5560; font-size: 16px; line-height: 1.38; }
+    .roadmap-rule { margin-top: 26px; padding: 18px; border-left: 6px solid var(--orange); color: var(--navy); background: rgba(255,255,255,.6); font-size: 18px; font-weight: 700; }
+    .pattern-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 20px; }
+    .section-pattern { position: relative; padding: 28px; overflow: hidden; color: #fff; background: var(--blue); }
+    .section-pattern .mini-kicker { color: var(--yellow); font-size: 13px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .section-pattern h3 { margin-top: 16px; max-width: 560px; font-size: 38px; line-height: 1.02; }
+    .section-pattern::after { content: ""; position: absolute; right: -50px; bottom: -70px; width: 210px; height: 210px; border: 38px solid var(--orange); border-radius: 50%; }
+    .closing-pattern { padding: 28px; border: 2px solid var(--blue); background: var(--paper); }
+    .closing-pattern h3 { margin-top: 15px; color: var(--blue); font-size: 34px; line-height: 1.04; }
+    .closing-pattern p { margin-top: 17px; color: #57525c; font-size: 17px; line-height: 1.4; }
+    .closing-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 23px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--navy); font-size: 14px; font-weight: 800; }
+
+    /* Full-design acceptance board */
+    .component-specimen { display: none !important; }
+    .fd-header { position: relative; z-index: 8; display: flex; justify-content: space-between; align-items: flex-start; }
+    .fd-kicker { color: var(--orange); font-size: 16px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .blue .fd-kicker, .dark .fd-kicker { color: var(--yellow); }
+    .fd-header h1 { margin-top: 10px; max-width: 1320px; font-size: 60px; line-height: .98; letter-spacing: -.035em; }
+    .fd-number { color: var(--blue); font: 400 30px/1 var(--display); }
+    .blue .fd-number, .dark .fd-number { color: var(--yellow); }
+    .fd-footer { position: absolute; left: 74px; right: 74px; bottom: 34px; display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; font-weight: 700; }
+    .blue .fd-footer, .dark .fd-footer { color: rgba(255,255,255,.66); }
+    .fd-label { display: inline-block; padding: 9px 12px 8px; color: #fff; background: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .fd-state { display: inline-block; padding: 7px 9px 6px; color: #fff; background: var(--blue); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .fd-state.prototype { background: var(--orange); }
+    .fd-state.direction { color: var(--navy); background: var(--yellow); }
+
+    /* Full design 01 — cover */
+    .fd-cover { background: var(--cream); }
+    .fd-cover::after { content: ""; position: absolute; right: 0; top: 0; width: 46%; height: 100%; background: var(--blue); }
+    .cover-copy { position: absolute; left: 76px; top: 160px; width: 900px; z-index: 4; }
+    .cover-logo { width: 320px; margin-bottom: 66px; }
+    .cover-copy .fd-label { margin-bottom: 28px; }
+    .cover-copy h1 { font-size: 90px; line-height: .92; letter-spacing: -.055em; }
+    .cover-copy h1 span { display: inline; color: var(--blue); box-shadow: inset 0 -18px 0 var(--yellow); }
+    .cover-copy p { margin-top: 30px; max-width: 790px; color: #4f4a55; font-size: 24px; line-height: 1.42; }
+    .cover-history { display: flex; align-items: center; gap: 18px; margin-top: 42px; }
+    .cover-history strong { color: var(--blue); font: 400 30px/1 var(--display); }
+    .cover-history span { font-size: 15px; font-weight: 800; }
+    .cover-history i { width: 90px; height: 3px; background: var(--orange); }
+    .cover-gallery { position: absolute; right: 0; top: 0; width: 920px; height: 1080px; z-index: 3; overflow: hidden; }
+    .cover-human { position: absolute; right: 70px; top: 66px; width: 510px; height: 510px; overflow: hidden; border: 12px solid var(--yellow); border-radius: 50%; }
+    .cover-human img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .cover-ui-main { position: absolute; left: 34px; top: 510px; width: 790px; height: 392px; overflow: hidden; border: 10px solid #fff; background: #fff; }
+    .cover-ui-main img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .cover-ui-main .fd-label { position: absolute; left: 14px; top: 14px; background: var(--navy); }
+    .cover-ui-small { position: absolute; right: 36px; bottom: 72px; width: 360px; height: 218px; overflow: hidden; border: 9px solid var(--yellow); background: #fff; clip-path: polygon(0 0,100% 0,88% 100%,0 100%); }
+    .cover-ui-small img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .cover-side-note { position: absolute; left: 38px; bottom: 102px; width: 360px; color: #fff; font: italic 24px/1.35 Georgia, serif; }
+
+    /* Full design 02 — end-to-end */
+    .fd-journey { color: #fff; background: var(--blue); }
+    .journey-stage { position: absolute; left: 74px; right: 74px; top: 220px; height: 410px; }
+    .journey-stage::before { content: ""; position: absolute; left: 105px; right: 105px; top: 194px; height: 9px; background: linear-gradient(90deg,var(--yellow),var(--orange),var(--cyan)); transform: rotate(-2deg); }
+    .journey-point { position: absolute; width: 270px; height: 270px; display: grid; place-content: center; padding: 38px; border-radius: 50%; color: var(--navy); background: var(--paper); text-align: center; z-index: 2; }
+    .journey-point:nth-child(1) { left: 0; top: 72px; }
+    .journey-point:nth-child(2) { left: 365px; top: 4px; }
+    .journey-point:nth-child(3) { left: 740px; top: 74px; width: 294px; height: 294px; background: var(--yellow); }
+    .journey-point:nth-child(4) { left: 1140px; top: 0; }
+    .journey-point:nth-child(5) { right: 0; top: 76px; background: var(--cyan); }
+    .journey-point .no { color: rgba(16,38,163,.32); font: 400 35px/1 var(--display); }
+    .journey-point h2 { margin-top: 10px; font-size: 25px; line-height: 1.02; }
+    .journey-point p { margin-top: 10px; font-size: 15px; line-height: 1.28; }
+    .journey-outcomes { position: absolute; left: 74px; right: 74px; bottom: 92px; height: 250px; display: grid; grid-template-columns: repeat(4,1fr); }
+    .outcome { position: relative; padding: 50px 38px 28px 66px; color: var(--navy); background: var(--paper); clip-path: polygon(0 0,90% 0,100% 50%,90% 100%,0 100%,10% 50%); }
+    .outcome:first-child { padding-left: 42px; clip-path: polygon(0 0,90% 0,100% 50%,90% 100%,0 100%); }
+    .outcome:nth-child(2) { background: var(--yellow); }
+    .outcome:nth-child(3) { color: #fff; background: var(--orange); }
+    .outcome:nth-child(4) { color: #fff; background: var(--navy); }
+    .outcome strong { display: block; font: 400 31px/1 var(--display); text-transform: uppercase; }
+    .outcome span { display: block; margin-top: 15px; font-size: 15px; line-height: 1.35; }
+
+    /* Full design 03 — ecosystem */
+    .fd-ecosystem { background: var(--cream); }
+    .ecosystem-body { position: absolute; left: 74px; right: 74px; top: 220px; bottom: 82px; display: grid; grid-template-columns: 1.08fr .92fr; gap: 40px; }
+    .ecosystem-map { position: relative; overflow: hidden; border-radius: 360px; background: var(--blue); }
+    .ecosystem-map::before, .ecosystem-map::after { content: ""; position: absolute; left: 50%; top: 50%; border: 1px solid rgba(255,255,255,.34); border-radius: 50%; transform: translate(-50%,-50%); }
+    .ecosystem-map::before { width: 760px; height: 520px; }
+    .ecosystem-map::after { width: 510px; height: 340px; }
+    .ecosystem-core { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; display: grid; place-content: center; border-radius: 50%; color: var(--navy); background: var(--yellow); text-align: center; transform: translate(-50%,-50%); z-index: 3; }
+    .ecosystem-core strong { font: 400 44px/1 var(--display); }
+    .ecosystem-core span { margin-top: 10px; font-size: 16px; font-weight: 800; }
+    .eco-node { position: absolute; min-width: 210px; padding: 16px 20px; border: 1px solid rgba(255,255,255,.48); border-radius: 999px; color: #fff; background: rgba(23,20,79,.62); font-size: 15px; font-weight: 800; text-align: center; z-index: 2; }
+    .eco-node.n1 { left: 58px; top: 105px; }
+    .eco-node.n2 { right: 58px; top: 105px; }
+    .eco-node.n3 { left: 30px; top: 330px; }
+    .eco-node.n4 { right: 30px; top: 330px; }
+    .eco-node.n5 { left: 110px; bottom: 90px; }
+    .eco-node.n6 { right: 110px; bottom: 90px; }
+    .ecosystem-proof { position: relative; }
+    .proof-main { position: absolute; left: 0; right: 0; top: 0; height: 430px; overflow: hidden; border: 8px solid #fff; }
+    .proof-main img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .proof-main .fd-label { position: absolute; left: 14px; top: 14px; background: var(--navy); }
+    .proof-secondary { position: absolute; left: 0; bottom: 20px; width: 58%; height: 295px; overflow: hidden; border: 8px solid var(--yellow); clip-path: polygon(0 0,100% 0,88% 100%,0 100%); }
+    .proof-secondary img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .proof-mobile { position: absolute; right: 0; bottom: 20px; width: 35%; height: 295px; overflow: hidden; padding: 12px; background: #fff; border-radius: 150px 150px 0 0; }
+    .proof-mobile img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .proof-mobile .fd-state { position: absolute; left: 22px; bottom: 18px; }
+
+    /* Full design 04 — maturity */
+    .fd-maturity { color: #fff; background: var(--navy); }
+    .maturity-ghost { position: absolute; left: 58px; top: 196px; color: rgba(255,255,255,.055); font: 400 236px/.85 var(--display); text-transform: uppercase; }
+    .maturity-rail { position: absolute; left: 92px; right: 92px; top: 430px; height: 360px; }
+    .maturity-rail::before { content: ""; position: absolute; left: 50px; right: 50px; top: 115px; height: 8px; background: linear-gradient(90deg,var(--yellow),var(--orange),var(--cyan)); }
+    .milestone { position: absolute; width: 330px; }
+    .milestone.m1 { left: 0; top: 38px; }
+    .milestone.m2 { left: 415px; top: 0; }
+    .milestone.m3 { left: 850px; top: 38px; }
+    .milestone.m4 { right: 0; top: 0; }
+    .milestone-dot { width: 62px; height: 62px; margin-bottom: 24px; border: 12px solid var(--navy); border-radius: 50%; background: var(--yellow); }
+    .milestone.m2 .milestone-dot { background: var(--orange); }
+    .milestone.m3 .milestone-dot { background: var(--cyan); }
+    .milestone.m4 .milestone-dot { background: #fff; }
+    .milestone time { color: var(--yellow); font: 400 40px/1 var(--display); }
+    .milestone h2 { margin-top: 12px; font-size: 25px; line-height: 1.05; }
+    .milestone p { margin-top: 13px; color: rgba(255,255,255,.72); font-size: 16px; line-height: 1.36; }
+    .maturity-statement { position: absolute; left: 92px; right: 92px; bottom: 86px; display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 80px; }
+    .maturity-statement strong { color: var(--yellow); font: 400 49px/1 var(--display); text-transform: uppercase; }
+    .maturity-statement p { padding-left: 28px; border-left: 6px solid var(--orange); color: rgba(255,255,255,.8); font-size: 20px; line-height: 1.42; }
+
+    /* Full design 05 — platform health to growth */
+    .fd-value { background: var(--cream); }
+    .value-chain { position: absolute; left: 74px; right: 74px; top: 295px; height: 270px; display: grid; grid-template-columns: repeat(5,1fr); }
+    .value-link { padding: 52px 42px 28px 62px; color: var(--navy); background: #fff; clip-path: polygon(0 0,89% 0,100% 50%,89% 100%,0 100%,11% 50%); }
+    .value-link:first-child { padding-left: 42px; color: #fff; background: var(--blue); clip-path: polygon(0 0,89% 0,100% 50%,89% 100%,0 100%); }
+    .value-link:nth-child(2) { background: var(--cyan); }
+    .value-link:nth-child(3) { background: var(--yellow); }
+    .value-link:nth-child(4) { color: #fff; background: var(--orange); }
+    .value-link:nth-child(5) { color: #fff; background: var(--navy); }
+    .value-link .no { opacity: .38; font: 400 28px/1 var(--display); }
+    .value-link h2 { margin-top: 14px; font-size: 25px; line-height: 1.04; }
+    .value-link p { margin-top: 14px; font-size: 14px; line-height: 1.35; }
+    .value-proof { position: absolute; left: 74px; right: 74px; bottom: 72px; height: 390px; display: grid; grid-template-columns: .75fr 1.25fr; gap: 62px; align-items: center; }
+    .value-quote { padding-left: 34px; border-left: 10px solid var(--orange); }
+    .value-quote strong { color: var(--blue); font: 400 48px/1.05 var(--display); text-transform: uppercase; }
+    .value-quote p { margin-top: 22px; color: #504b56; font-size: 20px; line-height: 1.42; }
+    .value-ui { position: relative; height: 350px; overflow: hidden; border: 9px solid var(--blue); background: #fff; }
+    .value-ui img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .value-ui .fd-label { position: absolute; left: 16px; top: 16px; background: var(--navy); }
+
+    /* Full design 06 — roadmap */
+    .fd-roadmap { color: #fff; background: var(--blue); }
+    .roadmap-stair { position: absolute; left: 74px; top: 230px; width: 1110px; height: 690px; }
+    .road-step { position: absolute; width: 560px; min-height: 154px; padding: 25px 54px 22px 94px; color: var(--navy); clip-path: polygon(0 0,88% 0,100% 50%,88% 100%,0 100%,12% 50%); }
+    .road-step:nth-child(1) { left: 0; top: 500px; color: #fff; background: var(--navy); }
+    .road-step:nth-child(2) { left: 155px; top: 380px; background: var(--cyan); }
+    .road-step:nth-child(3) { left: 310px; top: 260px; background: var(--yellow); }
+    .road-step:nth-child(4) { left: 465px; top: 140px; background: var(--orange); }
+    .road-step:nth-child(5) { left: 620px; top: 20px; background: #fff; }
+    .road-step .no { opacity: .38; font: 400 27px/1 var(--display); }
+    .road-step h2 { margin-top: 5px; font-size: 22px; }
+    .road-step p { margin-top: 7px; max-width: 400px; font-size: 13px; line-height: 1.25; }
+    .expansion-orbit { position: absolute; right: 60px; top: 255px; width: 610px; height: 610px; border: 2px solid rgba(255,255,255,.35); border-radius: 50%; }
+    .expansion-orbit::before { content: ""; position: absolute; inset: 90px; border: 2px solid rgba(255,255,255,.24); border-radius: 50%; }
+    .orbit-core { position: absolute; left: 50%; top: 50%; width: 250px; height: 250px; display: grid; place-content: center; border-radius: 50%; color: var(--navy); background: var(--yellow); text-align: center; transform: translate(-50%,-50%); }
+    .orbit-core strong { font: 400 28px/1.05 var(--display); text-transform: uppercase; }
+    .orbit-node { position: absolute; min-width: 170px; padding: 14px 18px; border-radius: 999px; color: var(--navy); background: #fff; font-size: 14px; font-weight: 900; text-align: center; text-transform: uppercase; }
+    .orbit-node.o1 { left: -28px; top: 120px; }
+    .orbit-node.o2 { right: -20px; top: 120px; }
+    .orbit-node.o3 { left: -24px; bottom: 110px; }
+    .orbit-node.o4 { right: -20px; bottom: 110px; }
+    .roadmap-note { position: absolute; right: 98px; bottom: 102px; width: 520px; padding-left: 22px; border-left: 6px solid var(--yellow); color: rgba(255,255,255,.78); font-size: 17px; line-height: 1.42; }
+
+    /* Creative diversity pass: one brand system, deliberately different compositions. */
+    .foundation-grid { grid-template-columns: .78fr 1.22fr; gap: 52px; }
+    .foundation-grid .palette-panel,
+    .foundation-grid .type-panel { border: 0; background: transparent; }
+    .foundation-grid .type-panel { grid-column: 1; grid-row: 1; padding: 12px 0 0; }
+    .foundation-grid .palette-panel { grid-column: 2; grid-row: 1; padding: 0; }
+    .foundation-grid .type-samples { gap: 13px; }
+    .foundation-grid .type-row { border: 0; }
+    .foundation-grid .display-sample { max-width: 570px; font-size: 64px; }
+    .foundation-grid .body-sample { max-width: 520px; font-size: 20px; }
+    .foundation-grid .swatches { height: 325px; grid-template-columns: repeat(8, 1fr); gap: 0; align-items: end; }
+    .foundation-grid .swatch { height: 260px; padding: 16px 13px; justify-content: flex-end; gap: 8px; clip-path: polygon(12% 0,100% 0,88% 100%,0 100%); }
+    .foundation-grid .swatch:nth-child(2n) { height: 315px; }
+    .foundation-grid .swatch:nth-child(3n) { height: 220px; }
+    .foundation-grid .swatch strong { font-size: 15px; }
+    .foundation-grid .swatch code { font-size: 12px; }
+    .foundation-grid .principles { display: flex; gap: 0; margin-top: 40px; border-top: 2px solid var(--blue); }
+    .foundation-grid .principle { flex: 1; min-height: 0; padding: 20px 20px 0; border: 0; border-left: 1px solid var(--line); background: transparent; }
+    .foundation-grid .principle:first-child { border-left: 0; }
+
+    .hierarchy-grid { grid-template-columns: 1.22fr .78fr; gap: 72px; }
+    .assertion-demo { padding: 30px 0 0 54px; border: 0; background: transparent; }
+    .assertion-demo::before { content: "“"; position: absolute; left: -8px; top: -46px; color: var(--yellow); font: 400 188px/1 Georgia, serif; }
+    .assertion-demo h2 { position: relative; z-index: 1; font-size: 82px; }
+    .assertion-demo > p { max-width: 790px; }
+    .hierarchy-parts { position: relative; display: block; padding: 8px 0 0 42px; border-left: 3px solid var(--blue); }
+    .hierarchy-parts::before { content: "READING ORDER"; position: absolute; left: -58px; top: 112px; color: var(--blue); font-size: 12px; font-weight: 900; letter-spacing: .12em; transform: rotate(-90deg); }
+    .hierarchy-parts .part { min-height: 0; padding: 18px 0 22px; border: 0; border-bottom: 1px solid var(--line); background: transparent; }
+    .hierarchy-parts .part:nth-child(2) { margin-left: 54px; }
+    .hierarchy-parts .part:nth-child(3) { margin-left: 108px; }
+    .hierarchy-parts .part:nth-child(4) { margin-left: 54px; }
+    .hierarchy-parts .part.wide { margin-left: 0; }
+    .hierarchy-parts .part h3 { margin-top: 8px; font-size: 22px; }
+    .hierarchy-parts .part p { margin-top: 7px; }
+    .hierarchy-parts .citation-demo { margin-top: 6px; padding-top: 8px; border: 0; }
+
+    .evidence-grid { grid-template-columns: 1.32fr .68fr; gap: 0; }
+    .evidence-frame { border: 0; }
+    .actual-frame { height: 584px; border: 10px solid #fff; border-right: 0; }
+    .evidence-side { position: relative; display: block; }
+    .human-frame { position: absolute; right: 0; top: -12px; width: 468px; height: 468px; border: 10px solid var(--yellow); border-radius: 50%; z-index: 3; }
+    .human-frame::after { right: 72px; bottom: 30px; }
+    .prototype-frame { position: absolute; left: -44px; bottom: 8px; width: 330px; height: 230px; padding: 14px; clip-path: polygon(0 0,100% 0,86% 100%,0 100%); z-index: 4; }
+    .state-card { position: absolute; right: 0; bottom: 16px; width: 290px; padding: 24px 0 0 30px; color: #fff; background: transparent; border-left: 3px solid var(--yellow); }
+    .state-card h3 { color: #fff; }
+    .actual-caption { width: 88%; }
+
+    .info-grid { display: block; }
+    .timeline-card { position: absolute; left: 0; top: 0; width: 1040px; height: 275px; padding: 14px 0; border: 0; background: transparent; }
+    .timeline { position: relative; display: flex; justify-content: space-between; margin-top: 34px; padding: 0 70px; }
+    .timeline::before { content: ""; position: absolute; left: 98px; right: 98px; top: 62px; height: 6px; background: linear-gradient(90deg,var(--blue),var(--orange)); }
+    .timeline .event { position: relative; width: 280px; padding: 0; border: 0; background: transparent; z-index: 1; }
+    .timeline .event::before { content: ""; display: block; width: 34px; height: 34px; margin: 45px 0 18px; border: 9px solid var(--cream); border-radius: 50%; background: var(--blue); }
+    .timeline .event:last-child::before { background: var(--orange); }
+    .timeline-arrow { display: none; }
+    .metric-card { position: absolute; right: 0; top: -6px; width: 540px; height: 360px; padding: 55px 70px; border-radius: 50% 0 50% 50%; }
+    .metric-card .big { margin-top: 12px; font-size: 90px; }
+    .system-strip { position: absolute; left: 0; right: 0; bottom: 0; height: 370px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+    .system-strip::before { content: ""; position: absolute; left: 70px; right: 70px; top: 50%; height: 2px; background: var(--blue); }
+    .system-tile { width: 260px; height: 260px; padding: 50px 28px 28px; border: 2px solid var(--blue); border-radius: 50%; text-align: center; z-index: 1; }
+    .system-tile:nth-child(even) { transform: translateY(-42px); background: var(--yellow); }
+    .system-tile:nth-child(3) { width: 290px; height: 290px; padding-top: 64px; color: #fff; background: var(--blue); }
+    .system-tile:nth-child(3) h3,
+    .system-tile:nth-child(3) p { color: #fff; }
+    .system-tile::before { font-size: 28px; }
+    .system-tile h3 { margin-top: 10px; }
+    .system-tile .status { left: 50%; bottom: 25px; transform: translateX(-50%); white-space: nowrap; }
+
+    .relationship-layout { top: 210px; }
+    .journey-row { position: relative; height: 350px; display: flex; justify-content: space-between; align-items: center; gap: 0; }
+    .journey-row::before { content: ""; position: absolute; left: 95px; right: 95px; top: 50%; height: 8px; background: linear-gradient(90deg,var(--yellow),var(--orange),var(--cyan)); transform: rotate(-3deg); }
+    .step-card { position: relative; width: 250px; height: 250px; min-height: 0; padding: 56px 28px 24px; border-radius: 50%; text-align: center; z-index: 1; }
+    .step-card:nth-of-type(1),
+    .step-card:nth-of-type(5) { transform: translateY(34px); }
+    .step-card:nth-of-type(2),
+    .step-card:nth-of-type(4) { transform: translateY(-34px); }
+    .step-card:nth-of-type(3) { width: 280px; height: 280px; padding-top: 68px; }
+    .step-card h3 { margin-top: 9px; font-size: 21px; }
+    .step-card p { margin-top: 9px; }
+    .connector { position: relative; z-index: 2; width: 32px; color: var(--orange); }
+    .relationship-bottom { grid-template-columns: 1.05fr .95fr; gap: 56px; margin-top: 12px; }
+    .core-map { min-height: 340px; border: 0; border-radius: 170px; background: rgba(255,255,255,.1); }
+    .core { width: 210px; height: 210px; border-radius: 50%; }
+    .core-line { width: 530px; height: 2px; transform: translate(-50%,-50%) rotate(-8deg); }
+    .satellite { border-radius: 999px; }
+    .future-card { padding: 48px 0 0 42px; border-left: 8px solid var(--yellow); color: #fff; background: transparent; }
+    .future-card h3 { color: #fff; font-size: 42px; }
+    .future-card p { color: rgba(255,255,255,.76); }
+    .future-card .chip { border-color: rgba(255,255,255,.45); color: #fff; background: transparent; }
+
+    .roadmap-layout { grid-template-columns: 1.22fr .78fr; gap: 0; }
+    .roadmap-panel { padding: 0 52px 0 0; border: 0; background: transparent; }
+    .horizons { position: relative; height: 520px; display: block; margin-top: 18px; }
+    .horizon { position: absolute; width: 520px; min-height: 220px; padding: 42px 54px 42px 86px; border: 0; clip-path: polygon(0 0,88% 0,100% 50%,88% 100%,0 100%,12% 50%); }
+    .horizon:nth-child(1) { left: 0; top: 245px; color: #fff; background: var(--blue); }
+    .horizon:nth-child(2) { left: 310px; top: 125px; background: var(--orange); }
+    .horizon:nth-child(3) { left: 620px; top: 5px; background: var(--yellow); }
+    .horizon:nth-child(1) h3,
+    .horizon:nth-child(1) p { color: #fff; }
+    .horizon:nth-child(2) h3,
+    .horizon:nth-child(2) p { color: var(--navy); }
+    .horizon .horizon-no { color: rgba(23,20,79,.3); }
+    .horizon:nth-child(1) .horizon-no { color: rgba(255,255,255,.35); }
+    .roadmap-rule { width: 870px; margin: -18px 0 0 62px; padding: 0 0 0 22px; background: transparent; }
+    .pattern-stack { margin-left: 20px; grid-template-rows: 1.25fr .75fr; gap: 0; }
+    .section-pattern { clip-path: polygon(0 0,100% 0,100% 82%,72% 100%,0 100%); }
+    .section-pattern h3 { font-size: 46px; }
+    .closing-pattern { margin: -26px 42px 0 72px; padding: 52px 42px 32px; border: 0; border-radius: 50%; text-align: center; z-index: 2; }
+    .closing-pattern h3 { font-size: 30px; }
+    .closing-bar { justify-content: center; gap: 34px; }
+
+    .controls { position: fixed; left: 50%; bottom: 20px; z-index: 100; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 2px solid rgba(255,255,255,.24); border-radius: 999px; background: rgba(15,15,15,.9); }
+    .controls button { width: 36px; height: 36px; border: 0; border-radius: 50%; color: #fff; background: rgba(255,255,255,.12); cursor: pointer; }
+    .progress { min-width: 64px; color: #fff; font-size: 13px; text-align: center; }
+    body.render-mode .controls { display: none !important; }
+
+    @media print {
+      @page { size: 1920px 1080px; margin: 0; }
+      html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+      .viewport, .stage { position: static; width: auto; height: auto; overflow: visible; transform: none !important; }
+      .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; width: 1920px; height: 1080px; break-after: page; }
+      .controls { display: none !important; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <main class="stage" id="stage" aria-label="Sifututor ecosystem full design review board">
+      <section class="slide active fd-cover" id="full-cover" aria-label="Executive cover design">
+        <div class="cover-copy">
+          <img class="cover-logo" src="../../sifu-tutor/public/images/logo.png" alt="Sifututor">
+          <span class="fd-label">Connected education operations</span>
+          <h1>Small team.<br><span>Complete ecosystem.</span></h1>
+          <p>A connected operating foundation carries personalised education from demand and matching through delivery, finance, support and continuous improvement.</p>
+          <div class="cover-history"><div><strong>2018</strong><br><span>Operating journey began</span></div><i></i><div><strong>May 2025</strong><br><span>New SIMS went live</span></div></div>
+        </div>
+        <div class="cover-gallery">
+          <figure class="cover-human"><img src="https://sifututor.my/wp-content/uploads/2025/03/register.jpg" alt="Tutor supporting a learner"></figure>
+          <figure class="cover-ui-main"><span class="fd-label">Ripple Suite · Actual UI</span><img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite capability overview"></figure>
+          <figure class="cover-ui-small"><img src="assets/verified/creative-hub-content-planner.png" alt="Creative Hub content planner"></figure>
+          <p class="cover-side-note">Human learning, supported by disciplined systems.</p>
+        </div>
+        <div class="fd-footer"><span>Executive design review · governed ecosystem facts</span><span>01</span></div>
+      </section>
+
+      <section class="slide fd-journey blue" id="full-journey" aria-label="End-to-end operating journey design">
+        <header class="fd-header"><div><div class="fd-kicker">The operating loop</div><h1>A learning need becomes a managed, measurable service.</h1></div><div class="fd-number">02</div></header>
+        <div class="journey-stage">
+          <article class="journey-point"><div class="no">01</div><h2>Demand and request</h2><p>Capture the learning need and essential context.</p></article>
+          <article class="journey-point"><div class="no">02</div><h2>Discover and match</h2><p>Coordinate suitable tutors and establish fit.</p></article>
+          <article class="journey-point"><div class="no">03</div><h2>Teach and verify</h2><p>Deliver, attend, report and preserve service evidence.</p></article>
+          <article class="journey-point"><div class="no">04</div><h2>Bill, collect and pay</h2><p>Keep financial movement connected to service truth.</p></article>
+          <article class="journey-point"><div class="no">05</div><h2>Support and improve</h2><p>Resolve issues and return learning to the next cycle.</p></article>
+        </div>
+        <div class="journey-outcomes">
+          <article class="outcome"><strong>Health</strong><span>Controls and feedback expose issues before they repeat.</span></article>
+          <article class="outcome"><strong>Efficiency</strong><span>Shared information reduces searching, re-entry and handoffs.</span></article>
+          <article class="outcome"><strong>Trust</strong><span>Reliable delivery and accurate money movement protect confidence.</span></article>
+          <article class="outcome"><strong>Growth</strong><span>Retention, fulfilment and reusable capability create leverage.</span></article>
+        </div>
+        <div class="fd-footer"><span>One connected loop · multiple participants · governed handoffs</span><span>02</span></div>
+      </section>
+
+      <section class="slide fd-ecosystem" id="full-ecosystem" aria-label="Ecosystem architecture design">
+        <header class="fd-header"><div><div class="fd-kicker">Platform architecture</div><h1>One authoritative core. Specialised systems around it.</h1></div><div class="fd-number">03</div></header>
+        <div class="ecosystem-body">
+          <div class="ecosystem-map">
+            <div class="eco-node n1">Parent + Tutor Apps</div><div class="eco-node n2">Ripple Suite</div><div class="eco-node n3">Finch + Communications</div><div class="eco-node n4">Creative Hub</div><div class="eco-node n5">Learning Products</div><div class="eco-node n6">Analytics + Agent OS</div>
+            <div class="ecosystem-core"><strong>SIMS</strong><span>Authoritative service core</span></div>
+          </div>
+          <div class="ecosystem-proof">
+            <figure class="proof-main"><span class="fd-label">Staff capability · Actual UI</span><img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite interface"></figure>
+            <figure class="proof-secondary"><img src="assets/verified/creative-hub-content-planner.png" alt="Creative Hub planner interface"></figure>
+            <figure class="proof-mobile"><img src="assets/verified/learnest-student-dashboard-prototype.png" alt="Learnest student dashboard prototype"><span class="fd-state prototype">Prototype</span></figure>
+          </div>
+        </div>
+        <div class="fd-footer"><span>Systems remain distinct where ownership and product truth require it</span><span>03</span></div>
+      </section>
+
+      <section class="slide fd-maturity dark" id="full-maturity" aria-label="Operating maturity and milestones design">
+        <header class="fd-header"><div><div class="fd-kicker">Operating maturity</div><h1>Experience became business rules. Business rules became platform capability.</h1></div><div class="fd-number">04</div></header>
+        <div class="maturity-ghost">2018—2025</div>
+        <div class="maturity-rail">
+          <article class="milestone m1"><div class="milestone-dot"></div><time>2018</time><h2>Live service begins</h2><p>The previous system supports real parents, learners, tutors and staff.</p></article>
+          <article class="milestone m2"><div class="milestone-dot"></div><time>2018–2024</time><h2>Operating knowledge compounds</h2><p>Repeated delivery turns exceptions and staff knowledge into reusable rules.</p></article>
+          <article class="milestone m3"><div class="milestone-dot"></div><time>May 2025</time><h2>New SIMS goes live</h2><p>A new authoritative core begins carrying the modern operating generation.</p></article>
+          <article class="milestone m4"><div class="milestone-dot"></div><time>Platform era</time><h2>Capabilities connect</h2><p>Channels, staff leverage, intelligence and resilience deepen around the core.</p></article>
+        </div>
+        <div class="maturity-statement"><strong>Maturity is accumulated operating ability—not a self-awarded score.</strong><p>A lean company can coordinate a service larger than its headcount because knowledge is encoded into shared workflows, controls and systems.</p></div>
+      </section>
+
+      <section class="slide fd-value" id="full-value" aria-label="Platform health and business value design">
+        <header class="fd-header"><div><div class="fd-kicker">Why platform health matters</div><h1>Healthy systems create operational leverage—and protect growth.</h1></div><div class="fd-number">05</div></header>
+        <div class="value-chain">
+          <article class="value-link"><div class="no">01</div><h2>Healthy platform</h2><p>Availability, recovery and trustworthy service state.</p></article>
+          <article class="value-link"><div class="no">02</div><h2>Efficient operation</h2><p>Less searching, re-entry and avoidable coordination.</p></article>
+          <article class="value-link"><div class="no">03</div><h2>Trusted service</h2><p>Consistent journeys for parents, tutors and staff.</p></article>
+          <article class="value-link"><div class="no">04</div><h2>Sound finance</h2><p>Clearer billing, collection, reconciliation and payment.</p></article>
+          <article class="value-link"><div class="no">05</div><h2>Sustainable growth</h2><p>Retention, fulfilment and product leverage can compound.</p></article>
+        </div>
+        <div class="value-proof">
+          <div class="value-quote"><strong>Efficiency is not only speed.</strong><p>It is the ability to increase service capacity while preserving quality, control and trust.</p></div>
+          <figure class="value-ui"><span class="fd-label">Knowledge at the point of work · Actual UI</span><img src="assets/verified/ripple-luna-workspace.png" alt="Ripple Luna knowledge workspace"></figure>
+        </div>
+        <div class="fd-footer"><span>Business value mechanism · no confidential financial figures shown</span><span>05</span></div>
+      </section>
+
+      <section class="slide fd-roadmap blue" id="full-roadmap" aria-label="Strategic roadmap and expansion design">
+        <header class="fd-header"><div><div class="fd-kicker">Strategic direction</div><h1>Consolidate the operating spine. Then multiply its value.</h1></div><div class="fd-number">06</div></header>
+        <div class="roadmap-stair">
+          <article class="road-step"><div class="no">H1</div><h2>Trusted operating spine</h2><p>Core authority, resilience, access and platform-health evidence.</p></article>
+          <article class="road-step"><div class="no">H2</div><h2>Connected experience</h2><p>Complete parent, tutor and staff journeys with less friction.</p></article>
+          <article class="road-step"><div class="no">H3</div><h2>Governed intelligence</h2><p>Explainable insight, selective automation and human ownership.</p></article>
+          <article class="road-step"><div class="no">H4</div><h2>Product multiplication</h2><p>Reuse proven foundations across distinct products and brands.</p></article>
+          <article class="road-step"><div class="no">H5</div><h2>Expansion options</h2><p>Validate countries and expert-service verticals before scale.</p></article>
+        </div>
+        <div class="expansion-orbit"><div class="orbit-node o1">New countries</div><div class="orbit-node o2">Learnest</div><div class="orbit-node o3">Sports + music</div><div class="orbit-node o4">Nakngaji</div><div class="orbit-core"><strong>Reusable operating foundation</strong></div></div>
+        <p class="roadmap-note">The horizons communicate dependency and direction—not calendar promises. Expansion remains an approved strategic option, not a current launch claim.</p>
+        <div class="fd-footer"><span>Strengthen → connect → automate responsibly → multiply → expand</span><span>06</span></div>
+      </section>
+
+      <section class="component-specimen active" id="foundations" aria-label="Brand foundations">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Foundations</div><h1>One identity. Many compositions.</h1></div>
+          <div class="board-mark"><img src="../../sifu-tutor/public/images/logo.png" alt="Sifututor"><div class="board-count">01</div></div>
+        </header>
+        <div class="foundation-grid">
+          <div class="palette-panel soft-card">
+            <div class="component-label">Colour system</div>
+            <div class="swatches">
+              <div class="swatch" style="background:#1026a3"><strong>Royal blue</strong><code>#1026A3</code></div>
+              <div class="swatch" style="background:#17144f"><strong>Deep navy</strong><code>#17144F</code></div>
+              <div class="swatch" style="background:#f45124"><strong>Orange</strong><code>#F45124</code></div>
+              <div class="swatch light" style="background:#f6df24"><strong>Yellow</strong><code>#F6DF24</code></div>
+              <div class="swatch" style="background:#11b9d4"><strong>Cyan</strong><code>#11B9D4</code></div>
+              <div class="swatch light" style="background:#f5f1e8"><strong>Warm cream</strong><code>#F5F1E8</code></div>
+              <div class="swatch light" style="background:#fffdf8"><strong>Paper white</strong><code>#FFFDF8</code></div>
+              <div class="swatch" style="background:#151515"><strong>Ink</strong><code>#151515</code></div>
+            </div>
+            <div class="principles">
+              <div class="principle"><b>75 / 25 balance</b><p>Professional structure with controlled Sifututor personality.</p></div>
+              <div class="principle"><b>Flat 2D only</b><p>No isometric scenes, rendered devices or pseudo-3D graphics.</p></div>
+              <div class="principle"><b>Real evidence</b><p>Actual interfaces and authentic human imagery lead the visual story.</p></div>
+              <div class="principle"><b>Stable grid</b><p>Twelve columns, 74–80px margins and deliberate alignment.</p></div>
+            </div>
+          </div>
+          <div class="type-panel soft-card">
+            <div class="component-label">Typography roles</div>
+            <div class="type-samples">
+              <div class="type-row"><div class="type-role">Assertion display</div><div class="display-sample">Complete ecosystem.</div></div>
+              <div class="type-row"><div class="type-role">Reading-first body</div><p class="body-sample">A connected operating foundation carries the service from demand through continuous improvement.</p></div>
+              <div class="type-row"><div class="type-role">Editorial accent</div><div class="accent-sample">Human learning, supported by disciplined systems.</div></div>
+              <div class="type-row"><div class="type-role">Evidence label</div><span class="label-sample">Actual interface evidence</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="review-note">Review: palette · typography · composition range · brand recognition</div>
+      </section>
+
+      <section class="component-specimen" id="hierarchy" aria-label="Text and narrative hierarchy">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Narrative</div><h1>Every slide begins with an assertion.</h1></div>
+          <div class="board-count">02</div>
+        </header>
+        <div class="hierarchy-grid">
+          <article class="assertion-demo">
+            <div class="eyebrow">Connected education operations</div>
+            <h2>Small team.<br><span>Complete ecosystem.</span></h2>
+            <p>A connected operating foundation carries the service from demand and matching through delivery, finance, support and continuous improvement.</p>
+            <div class="pull-quote">Human learning, supported by disciplined systems.</div>
+          </article>
+          <div class="hierarchy-parts">
+            <article class="part"><div class="component-label">Kicker</div><h3>Section context</h3><p>Short, consistent and never the main message.</p></article>
+            <article class="part"><div class="component-label">Highlight</div><h3>One controlled emphasis</h3><p>Yellow underlines evidence or the decisive phrase.</p></article>
+            <article class="part"><div class="component-label">Annotation</div><h3>Actual UI</h3><p>Names ownership, evidence type and product state.</p></article>
+            <article class="part"><div class="component-label">Proof chips</div><div class="chip-row"><span class="chip">Live users</span><span class="chip">End-to-end</span><span class="chip">Expansion-ready</span></div></article>
+            <article class="part wide"><div class="component-label">Footer and source furniture</div><div class="citation-demo"><span>Actual privacy-reviewed interfaces · governed ecosystem facts</span><span><b>02</b> Narrative hierarchy</span></div></article>
+          </div>
+        </div>
+        <div class="review-note">Review: headline confidence · reading order · copy density · emphasis</div>
+      </section>
+
+      <section class="component-specimen blue" id="evidence" aria-label="Evidence and imagery components">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Evidence</div><h1>Show the platform. Show the people it serves.</h1></div>
+          <div class="board-count">03</div>
+        </header>
+        <div class="evidence-grid">
+          <div>
+            <figure class="evidence-frame actual-frame"><span class="evidence-tag">Ripple Suite · Actual UI</span><img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite capability overview"></figure>
+            <div class="actual-caption"><span><b>Primary evidence</b> · large, readable and privacy-reviewed</span><span>System owner + evidence state always visible</span></div>
+          </div>
+          <div class="evidence-side">
+            <figure class="evidence-frame human-frame"><img src="https://sifututor.my/wp-content/uploads/2025/03/register.jpg" alt="Tutor and student in a learning session"></figure>
+            <figure class="evidence-frame prototype-frame"><span class="evidence-tag">Prototype</span><img src="assets/verified/learnest-student-dashboard-prototype.png" alt="Learnest student dashboard prototype"></figure>
+            <article class="state-card"><div class="component-label">State language</div><h3>Never blur capability states</h3><div class="state-list"><div class="state-row"><span class="state-dot" style="background:#1026a3"></span>Current capability</div><div class="state-row"><span class="state-dot" style="background:#f45124"></span>Prototype evidence</div><div class="state-row"><span class="state-dot" style="background:#f6df24"></span>Approved future direction</div></div></article>
+          </div>
+        </div>
+        <div class="review-note">Review: human/system balance · screenshot readability · evidence labels</div>
+      </section>
+
+      <section class="component-specimen" id="information" aria-label="Information block components">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Information</div><h1>Milestones, proof and systems share one language.</h1></div>
+          <div class="board-count">04</div>
+        </header>
+        <div class="info-grid">
+          <article class="timeline-card soft-card"><div class="component-label">Milestone timeline</div><div class="timeline"><div class="event"><strong>2018</strong><span>Operating journey began</span></div><div class="timeline-arrow">→</div><div class="event"><strong>May 2025</strong><span>New SIMS went live</span></div></div></article>
+          <article class="metric-card"><div class="component-label">Large proof component</div><div class="big">LIVE</div><h3>Operating with real users</h3><p>Use a verified number when available; otherwise communicate the established operating state without inventing a metric.</p></article>
+          <div class="system-strip">
+            <article class="system-tile" data-number="01"><h3>SIMS</h3><p>Authoritative service administration.</p><span class="status current">Current</span></article>
+            <article class="system-tile" data-number="02"><h3>Parent App</h3><p>Family participation and service access.</p><span class="status current">Current</span></article>
+            <article class="system-tile" data-number="03"><h3>Tutor App</h3><p>Tutor delivery and field workflow.</p><span class="status current">Current</span></article>
+            <article class="system-tile" data-number="04"><h3>Learnest</h3><p>Learning-product experience.</p><span class="status prototype">Prototype</span></article>
+            <article class="system-tile" data-number="05"><h3>New verticals</h3><p>Sports, music and other service categories.</p><span class="status direction">Direction</span></article>
+          </div>
+        </div>
+        <div class="review-note">Review: milestone credibility · status clarity · tile density · metric treatment</div>
+      </section>
+
+      <section class="component-specimen blue" id="relationships" aria-label="Ecosystem and process relationship components">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Relationships</div><h1>Connections must explain how value moves.</h1></div>
+          <div class="board-count">05</div>
+        </header>
+        <div class="relationship-layout">
+          <div class="journey-row">
+            <article class="step-card"><div class="step-number">01</div><h3>Demand and request</h3><p>Capture the learning need.</p></article><div class="connector">→</div>
+            <article class="step-card"><div class="step-number">02</div><h3>Discover and match</h3><p>Coordinate the right tutor.</p></article><div class="connector">→</div>
+            <article class="step-card"><div class="step-number">03</div><h3>Teach and verify</h3><p>Deliver and record service.</p></article><div class="connector">→</div>
+            <article class="step-card"><div class="step-number">04</div><h3>Bill, collect and pay</h3><p>Keep finance connected.</p></article><div class="connector">→</div>
+            <article class="step-card"><div class="step-number">05</div><h3>Support and improve</h3><p>Return knowledge to the next cycle.</p></article>
+          </div>
+          <div class="relationship-bottom">
+            <div class="core-map"><div class="core-line"></div><div class="satellite s1">Parent + Tutor Apps</div><div class="satellite s2">Ripple Suite</div><div class="satellite s3">Finch + Creative Hub</div><div class="satellite s4">Learning Products</div><div class="core"><div><strong>SIMS</strong><br>Authoritative core</div></div></div>
+            <article class="future-card"><div class="component-label">Future optionality</div><h3>Reuse the operating foundation</h3><p>New countries and service verticals appear as approved strategic direction—not as current launches.</p><div class="chip-row"><span class="chip">New country</span><span class="chip">Sports coach</span><span class="chip">Music</span><span class="chip">Nakngaji</span></div></article>
+          </div>
+        </div>
+        <div class="review-note">Review: process clarity · ecosystem hierarchy · current/future distinction</div>
+      </section>
+
+      <section class="component-specimen" id="roadmap" aria-label="Roadmap and presentation pattern components">
+        <header class="board-header">
+          <div><div class="board-kicker">Component review · Roadmap</div><h1>Direction without fragile progress reporting.</h1></div>
+          <div class="board-count">06</div>
+        </header>
+        <div class="roadmap-layout">
+          <article class="roadmap-panel soft-card"><div class="component-label">Roadmap horizons</div><div class="horizons"><div class="horizon"><div class="horizon-no">01</div><h3>Strengthen</h3><p>Deepen reliability, knowledge, operating discipline and measurement.</p></div><div class="horizon"><div class="horizon-no">02</div><h3>Scale</h3><p>Increase automation, reusable workflows and service capacity.</p></div><div class="horizon"><div class="horizon-no">03</div><h3>Expand</h3><p>Enable additional countries, products and service verticals.</p></div></div><div class="roadmap-rule">Use dependency and outcome language—not volatile sprint percentages or unsupported launch promises.</div></article>
+          <div class="pattern-stack"><article class="section-pattern"><div class="mini-kicker">Section divider</div><h3>From operating foundation to future leverage.</h3></article><article class="closing-pattern"><div class="component-label">Closing pattern</div><h3>A complete platform creates options.</h3><p>Close with the governing insight, then invite stakeholder discussion without forcing a decision.</p><div class="closing-bar"><span>Sifututor ecosystem</span><span>Discussion</span></div></article></div>
+        </div>
+        <div class="review-note">Review: roadmap confidence · future framing · section and closing patterns</div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="controls" aria-label="Component board navigation"><button id="prev" aria-label="Previous slide">←</button><span class="progress" id="progress">1 / 6</span><button id="next" aria-label="Next slide">→</button></nav>
+  <script>
+    class ComponentBoard {
+      constructor() {
+        this.stage = document.getElementById('stage');
+        this.slides = [...document.querySelectorAll('.slide')];
+        this.progress = document.getElementById('progress');
+        this.current = 0;
+        this.scaleStage();
+        window.addEventListener('resize', () => this.scaleStage());
+        document.getElementById('prev').addEventListener('click', () => this.show(this.current - 1));
+        document.getElementById('next').addEventListener('click', () => this.show(this.current + 1));
+        document.addEventListener('keydown', event => {
+          if (['ArrowRight','ArrowDown','PageDown',' '].includes(event.key)) { event.preventDefault(); this.show(this.current + 1); }
+          if (['ArrowLeft','ArrowUp','PageUp'].includes(event.key)) { event.preventDefault(); this.show(this.current - 1); }
+          if (event.key === 'Home') this.show(0);
+          if (event.key === 'End') this.show(this.slides.length - 1);
+          if (event.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+        });
+        const requested = Number(new URLSearchParams(location.search).get('slide') || 0);
+        this.show(requested);
+      }
+      scaleStage() {
+        const factor = Math.min(innerWidth / 1920, innerHeight / 1080);
+        const x = (innerWidth - 1920 * factor) / 2;
+        const y = (innerHeight - 1080 * factor) / 2;
+        this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+      }
+      show(index) {
+        this.current = Math.max(0, Math.min(index, this.slides.length - 1));
+        this.slides.forEach((slide, position) => {
+          const active = position === this.current;
+          slide.classList.toggle('active', active);
+          slide.classList.toggle('visible', active);
+          slide.setAttribute('aria-hidden', String(!active));
+        });
+        this.progress.textContent = `${this.current + 1} / ${this.slides.length}`;
+      }
+    }
+    if (new URLSearchParams(location.search).get('render') === '1') document.body.classList.add('render-mode');
+    new ComponentBoard();
+  </script>
+</body>
+</html>

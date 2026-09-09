@@ -1,0 +1,13 @@
+flowchart TD
+    S[Joint steering\nquarterly\nstrategy · value · roadmap · principals]
+    P[Performance forum\nmonthly\nportfolio · capacity · outcomes · cost]
+    C[Conduct and compliance forum\nmonthly\nexceptions · complaints · hardship · privacy]
+    D[Delivery forum\nfortnightly\nchanges · incidents · integrations · backlog]
+    R[Principal service review\nagreed cycle\nsegregated results · reconciliation · issues]
+
+    S --> P
+    S --> C
+    P --> D
+    P --> R
+    C -. independent escalation .-> S
+    D -. material risk .-> S

@@ -19,6 +19,12 @@ Technical details come after the practical meaning.
 
 Use plain language by default. Use workflow labels only when they help.
 
+Use the canonical name `Sifututor` in human-facing prose. Never write
+`SifuTutor` as the brand name. Exact repository slugs, URLs, domains, database
+or account identifiers, code namespaces, third-party display names, and
+historical evidence keep their authoritative literal spelling; format those
+identifiers as code where practical.
+
 Formal labels such as `Gate 2A`, `PARTIAL`, `BLOCKER`, or `Critical Save` are
 allowed when they are useful for:
 

@@ -102,6 +102,16 @@ reported symptom.
   smoke is possible. Route-only checks are acceptable only when a safe login,
   test account, or representative data is unavailable; report that limitation
   clearly and state the strongest functional evidence gathered instead.
+- For data-driven dashboard/list/detail pages, the post-deploy smoke must wait
+  for a terminal workflow state, not merely a visible shell, `main`, heading, or
+  skeleton. Prove one of: real rows rendered, the designed empty/error state
+  rendered, or the expected action became available/disabled for the right
+  reason. Also fail the smoke if a framework crash page appears, including
+  Next.js text such as `This page couldn't load` or `Application error`.
+- When the changed page calls a live API, the smoke should observe the relevant
+  API response and then assert the UI renders that response safely. A 200 API
+  response alone is not enough if malformed or incomplete production data can
+  still crash React during rendering.
 - `ripple-suite`: use Playwright smoke and the route tier from
   `CODEX-WORKFLOW.md`; protect SIMS read-only behavior and Neon writes.
 - `sifututor_tutor` and `sifututor_parent`: use Jest/unit tests for logic,
@@ -124,6 +134,44 @@ For bugfix and hotfix tasks, state:
 If no automated regression test is feasible, say why and provide the strongest
 manual or browser evidence available. Do not pretend manual evidence is the same
 as an automated regression.
+
+## Final Campaign Freshness
+
+A final campaign must prove the final product state, but that does not mean
+blindly replaying every unchanged test after every documentation, test-fixture,
+or evidence-only correction.
+
+Choose the rerun scope from the final change:
+
+| Final change | Required final proof |
+| --- | --- |
+| Product/runtime code, schema, build configuration, shared test infrastructure, or an external contract changed | Rerun every affected obligation, its related/cross-system journeys, and any wider campaign required because impact cannot be isolated safely. Use a complete replay when the frozen contract explicitly requires it or the affected set cannot be proven exactly. |
+| Test, fixture, evidence script, ledger, or report only; product SHAs and runtime artifacts are unchanged | Rerun every obligation owned or influenced by the changed files **and the related regression tests for behavior the correction could affect**. Unaffected evidence may be inherited only through the rules below. |
+| Documentation or wording only, with no executable acceptance claim changed | Run the relevant documentation/checker validation. Product evidence may be inherited when target identity remains exact. |
+
+Evidence inheritance is valid only when all of these are machine-checkable:
+
+1. the previous and final repository SHAs are pinned;
+2. the exact Git delta is recorded and classified, with zero unlisted product
+   or runtime files;
+3. every acceptance row owned or influenced by each changed test, fixture, or
+   evidence file is rerun at the final SHA, together with related regression
+   tests for adjacent state transitions, roles, flags, retries, recovery, and
+   cross-system contracts that the change could affect;
+4. unchanged cross-project evidence points to the same unchanged project SHA;
+5. inherited files retain their recorded hashes and original run identity;
+6. the final ledger records which evidence was fresh and which was inherited,
+   including the reason;
+7. the normal acceptance checker still reports every required obligation as
+   passing; and
+8. an additive freshness checker rejects an incomplete delta, stale hash,
+   missing affected row, dirty worktree, or mismatched SHA.
+
+Do not use incremental inheritance to hide a product change, a flaky or hung
+suite, a failed test, or an acceptance contract that explicitly requires a
+complete replay. If classification is uncertain, treat the change as product
+affecting and widen the rerun. Report the chosen scope and why it is sufficient
+instead of repeatedly calling an unchanged full campaign by a new name.
 
 ## Handoff Bar
 

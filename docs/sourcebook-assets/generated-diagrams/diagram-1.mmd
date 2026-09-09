@@ -1,0 +1,25 @@
+flowchart TB
+    subgraph R1[ ]
+      direction LR
+      A[Attract] --> B[Request] --> C[Match] --> D[Onboard]
+    end
+    subgraph R2[ ]
+      direction LR
+      E[Schedule] --> F[Teach] --> G[Verify] --> H[Report]
+    end
+    subgraph R3[ ]
+      direction LR
+      I[Bill] --> J[Collect] --> K[Pay] --> L[Support]
+    end
+    subgraph R4[ ]
+      direction LR
+      M[Analyse] --> N[Improve] --> O[Grow]
+    end
+    D --> E
+    H --> I
+    L --> M
+    O -. continuous learning .-> A
+    style R1 fill:none,stroke:none
+    style R2 fill:none,stroke:none
+    style R3 fill:none,stroke:none
+    style R4 fill:none,stroke:none

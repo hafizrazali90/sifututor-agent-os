@@ -1,0 +1,10 @@
+flowchart LR
+    D[Discover and define] --> B[Baseline]
+    B --> C[Configure controls]
+    C --> R[Run bounded cohort]
+    R --> M[Measure outcomes and guardrails]
+    M --> G{Evidence gate}
+    G -->|proven| E[Expand]
+    G -->|unclear| A[Adjust / re-baseline]
+    G -->|not acceptable| S[Stop safely]
+    A --> R

@@ -1,0 +1,19 @@
+{
+  "source": "external-kota-buku-document.md",
+  "sourceSHA256": "ce3d84033543540eaa80436338f9f0d62e4a545aa48d0df467ea3cab1a59399e",
+  "rendererSHA256": "480eb13330af1aada5128afe799e69a3711abb44bb5969dec9e243feda77e970",
+  "docxRendererSHA256": "95adf70450801992402f953d464d4b4f99355da4e5d4a3c6cd6bd60e33e5c6f2",
+  "cssSHA256": "23dba8a8a0f1d44887154b36b619523566f71036554b3e5fb12f76a1ac644194",
+  "generatedAt": "2026-09-07T12:57:42.498Z",
+  "outputSHA256": {
+    "kota-buku-document-en-editable.html": "13dc10f963e6686fdd238e466e9afa334927f470818bb2f704194985107881e3",
+    "kota-buku-document-en.docx": "e7bb70840f27c3ed16c0bb22ecfe6336603cfa3b70f78bc5c51e18a1f938efc2",
+    "kota-buku-document-en.html": "adf20440794833aec5e7177b89ace476c70e5ca73bf3946536cb001f58885a7f",
+    "kota-buku-document-en.pdf": "9f196d1fef533a3f24e415ff50f0f6fb03992defaf8c5e68195da51fadda3e00",
+    "kota-buku-document-ms-editable.html": "93aa7dbc5b201608fc3670f180d62b0ed79efed2260768437616648f8389e064",
+    "kota-buku-document-ms.docx": "c6f7e8f643d9c046a1dff9e7de2da998b434551542505db93812ca27db05ce72",
+    "kota-buku-document-ms.html": "e9400fcd8ebbe78bfd8f5917b6936e28d09004c754bff10a4c409152edde4aba",
+    "kota-buku-document-ms.pdf": "841020c9fa0ae41f787012f663e913d14964c5d32e99afb8a8658dfb78d95aa5",
+    "kota-buku-document.html": "24662d4d313d0561495584bb760642c48c95c1674327a01e3f0ec487208cd127"
+  }
+}

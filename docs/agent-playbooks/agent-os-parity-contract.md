@@ -39,7 +39,7 @@ questions, decisions, evidence, and stopping points match.
 | Area | Must match across agents |
 | --- | --- |
 | Source of truth | Read `AGENTS.md`, relevant project rules, Koda, active task state, and current files before acting. |
-| Routing | Classify the work into the same workflow: discussion, task-router, diagnose, product design, verify, QA, review, commit, save-session, handoff, or monitor. |
+| Routing | Classify the work into the same workflow: discussion, task-router, diagnose, product design, document production, verify, QA, review, commit, save-session, handoff, or monitor. |
 | Approval gates | Stop at the same gates: commit, push, PR, merge, deploy, destructive action, production mutation, critical-lane implementation. |
 | Safety | Never read `.env*`, expose secrets, bypass hooks, or modify `live/`. |
 | Critical lanes | Payments, auth, invoices, commissions, migrations, mobile API contracts, and deploys start with read-only diagnosis unless Hafiz explicitly authorizes a different emergency path. |
@@ -66,6 +66,8 @@ questions, decisions, evidence, and stopping points match.
 | Task Router | `/task-router` or project router | `$task-router` | `task-router.md` | Same route, context checks, approval boundary, next action. |
 | Diagnose | `/diagnose` | `$diagnose` | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
 | Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
+| Document Production | Natural-language route; dedicated global Claude adapter not installed in v1 | `$document-production` | `document-production.md` | Same document contract, deep internal/online research, provenance, blueprint approval, governed drafting, local output QA, adversarial review and publication boundary. |
+| Frontend Slides | `/frontend-slides` through the installed shared-package symlink | `$frontend-slides` | `frontend-slides.md` | Same approved brief/storyboard, design selection, fixed-stage HTML behavior, local export, citation-link validation, slide-level visual QA and no-deploy-by-default boundary. |
 | Verify | `/verify` | `$verify` | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
 | QA | `/qa` | `$qa` | `qa.md` | Same human-journey and regression evidence standard. |
 | Review | `/review` | `$review` | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
@@ -196,6 +198,8 @@ must produce even when their command names differ.
 | BP-013 | Claude uses project-specific slash commands such as `/sifu-save-session` | Treat them as adapter conveniences only. The shared workflow name is `/save-session`, `$save-session`, or natural-language "save session", and all must follow `save-session.md`. |
 | BP-014 | A required check, guard, or discovery command cannot be run in this session | Run the safe check when tools are available. Otherwise name the exact check and report it as not run or unverified. Never claim an exact state that was not observed, and never say all checks passed while a named check is unrun. |
 | BP-015 | Work is prepared for staging, commit, push, PR, or save | State the worktree, branch, and issue/PR identity from real discovery before staging. If discovery could not run, say so instead of asserting a branch or clean/dirty state. Ordinary discussion does not need this step. |
+| BP-016 | Hafiz asks for a substantial stakeholder/sourcebook/report document | Build one document contract, conduct deep internal and online research before locking the blueprint, distinguish current fact from direction and illustration, continue autonomously after blueprint approval, and stop before unapproved commit or external publication. |
+| BP-017 | Hafiz asks to turn an approved document into an HTML presentation | Preserve document-production evidence governance, route presentation design and rendering through `frontend-slides.md`, verify clickable citations and every slide visually, and keep output local unless external sharing is explicitly approved. |
 
 ## Adapter Helper Boundaries
 

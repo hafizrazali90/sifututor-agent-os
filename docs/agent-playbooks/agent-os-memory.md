@@ -73,7 +73,7 @@ are optional extras that never replace it.
 
 | Tag kind | Purpose | Required? | Allowed values |
 | --- | --- | --- | --- |
-| Project tag | Says which product or workspace the lesson belongs to. | Yes, at least one. | The project list in [save-session.md](save-session.md): `sifu-tutor`, `ripple-suite`, `sifututor_tutor`, `sifututor_parent`, `lls`, `lls-frontend`, `lls-mobile`, `creative-hub`, `team-inbox`, `finch-inbox`, `sifututor`, `codex-parity`. |
+| Project tag | Says which product or workspace the lesson belongs to. | Yes, at least one. | The project list in [save-session.md](save-session.md): `kelasapp`, `sifu-tutor`, `ripple-suite`, `sifututor_tutor`, `sifututor_parent`, `lls`, `lls-frontend`, `lls-mobile`, `creative-hub`, `finch-inbox`, `cx-call-capture-android`, `sims-owner-analytics`, `sifututor.my`, `nakngaji.my`, `koda-memory`, `sifututor`, `codex-parity`. |
 | Domain tag | Says what the lesson is about. | No, but usually helpful. | Free-form topic tags such as `agent-os`, `router`, `workflow`, `memory`, `guardrails`, `koda`, `payment`, `qa`. |
 
 For umbrella Agent OS work that is not owned by one product, use `sifututor`
@@ -86,7 +86,10 @@ A domain tag such as agent-os, payment, or qa is not a project tag. A memory
 tagged only agent-os is missing its required project tag.
 ```
 
-`umbrella` is not a valid project tag. Do not invent new project tags; if a new
+`default`, `umbrella`, `team-inbox`, `sifututor-agent-os`, and `claude-code`
+are not valid project tags. Use `finch-inbox` for the retired `team-inbox`
+product, `sifututor` for umbrella Agent OS lessons, and `codex-parity` for
+Claude/Codex interoperability lessons. Do not invent new project tags; if a new
 project genuinely needs one, add it to the save-session project list first.
 
 For Agent OS memories, a good tag set looks like:

@@ -169,6 +169,7 @@ examples answer: "what should the agent do in this real situation?"
 | Idea and discussion | Light | Hafiz wants to think, compare, understand, or decide. |
 | Work intake | Light to Medium | A request, staff report, Planner card, GitHub issue, Mission Ledger item, or production signal becomes work. |
 | Product design | Medium | A feature, redesign, workflow, PRD, UX spec, or build prompt is needed. |
+| Document production | Medium to Full | A substantial professional sourcebook, strategy paper, stakeholder document, operating guide, or evidence-backed report must be researched, governed, drafted, rendered and reviewed. |
 | Implementation readiness | Medium to Critical | A task is moving from idea/design into coding or to another builder. |
 | Agent OS improvement loop | Medium | Hafiz wants the Agent OS itself to learn, fix workflow behavior, update skills/playbooks/evals consistently, or make future agents handle something better. |
 | Enforcement and drift detection | Medium | Agent OS rules need stronger enforcement, hooks/skills/evals need alignment, or Claude/Codex behavior diverges. |
@@ -469,7 +470,80 @@ Product design scenario matrix:
 | Cross-module or API/mobile contract | Build-Ready Pack. | Entry points, contracts, state transitions, compatibility, tests, rollback/monitoring. | Stop before implementation unless build boundary is approved. |
 | Another agent/dev will build | Build-Ready Pack. | Goal, files to read, constraints, out-of-scope list, test plan, pause conditions, final report shape. | Handoff-ready, not built, unless implementation is also approved. |
 
-## 3A. Implementation Readiness And Build Handoff Workflow
+## 3A. Document Production Workflow
+
+Starts when Hafiz asks for a substantial professional document whose quality
+depends on research, evidence control, deliberate narrative, polished local
+formats, or independent challenge.
+
+Use [document-production.md](document-production.md). The practical path is:
+
+```text
+document contract
+-> deep internal and online research
+-> evidence and claim register
+-> blueprint and owner approval
+-> governed Markdown master
+-> diagrams and local HTML/PDF/DOCX
+-> deterministic and visual QA
+-> independent adversarial review
+-> correction and local acceptance
+```
+
+Hafiz owns audience, strategic narrative, confidentiality, business
+commitments, and external publication. The agent owns discovering known
+context, research planning, source provenance, drafting, local format
+generation, QA, bounded review, correction, and preservation inside the
+approved packet.
+
+Deep online research is mandatory for governed stakeholder and public or
+high-stakes documents unless the contract explicitly limits the document to
+internal facts and records why external context is unnecessary. Search
+snippets and generated summaries are discovery aids, not evidence. Reopen
+volatile sources after drafting and verify that they support the final wording.
+
+The main human checkpoint is the document contract and blueprint. After that
+approval, continue autonomously until local acceptance or a genuine stop rule:
+material source conflict, changed audience/confidentiality, a new business
+commitment, sensitive data need, two unresolved material review cycles, or an
+unapproved commit/upload/publication boundary.
+
+Evidence required:
+
+- research questions and source provenance;
+- governed claims with current/strategic/illustrative status;
+- deterministic structure, claim, sensitive-content and output checks;
+- visual inspection of every diagram and representative dense pages;
+- zero blocking and zero material adversarial-review findings;
+- honest local/committed/shared state.
+
+Exit at complete, reviewed local artifacts by default. Do not call the
+document subjectively perfect, and do not upload, publish, send or commit it
+unless that boundary was explicitly approved.
+
+Save to:
+
+- Markdown as the governed master by default;
+- derived HTML, PDF and DOCX from that master when required;
+- a claim/source register and blueprint beside the document or in its governed
+  artifact package;
+- Koda only for durable lessons;
+- Session Map for active continuity and save-session for close-out.
+
+Common failure: drafting first and adding a few citations afterward, which
+creates polished prose without trustworthy provenance or an honest distinction
+between current fact and future direction.
+
+Document-production scenario examples:
+
+| Scenario | First move | Evidence and autonomous path | Stop point |
+| --- | --- | --- | --- |
+| Hafiz asks for a company ecosystem sourcebook for internal teams and selected stakeholders | Build one document contract from the conversation and existing context; ask only unresolved audience, narrative, confidentiality or output decisions. | Research internal systems and Koda, conduct deep online context research, govern claims, obtain blueprint approval, then draft, render, inspect and challenge autonomously. | Complete reviewed local Markdown and required formats; stop before commit or external sharing unless approved. |
+| Hafiz asks to refresh a living strategy document after a major milestone | Read its contract, blueprint, claim register and last review note before searching broadly. | Reverify affected and volatile claims, update the governed master and claim register together, regenerate all derived formats, and run proportionate review. | Updated and locally checked; stop if the milestone changes approved strategy or publication scope. |
+| Hafiz asks for a public report containing regulation, market statistics and future-country expansion | Classify it as public/high-stakes and define the exact jurisdictions, dates, audience and approval owner. | Use current regulators, government publications, standards and primary sources; record contradictions and distinguish recommendation from legal or market fact. | Zero blocking/material findings locally, then stop for owner publication approval. |
+| Hafiz asks to correct one typo in an existing guide | Keep it on the ordinary docs route. | Edit the narrow source and run a proportionate check; do not invoke the full research and blueprint workflow. | Corrected locally or at the separately approved commit boundary. |
+
+## 3B. Implementation Readiness And Build Handoff Workflow
 
 Starts when a task is about to move from discussion, PRD, UX, diagnosis, or
 issue intake into coding, especially when another agent or human builder will
@@ -530,7 +604,7 @@ Implementation readiness scenario matrix:
 | Critical lane | Confirm read-only diagnosis, approved implementation boundary, rollback, negative tests, monitoring. | Stay in Phase A diagnosis. | Stop for Hafiz approval before edits. |
 | Handoff to another builder | Confirm goal, context pack, entry points, constraints, evidence, stop rules, final answer shape. | Handoff is not ready. | Produce handoff, not implementation. |
 
-## 3B. Agent OS Improvement Loop
+## 3C. Agent OS Improvement Loop
 
 Starts when Hafiz asks to improve the workflow, fix Agent OS behavior, make
 future agents handle something better, or prevent a repeated agent mistake.
@@ -585,7 +659,7 @@ Agent OS improvement scenario matrix:
 | Rule is ignored repeatedly | Owning playbook plus enforcement/eval layer. | Choose docs, skill, hook, guard, eval, or health based on risk. | Avoid hook changes until rule shape is clear. |
 | Workflow feels too heavy | Workflow lanes and approval gates. | Relax safe docs/mechanical bundles, keep hard gates for push/deploy/critical/destructive work. | Commit only the agreed boundary. |
 
-## 3C. Enforcement And Drift Detection Workflow
+## 3D. Enforcement And Drift Detection Workflow
 
 Starts when a rule is being ignored, hooks/skills/evals need alignment, Claude
 and Codex behave differently, or Hafiz asks how the Agent OS will make agents
@@ -636,7 +710,7 @@ Enforcement scenario matrix:
 | Judgment-heavy preference | Playbook guidance and Koda correction. | A hook would be noisy or too rigid. | Use natural-language close-out and observe. |
 | Capability/access confusion | Capability model and health probe. | Agents need current tool truth before claiming ability. | Report available/blocked/unknown honestly. |
 
-## 3D. Session Map Lifecycle Workflow
+## 3E. Session Map Lifecycle Workflow
 
 Starts when a conversation is long, multi-goal, resumed after a pause, split
 across agents, or at risk of losing the main story.

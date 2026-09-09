@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Finance &amp; Accounting: Tutor Commitment Fee Review</title>
+    <style>
+        :root {
+            --sims-50: #eef2ff;
+            --sims-100: #e0e7ff;
+            --sims-300: #a5b4fc;
+            --sims-500: #3a4ee1;
+            --sims-600: #3042c5;
+            --sims-900: #1e2a78;
+            --blue-50: #eff6ff;
+            --blue-200: #bfdbfe;
+            --blue-700: #1d4ed8;
+            --blue-900: #1e3a8a;
+            --green-50: #ecfdf5;
+            --green-200: #a7f3d0;
+            --green-700: #047857;
+            --amber-50: #fffbeb;
+            --amber-200: #fde68a;
+            --amber-800: #92400e;
+            --red-50: #fef2f2;
+            --red-200: #fecaca;
+            --red-700: #b91c1c;
+            --purple-50: #f5f3ff;
+            --purple-200: #ddd6fe;
+            --purple-700: #6d28d9;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-300: #d1d5db;
+            --neutral-400: #9ca3af;
+            --neutral-500: #6b7280;
+            --neutral-700: #374151;
+            --neutral-900: #111827;
+            --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: #f8fafc;
+            color: var(--neutral-900);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.55;
+        }
+
+        button,
+        a {
+            font: inherit;
+        }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        aside {
+            display: none;
+        }
+
+        .brand {
+            margin: 0 0 28px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .nav-label {
+            margin: 18px 10px 8px;
+            color: var(--neutral-400);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            display: block;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: var(--neutral-700);
+            font-size: 14px;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            background: var(--sims-50);
+            color: var(--sims-900);
+        }
+
+        main {
+            padding: 32px;
+        }
+
+        .guide {
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--sims-500);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            max-width: 760px;
+            margin: 0;
+            font-size: 30px;
+            line-height: 1.15;
+            letter-spacing: -.03em;
+        }
+
+        .subtitle {
+            max-width: 760px;
+            margin: 12px 0 0;
+            color: var(--neutral-500);
+            font-size: 15px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 8px;
+            background: white;
+            color: var(--neutral-900);
+            padding: 0 14px;
+            font-size: 14px;
+            font-weight: 750;
+            text-decoration: none;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .btn.primary {
+            border-color: var(--sims-500);
+            background: var(--sims-500);
+            color: white;
+        }
+
+        .updated {
+            margin: 14px 0 0;
+            color: var(--neutral-400);
+            font-size: 12px;
+        }
+
+        section {
+            margin-top: 44px;
+            scroll-margin-top: 20px;
+        }
+
+        .short {
+            margin-top: 32px;
+            border: 1px solid var(--sims-300);
+            border-radius: 12px;
+            background: var(--sims-50);
+            padding: 20px;
+        }
+
+        .short h2,
+        section h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            line-height: 1.25;
+            letter-spacing: -.01em;
+        }
+
+        .short ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 14px;
+        }
+
+        .short li + li {
+            margin-top: 7px;
+        }
+
+        .section-label {
+            margin: 0 0 5px;
+            color: var(--neutral-400);
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .section-intro {
+            max-width: 760px;
+            margin: 0 0 18px;
+            color: var(--neutral-500);
+            font-size: 14px;
+        }
+
+        .ownership {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .owner-card {
+            position: relative;
+            min-height: 174px;
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .owner-card .owner {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 5px 9px;
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        .owner-card h3 {
+            margin: 12px 0 6px;
+            font-size: 16px;
+        }
+
+        .owner-card p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .owner-card.tx .owner {
+            background: var(--purple-50);
+            color: var(--purple-700);
+        }
+
+        .owner-card.finance {
+            border-color: var(--green-200);
+            background: var(--green-50);
+        }
+
+        .owner-card.finance .owner {
+            background: white;
+            color: var(--green-700);
+        }
+
+        .owner-card.sims .owner {
+            background: var(--blue-50);
+            color: var(--blue-700);
+        }
+
+        .decision-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .decision-card {
+            overflow: hidden;
+            border: 1px solid var(--neutral-200);
+            border-radius: 14px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .decision-head {
+            min-height: 116px;
+            padding: 17px;
+        }
+
+        .decision-card.offline .decision-head {
+            background: var(--blue-50);
+        }
+
+        .decision-card.deduction .decision-head {
+            background: var(--purple-50);
+        }
+
+        .decision-card.fiuu .decision-head {
+            background: var(--amber-50);
+        }
+
+        .decision-kicker {
+            margin: 0 0 5px;
+            color: var(--neutral-500);
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+        }
+
+        .decision-head h3 {
+            margin: 0 0 5px;
+            font-size: 17px;
+        }
+
+        .decision-head p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .decision-body {
+            padding: 15px 17px 17px;
+        }
+
+        .decision-body ol {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--neutral-700);
+            font-size: 13px;
+        }
+
+        .decision-body li + li {
+            margin-top: 7px;
+        }
+
+        .outcome {
+            margin-top: 14px;
+            border-radius: 9px;
+            background: var(--neutral-100);
+            padding: 10px 12px;
+            color: var(--neutral-700);
+            font-size: 12px;
+        }
+
+        .outcome strong {
+            color: var(--neutral-900);
+        }
+
+        .screenshot-card {
+            overflow: hidden;
+            margin-top: 18px;
+            border: 1px solid var(--neutral-200);
+            border-radius: 14px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .screenshot-head {
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr);
+            gap: 12px;
+            align-items: start;
+            padding: 17px 18px;
+        }
+
+        .step-number {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--sims-50);
+            color: var(--sims-900);
+            font-size: 14px;
+            font-weight: 850;
+        }
+
+        .screenshot-head h3 {
+            margin: 0 0 4px;
+            font-size: 17px;
+        }
+
+        .screenshot-head p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .screenshot-wrap {
+            border-top: 1px solid var(--neutral-200);
+            background: var(--neutral-100);
+            padding: 14px;
+        }
+
+        .screenshot-wrap img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid var(--neutral-200);
+            border-radius: 9px;
+            background: white;
+        }
+
+        .callouts {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 0 18px 18px;
+        }
+
+        .callouts.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .callout {
+            border: 1px solid var(--neutral-200);
+            border-radius: 10px;
+            background: var(--neutral-50);
+            padding: 11px 12px;
+            color: var(--neutral-500);
+            font-size: 12px;
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 2px;
+            color: var(--neutral-900);
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .check-card {
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            padding: 17px;
+        }
+
+        .check-card h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+
+        .check-list {
+            display: grid;
+            gap: 9px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .check-list li {
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr);
+            gap: 8px;
+            color: var(--neutral-700);
+            font-size: 13px;
+        }
+
+        .check-icon {
+            display: grid;
+            width: 20px;
+            height: 20px;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--green-50);
+            color: var(--green-700);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .stop {
+            border: 1px solid var(--red-200);
+            border-radius: 12px;
+            background: var(--red-50);
+            padding: 18px;
+        }
+
+        .stop h2 {
+            color: var(--red-700);
+        }
+
+        .stop-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .stop-item {
+            border: 1px solid var(--red-200);
+            border-radius: 9px;
+            background: white;
+            padding: 11px 12px;
+            color: var(--neutral-700);
+            font-size: 13px;
+        }
+
+        .stop-item strong {
+            display: block;
+            margin-bottom: 2px;
+            color: var(--red-700);
+        }
+
+        .state-table {
+            overflow: hidden;
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+        }
+
+        .state-row {
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .state-row + .state-row {
+            border-top: 1px solid var(--neutral-200);
+        }
+
+        .state-cell {
+            padding: 13px 14px;
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .state-cell:first-child {
+            color: var(--neutral-900);
+            font-weight: 750;
+        }
+
+        .state-row.header {
+            background: var(--neutral-100);
+        }
+
+        .state-row.header .state-cell {
+            color: var(--neutral-500);
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .footer {
+            margin-top: 52px;
+            border-top: 1px solid var(--neutral-200);
+            padding: 24px 0 8px;
+            color: var(--neutral-400);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (min-width: 960px) {
+            .app {
+                display: grid;
+                grid-template-columns: 252px minmax(0, 1fr);
+            }
+
+            aside {
+                display: block;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                border-right: 1px solid var(--neutral-200);
+                background: white;
+                padding: 26px 18px;
+            }
+        }
+
+        @media (max-width: 800px) {
+            main {
+                padding: 24px 18px 36px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .ownership,
+            .decision-grid,
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .owner-card,
+            .decision-head {
+                min-height: 0;
+            }
+
+            .state-row {
+                grid-template-columns: 1fr;
+                padding: 12px 14px;
+            }
+
+            .state-cell {
+                padding: 3px 0;
+            }
+
+            .state-row.header {
+                display: none;
+            }
+
+            .callouts.three {
+                grid-template-columns: 1fr;
+            }
+
+            .state-cell:nth-child(2)::before {
+                content: "Finance: ";
+                color: var(--neutral-900);
+                font-weight: 750;
+            }
+
+            .state-cell:nth-child(3)::before {
+                content: "System: ";
+                color: var(--neutral-900);
+                font-weight: 750;
+            }
+        }
+
+        @media (max-width: 560px) {
+            main {
+                padding: 20px 14px 32px;
+            }
+
+            .topbar,
+            .actions {
+                width: 100%;
+            }
+
+            .actions .btn {
+                flex: 1;
+                min-height: 44px;
+            }
+
+            .callouts,
+            .stop-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .screenshot-wrap {
+                overflow-x: auto;
+                padding: 10px;
+            }
+
+            .screenshot-wrap img {
+                min-width: 680px;
+            }
+
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            aside,
+            .actions {
+                display: none !important;
+            }
+
+            .app {
+                display: block;
+            }
+
+            main {
+                padding: 0;
+            }
+
+            .guide {
+                max-width: none;
+            }
+
+            section,
+            .screenshot-card,
+            .decision-card,
+            .owner-card,
+            .check-card,
+            .stop {
+                break-inside: avoid;
+            }
+
+            .screenshot-wrap img {
+                min-width: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside aria-label="Guide navigation">
+        <p class="brand">Sifututor</p>
+        <p class="nav-label">Finance Guide</p>
+        <a class="nav-item active" href="#overview">Commitment Fee Review</a>
+        <a class="nav-item" href="#decision-map">Decision Paths</a>
+        <a class="nav-item" href="#offline-review">Offline Payment</a>
+        <a class="nav-item" href="#deduction-review">Payout Deduction</a>
+        <a class="nav-item" href="#fiuu-review">FIUU Exception</a>
+        <a class="nav-item" href="#outcomes">Outcomes</a>
+    </aside>
+
+    <main>
+        <article class="guide">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Ripple and SIMS · Finance &amp; Accounting</p>
+                    <h1>Finance &amp; Accounting: Tutor Commitment Fee Review</h1>
+                    <p class="subtitle">
+                        Use this guide to independently review offline payments, confirm completed tutor payout
+                        deductions, and resolve FIUU payment exceptions without manually changing tutor status.
+                    </p>
+                </div>
+                <div class="actions">
+                    <button class="btn" type="button" onclick="window.print()">Print Guide</button>
+                    <a class="btn primary" href="#decision-map">Start Review</a>
+                </div>
+            </header>
+            <p class="updated">Internal staff guide · Updated 27 July 2026 · Test screenshots only</p>
+
+            <section class="short" id="overview">
+                <h2>The Short Version</h2>
+                <ul>
+                    <li>This guide covers tutor commitment fees only. It does not cover parent commitment fees.</li>
+                    <li>Finance decides whether submitted payment evidence is valid. TX submits evidence but cannot confirm its own submission.</li>
+                    <li>For offline payments, match the full fee amount shown, date, reference, receiving destination, and proof before confirming.</li>
+                    <li>For payout deductions, confirm only after the full fee amount shown was already deducted from processed tutor payments. The current amount is RM100.</li>
+                    <li>A FIUU status retry only checks evidence. It cannot approve, settle, refund, or activate a tutor.</li>
+                    <li>Never manually change a tutor to Active or Verified. SIMS owns settlement and activation.</li>
+                </ul>
+            </section>
+
+            <section>
+                <p class="section-label">Ownership</p>
+                <h2>One Submission, One Independent Decision</h2>
+                <p class="section-intro">
+                    The separation of duties protects Finance and the tutor. The person who prepares evidence is not
+                    the person who confirms that money was received or recovered.
+                </p>
+                <div class="ownership">
+                    <article class="owner-card tx">
+                        <span class="owner">TX</span>
+                        <h3>Submits Evidence</h3>
+                        <p>Uploads offline payment proof or records evidence that a full payout deduction has already happened.</p>
+                    </article>
+                    <article class="owner-card finance">
+                        <span class="owner">Finance</span>
+                        <h3>Verifies and Decides</h3>
+                        <p>Independently checks the proof, records a reason, then confirms or rejects the evidence.</p>
+                    </article>
+                    <article class="owner-card sims">
+                        <span class="owner">SIMS</span>
+                        <h3>Settles and Activates</h3>
+                        <p>Records the official result and changes the tutor to Verified only when payment is valid, verification remains Approved, and the account is otherwise eligible.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="decision-map">
+                <p class="section-label">Decision Map</p>
+                <h2>Choose the Correct Review Path</h2>
+                <p class="section-intro">
+                    Start with how the commitment fee was handled. Do not treat every case as an ordinary payment.
+                </p>
+                <div class="decision-grid">
+                    <article class="decision-card offline">
+                        <div class="decision-head">
+                            <p class="decision-kicker">Ripple</p>
+                            <h3>Offline Payment</h3>
+                            <p>Bank transfer, cash, cheque, or other offline-payment proof submitted by TX.</p>
+                        </div>
+                        <div class="decision-body">
+                            <ol>
+                                <li>Open Offline Payment Review.</li>
+                                <li>View the proof and tutor details.</li>
+                                <li>Match amount, date, account, and reference.</li>
+                                <li>Confirm or reject with a reason.</li>
+                            </ol>
+                            <p class="outcome"><strong>Confirm only when:</strong> the full fee amount shown is independently matched.</p>
+                        </div>
+                    </article>
+
+                    <article class="decision-card deduction">
+                        <div class="decision-head">
+                            <p class="decision-kicker">Ripple</p>
+                            <h3>Tutor Payout Deduction</h3>
+                            <p>Evidence that the full fee amount shown was already recovered from processed tutor payments.</p>
+                        </div>
+                        <div class="decision-body">
+                            <ol>
+                                <li>View the deduction proof and batch reference.</li>
+                                <li>Check the processed payout record.</li>
+                                <li>Confirm the full fee amount shown was already deducted.</li>
+                                <li>Confirm evidence or reject it.</li>
+                            </ol>
+                            <p class="outcome"><strong>Do not confirm:</strong> planned, future, or partial deductions.</p>
+                        </div>
+                    </article>
+
+                    <article class="decision-card fiuu">
+                        <div class="decision-head">
+                            <p class="decision-kicker">SIMS Operations Centre</p>
+                            <h3>FIUU Payment Exception</h3>
+                            <p>A verified FIUU response does not match the saved payment state.</p>
+                        </div>
+                        <div class="decision-body">
+                            <ol>
+                                <li>Review the order and exception reason.</li>
+                                <li>Check FIUU evidence and tutor eligibility.</li>
+                                <li>Select the permitted resolution: confirm paid, mark refund required, or record duplicate for a transaction conflict.</li>
+                                <li>Record a clear decision reason.</li>
+                            </ol>
+                            <p class="outcome"><strong>Remember:</strong> marking refund required does not refund FIUU.</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="offline-review">
+                <p class="section-label">Path 1 · Ripple</p>
+                <h2>Review an Offline Payment</h2>
+                <p class="section-intro">
+                    Use the Finance queue, not the tutor verification worklist. Each card shows who submitted the proof
+                    and the payment details Finance must verify.
+                </p>
+
+                <article class="screenshot-card">
+                    <div class="screenshot-head">
+                        <span class="step-number">1</span>
+                        <div>
+                            <h3>Open the Finance Queue</h3>
+                            <p>In Ripple, choose Tutor Experience → Offline payment review, then start with Pending.</p>
+                        </div>
+                    </div>
+                    <div class="screenshot-wrap">
+                        <img src="finance-commitment-fee-assets/offline-payment-review-queue.png"
+                             alt="Ripple Offline Payment Review queue showing a pending RM100 tutor payment">
+                    </div>
+                    <div class="callouts">
+                        <div class="callout"><strong>Check the submitter</strong>You cannot confirm evidence you submitted.</div>
+                        <div class="callout"><strong>Check all four fields</strong>Amount, date, receiving account, and reference must match.</div>
+                    </div>
+                </article>
+
+                <article class="screenshot-card">
+                    <div class="screenshot-head">
+                        <span class="step-number">2</span>
+                        <div>
+                            <h3>Record the Independent Decision</h3>
+                            <p>A decision reason is required. Write what was matched, not only “checked” or “okay”.</p>
+                        </div>
+                    </div>
+                    <div class="screenshot-wrap">
+                        <img src="finance-commitment-fee-assets/offline-payment-confirmation.png"
+                             alt="Ripple confirmation modal for an offline tutor commitment fee payment">
+                    </div>
+                    <div class="callouts">
+                        <div class="callout"><strong>Good reason</strong>“Matched Maybank statement. Full fee amount, date, and reference confirmed.”</div>
+                        <div class="callout"><strong>Reject when uncertain</strong>Missing, unreadable, mismatched, or duplicate proof must not be confirmed.</div>
+                    </div>
+                </article>
+            </section>
+
+            <section id="deduction-review">
+                <p class="section-label">Path 2 · Ripple</p>
+                <h2>Review Tutor Payout Deduction Evidence</h2>
+                <p class="section-intro">
+                    This remains a manual Finance process. The queue records evidence only after the deduction has
+                    already happened in a processed tutor payment.
+                </p>
+
+                <article class="screenshot-card">
+                    <div class="screenshot-head">
+                        <span class="step-number">1</span>
+                        <div>
+                            <h3>Check the Payout Batch and Proof</h3>
+                            <p>Confirm that the reference points to a processed payout and the full fee amount shown was recovered.</p>
+                        </div>
+                    </div>
+                    <div class="screenshot-wrap">
+                        <img src="finance-commitment-fee-assets/payout-deduction-review-queue.png"
+                             alt="Ripple Finance queue showing pending tutor payout deduction evidence">
+                    </div>
+                    <div class="callouts">
+                        <div class="callout"><strong>Required evidence</strong>Processed date, payout batch reference, deduction proof, and a clear note.</div>
+                        <div class="callout"><strong>Full amount only</strong>A planned or partial deduction does not settle the fee.</div>
+                    </div>
+                </article>
+
+                <article class="screenshot-card">
+                    <div class="screenshot-head">
+                        <span class="step-number">2</span>
+                        <div>
+                            <h3>Confirm What Already Happened</h3>
+                            <p>The button confirms evidence of a completed deduction. It does not perform the deduction.</p>
+                        </div>
+                    </div>
+                    <div class="screenshot-wrap">
+                        <img src="finance-commitment-fee-assets/payout-deduction-confirmation.png"
+                             alt="Ripple confirmation modal for completed tutor payout deduction evidence">
+                    </div>
+                    <div class="callouts">
+                        <div class="callout"><strong>Good reason</strong>“Matched payout batch 001 and proof. Full fee deduction confirmed.”</div>
+                        <div class="callout"><strong>Reject planned deductions</strong>Finance must first complete the manual deduction outside this review screen.</div>
+                    </div>
+                </article>
+            </section>
+
+            <section id="fiuu-review">
+                <p class="section-label">Path 3 · SIMS Operations Centre</p>
+                <h2>Resolve a FIUU Payment Exception</h2>
+                <p class="section-intro">
+                    In SIMS, choose Operations Centre → FIUU Payment Exceptions, then select Review FIUU exception.
+                    Use this path when FIUU evidence and the saved SIMS state do not agree. Ripple’s technical status
+                    refresh cannot make the financial decision.
+                </p>
+
+                <article class="screenshot-card">
+                    <div class="screenshot-head">
+                        <span class="step-number">1</span>
+                        <div>
+                            <h3>Review the Exception Before Selecting a Resolution</h3>
+                            <p>Confirm paid only when the payment is verified and the tutor is currently eligible.</p>
+                        </div>
+                    </div>
+                    <div class="screenshot-wrap">
+                        <img src="finance-commitment-fee-assets/fiuu-exception-review.png"
+                             alt="SIMS Operations Centre modal for reviewing a tutor FIUU payment exception">
+                    </div>
+                    <div class="callouts three">
+                        <div class="callout"><strong>Confirm paid</strong>Use only when verified FIUU evidence supports settlement now.</div>
+                        <div class="callout"><strong>Record duplicate</strong>For a transaction conflict only, use this when the same tutor fee and FIUU transaction are already recorded as paid.</div>
+                        <div class="callout"><strong>Refund required</strong>This records the decision only. Complete the authorised refund outside SIMS, then update the case.</div>
+                    </div>
+                </article>
+            </section>
+
+            <section>
+                <p class="section-label">Before Confirming</p>
+                <h2>Use the Finance Checklist</h2>
+                <div class="two-column">
+                    <article class="check-card">
+                        <h3>Offline Payment</h3>
+                        <ul class="check-list">
+                            <li><span class="check-icon">✓</span><span>The amount matches the full fee amount displayed in the queue. The current amount is RM100.</span></li>
+                            <li><span class="check-icon">✓</span><span>The payment date matches the attached evidence.</span></li>
+                            <li><span class="check-icon">✓</span><span>The recorded receiving account or collection destination is correct.</span></li>
+                            <li><span class="check-icon">✓</span><span>The payment reference, receipt number, or cheque number is visible and not duplicated.</span></li>
+                            <li><span class="check-icon">✓</span><span>You did not submit this proof.</span></li>
+                        </ul>
+                    </article>
+                    <article class="check-card">
+                        <h3>Payout Deduction</h3>
+                        <ul class="check-list">
+                            <li><span class="check-icon">✓</span><span>The tutor payment was already processed.</span></li>
+                            <li><span class="check-icon">✓</span><span>The full fee amount displayed in the queue was already deducted.</span></li>
+                            <li><span class="check-icon">✓</span><span>The batch reference matches the proof.</span></li>
+                            <li><span class="check-icon">✓</span><span>The note explains where the deduction appears.</span></li>
+                            <li><span class="check-icon">✓</span><span>You did not submit this evidence.</span></li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <section class="stop">
+                <p class="section-label">Safety Rules</p>
+                <h2>Never Do These</h2>
+                <div class="stop-grid">
+                    <div class="stop-item"><strong>Do not self-confirm</strong>The evidence submitter must not approve the same evidence.</div>
+                    <div class="stop-item"><strong>Do not confirm a plan</strong>A future or partial payout deduction is not completed evidence.</div>
+                    <div class="stop-item"><strong>Do not request double payment</strong>If FIUU status is unclear, review the exception before asking the tutor to pay again.</div>
+                    <div class="stop-item"><strong>Do not activate manually</strong>Never change the tutor to Active or Verified to bypass settlement.</div>
+                    <div class="stop-item"><strong>Do not assume a retry settles money</strong>Technical refresh only checks verified FIUU evidence.</div>
+                    <div class="stop-item"><strong>Do not promise a refund is complete</strong>“Refund required” records a decision only. Complete the authorised refund outside SIMS, then update the case.</div>
+                </div>
+            </section>
+
+            <section id="outcomes">
+                <p class="section-label">After the Decision</p>
+                <h2>Understand the Result</h2>
+                <div class="state-table" role="table" aria-label="Finance decision outcomes">
+                    <div class="state-row header" role="row">
+                        <div class="state-cell" role="columnheader">Decision or Situation</div>
+                        <div class="state-cell" role="columnheader">Finance Meaning</div>
+                        <div class="state-cell" role="columnheader">System Result</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Confirm payment</div>
+                        <div class="state-cell" role="cell">The full payment was independently verified.</div>
+                        <div class="state-cell" role="cell">SIMS settles the fee and changes the tutor to Verified only if verification remains Approved and the account is otherwise eligible.</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Confirm deduction evidence</div>
+                        <div class="state-cell" role="cell">The full fee amount shown was already recovered from processed tutor payments.</div>
+                        <div class="state-cell" role="cell">SIMS settles the fee and applies the same Approved-verification and account-eligibility checks.</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Reject evidence</div>
+                        <div class="state-cell" role="cell">The proof is missing, incorrect, duplicated, partial, or cannot be matched.</div>
+                        <div class="state-cell" role="cell">The fee remains unsettled and TX must correct or replace the evidence.</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Record duplicate</div>
+                        <div class="state-cell" role="cell">The same tutor fee and FIUU transaction are already recorded as paid.</div>
+                        <div class="state-cell" role="cell">SIMS voids the duplicate attempt. It does not settle the fee a second time.</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Mark refund required</div>
+                        <div class="state-cell" role="cell">The FIUU transaction should not settle the tutor fee.</div>
+                        <div class="state-cell" role="cell">SIMS records the decision. Finance must complete the authorised FIUU refund outside SIMS, then update the case.</div>
+                    </div>
+                    <div class="state-row" role="row">
+                        <div class="state-cell" role="cell">Offline payment confirmed during suspension</div>
+                        <div class="state-cell" role="cell">The fee can be settled, but activation remains blocked.</div>
+                        <div class="state-cell" role="cell">SIMS records the offline settlement and leaves the tutor suspended. A FIUU “Confirm paid” resolution requires current eligibility.</div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                Sifututor internal staff guide. For authorised staff use only. Screenshots use test data.
+            </footer>
+        </article>
+    </main>
+</div>
+
+</body>
+</html>

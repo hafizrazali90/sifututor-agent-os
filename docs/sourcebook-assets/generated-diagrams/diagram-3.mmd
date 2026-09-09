@@ -1,0 +1,23 @@
+flowchart TB
+    L1[1. Experience and access channels\nWebsites · Parent App · Tutor App · Staff interfaces]
+    L2[2. Staff operating workspace\nRipple · SIMS administration · Support workspace]
+    L3[3. Authoritative business and workflow services\nIdentity · Requests · Classes · Invoices · Payments]
+    L4[4. Learning and content capabilities\nLearnest · Kelasapp · Course, class and reporting tools]
+    L5[5. Communications and engagement\nNotifications · Omnichannel inbox · CRM · Creative operations]
+    L6[6. Finance and transaction control\nBilling · Gateway/bank evidence · Reconciliation · Tutor settlement]
+    L7[7. Data, analytics and intelligence\nOperational dashboards · Governed analytics · AI assistance]
+    L8[8. Platform operations, trust and resilience\nAccess control · Testing · Monitoring · Recovery · Agent OS]
+    L1 --> L2 --> L3
+    L3 --> L4
+    L3 --> L5
+    L3 --> L6
+    L4 --> L7
+    L5 --> L7
+    L6 --> L7
+    L8 -. supports every layer .-> L1
+    L8 -.-> L2
+    L8 -.-> L3
+    L8 -.-> L4
+    L8 -.-> L5
+    L8 -.-> L6
+    L8 -.-> L7

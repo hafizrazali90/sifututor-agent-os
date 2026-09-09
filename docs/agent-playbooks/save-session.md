@@ -74,6 +74,14 @@ For meaningful sessions, the save report must include these facts:
 10. Do-not-redo context: what the next agent should trust from this session
     and what it should still verify from current evidence.
 
+A continuation pack is a snapshot, not a permanently current record. Refresh
+it after every state-changing boundary: commit, push, PR open, merge, deploy,
+live check, approval that changes the permitted next step, or any later evidence
+that changes the highest proven state. Do this before handing off, changing
+devices, or asking another session to resume. On resume, verify current Git and
+external state first; if fresh evidence disagrees with the pack, correct the
+pack and use the fresh evidence instead of repeating stale wording.
+
 If the session has multiple fixes, branches, PRs, or deploy candidates, include
 or update the Session Release Ledger before saving. Do not let "fixed in code"
 sound like "merged", "deployed", or "live checked".
@@ -185,7 +193,7 @@ git status --short --branch
 For all product projects from the umbrella root:
 
 ```bash
-for d in sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub team-inbox finch-inbox; do
+for d in kelas sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub finch-inbox; do
   echo "## $d"
   (cd "$d" && ../scripts/agent-checks/pre-commit-guard.sh)
 done
@@ -206,9 +214,10 @@ source: user-stated | auto-captured | correction
 Every memory needs at least one project tag:
 
 ```text
-sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
-lls | lls-frontend | lls-mobile | creative-hub | team-inbox | finch-inbox |
-sifututor | codex-parity
+kelasapp | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
+lls | lls-frontend | lls-mobile | creative-hub | finch-inbox |
+cx-call-capture-android | sims-owner-analytics |
+sifututor.my | nakngaji.my | koda-memory | sifututor | codex-parity
 ```
 
 Never store secrets, raw tokens, credentials, payload bodies, customer private

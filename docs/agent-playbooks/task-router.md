@@ -43,6 +43,21 @@ classify, resume, or create work.
    coding because Hafiz says "proceed" unless the current discussion already
    produced the module scope, user/system flow decisions, screen inventory,
    state coverage, evidence plan, and explicit implementation approval.
+9a. If Hafiz asks for a substantial professional document such as a
+    sourcebook, strategy paper, capability brief, stakeholder document,
+    evidence-backed report, or governed multi-format guide, route to
+    [document-production.md](document-production.md). Plain meaning: establish
+    one document contract, conduct deep internal and online research, govern
+    claims, approve the blueprint once, then draft, render, challenge and
+    correct autonomously inside the agreed local boundary. Ordinary narrow
+    documentation edits remain on the normal `docs` route.
+9b. If Hafiz asks to create, convert, redesign, render, or visually check an
+    HTML slide presentation, route the presentation layer through
+    [frontend-slides.md](frontend-slides.md). When the deck is stakeholder-
+    facing or research-backed, keep `document-production.md` as the owner of
+    claims, evidence, blueprint approval, adversarial review and publication
+    boundaries. The slide workflow owns narrative pacing, visual design, HTML
+    behavior, local export and slide-level QA.
 10. For critical-lane work, cross-module workflows, or any task being handed
     from one AI/human developer to another, apply
     [ai-implementation-readiness.md](ai-implementation-readiness.md) before
@@ -255,6 +270,8 @@ Common route shapes:
 | `small-change` | Copy, label, config, minor UI | describe -> fix -> e2e_regression_if_user_facing -> verify -> qa -> commit |
 | `refactor` | Structure change without behavior change | analyze -> plan -> refactor -> verify -> qa -> review -> commit |
 | `docs` | Documentation only | write -> verify -> commit |
+| `document-production` | Substantial research-backed professional document | document_contract -> deep_internal_and_online_research -> evidence_map -> blueprint_approval -> draft -> formats -> deterministic_and_visual_qa -> adversarial_review -> local_acceptance |
+| `frontend-slides` | New, converted, redesigned, or rendered HTML presentation | approved_brief_or_blueprint -> assertion_storyboard -> visual_direction -> html_build -> deterministic_and_visual_qa -> local_handback |
 | `product-design` | PRD, UX spec, build prompts, major workflow design | design_brief -> prd -> clarifier_if_needed -> ux_spec -> backend_contract_if_needed -> build_prompts -> implementation_handoff |
 
 ## Lane Intensity

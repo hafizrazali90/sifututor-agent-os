@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sifututor Ecosystem — Flat Editorial Visual Direction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --stage-bg: #0e0e0e;
+      --slide-bg: #3900c8;
+      --purple: #3900c8;
+      --purple-dark: #25008f;
+      --orange: #ff4713;
+      --lime: #adff00;
+      --cyan: #14c9df;
+      --brand-blue: #1026a3;
+      --brand-navy: #17144f;
+      --brand-orange: #f45124;
+      --brand-yellow: #f6df24;
+      --brand-cream: #f5f1e8;
+      --ink: #151515;
+      --paper: #f6f4ee;
+      --white: #fff;
+      --font-display: "Archivo Black", sans-serif;
+      --font-body: "DM Sans", sans-serif;
+      --ease: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Mandatory fixed 1920×1080 presentation stage. */
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--stage-bg, #000);
+    }
+
+    .deck-viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background: var(--stage-bg, #000);
+    }
+
+    .deck-stage {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      transform-origin: 0 0;
+      background: var(--slide-bg, #fff);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      display: block;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      background: var(--slide-bg, #fff);
+    }
+
+    .slide.active,
+    .slide.visible {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 1;
+    }
+
+    img,
+    video,
+    canvas,
+    svg {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .deck-controls {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+
+    @media print {
+      @page { size: 1920px 1080px; margin: 0; }
+
+      html,
+      body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+      }
+
+      .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+      }
+
+      .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+      }
+
+      .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+      }
+
+      .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .deck-controls,
+      .edit-hotzone,
+      .edit-toggle { display: none !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .2s !important;
+      }
+    }
+
+    body { font-family: var(--font-body); color: var(--ink); }
+    button { font: inherit; }
+
+    .reveal,
+    .reveal-scale {
+      opacity: 0;
+      transition: opacity .65s var(--ease), transform .65s var(--ease);
+    }
+    .reveal { transform: translateY(26px); }
+    .reveal-scale { transform: scale(.96) rotate(var(--rotation, 0deg)); }
+    .slide.visible .reveal { opacity: 1; transform: none; }
+    .slide.visible .reveal-scale { opacity: 1; transform: scale(1) rotate(var(--rotation, 0deg)); }
+    .delay-1 { transition-delay: .07s; }
+    .delay-2 { transition-delay: .14s; }
+    .delay-3 { transition-delay: .21s; }
+    .delay-4 { transition-delay: .28s; }
+
+    .grain {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      background-image: radial-gradient(rgba(255,255,255,.44) .65px, transparent .65px);
+      background-size: 7px 7px;
+      mix-blend-mode: soft-light;
+    }
+
+    .star {
+      position: absolute;
+      width: 118px;
+      aspect-ratio: 1;
+      background: var(--star-colour, var(--lime));
+      clip-path: polygon(50% 0%, 58% 31%, 75% 7%, 72% 37%, 100% 25%, 78% 47%, 100% 58%, 70% 58%, 84% 86%, 60% 68%, 54% 100%, 46% 70%, 25% 94%, 31% 63%, 0 76%, 23% 52%, 0 42%, 31% 41%, 15% 14%, 41% 32%);
+    }
+
+    .burst-lines {
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: repeating-conic-gradient(from 0deg, var(--burst-colour, var(--orange)) 0deg 5deg, transparent 5deg 12deg);
+      -webkit-mask: radial-gradient(circle, transparent 0 30%, #000 31% 100%);
+      mask: radial-gradient(circle, transparent 0 30%, #000 31% 100%);
+    }
+
+    .source-note {
+      position: absolute;
+      left: 74px;
+      bottom: 34px;
+      z-index: 20;
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: .02em;
+    }
+
+    .slide-index {
+      position: absolute;
+      right: 72px;
+      bottom: 32px;
+      z-index: 20;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .slide-index b { margin-right: 10px; font: 400 25px/1 var(--font-display); }
+
+    /* Slide 1 — Sifututor professional editorial direction. */
+    .cover { background: var(--brand-cream); color: var(--ink); }
+    .cover::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 18px;
+      background: linear-gradient(90deg, var(--brand-blue) 0 68%, var(--brand-orange) 68% 86%, var(--brand-yellow) 86%);
+    }
+    .cover::after {
+      content: "";
+      position: absolute;
+      top: 18px;
+      right: 0;
+      width: 915px;
+      height: 1062px;
+      background: var(--brand-blue);
+    }
+
+    .logo-plaque {
+      position: absolute;
+      top: 55px;
+      left: 78px;
+      z-index: 8;
+      width: 286px;
+      height: 66px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .logo-plaque img { width: 278px; height: auto; }
+
+    .cover-kicker {
+      position: absolute;
+      left: 80px;
+      top: 174px;
+      z-index: 8;
+      display: inline-block;
+      padding: 10px 15px 9px;
+      background: var(--brand-orange);
+      color: var(--white);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transform: none;
+    }
+
+    .cover h1 {
+      position: absolute;
+      left: 76px;
+      top: 246px;
+      z-index: 8;
+      width: 790px;
+      font: 400 84px/.96 var(--font-display);
+      letter-spacing: -.04em;
+      text-transform: uppercase;
+    }
+
+    .cover h1 .highlight {
+      display: inline-block;
+      margin-top: 9px;
+      padding: 7px 12px 10px 0;
+      color: var(--brand-blue);
+      background: linear-gradient(transparent 70%, var(--brand-yellow) 70% 96%, transparent 96%);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .cover-copy {
+      position: absolute;
+      left: 83px;
+      top: 520px;
+      z-index: 8;
+      width: 700px;
+      font-size: 25px;
+      line-height: 1.48;
+      color: #45424d;
+    }
+
+    .cover-principle {
+      position: absolute;
+      left: 82px;
+      top: 646px;
+      z-index: 8;
+      width: 692px;
+      padding-top: 18px;
+      border-top: 2px solid rgba(16,38,163,.24);
+      color: var(--brand-blue);
+      background: transparent;
+      font: italic 24px/1.35 Georgia, serif;
+    }
+
+    .milestone {
+      position: absolute;
+      left: 82px;
+      top: 738px;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .date-chip {
+      min-width: 228px;
+      padding: 17px 19px 16px;
+      border: 2px solid rgba(16,38,163,.22);
+      background: rgba(255,255,255,.66);
+      color: var(--ink);
+    }
+    .date-chip strong { display: block; color: var(--brand-blue); font: 400 32px/1 var(--font-display); }
+    .date-chip span { display: block; margin-top: 8px; font-size: 17px; font-weight: 600; }
+    .flat-arrow { font: 400 38px/1 var(--font-display); color: var(--brand-orange); }
+
+    .cover-proofline {
+      position: absolute;
+      left: 82px;
+      top: 904px;
+      z-index: 8;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 760px;
+    }
+    .cover-proofline span {
+      padding: 8px 11px 7px;
+      border: 1px solid rgba(16,38,163,.25);
+      color: var(--brand-navy);
+      background: rgba(255,255,255,.55);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .collage-frame {
+      position: absolute;
+      z-index: 4;
+      overflow: hidden;
+      border: 3px solid var(--white);
+      background: var(--white);
+      transform: none;
+    }
+    .collage-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .collage-frame figcaption {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      padding: 9px 13px 8px;
+      background: var(--brand-navy);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .cover-human {
+      left: 1048px;
+      top: 642px;
+      width: 442px;
+      height: 300px;
+      border: 0;
+      background: var(--brand-orange);
+    }
+    .cover-human img { object-position: center 18%; }
+    .cover-human::after {
+      content: "Human learning";
+      position: absolute;
+      right: 20px;
+      bottom: 18px;
+      padding: 9px 12px 8px;
+      background: var(--brand-orange);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .collage-ripple {
+      left: 1048px;
+      top: 128px;
+      width: 738px;
+      height: 430px;
+      box-shadow: none;
+    }
+    .collage-ripple img { object-position: top; }
+    .cover-system-label {
+      position: absolute;
+      left: 1048px;
+      top: 74px;
+      z-index: 9;
+      color: rgba(255,255,255,.84);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .cover-outcome-card {
+      position: absolute;
+      left: 1518px;
+      top: 642px;
+      z-index: 7;
+      width: 268px;
+      height: 300px;
+      padding: 23px 24px 50px;
+      background: var(--brand-cream);
+      color: var(--brand-navy);
+    }
+    .cover-outcome-card .card-kicker {
+      color: var(--brand-orange);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .cover-outcome-card h3 {
+      margin-top: 11px;
+      font: 400 23px/1.02 var(--font-display);
+      letter-spacing: -.025em;
+      text-transform: uppercase;
+    }
+    .cover-outcome-card ul {
+      margin-top: 14px;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+    .cover-outcome-card li {
+      padding-top: 7px;
+      border-top: 1px solid rgba(23,20,79,.18);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .cover-outcome-card li b { margin-right: 7px; color: var(--brand-blue); }
+    .cover-outcome-card::after {
+      content: "ONE CONNECTED SERVICE";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 24px 9px;
+      background: var(--brand-yellow);
+      color: var(--brand-navy);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+    .cover .source-note { color: #77717e; }
+    .cover .slide-index { color: rgba(255,255,255,.68); }
+    .cover .slide-index b { color: var(--brand-yellow); }
+
+    /* Slide 2 — warm-white editorial product portfolio mosaic. */
+    .portfolio { background: var(--paper); color: var(--ink); }
+    .portfolio::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 22px; background: linear-gradient(90deg, var(--purple) 0 56%, var(--orange) 56% 78%, var(--lime) 78%); }
+
+    .portfolio-header {
+      position: absolute;
+      left: 76px;
+      right: 76px;
+      top: 60px;
+      z-index: 7;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .portfolio-kicker { display: inline-block; padding: 8px 14px; background: var(--purple); color: var(--white); font-size: 18px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .portfolio h2 { margin-top: 17px; max-width: 1180px; font: 400 69px/.96 var(--font-display); letter-spacing: -.045em; text-transform: uppercase; }
+    .portfolio h2 span { color: var(--purple); }
+    .proof-badge { margin-top: 19px; padding: 13px 18px 11px; border: 3px solid var(--ink); background: var(--lime); font-size: 17px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; transform: rotate(1.5deg); box-shadow: 7px 7px 0 var(--ink); }
+
+    .portfolio-shot {
+      position: absolute;
+      top: 276px;
+      height: 430px;
+      overflow: hidden;
+      border: 5px solid var(--ink);
+      background: var(--white);
+    }
+    .portfolio-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .portfolio-shot figcaption { position: absolute; left: 16px; top: 16px; padding: 9px 13px; background: var(--ink); color: var(--white); font-size: 16px; font-weight: 900; text-transform: uppercase; }
+    .shot-ripple { left: 78px; width: 842px; box-shadow: 15px 15px 0 var(--orange); }
+    .shot-creative { right: 78px; width: 842px; box-shadow: 15px 15px 0 var(--purple); }
+
+    .system-grid {
+      position: absolute;
+      left: 78px;
+      right: 78px;
+      top: 776px;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: 390px repeat(6, 1fr);
+      gap: 14px;
+    }
+    .system-card {
+      height: 180px;
+      padding: 21px 19px 18px;
+      border: 4px solid var(--ink);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+    .system-card strong { font: 400 25px/.98 var(--font-display); letter-spacing: -.03em; text-transform: uppercase; }
+    .system-card small { font-size: 15px; line-height: 1.25; font-weight: 700; }
+    .system-card .number { font: 400 54px/1 var(--font-display); opacity: .30; }
+    .sims-card { color: var(--white); background: var(--purple); box-shadow: 9px 9px 0 var(--lime); }
+    .parent-card { background: var(--lime); }
+    .tutor-card { background: var(--orange); }
+    .finch-card { color: var(--white); background: var(--ink); }
+    .learnest-card { background: var(--white); }
+    .kelas-card { background: var(--cyan); }
+    .agent-card { color: var(--white); background: var(--purple-dark); }
+    .system-logo { align-self: flex-start; width: 38px; height: 38px; object-fit: contain; }
+    .learnest-logo { width: 100px; height: auto; filter: none; }
+    .prototype-label { display: inline-block; align-self: flex-start; padding: 5px 8px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .portfolio .star { right: 24px; top: 212px; width: 86px; --star-colour: var(--orange); }
+    .portfolio .source-note, .portfolio .slide-index { color: rgba(21,21,21,.62); }
+    .portfolio .slide-index b { color: var(--purple); }
+
+    /* Slide 3 — dynamic five-part operating sequence with actual evidence. */
+    .journey { background: var(--ink); color: var(--white); }
+    .journey::before { content: ""; position: absolute; right: 0; top: 0; width: 410px; height: 26px; background: var(--orange); }
+
+    .journey-header { position: absolute; left: 74px; top: 54px; z-index: 12; width: 1420px; }
+    .journey-kicker { display: inline-block; padding: 8px 14px 7px; background: var(--cyan); color: var(--ink); font-size: 18px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .journey h2 { margin-top: 15px; font: 400 64px/.98 var(--font-display); letter-spacing: -.045em; text-transform: uppercase; }
+    .journey h2 .lime-strip { display: inline-block; margin-top: 8px; padding: 5px 14px 9px; color: var(--ink); background: var(--lime); transform: rotate(-.6deg); }
+    .loop-copy { position: absolute; right: 76px; top: 82px; z-index: 12; width: 330px; padding: 17px 20px; border: 3px solid var(--white); background: var(--purple); font-size: 19px; line-height: 1.35; font-weight: 700; transform: rotate(1.3deg); }
+
+    .stage-sequence {
+      position: absolute;
+      left: 76px;
+      right: 76px;
+      top: 280px;
+      z-index: 9;
+      display: grid;
+      grid-template-columns: 1.05fr 50px 1.05fr 50px 1.05fr 50px 1.05fr 50px 1.05fr;
+      align-items: center;
+      gap: 7px;
+    }
+    .stage-card {
+      height: 220px;
+      padding: 22px;
+      border: 4px solid var(--white);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform: translateY(var(--lift));
+      color: var(--white);
+    }
+    .stage-card .big-number { font: 400 66px/.9 var(--font-display); opacity: .33; }
+    .stage-card strong { font: 400 25px/.98 var(--font-display); letter-spacing: -.025em; text-transform: uppercase; }
+    .stage-card small { font-size: 15px; font-weight: 700; line-height: 1.25; }
+    .stage-1 { --lift: 26px; background: var(--purple); }
+    .stage-2 { --lift: -14px; color: var(--ink); border-color: var(--orange); background: var(--orange); }
+    .stage-3 { --lift: 38px; color: var(--ink); border-color: var(--lime); background: var(--lime); }
+    .stage-4 { --lift: -4px; color: var(--ink); border-color: var(--cyan); background: var(--cyan); }
+    .stage-5 { --lift: 28px; background: var(--purple); }
+    .stage-arrow { color: var(--orange); font: 400 42px/1 var(--font-display); text-align: center; transform: translateY(var(--arrow-lift, 0)); }
+
+    .journey-shot {
+      position: absolute;
+      top: 590px;
+      width: 730px;
+      height: 340px;
+      overflow: hidden;
+      border: 5px solid var(--white);
+      background: var(--white);
+      transform: rotate(var(--rotation));
+    }
+    .journey-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .journey-shot figcaption { position: absolute; left: 14px; top: 14px; padding: 9px 12px; color: var(--ink); background: var(--lime); font-size: 16px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+    .journey-ripple { --rotation: -1.5deg; left: 140px; box-shadow: 16px 16px 0 var(--orange); }
+    .journey-luna { --rotation: 1.5deg; right: 140px; box-shadow: 16px 16px 0 var(--cyan); }
+    .journey .star { left: 25px; top: 668px; width: 90px; --star-colour: var(--lime); transform: rotate(14deg); }
+    .journey .burst-lines { right: 34px; top: 516px; --burst-colour: var(--orange); }
+    .journey .source-note, .journey .slide-index { color: rgba(255,255,255,.65); }
+    .journey .slide-index b { color: var(--lime); }
+
+    /* Navigation and local editing controls remain outside the authored stage. */
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 8px 12px;
+      border: 2px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      background: rgba(15,15,15,.88);
+      box-shadow: 0 9px 28px rgba(0,0,0,.3);
+    }
+    .deck-controls button { width: 34px; height: 34px; border: 0; border-radius: 50%; color: #fff; background: rgba(255,255,255,.1); cursor: pointer; }
+    .deck-controls button:hover { color: var(--ink); background: var(--lime); }
+    .progress { min-width: 58px; text-align: center; color: #fff; font-size: 13px; }
+    .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+    .edit-toggle { position: fixed; top: 17px; left: 17px; width: 42px; height: 42px; border: 2px solid rgba(255,255,255,.4); border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 10001; color: #fff; background: rgba(15,15,15,.92); }
+    .edit-toggle.show,
+    .edit-toggle.active { opacity: 1; pointer-events: auto; }
+    [contenteditable="true"] { outline: 3px dashed var(--cyan); outline-offset: 5px; }
+    body.render-mode .deck-controls,
+    body.render-mode .edit-hotzone,
+    body.render-mode .edit-toggle { display: none !important; }
+    body.render-mode .reveal,
+    body.render-mode .reveal-scale { opacity: 1 !important; transform: rotate(var(--rotation, 0deg)) !important; transition: none !important; }
+  </style>
+</head>
+<body>
+  <div class="deck-viewport">
+    <main class="deck-stage" id="deckStage" aria-label="Sifututor ecosystem flat editorial visual direction board">
+      <section class="slide cover active" id="editorial-cover" aria-label="Flat editorial ecosystem cover">
+        <div class="grain"></div>
+        <div class="logo-plaque reveal"><img src="../../sifu-tutor/public/images/logo.png" alt="Sifututor"></div>
+        <div class="cover-kicker reveal delay-1" data-editable>Connected education operations</div>
+        <h1 class="reveal delay-2" data-editable>Small team.<br><span class="highlight">Complete ecosystem.</span></h1>
+        <p class="cover-copy reveal delay-3" data-editable>A connected operating foundation carries the service from demand and matching through delivery, finance, support and continuous improvement.</p>
+        <p class="cover-principle reveal delay-3" data-editable>Human learning, supported by disciplined systems.</p>
+        <div class="milestone reveal delay-4">
+          <div class="date-chip"><strong data-editable>2018</strong><span data-editable>Operating journey began</span></div>
+          <span class="flat-arrow">→</span>
+          <div class="date-chip"><strong data-editable>May 2025</strong><span data-editable>New SIMS went live</span></div>
+        </div>
+
+        <div class="cover-proofline reveal delay-4" aria-label="Capability proof points">
+          <span>Live users</span>
+          <span>End-to-end operations</span>
+          <span>Built for expansion</span>
+        </div>
+
+        <figure class="collage-frame cover-human reveal-scale delay-2">
+          <img src="https://sifututor.my/wp-content/uploads/2025/03/register.jpg" alt="A Sifututor learning session with a tutor and student">
+        </figure>
+        <div class="cover-system-label reveal delay-3">Systems that run the service</div>
+        <figure class="collage-frame collage-ripple reveal-scale delay-2">
+          <img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite capability overview">
+          <figcaption>Ripple Suite · Actual UI</figcaption>
+        </figure>
+        <aside class="cover-outcome-card reveal delay-4" aria-label="Connected operating coverage">
+          <div class="card-kicker">End-to-end coverage</div>
+          <h3>From request to improvement</h3>
+          <ul>
+            <li><b>01</b>Demand and matching</li>
+            <li><b>02</b>Delivery and verification</li>
+            <li><b>03</b>Finance, support and learning</li>
+          </ul>
+        </aside>
+        <div class="source-note">Actual privacy-reviewed interfaces · governed ecosystem facts</div>
+        <div class="slide-index"><b>01</b> Sifututor professional editorial</div>
+      </section>
+
+      <section class="slide portfolio" id="editorial-portfolio" aria-label="Editorial platform portfolio">
+        <div class="grain"></div>
+        <header class="portfolio-header">
+          <div>
+            <div class="portfolio-kicker reveal" data-editable>Product portfolio</div>
+            <h2 class="reveal delay-1" data-editable>One service core.<br><span>Many specialised systems.</span></h2>
+          </div>
+          <div class="proof-badge reveal delay-2">Actual interface evidence</div>
+        </header>
+
+        <figure class="portfolio-shot shot-ripple reveal-scale delay-2">
+          <img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite operational modules">
+          <figcaption>Operations · Ripple Suite</figcaption>
+        </figure>
+        <figure class="portfolio-shot shot-creative reveal-scale delay-3">
+          <img src="assets/verified/creative-hub-content-planner.png" alt="Creative Hub content operations">
+          <figcaption>Growth · Creative Hub</figcaption>
+        </figure>
+
+        <div class="system-grid reveal delay-4" aria-label="Specialised Sifututor systems">
+          <article class="system-card sims-card"><span class="number">01</span><strong data-editable>SIMS<br>operating core</strong><small data-editable>Authoritative service administration</small></article>
+          <article class="system-card parent-card"><span class="number">02</span><strong data-editable>Parent App</strong><small data-editable>Family participation</small></article>
+          <article class="system-card tutor-card"><span class="number">03</span><strong data-editable>Tutor App</strong><small data-editable>Tutor delivery</small></article>
+          <article class="system-card finch-card"><img class="system-logo" src="../../finch-inbox/frontend/public/finch-logo.png" alt="Finch"><strong data-editable>Finch</strong><small data-editable>Omnichannel support</small></article>
+          <article class="system-card learnest-card"><img class="system-logo learnest-logo" src="../../lls-frontend/public/assets/images/Learnest-logo.png" alt="Learnest"><span class="prototype-label">Prototype evidence</span><small data-editable>Learning product platform</small></article>
+          <article class="system-card kelas-card"><span class="number">06</span><strong data-editable>Kelasapp</strong><small data-editable>Learning experience</small></article>
+          <article class="system-card agent-card"><span class="number">07</span><strong data-editable>Agent OS</strong><small data-editable>Quality and delivery discipline</small></article>
+        </div>
+        <div class="star" aria-hidden="true"></div>
+        <div class="source-note">Established systems and explicit prototype evidence remain visually distinct</div>
+        <div class="slide-index"><b>02</b> Modular product portfolio</div>
+      </section>
+
+      <section class="slide journey" id="editorial-journey" aria-label="Editorial end-to-end operating journey">
+        <div class="grain"></div>
+        <header class="journey-header">
+          <div class="journey-kicker reveal" data-editable>End-to-end by design</div>
+          <h2 class="reveal delay-1" data-editable>A learning need becomes<br><span class="lime-strip">a managed, measurable service.</span></h2>
+        </header>
+        <p class="loop-copy reveal delay-2" data-editable>The journey does not stop at payment. Support and knowledge return to the next cycle.</p>
+
+        <div class="stage-sequence reveal delay-2">
+          <article class="stage-card stage-1"><span class="big-number">01</span><strong data-editable>Demand &amp;<br>request</strong><small data-editable>Capture the learning need</small></article>
+          <span class="stage-arrow">→</span>
+          <article class="stage-card stage-2"><span class="big-number">02</span><strong data-editable>Discover &amp;<br>match</strong><small data-editable>Coordinate the right tutor</small></article>
+          <span class="stage-arrow">→</span>
+          <article class="stage-card stage-3"><span class="big-number">03</span><strong data-editable>Teach &amp;<br>verify</strong><small data-editable>Deliver and record service</small></article>
+          <span class="stage-arrow">→</span>
+          <article class="stage-card stage-4"><span class="big-number">04</span><strong data-editable>Bill, collect<br>&amp; pay</strong><small data-editable>Keep finance connected</small></article>
+          <span class="stage-arrow">↗</span>
+          <article class="stage-card stage-5"><span class="big-number">05</span><strong data-editable>Support, learn<br>&amp; improve</strong><small data-editable>Turn knowledge into the next cycle</small></article>
+        </div>
+
+        <figure class="journey-shot journey-ripple reveal-scale delay-3">
+          <img src="assets/verified/ripple-capability-overview.png" alt="Ripple Suite operating evidence">
+          <figcaption>Operate</figcaption>
+        </figure>
+        <figure class="journey-shot journey-luna reveal-scale delay-4">
+          <img src="assets/verified/ripple-luna-workspace.png" alt="Ripple Luna knowledge workspace">
+          <figcaption>Learn + improve</figcaption>
+        </figure>
+        <div class="star" aria-hidden="true"></div>
+        <div class="burst-lines" aria-hidden="true"></div>
+        <div class="source-note">Actual operating and knowledge-workspace evidence</div>
+        <div class="slide-index"><b>03</b> Connected operating loop</div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="deck-controls" aria-label="Slide controls">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <span class="progress" id="progress">1 / 3</span>
+    <button id="next" aria-label="Next slide">→</button>
+  </nav>
+  <div class="edit-hotzone" aria-hidden="true"></div>
+  <button class="edit-toggle" id="editToggle" title="Edit mode (E)" aria-label="Toggle inline edit mode">✎</button>
+
+  <script>
+    class SlidePresentation {
+      constructor() {
+        this.slides = [...document.querySelectorAll('.slide')];
+        this.stage = document.getElementById('deckStage');
+        this.progress = document.getElementById('progress');
+        this.currentSlide = 0;
+        this.touchStartX = null;
+        this.wheelLocked = false;
+        this.setupStageScale();
+        this.setupNavigation();
+        const requestedSlide = new URLSearchParams(window.location.search).get('slide');
+        this.showSlide(requestedSlide === null ? Number(localStorage.getItem('sifututor-ecosystem-board-slide') || 0) : Number(requestedSlide));
+      }
+
+      setupStageScale() {
+        const scale = () => {
+          const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          const x = (window.innerWidth - 1920 * factor) / 2;
+          const y = (window.innerHeight - 1080 * factor) / 2;
+          this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+      }
+
+      setupNavigation() {
+        document.getElementById('prev').addEventListener('click', () => this.showSlide(this.currentSlide - 1));
+        document.getElementById('next').addEventListener('click', () => this.showSlide(this.currentSlide + 1));
+        document.addEventListener('keydown', event => {
+          if (event.target.getAttribute('contenteditable') === 'true') return;
+          if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); this.showSlide(this.currentSlide + 1); }
+          if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key)) { event.preventDefault(); this.showSlide(this.currentSlide - 1); }
+          if (event.key === 'Home') this.showSlide(0);
+          if (event.key === 'End') this.showSlide(this.slides.length - 1);
+          if (event.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+        });
+        document.addEventListener('touchstart', event => { this.touchStartX = event.changedTouches[0].clientX; }, { passive: true });
+        document.addEventListener('touchend', event => {
+          if (this.touchStartX === null) return;
+          const delta = event.changedTouches[0].clientX - this.touchStartX;
+          if (Math.abs(delta) > 55) this.showSlide(this.currentSlide + (delta < 0 ? 1 : -1));
+          this.touchStartX = null;
+        }, { passive: true });
+        document.addEventListener('wheel', event => {
+          if (this.wheelLocked || Math.abs(event.deltaY) < 18) return;
+          this.wheelLocked = true;
+          this.showSlide(this.currentSlide + (event.deltaY > 0 ? 1 : -1));
+          setTimeout(() => { this.wheelLocked = false; }, 650);
+        }, { passive: true });
+      }
+
+      showSlide(index) {
+        this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+        this.slides.forEach((slide, position) => {
+          const active = position === this.currentSlide;
+          slide.classList.toggle('active', active);
+          slide.classList.toggle('visible', active);
+          slide.setAttribute('aria-hidden', String(!active));
+        });
+        this.progress.textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+        localStorage.setItem('sifututor-ecosystem-board-slide', String(this.currentSlide));
+      }
+    }
+
+    class InlineEditor {
+      constructor() {
+        this.isActive = false;
+        this.toggle = document.getElementById('editToggle');
+        this.items = [...document.querySelectorAll('[data-editable]')];
+        this.restore();
+        this.items.forEach((item, index) => item.addEventListener('input', () => localStorage.setItem(`sifututor-board-v2-copy-${index}`, item.innerHTML)));
+      }
+
+      restore() {
+        this.items.forEach((item, index) => {
+          const saved = localStorage.getItem(`sifututor-board-v2-copy-${index}`);
+          if (saved !== null) item.innerHTML = saved;
+        });
+      }
+
+      toggleEditMode() {
+        this.isActive = !this.isActive;
+        this.toggle.classList.toggle('active', this.isActive);
+        this.items.forEach(item => item.setAttribute('contenteditable', String(this.isActive)));
+      }
+    }
+
+    const renderMode = new URLSearchParams(window.location.search).get('render') === '1';
+    if (renderMode) document.body.classList.add('render-mode');
+    const deck = new SlidePresentation();
+    const editor = new InlineEditor();
+    const hotzone = document.querySelector('.edit-hotzone');
+    const editToggle = document.getElementById('editToggle');
+    let hideTimeout = null;
+    hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+    hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+    editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+    hotzone.addEventListener('click', () => editor.toggleEditMode());
+    editToggle.addEventListener('click', () => editor.toggleEditMode());
+    document.addEventListener('keydown', event => {
+      if ((event.key === 'e' || event.key === 'E') && event.target.getAttribute('contenteditable') !== 'true') editor.toggleEditMode();
+    });
+  </script>
+</body>
+</html>
