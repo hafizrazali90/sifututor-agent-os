@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tutor Approval vs Tutor Activation: Staff Guide</title>
+    <style>
+        :root {
+            --sims-50: #eef2ff;
+            --sims-100: #e0e7ff;
+            --sims-300: #a5b4fc;
+            --sims-500: #3a4ee1;
+            --sims-600: #3042c5;
+            --sims-900: #1e2a78;
+            --blue-50: #eff6ff;
+            --blue-200: #bfdbfe;
+            --blue-900: #1e3a8a;
+            --green-50: #ecfdf5;
+            --green-200: #a7f3d0;
+            --green-700: #047857;
+            --amber-50: #fffbeb;
+            --amber-200: #fde68a;
+            --amber-800: #92400e;
+            --red-50: #fef2f2;
+            --red-200: #fecaca;
+            --red-700: #b91c1c;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-300: #d1d5db;
+            --neutral-400: #9ca3af;
+            --neutral-500: #6b7280;
+            --neutral-700: #374151;
+            --neutral-900: #111827;
+            --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f8fafc;
+            color: var(--neutral-900);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.55;
+        }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        aside {
+            display: none;
+        }
+
+        .brand {
+            margin: 0 0 28px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .nav-label {
+            margin: 18px 10px 8px;
+            color: var(--neutral-400);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            display: block;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: var(--neutral-700);
+            font-size: 14px;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            background: var(--sims-50);
+            color: var(--sims-900);
+        }
+
+        main {
+            padding: 32px;
+        }
+
+        .guide {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--sims-500);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.15;
+            letter-spacing: -.03em;
+        }
+
+        .subtitle {
+            max-width: 700px;
+            margin: 12px 0 0;
+            color: var(--neutral-500);
+            font-size: 15px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 8px;
+            background: white;
+            color: var(--neutral-900);
+            padding: 0 14px;
+            font-size: 14px;
+            font-weight: 750;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn.primary {
+            border-color: var(--sims-500);
+            background: var(--sims-500);
+            color: white;
+        }
+
+        .updated {
+            margin: 14px 0 0;
+            color: var(--neutral-400);
+            font-size: 12px;
+        }
+
+        section {
+            margin-top: 40px;
+        }
+
+        .short {
+            margin-top: 32px;
+            border: 1px solid var(--sims-300);
+            border-radius: 12px;
+            background: var(--sims-50);
+            padding: 18px;
+        }
+
+        .short h2,
+        section h2 {
+            margin: 0 0 10px;
+            font-size: 19px;
+            line-height: 1.25;
+            letter-spacing: -.01em;
+        }
+
+        .short ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--neutral-900);
+            font-size: 14px;
+        }
+
+        .short li + li {
+            margin-top: 6px;
+        }
+
+        .visual-summary {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .split-card {
+            overflow: hidden;
+            border: 1px solid var(--neutral-200);
+            border-radius: 14px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .split-card-header {
+            border-bottom: 1px solid var(--neutral-200);
+            background: var(--neutral-100);
+            padding: 12px 14px;
+            color: var(--neutral-500);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .comparison {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 86px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+
+        .comparison-label {
+            border-radius: 999px;
+            padding: 5px 9px;
+            font-size: 12px;
+            font-weight: 850;
+            text-align: center;
+        }
+
+        .comparison-label.old {
+            background: var(--red-50);
+            color: var(--red-700);
+        }
+
+        .comparison-label.new {
+            background: var(--green-50);
+            color: var(--green-700);
+        }
+
+        .comparison-box {
+            min-height: 56px;
+            border: 1px solid var(--neutral-200);
+            border-radius: 10px;
+            background: white;
+            padding: 10px 12px;
+        }
+
+        .comparison-box strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .comparison-box span {
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .swimlane {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            padding: 14px;
+        }
+
+        .lane {
+            position: relative;
+            display: grid;
+            align-content: start;
+            min-height: 160px;
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            padding: 14px;
+        }
+
+        .lane:not(:last-child)::after {
+            content: "→";
+            position: absolute;
+            top: 50%;
+            right: -16px;
+            z-index: 2;
+            display: grid;
+            width: 22px;
+            height: 22px;
+            transform: translateY(-50%);
+            place-items: center;
+            border: 1px solid var(--neutral-200);
+            border-radius: 999px;
+            background: white;
+            color: var(--neutral-500);
+            font-weight: 900;
+        }
+
+        .lane-tag {
+            width: max-content;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 850;
+            text-transform: uppercase;
+        }
+
+        .lane-tag.cx {
+            background: var(--blue-50);
+            color: var(--blue-900);
+        }
+
+        .lane-tag.tx {
+            background: var(--green-50);
+            color: var(--green-700);
+        }
+
+        .lane-tag.sims {
+            background: var(--sims-50);
+            color: var(--sims-900);
+        }
+
+        .lane h3 {
+            margin-top: 10px;
+        }
+
+        .lane p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 13px;
+        }
+
+        .decision-flow {
+            display: grid;
+            grid-template-columns: 1fr 44px 1fr;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .decision-node {
+            border: 1px solid var(--neutral-200);
+            border-radius: 14px;
+            background: white;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .decision-node.question {
+            border-color: var(--sims-300);
+            background: var(--sims-50);
+        }
+
+        .decision-options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option-card {
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            padding: 13px;
+        }
+
+        .option-card.good {
+            border-color: var(--green-200);
+            background: var(--green-50);
+        }
+
+        .option-card.stop {
+            border-color: var(--red-200);
+            background: var(--red-50);
+        }
+
+        .flow-arrow {
+            display: grid;
+            place-items: center;
+            color: var(--neutral-400);
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .section-label {
+            margin: 0 0 4px;
+            color: var(--neutral-400);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .section-copy {
+            max-width: 720px;
+            margin: 0 0 16px;
+            color: var(--neutral-500);
+            font-size: 14px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 15px;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 14px;
+        }
+
+        .card.blue {
+            border-color: var(--blue-200);
+            background: var(--blue-50);
+        }
+
+        .card.green {
+            border-color: var(--green-200);
+            background: var(--green-50);
+        }
+
+        .card.amber {
+            border-color: var(--amber-200);
+            background: var(--amber-50);
+        }
+
+        .card.red {
+            border-color: var(--red-200);
+            background: var(--red-50);
+        }
+
+        .step-list {
+            display: grid;
+            gap: 18px;
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 32px minmax(0, 1fr);
+            gap: 14px;
+        }
+
+        .step-no {
+            display: grid;
+            width: 32px;
+            height: 32px;
+            place-items: center;
+            border-radius: 999px;
+            background: var(--sims-50);
+            color: var(--sims-900);
+            font-weight: 800;
+        }
+
+        .step h3 {
+            margin: 2px 0 4px;
+            font-size: 15px;
+        }
+
+        .step p {
+            margin: 0;
+            color: var(--neutral-500);
+            font-size: 14px;
+        }
+
+        figure {
+            overflow: hidden;
+            margin: 16px 0 0;
+            border: 1px solid var(--neutral-200);
+            border-radius: 12px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .shot {
+            display: flex;
+            justify-content: center;
+            border-bottom: 1px solid var(--neutral-200);
+            background: var(--neutral-100);
+            padding: 0;
+        }
+
+        .shot img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        figcaption {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 14px;
+            color: var(--neutral-500);
+            font-size: 12px;
+        }
+
+        .real-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            background: var(--green-50);
+            color: var(--green-700);
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 12px;
+            background: white;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--neutral-100);
+            color: var(--neutral-500);
+            font-size: 11px;
+            letter-spacing: .07em;
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--neutral-200);
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        td strong {
+            color: var(--neutral-900);
+        }
+
+        .message {
+            white-space: pre-line;
+            border: 1px solid var(--green-200);
+            border-radius: 12px;
+            background: var(--green-50);
+            padding: 16px;
+        }
+
+        .message .bubble {
+            max-width: 700px;
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            background: white;
+            padding: 14px;
+            color: var(--neutral-900);
+            font-size: 14px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+        }
+
+        .footer {
+            margin-top: 52px;
+            border-top: 1px solid var(--neutral-200);
+            padding-top: 18px;
+            color: var(--neutral-400);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (max-width: 860px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            aside {
+                display: none;
+            }
+
+            main {
+                padding: 22px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .visual-summary,
+            .swimlane,
+            .decision-flow {
+                grid-template-columns: 1fr;
+            }
+
+            .lane:not(:last-child)::after {
+                top: auto;
+                right: 50%;
+                bottom: -17px;
+                transform: translateX(50%) rotate(90deg);
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+
+            .actions {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1;
+            }
+
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <main>
+            <article class="guide" data-testid="staff-guide-content">
+                <div class="topbar">
+                    <div>
+                        <p class="eyebrow">SIMS and Ripple · Tutor Requests</p>
+                        <h1>Tutor Approval vs Tutor Activation</h1>
+                        <p class="subtitle">
+                            Use this guide when CX Support needs to approve an Unverified tutor for one request while TX continues verification and commitment fee follow-up in Ripple Tutor Experience.
+                        </p>
+                    </div>
+                    <div class="actions">
+                        <a class="btn" href="#">Print Guide</a>
+                        <a class="btn primary" href="#">Download PDF</a>
+                    </div>
+                </div>
+                <p class="updated">Last updated 26 July 2026</p>
+
+                <section class="short">
+                    <h2>The short version</h2>
+                    <ul>
+                        <li>First confirm that Ripple shows Verification: Approved and the tutor remains Unverified only because the commitment fee is unpaid.</li>
+                        <li>CX Support can then approve the tutor for one specific Tutor Request.</li>
+                        <li>The tutor can work and be paid normally for that approved request, but remains globally Unverified and blocked from other requests.</li>
+                        <li>TX uses Ripple Tutor Experience to complete verification and commitment fee follow-up.</li>
+                        <li>Never manually change the tutor to Active or Verified. When payment settles and verification remains approved, SIMS updates the account automatically.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <p class="section-label">1. What changed</p>
+                    <h2>Approval and activation are now separate</h2>
+                    <p class="section-copy">
+                        Previously, staff sometimes changed a tutor from Unverified to Active in SIMS so the tutor could be accepted on a request. That mixed two different decisions. CX Support owns the request decision. TX owns verification and commitment fee follow-up. SIMS owns the final account transition after valid payment settlement.
+                    </p>
+
+                    <div class="grid-2">
+                        <div class="card blue">
+                            <h3>CX Support: approve for request</h3>
+                            <p>
+                                First confirm Ripple Verification is Approved. Then use the SIMS Tutor Request approval action. The exception applies only to that exact request.
+                            </p>
+                        </div>
+                        <div class="card green">
+                            <h3>TX: complete verification and fee follow-up</h3>
+                            <p>
+                                Use Ripple Tutor Experience to correct allowed information, approve completed verification, share the FIUU link, or submit offline evidence.
+                            </p>
+                        </div>
+                        <div class="card amber">
+                            <h3>Finance: confirm payment evidence</h3>
+                            <p>
+                                A different Finance reviewer confirms or rejects offline evidence. FIUU settlement needs no separate Finance confirmation.
+                            </p>
+                        </div>
+                        <div class="card red">
+                            <h3>Never manually change the account status</h3>
+                            <p>
+                                Request approval does not make the tutor globally Verified. SIMS applies the final transition only after valid settlement while verification remains approved.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="section-label">2. What staff will see</p>
+                    <h2>Use the request approval workflow, then follow up in Ripple</h2>
+                    <p class="section-copy">
+                        These are the actual screens for this workflow. The examples use safe test records.
+                    </p>
+
+                    <figure>
+                        <div class="shot">
+                            <img
+                                src="screenshots/sims-request-exception-dialog.png"
+                                alt="SIMS request approval modal warning that the tutor remains Unverified and requiring a reason, staff note, acknowledgement, and Approve Tutor for This Request action."
+                            >
+                        </div>
+                        <figcaption>
+                            <span class="real-badge">Actual SIMS screen (test record)</span>
+                            After checking that Ripple Verification is Approved, CX Support records why the Unverified tutor is being approved for this request. The modal states that the tutor remains Unverified and that TX must follow up on the commitment fee.
+                        </figcaption>
+                    </figure>
+
+                    <figure>
+                        <div class="shot">
+                            <img
+                                src="screenshots/tutor-experience-worklist-request-exception.png"
+                                alt="Ripple Tutor Experience worklist showing an approved tutor with a pending commitment fee, an Unverified account, and a request exception follow-up flag."
+                            >
+                        </div>
+                        <figcaption>
+                            <span class="real-badge">Actual Ripple screen (test record)</span>
+                            The approved tutor stays visible in Tutor Experience with a request exception flag. TX can see that the RM100 commitment fee still needs follow-up.
+                        </figcaption>
+                    </figure>
+
+                    <figure>
+                        <div class="shot">
+                            <img
+                                src="screenshots/tutor-experience-request-exception-history.png"
+                                alt="Ripple tutor detail showing Approved, Pending, and Unverified statuses with request-specific approval history and the CX Support approver."
+                            >
+                        </div>
+                        <figcaption>
+                            <span class="real-badge">Actual Ripple screen (test record)</span>
+                            The tutor detail keeps the request-specific approval as an audit record. It shows the exact tutor request, reason, note, and CX Support approver without changing the tutor account to Active.
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section>
+                    <p class="section-label">3. Daily workflow</p>
+                    <h2>What each team should do</h2>
+                    <div class="step-list">
+                        <div class="step">
+                            <span class="step-no">1</span>
+                            <div>
+                                <h3>Confirm TX has approved the tutor verification</h3>
+                                <p>Open the tutor in Ripple Tutor Experience. Continue only when Verification shows Approved and the account remains Unverified because the commitment fee is unpaid. If verification is not Approved, stop and ask TX to complete the review.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-no">2</span>
+                            <div>
+                                <h3>CX Support approves the tutor for the request</h3>
+                                <p>Review suitability for the parent request. If suitable, click Approve in the SIMS Tutor Request workflow. Select a truthful reason, add a clear staff note, confirm the acknowledgement, and choose Approve Tutor for This Request.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-no">3</span>
+                            <div>
+                                <h3>Keep the tutor account Unverified while the fee is unpaid</h3>
+                                <p>The approval covers only the named Tutor Request. The tutor can work and be paid for that request. Other requests remain blocked unless CX Support repeats this approval workflow for each request. The exception and staff reason are not shown to the tutor or parent.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-no">4</span>
+                            <div>
+                                <h3>TX continues commitment fee follow-up</h3>
+                                <p>TX uses Ripple Tutor Experience to share the official FIUU link or submit offline evidence. For tutor payout deduction, submit evidence only after the full RM100 has already been deducted from processed tutor payments.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-no">5</span>
+                            <div>
+                                <h3>Let SIMS complete the account transition</h3>
+                                <p>When payment settles and verification remains approved, SIMS updates the tutor automatically. Staff must not manually change the tutor to Active or Verified.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="section-label">4. Do and do not</p>
+                    <h2>Use the right action</h2>
+                    <div class="grid-2">
+                        <div class="card green">
+                            <h3>Do</h3>
+                            <p>Approve the tutor for the request through the request workflow when CX Support decides the tutor is suitable.</p>
+                        </div>
+                        <div class="card red">
+                            <h3>Do not</h3>
+                            <p>Do not change the tutor to Active in SIMS just because CX Support needs to approve the tutor for a request.</p>
+                        </div>
+                        <div class="card green">
+                            <h3>Do</h3>
+                            <p>Let TX continue verification and commitment fee follow-up in Ripple while the tutor remains Unverified.</p>
+                        </div>
+                        <div class="card red">
+                            <h3>Do not</h3>
+                            <p>Do not manually set Active or Verified, and do not treat a planned or partial payout deduction as settled.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="section-label">5. Troubleshooting</p>
+                    <h2>When staff are unsure</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>If this happens</th>
+                                <th>Meaning</th>
+                                <th>Do this</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Tutor is Unverified but suitable for the request</strong></td>
+                                <td>The exception is available only after TX has approved verification and the commitment fee remains unpaid.</td>
+                                <td>Check Ripple first. If Verification is Approved, CX Support may use the Tutor Request approval action. Keep the account Unverified.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ripple Verification is not Approved</strong></td>
+                                <td>The tutor is not ready for the request exception workflow.</td>
+                                <td>Do not approve the tutor for the request and do not change the account status. Ask TX to complete the verification review.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Staff wants to change Unverified to Active</strong></td>
+                                <td>This is usually the old shortcut.</td>
+                                <td>Do not change the status. If the need is request approval, use the Tutor Request approval workflow. SIMS handles final verification automatically after settlement.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Commitment fee will be deducted from tutor payout</strong></td>
+                                <td>This stays manual for now.</td>
+                                <td>Track the deduction manually. Submit deduction evidence only after the full RM100 has already been deducted from processed tutor payments.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment proof does not match SIMS state</strong></td>
+                                <td>Finance owns the financial decision.</td>
+                                <td>Send it through the proper Finance review or FIUU exception path. Do not activate from a technical retry alone.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <p class="section-label">6. Staff message</p>
+                    <h2>Copy this when reminding the team</h2>
+                    <div class="message">
+                        <div class="bubble">Hi team, reminder for tutor approval and activation.
+
+Before approving an Unverified tutor, check Ripple Tutor Experience. Continue only when Verification shows Approved and the commitment fee is still unpaid. If verification is not Approved, ask TX to complete the review first.
+
+CX Support should then use the SIMS Tutor Request approval workflow. Do not manually change the tutor from Unverified to Active or Verified.
+
+CX Support owns the request approval decision.
+TX owns tutor verification and commitment fee follow-up in Ripple Tutor Experience.
+
+The approval covers only that specific Tutor Request. The tutor can work and be paid normally for that request, but remains Unverified and blocked from other requests.
+
+Do not manually change the tutor to Active or Verified. When payment settles and verification remains approved, SIMS updates the account automatically.</div>
+                    </div>
+                </section>
+
+                <p class="footer">Sifututor internal use. Do not share staff-only pages publicly.</p>
+            </article>
+        </main>
+    </div>
+</body>
+</html>

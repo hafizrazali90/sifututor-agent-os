@@ -7,13 +7,24 @@
 !README.md
 !AGENTS.md
 
-# Track shared playbooks.
+# Track workspace documents (playbooks, product/QA references, staff guides,
+# analytics packets, partnership decks) so the team can refer to them.
 !docs/
-docs/*
-!docs/agent-playbooks/
-!docs/agent-playbooks/**
-!docs/onboarding/
-!docs/onboarding/**
+!docs/**
+
+# Client and programme packages live in Learnest-Lab/papertrail, not here.
+# See docs/README.md.
+docs/ai-classroom-concept/
+docs/tekun-collection-*
+docs/sifututor-ecosystem-*
+docs/sourcebook-assets/
+docs/kesuma-ecosystem-research-*
+
+# Rebuildable output: regenerate from the tracked sources instead.
+docs/**/screenshots/
+docs/**/rendered/
+docs/**/*.zip
+docs/**/* 2/
 
 # Track shared guard scripts.
 !scripts/
