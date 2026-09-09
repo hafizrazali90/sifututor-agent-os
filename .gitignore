@@ -7,13 +7,18 @@
 !README.md
 !AGENTS.md
 
-# Track shared playbooks.
+# Track shared playbooks and reference documents (decks, sourcebooks,
+# research, handoffs) so the team can refer to them for future projects.
 !docs/
-docs/*
-!docs/agent-playbooks/
-!docs/agent-playbooks/**
-!docs/onboarding/
-!docs/onboarding/**
+!docs/**
+# Partner-supplied commercial material stays local.
+docs/ai-classroom-concept/partner/
+# Third-party source documents (copyright, size) and archives stay local.
+docs/ai-classroom-concept/sources/*.pdf
+docs/**/*.zip
+# Rendered screenshot evidence is reproducible from the sources.
+docs/**/screenshots/
+docs/**/rendered/
 
 # Track shared guard scripts.
 !scripts/
