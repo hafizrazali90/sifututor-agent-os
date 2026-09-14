@@ -66,7 +66,12 @@ order.
    request stack if adopted) drawn from Me+'s measured behaviour, and a
    short list of the screens that adopt an interactive concept. Not every
    screen; the ones where a gesture or a transition carries meaning.
-3. **Decision audit.** Every decision he made in the walk-throughs traced
+3. **Copy audit.** The writer (`autopilot-copy`) goes through every string on
+   every page in the library, both languages, against the glossary and the
+   style rules, and returns one copy table per page with the changes. Runs
+   concurrently from 14/09/2026 on the pages already drawn, and on each new
+   flow's final export.
+4. **Decision audit.** Every decision he made in the walk-throughs traced
    to the boards it belongs on, applied there properly, and nowhere it does
    not belong. His words: never overdo. A rule sprinkled everywhere is as
    wrong as a rule missed.
