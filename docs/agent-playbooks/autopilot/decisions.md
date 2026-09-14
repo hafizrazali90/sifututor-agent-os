@@ -42,3 +42,12 @@ A runner that is itself a subagent launches its lanes, twins and verifier
 blocking (`run_in_background: false`), because a subagent's background
 children notify the main session, not the subagent; the first parallel
 runner stalled waiting for a notice that could never reach it (14/09/2026).
+
+## Missing backend, decided 14/09/2026
+
+The runs so far treated a dead column as a reason not to draw (Being worth
+picking decision 8). Hafiz reversed that on the intro video: the redesign
+exists to make the app better, and a missing route or column is a ticket
+to build. From now on a feature that serves the tutor is drawn and its
+table row names the backend work; the system section still records what
+exists today, and copy never promises what is not built (B21). Rule E9.
