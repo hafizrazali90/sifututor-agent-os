@@ -82,3 +82,12 @@ order.
    to the boards it belongs on, applied there properly, and nowhere it does
    not belong. His words: never overdo. A rule sprinkled everywhere is as
    wrong as a rule missed.
+
+## What we refuse to build, 14/09/2026
+
+From the engagement reference pass, with sources: no points or badges
+without cash meaning, which is the exact thing Uber drivers resented in the
+2017 New York Times investigation; no leaderboard against other tutors,
+given Human Rights Watch's and the FTC's findings on opaque gig scoring; no
+confetti on money moving; no streak that punishes a week a tutor did not
+control; no fake urgency. A tutor is earning a living, not playing.
