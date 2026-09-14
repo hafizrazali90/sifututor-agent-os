@@ -92,3 +92,35 @@ The scoreboard in `learning.md` records rounds and findings per flow.
 Becoming verified took three rounds and 67 findings with neither of these in
 place. Being worth picking is the first flow with both. If its round count
 does not drop, the checks are wrong, not the reviewers.
+
+## After Getting work, 14/09/2026
+
+Seven review rounds across two parts, 119 findings raised, 104 confirmed,
+10 wrong. More rounds than the flow before it, for a reason worth keeping:
+Hafiz changed the design's shape twice mid-run, which no amount of
+pre-flight would have prevented and which produced the better flow. Sorted
+by cause, excluding those two:
+
+| Cause | Share | What now catches it |
+|---|---|---|
+| A rule applied on one board and not its siblings | a third | Pre-flight checks 9 to 14; the rules step before drawing |
+| Two boards showing the same request with different facts | a fifth | Check 13, one request one set of facts |
+| A control or a toast below the fold | a tenth | Check 14, a control a tutor must reach ends above 812 |
+| A variant named in the table and never drawn | a tenth | The table is read back board by board before export |
+| Copy claiming more than the data holds | a tenth | The writer, on the table before drawing and on the export |
+| Execution slips (clipped, placeholder, overlap) | the rest | Looking at the export, every round |
+
+Four things change in the run:
+
+- **The writer is a step, not an option.** `autopilot-copy` writes the copy
+  table from the board table before anything is drawn, and audits the
+  export. On this flow it cut two unsourced claims, caught eleven Malay
+  register errors and found the app translating text the backend never
+  translates.
+- **A rule conflict gets a reference pass, not a question.** When the stack
+  card needed something the flat card rule forbids, measuring Tinder and
+  five flat design systems answered it in one pass and the rule survived.
+- **Every board is a phone screen.** At least 812, taller boards mark the
+  fold, and no control a tutor must reach sits below it.
+- **Clone in one call, edit in the next.** Instance text in a same-script
+  clone silently ignores edits (B19, third trap).

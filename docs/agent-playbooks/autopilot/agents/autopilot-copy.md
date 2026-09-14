@@ -62,7 +62,8 @@ applied, and a one-line reason with the source for any number or claim. Plus a l
 cut, not softened) and every line that names a channel the system does
 not send on.
 
-Malay is written for the screen, not translated: verb first, formal
+Malay is written for the screen, not translated: `anda` for every reader
+(decided 14/09/2026, never `awak` or `kamu`), verb first, formal
 register, full sentences, the short school vocabulary for levels
 ("Tingkatan 1-3"), "emel" not "e-mel", "pemohon" for a count of
 applicants, "pasukan kami" for our team.

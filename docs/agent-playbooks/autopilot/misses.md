@@ -34,3 +34,22 @@ the twin, the flow, what it claimed, what was actually there.
 ## Getting work, round 3 (14/09/2026)
 
 No wrong findings. Two taste calls (the empty-list object, the Malay pitch register) went forward as opinions and were taken.
+
+## Getting work, round 4 (14/09/2026)
+
+| Twin | Finding | Why it was wrong |
+|---|---|---|
+| Claude | The spec contradicts itself on the empty-list object | Round 2's dated entry said magnifier; round 3's entry and the table say tray. Revision history, not a live contradiction |
+| Claude | Settings and account, round 2: the bell on the Turn on notifications sheet is from a different artwork family, glossy, saturation 0.71 against 0.27 to 0.57 for the pack | bell.png is in the licensed pack folder with its Blender source. Measured across the whole pack, pin 0.71, trophy 0.69 and idea 0.69 sit beside the bell at 0.72; the twin sampled the five palest objects and called them the pack |
+
+## Getting work, round 5 and the stack round 1 (14/09/2026)
+
+No wrong findings in either. The stack round's object suggestion (an abacus on a kind-2 empty state) conflicted with patterns.md 12, so a line glyph was used instead; recorded as taken with a change, not as wrong.
+
+## Getting work, the stack rounds 1 and 2 (14/09/2026)
+
+| Twin | Finding | Why it was wrong |
+|---|---|---|
+| Claude | The empty tray on board 33 repeats board 12's object | The board table asks for exactly that, the same meaning on both: nothing has arrived |
+| Codex | The Got it box overlaps the round buttons by 8px | They touch, 0 to 1px; the lack of clearance was real, the figure was not |
+| Claude | Two counts open with a digit | No such rule existed when raised; it was added to the glossary afterwards |
