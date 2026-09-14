@@ -66,11 +66,18 @@ order.
    request stack if adopted) drawn from Me+'s measured behaviour, and a
    short list of the screens that adopt an interactive concept. Not every
    screen; the ones where a gesture or a transition carries meaning.
-3. **Copy audit.** The writer (`autopilot-copy`) goes through every string on
-   every page in the library, both languages, against the glossary and the
-   style rules, and returns one copy table per page with the changes. Runs
-   concurrently from 14/09/2026 on the pages already drawn, and on each new
-   flow's final export.
+3. **Copy audit, the whole app, last.** Hafiz, 14/09/2026: "make sure to
+   audit all copy with the writer agent once all finish". So the writer
+   (`autopilot-copy`) runs once more at the end across EVERY page in the
+   library, both languages, after the last flow and after every addendum,
+   even pages it has already audited, because late decisions change strings
+   on pages that were signed off earlier. It returns one copy table per
+   page, and the run is not finished until every table is applied or its
+   rows are answered. Per-flow audits during the run do not replace it.
+
+   Audited so far, and needing the final pass again: Becoming verified,
+   Being worth picking, Getting work. Never audited yet: Teaching a class,
+   Getting paid, Asking staff, Settings and account, and every addendum.
 4. **Decision audit.** Every decision he made in the walk-throughs traced
    to the boards it belongs on, applied there properly, and nowhere it does
    not belong. His words: never overdo. A rule sprinkled everywhere is as
