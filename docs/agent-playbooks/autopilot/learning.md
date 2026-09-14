@@ -35,7 +35,7 @@ any of it works.
 | Flow | Boards | Findings raised | Confirmed | Wrong | Rounds | Escapes |
 |---|---|---|---|---|---|---|
 | Teaching a class | 23 | | | | 3 | |
-| Getting paid | 16 | | | | 4 | |
+| Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
 
 **Escapes is the number that matters.** Everything else is process. If
@@ -57,3 +57,19 @@ The eight checks can grow. The rules can grow. But a decision recorded in a
 flow spec as his is never quietly reversed by a later run. If a new fact
 contradicts an old decision of his, the run keeps his decision, draws it his
 way, and puts the contradiction in the decision log.
+
+## Rules this system has produced
+
+Written here so the count is visible. Each one exists because something got
+through and had to be caught by hand.
+
+| Run | Rule added | What caused it |
+|---|---|---|
+| Getting paid, round 4 | B15, a total and its parts must describe the same set | A chart head of RM3,412.00 over bars adding to RM2,220 |
+| Getting paid, round 4 | B16, a colour that means something must be named | A highlight that turned out not to exist |
+| Getting paid, round 4 | B17, the common case is a variant too | Every slip board had an adjustment; most slips have none |
+| Getting paid, round 4 | B18, trust the render, not the bounding box | A label that measured as fitting and clipped on export |
+
+B16 and B18 are the two that came out of a twin being wrong rather than
+right, which is the pattern worth watching: a bad measurement usually sits on
+top of a real complaint.
