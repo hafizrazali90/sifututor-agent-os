@@ -37,7 +37,7 @@ any of it works.
 | Teaching a class | 23 | | | | 3 | |
 | Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
-| Becoming verified | 29 | 22 | 21 | 0 | 2 so far | not yet reviewed |
+| Becoming verified | 33 | 44 | 39 | 1 | 3 so far | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
