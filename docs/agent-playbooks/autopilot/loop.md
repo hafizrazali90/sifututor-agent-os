@@ -1,0 +1,61 @@
+# The run
+
+One flow at a time. Six agents. The chat draws and decides.
+
+## Before drawing, once
+
+Three agents in parallel. None of them sees the others' work, so none of
+them anchors on it.
+
+| Agent | Question |
+|---|---|
+| `autopilot-data` | What really happens, in numbers |
+| `autopilot-system` | What exists, what the backend can do, what it costs staff |
+| `autopilot-reference` | How the best apps solve this, named and measured |
+
+The chat reads all three and writes the flow's spec: the facts, then a
+decision per question with the options, the number behind it, the reference
+app, and the reason. Assumptions are stated as assumptions.
+
+## Drawing
+
+The chat draws every board in Figma, on one page per flow, in three
+sections: happy path, alternates, Malay. Then re-lays the page so no board
+overlaps its neighbour, exports each board, and builds one contact sheet.
+
+Before any review, the chat runs its own pre-flight from
+`design/design-review-rules.md` section A. Anything found there is fixed
+without reporting it.
+
+## Review, up to five rounds
+
+Each round:
+
+1. `autopilot-twin` on Claude and the Codex twin run **in parallel and
+   blind**, on the same contact sheet and spec. Neither sees the other's
+   findings. Neither sees the conversation.
+2. `autopilot-verifier` takes both lists and marks each finding CONFIRMED,
+   WRONG or UNCHECKABLE, and reports DRIFT between the spec and the boards.
+3. The chat fixes every CONFIRMED and every DRIFT. It decides on
+   UNCHECKABLE ones and writes the reason. It ignores WRONG ones and logs
+   them.
+4. Re-export, re-shoot, next round.
+
+Stop when both twins return nothing, or at five rounds. Anything still open
+at five goes into the decision log as an open question with what each twin
+said, and the run moves on. It never waits for Hafiz.
+
+## After
+
+- Every decision is in the flow's spec, dated, with its reason.
+- The contact sheet is in `design/research/`.
+- The decision log for the review pack is written.
+- Everything is committed.
+- The scoreboard in `learning.md` is updated.
+
+## What never stops the run
+
+Nothing. A decision that would once have been a question becomes a row in
+the decision log marked **needs Hafiz**, with the option taken, why, and
+what hangs on it. The boards affected are named so he can see the blast
+radius of changing his mind.
