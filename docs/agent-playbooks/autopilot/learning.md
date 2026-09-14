@@ -37,7 +37,7 @@ any of it works.
 | Teaching a class | 23 | | | | 3 | |
 | Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
-| Becoming verified | 33 | 44 | 39 | 1 | 3 so far | not yet reviewed |
+| Becoming verified | 37 | 67 | 62 | 1 | 4 so far | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
@@ -74,6 +74,9 @@ through and had to be caught by hand.
 | Becoming verified, round 1 | B20, a number has a source or it is not on the screen | Three invented durations after decision 7 had deleted one |
 | Becoming verified, round 1 | B21, never promise a channel the system does not send on | "and by SMS" copied from Grab Driver |
 | Becoming verified, round 1 | B22, one glyph, one meaning | The done tick bulleting rules |
+
+| Becoming verified, round 3 | B4 amended, the bar pins only when content fills the screen | Eleven boards with 140 to 310pt of dead space |
+| Becoming verified, after round 3 | The board table before drawing, and the automated pre-flight | Half of 67 findings were written rules not applied |
 
 B16 and B18 are the two that came out of a twin being wrong rather than
 right, which is the pattern worth watching: a bad measurement usually sits on
