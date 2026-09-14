@@ -124,3 +124,33 @@ Four things change in the run:
   fold, and no control a tutor must reach sits below it.
 - **Clone in one call, edit in the next.** Instance text in a same-script
   clone silently ignores edits (B19, third trap).
+
+## After Settings and account, 14/09/2026
+
+Five rounds, 33 boards, 62 findings, 53 confirmed, 1 wrong. The flow was
+picked up mid-run by a second session after the first hit a model limit,
+which is itself a finding: everything the next session needed was on disk
+(the three lane reports, the spec with its board table, the frozen round
+sheets and the twin reports beside them), so it resumed at the verifier
+rather than at research. Keep writing those files even when nothing seems to
+need them.
+
+Sorted by cause:
+
+| Cause | Share | What now catches it |
+|---|---|---|
+| The document and the boards disagreed: a change log claiming a fix that was never drawn, a renamed string left in the table and in two sibling specs | about a third | Pre-flight check 15, the banned-string list, for the strings. For the rest: the change log is written after the export, and every rename is applied to the specs in the same pass as the boards |
+| A screen or variant nobody owned: the un-verified Profile, the unsaved-work sheet, one preference switched off, the third mode, the unfiltered list | a quarter | The Empty and Header columns already exist; add a **status** row to the board table for any flow with a tab root, naming what the screen shows at each account state, and a row per value of any enumerated field the code holds |
+| Copy that promised what the backend does not send | a sixth | The copy pass now reads the backend's category or job map before it writes a line that names a message. Three of these were in one card |
+| A written rule not applied: the ink placeholder, the tertiary empty values, the sheet clearance, the scrim colour | a sixth | Pre-flight checks exist for the colour rules; the scrim and the sheet clearance are new candidates, both measurable from the node tree |
+| Execution slips: the fold through text, the toast over a value, a cloned card bringing its old subtitles | the rest | Looking at the export, which caught two of the three before the twins did |
+
+Two things change in the table for the next flow:
+
+- **A status row.** Any flow that draws a tab root draws it once per account
+  state the tutor can be in. Settings drew a verified Profile for three
+  rounds and had nothing for the 23,299 tutors who are not verified.
+- **A row per enumerated value.** When the code holds an enum, the table
+  gets one row per value before drawing. Two of three modes were drawn for
+  four rounds because nobody wrote the third row.
+

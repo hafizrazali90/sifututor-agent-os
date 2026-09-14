@@ -53,3 +53,15 @@ No wrong findings in either. The stack round's object suggestion (an abacus on a
 | Claude | The empty tray on board 33 repeats board 12's object | The board table asks for exactly that, the same meaning on both: nothing has arrived |
 | Codex | The Got it box overlaps the round buttons by 8px | They touch, 0 to 1px; the lack of clearance was real, the figure was not |
 | Claude | Two counts open with a digit | No such rule existed when raised; it was added to the glossary afterwards |
+
+## Settings and account, rounds 3 and 4 (14/09/2026)
+
+Round 3: no wrong findings. Two judgment calls went forward as opinions and
+were both taken, one of them with a different fix: "Your profile is
+complete" over four ticked rows was changed, and the full progress bar went
+with it, because the heading and the bar measured different things.
+
+| Twin | Finding | Why it was wrong |
+|---|---|---|
+| Codex | Board 28's area sheet shows a blank list, against patterns.md 9's "never a blank list" | That sentence sits under the no-results state and governs a query that matched nothing. Board 28 has no query yet. The gap it pointed at was real for a different reason: no board drew the unfiltered long list, which the other twin's B14 finding caught, so 28 now carries it |
+

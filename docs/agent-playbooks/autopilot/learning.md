@@ -40,6 +40,7 @@ any of it works.
 | Becoming verified | 39 | 110 | 96 | 3 | 5 | awaiting his review |
 | Being worth picking | 25 | 71 | 59 | 2 | 4 | not yet reviewed |
 | Getting work | 43 | 119 | 104 | 10 | 5 + 2 | not yet reviewed |
+| Settings and account | 33 | 62 | 53 | 1 | 5 | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
@@ -86,6 +87,10 @@ through and had to be caught by hand.
 | Being worth picking, round 4 | A rule fixed on one flow is checked on its sibling by the pre-flight, not by memory | patterns.md 8 was fixed on flow 1's hubs in its round 4 and drawn wrong on flow 2's; pre-flight check 9 |
 | Getting work, round 3 | A writer joins: `autopilot-copy` writes every string per reader (tutor, parent, staff), English and Malay, before drawing and after each export | Copy escaped in two flows running: an approval rate the data did not hold (flow 2), "most" over an average, platform-side wording, Malay mapped from English (flow 3). Hafiz asked for a narrative and copy expert per audience on 14/09/2026 |
 | Getting work, the stack, round 2 | Clone in one call, edit in the next: instance text in a same-script clone ignores the edit | Two Malay boards kept English chips though the script reported the change (B19, third trap) |
+| Settings and account, round 4 | Pre-flight check 15, a banned-string list taken from `copy-glossary.md`: a string the glossary retires can never be drawn again | A Malay board drawn fresh in round 3 shipped "Sentiasa dihantar" the same round the glossary banned it, because only a reviewer was checking. The glossary was a document nothing enforced |
+| Settings and account, round 4 | The fold is two marks in the page gutters at 812, never a rule across the content | The full-width dashed line read as a strike-through on four boards, worst through a paragraph of a legal document |
+| Settings and account, round 4 | A board covered by a half sheet is exempt from the empty-tail check | The pre-flight blocked the new discard-sheet board for 450pt of "empty" screen that a sheet was sitting on |
+| Settings and account, round 5 | Copy that names what a notification sends is checked against the backend's own category map, not against what the row is called | Three rows promised messages the code does not send: verification updates in the always-on tier, a slip-ready notification that belongs to parents, and "classes" where the category sends requests |
 | Being worth picking, after round 4 | Pre-flight checks 10 and 11 (comparative claims, the same object twice), chevron rows in the destinations list; the table gains a Header column and an empty-state row per editor; the runner reads previous flows' rules before drawing | "Approved far more often" with no rate behind it; the About you book reused for the Quran row; a chevron with nowhere to go; the Profile named as the first hero candidate and drawn standard for four rounds; empty states drawn in round 3 |
 
 B16 and B18 are the two that came out of a twin being wrong rather than
