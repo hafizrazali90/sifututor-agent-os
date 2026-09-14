@@ -81,3 +81,14 @@ Nothing. A decision that would once have been a question becomes a row in
 the decision log marked **needs Hafiz**, with the option taken, why, and
 what hangs on it. The boards affected are named so he can see the blast
 radius of changing his mind.
+
+## A rule conflict gets a reference pass, not a question
+
+Hafiz, 14/09/2026: "why dont u check how other app are doing similar
+section then we follow and adapt to our current design". When a new pattern
+needs something a written rule forbids (the stack card against the flat
+card rule), the run does not stop and ask him to arbitrate. It measures how
+the apps that solve the same problem do it, including apps whose systems
+share our constraint, then brings him the evidence with a recommendation,
+or adapts without breaking the rule at all. The question, if one is still
+needed, arrives with the measurements attached.
