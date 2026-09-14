@@ -51,3 +51,22 @@ exists to make the app better, and a missing route or column is a ticket
 to build. From now on a feature that serves the tutor is drawn and its
 table row names the backend work; the system section still records what
 exists today, and copy never promises what is not built (B21). Rule E9.
+
+## Closing passes, decided 14/09/2026
+
+Hafiz: once every flow is drawn, three passes run before build, in this
+order.
+
+1. **Consistency.** One name per thing, one component per job, every rule
+   applied on every sibling (the fold, the checklist tones, the pay line,
+   the glossary), across all flow pages. The pre-flight runs on every page;
+   the twins review the whole app as one sheet.
+2. **Interaction and motion, like Me+.** A motion spec per pattern (sheet,
+   coloured page, checklist, card open, toast, the Chosen celebration, the
+   request stack if adopted) drawn from Me+'s measured behaviour, and a
+   short list of the screens that adopt an interactive concept. Not every
+   screen; the ones where a gesture or a transition carries meaning.
+3. **Decision audit.** Every decision he made in the walk-throughs traced
+   to the boards it belongs on, applied there properly, and nowhere it does
+   not belong. His words: never overdo. A rule sprinkled everywhere is as
+   wrong as a rule missed.
