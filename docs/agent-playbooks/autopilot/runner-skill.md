@@ -34,14 +34,19 @@ app, and the reason. Anything you cannot settle from evidence goes in the
 decision log marked **needs Hafiz** with the option you took. You do not stop
 for it.
 
-## Step 3, draw
+## Step 3, the board table, then draw
 
-Every board: happy path, every alternate, every edge case, plus Malay. Then
+Write one row per board in the spec first, per
+`~/Projects/Sifututor/docs/agent-playbooks/autopilot/board-spec.md`: action and
+colour, state, every tap and its destination, every number and its source.
+
+Then every board: happy path, every alternate, every edge case, plus Malay. Then
 re-lay the page per `design/figma-map.md`. Export each board. Build one
 contact sheet.
 
-Run the section A checks from `design-review-rules.md` yourself and fix what
-you find without reporting it.
+Run `design/scripts/preflight.figma.js` on the page through `use_figma` and fix
+everything it reports. Export only on an empty report. Then section A of
+`design-review-rules.md` by eye.
 
 ## Step 4, review, up to five rounds
 
@@ -60,6 +65,9 @@ Stop when both twins return nothing or at five rounds.
 ## Step 5, hand back
 
 - Update `learning.md`: the scoreboard row, any new rule, any new check.
+- Retrospect before the next flow: sort every finding by cause, add the
+  preventable ones to the pre-flight or the board table, and record what
+  changed. The next flow's round count is the test.
 - Commit everything.
 - Then, in chat: the contact sheet opened on screen, the decisions in plain
   words with the number behind each, what needs him, and what is still open.

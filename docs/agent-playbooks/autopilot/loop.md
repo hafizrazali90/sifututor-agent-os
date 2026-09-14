@@ -17,15 +17,27 @@ The chat reads all three and writes the flow's spec: the facts, then a
 decision per question with the options, the number behind it, the reference
 app, and the reason. Assumptions are stated as assumptions.
 
+## Before drawing, the board table
+
+One row per board in the flow spec, per `board-spec.md`: the one action and
+its colour, the state it shows, every tap and where it goes, every number
+and its source. Nothing is drawn until its row exists. This came out of
+Becoming verified, where half of 67 findings were written rules not applied
+and a fifth were taps with no destination.
+
 ## Drawing
 
 The chat draws every board in Figma, on one page per flow, in three
 sections: happy path, alternates, Malay. Then re-lays the page so no board
 overlaps its neighbour, exports each board, and builds one contact sheet.
 
-Before any review, the chat runs its own pre-flight from
-`design/design-review-rules.md` section A. Anything found there is fixed
-without reporting it.
+Before any export, the chat runs `design/scripts/preflight.figma.js` on the
+page and fixes everything it reports. It checks the rules reviewers have
+already caught once: button colour by verb, the done tick outside a done row,
+white cards without an edge, tertiary on a pastel, counts as words, unbound
+white wrappers, empty space above the bar, overlap, and lists every text
+button for the destinations column. The export happens only on an empty
+report. Then section A of `design-review-rules.md` by eye.
 
 ## Review, up to five rounds
 
