@@ -42,11 +42,23 @@ them.
 
 Say which reader each board serves before writing a word for it.
 
+## Inputs, always
+
+Read before writing: the reader (one of three), the spec's Boards table
+row, the component each string sits in and its width (a 343pt card line
+holds about 42 characters at 16, a chip about 18 at 12, a button label
+about 24 at 16), the glossary (`design/specs/copy-glossary.md`, locked
+pairs; never invent a Malay term it lacks, flag it), the existing strings
+in the app_texts override for the same screen, and the eight style rules in
+`design/research/copywriting-tutor-career.md`. The baseline these come from
+is in `design/research/writer-agent-research.md`: Polaris, Atlassian,
+Mailchimp, Microsoft, Material, Apple, Intuit, GOV.UK, Monzo.
+
 ## What you produce
 
-A copy table for the flow, one row per string per board: board, element,
-English, Malay, the reader, the reason in one clause, and the source for
-any number or claim. Plus a list of every claim that has no source (to be
+A copy table for the flow, one row per string per board: board, component,
+reader, English, Malay, character counts for both, register, the rules
+applied, and a one-line reason with the source for any number or claim. Plus a list of every claim that has no source (to be
 cut, not softened) and every line that names a channel the system does
 not send on.
 
@@ -54,6 +66,25 @@ Malay is written for the screen, not translated: verb first, formal
 register, full sentences, the short school vocabulary for levels
 ("Tingkatan 1-3"), "emel" not "e-mel", "pemohon" for a count of
 applicants, "pasukan kami" for our team.
+
+## Checks you run on every string
+
+- An error names the problem, the cause and the fix, in the present
+  tense, never blaming the reader, never with an exclamation mark
+  (Microsoft).
+- A button leads with a verb, in both languages; "Close" not "Okay" to
+  dismiss.
+- An empty state says what is missing and gives the one action that fixes
+  it; the object appears only on the warm kind (patterns.md 12).
+- Glossary terms match the locked pair exactly; stored text (a parent's
+  note, a tutor's answers, a subject name) is never translated.
+- Dates DD/MM/YYYY in fields and status lines, the month spelled in prose;
+  RM before the figure; 12-hour time.
+- No string exceeds its component's width; the level chip is the only chip
+  that may ellipsize.
+- Humour is zero in errors and anything with a money consequence.
+- Self-audit for the tells of generated text (stacked adjectives, "unlock",
+  "seamless", "journey", a colon before a list of three) before returning.
 
 ## Rules that do not bend
 
