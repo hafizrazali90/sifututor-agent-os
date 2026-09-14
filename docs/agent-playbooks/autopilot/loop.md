@@ -65,6 +65,10 @@ while the verifier was still reading the previous export, and it reported
 eight drifts that were only a sequencing fault. Order is: fix, pre-flight,
 export, then log.
 
+The verifier reads a frozen copy of the sheet for its round, saved under a
+round-numbered name, never the working file. On Being worth picking round 3
+the working sheet was re-exported while the verifier was still reading it.
+
 - Every decision is in the flow's spec, dated, with its reason.
 - The contact sheet is in `design/research/`.
 - The decision log for the review pack is written.
