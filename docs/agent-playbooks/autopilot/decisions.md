@@ -37,3 +37,8 @@ Order agreed: Getting work with Settings and account; Reporting on a student
 with Getting told; Getting in with Bringing another tutor; Opening the app
 alone; then the cross-flow loading, empty and failure pass. Each flow's pack
 goes to him the moment it closes.
+
+A runner that is itself a subagent launches its lanes, twins and verifier
+blocking (`run_in_background: false`), because a subagent's background
+children notify the main session, not the subagent; the first parallel
+runner stalled waiting for a notice that could never reach it (14/09/2026).
