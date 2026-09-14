@@ -24,7 +24,10 @@ Three agents at once, in one message so they run together:
 - `autopilot-reference`
 
 Give each the flow name and one paragraph of what the flow is for. Do not
-give them each other's output.
+give them each other's output. The data and system lanes return their
+report inline (their definitions forbid writing files); save each report
+to the scratchpad `lanes/<flow>-<lane>.md` yourself before reading the next,
+so the spec cites a file and the next session can find it.
 
 ## Step 2, decide
 
