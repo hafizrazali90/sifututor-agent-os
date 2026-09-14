@@ -37,6 +37,7 @@ any of it works.
 | Teaching a class | 23 | | | | 3 | |
 | Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
+| Becoming verified | 29 | 22 | 21 | 0 | 2 so far | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
@@ -69,6 +70,10 @@ through and had to be caught by hand.
 | Getting paid, round 4 | B16, a colour that means something must be named | A highlight that turned out not to exist |
 | Getting paid, round 4 | B17, the common case is a variant too | Every slip board had an adjustment; most slips have none |
 | Getting paid, round 4 | B18, trust the render, not the bounding box | A label that measured as fitting and clipped on export |
+
+| Becoming verified, round 1 | B20, a number has a source or it is not on the screen | Three invented durations after decision 7 had deleted one |
+| Becoming verified, round 1 | B21, never promise a channel the system does not send on | "and by SMS" copied from Grab Driver |
+| Becoming verified, round 1 | B22, one glyph, one meaning | The done tick bulleting rules |
 
 B16 and B18 are the two that came out of a twin being wrong rather than
 right, which is the pattern worth watching: a bad measurement usually sits on
