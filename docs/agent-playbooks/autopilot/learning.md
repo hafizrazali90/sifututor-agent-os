@@ -38,7 +38,7 @@ any of it works.
 | Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
 | Becoming verified | 39 | 110 | 96 | 3 | 5 | awaiting his review |
-| Being worth picking | 23 | 53 | 49 | 2 | 4 so far | not yet reviewed |
+| Being worth picking | 25 | 71 | 59 | 2 | 4 | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
@@ -82,6 +82,7 @@ through and had to be caught by hand.
 | Being worth picking, round 1 | The drawing step reads the board table back before export | The one row with a number drifted and the drift travelled to three boards |
 
 | Being worth picking, round 3 | The change log is written after the export, not before | A verifier reported eight drifts that were the old export against a new log |
+| Being worth picking, round 4 | A rule fixed on one flow is checked on its sibling by the pre-flight, not by memory | patterns.md 8 was fixed on flow 1's hubs in its round 4 and drawn wrong on flow 2's; pre-flight check 9 |
 
 B16 and B18 are the two that came out of a twin being wrong rather than
 right, which is the pattern worth watching: a bad measurement usually sits on
