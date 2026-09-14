@@ -37,8 +37,8 @@ any of it works.
 | Teaching a class | 23 | | | | 3 | |
 | Getting paid | 17 | 6 | 5 | 1 | 4 | not yet reviewed |
 | Asking staff | 37 | | | | 4 | |
-| Becoming verified | 39 | 92 | 83 | 1 | 5 | not yet reviewed |
-| Being worth picking | 15 | 18 | 16 | 1 | 2 so far | not yet reviewed |
+| Becoming verified | 39 | 110 | 96 | 3 | 5 | awaiting his review |
+| Being worth picking | 19 | 35 | 32 | 2 | 3 so far | not yet reviewed |
 
 **Escapes is the number that matters.** Everything else is process. If
 escapes fall flow over flow, the twins are learning him. If escapes stay
