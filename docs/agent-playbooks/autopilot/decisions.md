@@ -23,3 +23,17 @@ Live record. Every decision here was made by Hafiz in chat, dated.
 | # | Decision | His words |
 |---|---|---|
 | 7 | The agents must be grounded in everything the workspace already holds, not just the design specs: Koda memory, the local memory files, `working-with-hafiz.md`, the mission ledgers, and the decision docs under `Sifututor`. | "also use all info u cna to create this agent for our agentic agent os such as memory, and decision doc u found under sifututor and so on." |
+
+## Parallel flows, decided 14/09/2026
+
+Hafiz asked whether several flows can run at once. Yes, two at a time, each
+with its own team and its own Figma page; the one desktop connection means
+drawing steps interleave while research and reviews run fully in parallel.
+Not seven at once: the costliest faults so far were rules fixed on one flow
+and missed on its sibling, and that check only holds with two side by side.
+Opening the app runs last because Home is built from the other flows' cards.
+
+Order agreed: Getting work with Settings and account; Reporting on a student
+with Getting told; Getting in with Bringing another tutor; Opening the app
+alone; then the cross-flow loading, empty and failure pass. Each flow's pack
+goes to him the moment it closes.
