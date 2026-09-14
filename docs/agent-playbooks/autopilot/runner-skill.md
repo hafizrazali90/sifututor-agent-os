@@ -36,6 +36,11 @@ for it.
 
 ## Step 3, the board table, then draw
 
+First, the rules from before: read the change sections of every flow spec
+that shares a component with this flow, and the rules list in
+`learning.md`. Each rule is either in the pre-flight or written into this
+flow's table before a board is drawn.
+
 Write one row per board in the spec first, per
 `~/Projects/Sifututor/docs/agent-playbooks/autopilot/board-spec.md`: action and
 colour, state, every tap and its destination, every number and its source.
@@ -58,7 +63,9 @@ Each round:
 2. Launch `autopilot-verifier` with both lists, the sheet and the spec.
 3. Fix every CONFIRMED and every DRIFT. Decide UNCHECKABLE ones and write
    why. Log WRONG ones to `autopilot/misses.md`.
-4. Re-export and go again.
+4. Re-export, look at the export, then write the round's change log. Never
+   the log first. Freeze the exported sheet under a round name; the verifier
+   reads the frozen copy, never the working file.
 
 Stop when both twins return nothing or at five rounds.
 
