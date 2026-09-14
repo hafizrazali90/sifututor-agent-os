@@ -12,3 +12,25 @@ the twin, the flow, what it claimed, what was actually there.
 | 14/09/2026 | Claude | Being worth picking | The About you row reuses the book-and-pencil that means Education on the sibling hub | Two different assets: writing.png (one open book with a pencil) against education.png (two stacked books). The roughness claim on the camera and calendar in the same finding was right and both were regenerated. |
 | 14/09/2026 | Claude | Becoming verified | The two "what you sent" rows go nowhere and are on no not-drawn list | The spec had a round 5 not-drawn entry naming exactly those rows. The reviewer read an older copy. |
 | 14/09/2026 | Claude | Becoming verified | The reading object means Documents on the hub and getting paid on boards 10 and 22 | True for board 10; board 22 had no objects at all, a different defect the Codex twin found. |
+
+## Getting work, round 1 (14/09/2026)
+
+| Twin | Finding | Why it was wrong |
+|---|---|---|
+| Claude | "All six detail boards carry the parent's note" | Board 09 had none; the 25% case was drawn, only unlisted in Not drawn |
+| Claude | Toast rule "places the toast under the safe area at the top" | core-components.md 9 says never at the top; the overlap itself was real |
+| Claude | Money icon should come from the Craftwork pack | asset-sources.md: the ringgit is hand-drawn because no pack carries one; the library icon is the approved one |
+| Claude | 126pt empty on board 20 "the same shape" as 07 | 83pt on 20; the fault was real on 07 and 16 |
+| Claude | "Most ... 2 days" on board 16 | Board 16 has no such sentence; real on 07 and 20 |
+
+## Getting work, round 2 (14/09/2026)
+
+| Twin | Finding | Why it was wrong |
+|---|---|---|
+| Codex | Composite anonymised request rows are invented data | The spec's Known limits records them as real shapes anonymised for a family's address; the profile forbids fabricated numbers, not anonymised ones |
+| Claude | The testimonial child "Danish" also on board 21 | Board 21 is the empty About you; no testimonial there. The collision on 04, 11 and 16 was real |
+| Codex | Cited the area-not-street rule for a missing variant | The missing in-person Chosen page was real; the rule cited is about privacy, not variants |
+
+## Getting work, round 3 (14/09/2026)
+
+No wrong findings. Two taste calls (the empty-list object, the Malay pitch register) went forward as opinions and were taken.

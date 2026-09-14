@@ -48,6 +48,12 @@ Write one row per board in the spec first, per
 `~/Projects/Sifututor/docs/agent-playbooks/autopilot/board-spec.md`: action and
 colour, state, every tap and its destination, every number and its source.
 
+Then the copy pass: launch `autopilot-copy` with the spec and the board
+table. It returns the copy table for every string on every board, English
+and Malay, with the reader each board serves and every claim to cut. Draw
+from that table, never from your own first draft. After each export, give
+it the sheet too: it checks the drawn words against its table.
+
 Then every board: happy path, every alternate, every edge case, plus Malay. Then
 re-lay the page per `design/figma-map.md`. Export each board. Build one
 contact sheet.
