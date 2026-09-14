@@ -59,6 +59,12 @@ said, and the run moves on. It never waits for Hafiz.
 
 ## After
 
+The change log for a round is written after the export that shows the
+changes, never before. On Being worth picking round 3 the log said "fixed"
+while the verifier was still reading the previous export, and it reported
+eight drifts that were only a sequencing fault. Order is: fix, pre-flight,
+export, then log.
+
 - Every decision is in the flow's spec, dated, with its reason.
 - The contact sheet is in `design/research/`.
 - The decision log for the review pack is written.
