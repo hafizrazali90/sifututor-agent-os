@@ -37,12 +37,13 @@ Use these layers together:
    authenticated-request output before execution.
 2. Agents use reviewed `scripts/agent-access/` wrappers that return status,
    counts, names, or boolean comparisons without returning credentials.
-3. A reveal request creates a short-lived, metadata-only session marker. While
-   it is active, the shared pre-tool guard hard-blocks screenshot,
-   accessibility-snapshot, DOM-capture, copied-text, clipboard-read, and image
-   viewing tools. Hafiz uses hidden owner-only entry. The marker stores no
-   prompt, URL, page content, or credential; it clears when the credential
-   surface is explicitly closed/hidden or expires after 30 minutes.
+3. A reveal/capture request creates a metadata-only session marker. While it is
+   active, the shared pre-tool guard blocks every tool, because a generic
+   browser open/read or arbitrary script could return the credential without
+   using a screenshot command. Hafiz uses hidden owner-only entry. The marker
+   stores no prompt, URL, page content, or credential; it clears only when the
+   credential surface is explicitly closed/hidden, at session stop, or at the
+   start of a replacement session.
 4. `secret_artifact_scan.py` inspects staged additions before commit and
    reports only the file, line, and detection rule.
 5. Claude and Codex failure logs retain metadata only; command arguments and

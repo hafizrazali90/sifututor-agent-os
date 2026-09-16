@@ -45,7 +45,7 @@ The hook should never silently perform expensive state changes.
 | --- | --- | --- |
 | `SessionStart` | Startup, resume, clear, or compact session start. | Loads Sifututor context and verifies Koda read/write health once for the session. |
 | `UserPromptSubmit` | Every Hafiz prompt. | Detects project, active task, likely workflow skill, and relevant Koda memories. |
-| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and visual capture while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. |
+| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and quarantines all tool use while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. |
 | `PostToolUse` | After shell/exec commands. | Records metadata-only failed-command diagnostics without command arguments or raw output. |
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
 | `Stop` | When Codex is about to stop. | Reminds Codex to save meaningful session state. |
@@ -212,10 +212,11 @@ The hook may:
 - block unsafe Bash patterns through guard scripts,
 - mark a provider credential-reveal boundary without storing prompt or page
   content,
-- block whole-environment, raw credential-file, secret-store, and visual
-  provider-key-page output before a tool can return the sensitive value,
-- clear the visual block after an explicit safe-state prompt or 30-minute
-  expiry.
+- block whole-environment, raw credential-file, secret-store, and every tool
+  during a provider-key reveal boundary before any arbitrary browser/script
+  path can return the sensitive value,
+- clear the quarantine after an explicit safe-state prompt, session stop, or
+  replacement session start.
 
 The hook must not:
 

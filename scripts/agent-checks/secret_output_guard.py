@@ -24,25 +24,6 @@ class Decision:
     reason: str = ""
 
 
-SECRET_VISUAL_BOUNDARY_TTL_SECONDS = 30 * 60
-_VISUAL_TOOL_NAME = re.compile(
-    r"(?:screenshot|screen[_-]?capture|snapshot|accessibility|ax[_-]?tree|dom[_-]?(?:capture|snapshot)|"
-    r"page[_-]?(?:content|text)|clipboard[_-]?read|view[_-]?image)",
-    re.I,
-)
-_NESTED_VISUAL_CALL = re.compile(
-    r"tools\.[A-Za-z0-9_]*(?:screenshot|snapshot|accessibility|ax[_-]?tree|"
-    r"dom|page[_-]?(?:content|text)|clipboard|view[_-]?image)[A-Za-z0-9_]*\s*\(",
-    re.I,
-)
-_SCREENSHOT_ARGUMENT = re.compile(r"[\"']?screenshot[\"']?\s*:", re.I)
-_VISUAL_COMMAND = re.compile(
-    r"(?:^|[;&|]\s*)(?:screencapture\b|cua-driver\b[^\n;&|]*\b(?:snapshot|screenshot)\b|"
-    r"(?:npx\s+)?playwright\b[^\n;&|]*\bscreenshot\b)",
-    re.I,
-)
-
-
 _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"\bpm2\s+(?:jlist|prettylist|env|show|describe)\b", re.I),
@@ -182,10 +163,13 @@ def prompt_requests_secret_reveal(prompt: str) -> bool:
     """Detect requests to visually expose a complete provider credential."""
 
     normalized = " ".join(str(prompt).lower().split())
-    reveal = re.search(r"\b(?:screenshot|snapshot|inspect|view|show|read|copy|extract)\b", normalized)
+    reveal = re.search(
+        r"\b(?:screenshot|snapshot|capture|photograph|record|dump|download|inspect|view|show|read|copy|extract)\b",
+        normalized,
+    )
     secret = re.search(r"\b(?:api[ _-]?key|token|credential|secret|password|private key)\b", normalized)
     surface = re.search(r"\b(?:page|dashboard|provider|console|accessibility|ax tree|developer portal)\b", normalized)
-    if not (reveal and secret and surface):
+    if not (reveal and secret):
         return False
     complete = re.search(
         r"\b(?:full|complete|entire|unmasked|revealed|plain[ -]?text)\b",
@@ -193,6 +177,8 @@ def prompt_requests_secret_reveal(prompt: str) -> bool:
     )
     if complete:
         return True
+    if not surface:
+        return False
     safe_display = re.search(
         r"\b(?:redacted|masked|hidden|concealed|last four|last 4|prefix only|not visible|no longer visible)\b",
         normalized,
@@ -278,17 +264,7 @@ def secret_visual_boundary_active(
     payload: dict[str, Any], *, state_dir: Path | None = None, now: float | None = None
 ) -> bool:
     marker = _visual_marker(payload, state_dir)
-    if marker is None or not marker.is_file():
-        return False
-    timestamp = time.time() if now is None else now
-    try:
-        age = timestamp - marker.stat().st_mtime
-    except OSError:
-        return False
-    if age > SECRET_VISUAL_BOUNDARY_TTL_SECONDS:
-        marker.unlink(missing_ok=True)
-        return False
-    return True
+    return bool(marker is not None and marker.is_file())
 
 
 def sync_secret_visual_boundary(
@@ -307,23 +283,6 @@ def sync_secret_visual_boundary(
     return secret_visual_boundary_active(payload, state_dir=state_dir, now=now)
 
 
-def _is_visual_capture_request(tool_name: str, tool_input: Any) -> bool:
-    if _VISUAL_TOOL_NAME.search(str(tool_name)):
-        return True
-    if isinstance(tool_input, dict) and any(
-        str(key).lower() == "screenshot" and bool(value)
-        for key, value in tool_input.items()
-    ):
-        return True
-    if str(tool_name) in {"functions.exec", "functions_exec"}:
-        source = str(tool_input.get("input") if isinstance(tool_input, dict) else tool_input)
-        if _NESTED_VISUAL_CALL.search(source):
-            return True
-        if "tools.web__run" in source and _SCREENSHOT_ARGUMENT.search(source):
-            return True
-    return any(_VISUAL_COMMAND.search(command) for command in _collect_command_text(tool_input))
-
-
 def evaluate_tool_request(
     tool_name: str,
     tool_input: Any,
@@ -332,14 +291,12 @@ def evaluate_tool_request(
     state_dir: Path | None = None,
     now: float | None = None,
 ) -> Decision:
-    """Evaluate visual-capture state first, then existing command-output rules."""
+    """Quarantine all tools during a credential reveal, then check commands."""
 
-    if secret_visual_boundary_active(payload, state_dir=state_dir, now=now) and _is_visual_capture_request(
-        tool_name, tool_input
-    ):
+    if secret_visual_boundary_active(payload, state_dir=state_dir, now=now):
         return Decision(
             False,
-            "Visual capture is temporarily blocked while a complete credential may be visible. Hide or leave the credential page, then explicitly clear the visual guard.",
+            "Tools are blocked while a complete credential may be visible. Hide or leave the credential page, then explicitly clear the visual guard.",
         )
     for command in _collect_command_text(tool_input):
         decision = evaluate_command(command)
