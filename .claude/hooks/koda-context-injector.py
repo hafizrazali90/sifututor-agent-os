@@ -16,6 +16,13 @@ import os
 import sys
 import urllib.request
 import urllib.error
+from pathlib import Path
+
+AGENT_CHECKS = Path(__file__).resolve().parents[2] / "scripts" / "agent-checks"
+if str(AGENT_CHECKS) not in sys.path:
+    sys.path.insert(0, str(AGENT_CHECKS))
+
+from secret_output_guard import prompt_requests_secret_reveal
 
 KODA_URL = "https://koda.tutorla.tech/mcp"
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
@@ -37,12 +44,19 @@ EXPLANATION_REMINDER = (
     "and decision, then stop before the next item unless he approved an "
     "autonomous walkthrough."
 )
+SECRET_SAFETY_REMINDER = (
+    "Agent OS secret-safety boundary: do not take screenshots, accessibility "
+    "snapshots, DOM captures, or copied text from a provider page that displays "
+    "a complete key, token, password, or private credential. Use owner-only "
+    "hidden entry and verify only non-secret status or a boolean match through "
+    "an approved wrapper."
+)
 
 
-def _emit_context(memory_context=""):
+def _emit_context(memory_context="", safety_context=""):
     sections = [
         section
-        for section in (memory_context, EXPLANATION_REMINDER, CLOSEOUT_REMINDER)
+        for section in (memory_context, safety_context, EXPLANATION_REMINDER, CLOSEOUT_REMINDER)
         if section
     ]
     print(json.dumps({
@@ -127,10 +141,13 @@ def main():
     user_prompt = data.get("user_prompt", "")
     if len(user_prompt.strip()) < MIN_PROMPT_LEN:
         sys.exit(0)
+    safety_context = (
+        SECRET_SAFETY_REMINDER if prompt_requests_secret_reveal(user_prompt) else ""
+    )
 
     api_key = os.environ.get("KODA_API_KEY", "")
     if not api_key:
-        _emit_context()
+        _emit_context(safety_context=safety_context)
         return
 
     # Detect project intent — if user mentioned a specific project, we'll
@@ -184,7 +201,7 @@ def main():
         "id": 1,
     })
     if not init_body or not session_id:
-        _emit_context()
+        _emit_context(safety_context=safety_context)
         return
 
     # Step 2: send the initialized notification (some MCP servers require it)
@@ -210,7 +227,7 @@ def main():
     )
 
     if not body:
-        _emit_context()
+        _emit_context(safety_context=safety_context)
         return
 
     body = _unwrap_sse(body, content_type)
@@ -275,7 +292,7 @@ def main():
         merged.append(mem)
 
     if not merged:
-        _emit_context()
+        _emit_context(safety_context=safety_context)
         return
 
     # Format top 5 (or 7 if we had a project boost — more cross-project signal)
@@ -293,14 +310,14 @@ def main():
             bullets.append(f"- ({mem_id}{tag_str}) {snippet}")
 
     if not bullets:
-        _emit_context()
+        _emit_context(safety_context=safety_context)
         return
 
     header = "Relevant Koda memories (search-injected — verify before relying on):"
     if detected_project:
         header = f"Relevant Koda memories (detected project: {detected_project}; cross-project + tag-boosted):"
     context = header + "\n" + "\n".join(bullets)
-    _emit_context(context)
+    _emit_context(context, safety_context)
 
 
 if __name__ == "__main__":

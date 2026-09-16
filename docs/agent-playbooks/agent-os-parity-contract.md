@@ -42,6 +42,7 @@ questions, decisions, evidence, and stopping points match.
 | Routing | Classify the work into the same workflow: discussion, task-router, diagnose, product design, verify, QA, review, commit, save-session, handoff, or monitor. |
 | Approval gates | Stop at the same gates: commit, push, PR, merge, deploy, destructive action, production mutation, critical-lane implementation. |
 | Safety | Never read `.env*`, expose secrets, bypass hooks, or modify `live/`. |
+| Secret-output prevention | Use the same shared pre-tool guard, provider visual-capture boundary, hidden owner-entry path, staged artifact scan, and metadata-only failure logging. |
 | Critical lanes | Payments, auth, invoices, commissions, migrations, mobile API contracts, and deploys start with read-only diagnosis unless Hafiz explicitly authorizes a different emergency path. |
 | Evidence | User-facing behavior needs human-journey evidence where feasible, not only code-level tests. |
 | State | Do not confuse local, committed, pushed, PR open, merged, deployed, and live-smoke-passed. |

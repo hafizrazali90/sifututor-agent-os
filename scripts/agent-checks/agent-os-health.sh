@@ -122,6 +122,8 @@ check_file "Claude delegation fixtures" "$ROOT/scripts/agent-checks/agent-os-cla
 check_file "Claude delegation template" "$ROOT/docs/agent-playbooks/templates/claude-delegation-job.json"
 check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py"
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
+check_file "secret output guard" "$ROOT/scripts/agent-checks/secret_output_guard.py"
+check_file "secret artifact scan" "$ROOT/scripts/agent-checks/secret_artifact_scan.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 check_file "Codex SIMS UI audit skill" "$ROOT/.agents/skills/sims-ui-audit/SKILL.md"
 if [[ -d "$ROOT/sifu-tutor" ]]; then
@@ -271,6 +273,15 @@ else
   sed -n '1,12p' $TMP_DIR/agent-os-today-snapshot.out 2>/dev/null || true
   sed -n '1,12p' $TMP_DIR/agent-os-today-snapshot.err 2>/dev/null || true
 fi
+
+if python3 -m unittest scripts/agent-checks/test_secret_output_guard.py scripts/agent-checks/test_secret_artifact_scan.py >$TMP_DIR/agent-os-secret-guards.out 2>$TMP_DIR/agent-os-secret-guards.err; then
+  pass "secret output guards" "command and artifact regressions passed"
+else
+  fail "secret output guards" "regression tests failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-secret-guards.out 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/agent-os-secret-guards.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-secret-guards.out $TMP_DIR/agent-os-secret-guards.err
 rm -f $TMP_DIR/agent-os-today-snapshot.out $TMP_DIR/agent-os-today-snapshot.err
 
 if "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py" >$TMP_DIR/agent-os-conversation-fixtures.out 2>$TMP_DIR/agent-os-conversation-fixtures.err; then
