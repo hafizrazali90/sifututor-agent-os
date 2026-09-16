@@ -13,7 +13,11 @@ from typing import Any
 import urllib.request
 
 from koda_contract import capability_report
-from secret_output_guard import prompt_requests_secret_reveal
+from secret_output_guard import (
+    clear_secret_visual_boundary,
+    prompt_requests_secret_reveal,
+    sync_secret_visual_boundary,
+)
 
 
 _THIS_FILE = globals().get("__file__")
@@ -1519,6 +1523,7 @@ def main() -> int:
     active_summary = active_task_summary(project)
 
     if event == "SessionStart":
+        clear_secret_visual_boundary(payload)
         source = payload.get("source") or "startup"
         koda_ok, koda_details = koda_health_check(write=True)
         if koda_ok:
@@ -1555,6 +1560,7 @@ def main() -> int:
 
     if event == "UserPromptSubmit":
         prompt = str(payload.get("prompt") or "")
+        sync_secret_visual_boundary(payload, prompt)
         skill, actions, reason = classify_prompt(prompt)
         if not skill:
             return 0
@@ -1610,6 +1616,7 @@ def main() -> int:
         return 0
 
     if event == "Stop":
+        clear_secret_visual_boundary(payload)
         emit_system(
             "Sifututor Stop reminder: if meaningful work occurred, use $save-session before ending. Do not finish with only 'done.' Report Koda memory status, active task, guards, commits/pushes, remaining work, and blockers."
         )

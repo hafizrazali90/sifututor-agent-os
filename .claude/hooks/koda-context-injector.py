@@ -22,7 +22,7 @@ AGENT_CHECKS = Path(__file__).resolve().parents[2] / "scripts" / "agent-checks"
 if str(AGENT_CHECKS) not in sys.path:
     sys.path.insert(0, str(AGENT_CHECKS))
 
-from secret_output_guard import prompt_requests_secret_reveal
+from secret_output_guard import prompt_requests_secret_reveal, sync_secret_visual_boundary
 
 KODA_URL = "https://koda.tutorla.tech/mcp"
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
@@ -139,6 +139,7 @@ def main():
         sys.exit(0)
 
     user_prompt = data.get("user_prompt", "")
+    sync_secret_visual_boundary(data, user_prompt)
     if len(user_prompt.strip()) < MIN_PROMPT_LEN:
         sys.exit(0)
     safety_context = (

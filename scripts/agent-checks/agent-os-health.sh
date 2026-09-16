@@ -275,7 +275,7 @@ else
 fi
 
 if python3 -m unittest scripts/agent-checks/test_secret_output_guard.py scripts/agent-checks/test_secret_artifact_scan.py >$TMP_DIR/agent-os-secret-guards.out 2>$TMP_DIR/agent-os-secret-guards.err; then
-  pass "secret output guards" "command and artifact regressions passed"
+  pass "secret output guards" "command, visual-capture, and artifact regressions passed"
 else
   fail "secret output guards" "regression tests failed"
   sed -n '1,12p' $TMP_DIR/agent-os-secret-guards.out 2>/dev/null || true

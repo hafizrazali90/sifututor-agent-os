@@ -209,7 +209,8 @@ hooks = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
 needed = {"UserPromptSubmit", "PreToolUse", "PostToolUse"}
 guard = "secret_output_guard.py"
 has_guard = any(
-    guard in str(hook.get("command") or "")
+    group.get("matcher") == ".*"
+    and guard in str(hook.get("command") or "")
     for group in hooks.get("PreToolUse", [])
     if isinstance(group, dict)
     for hook in group.get("hooks", [])
@@ -268,28 +269,35 @@ hooks.setdefault(
 )
 guard_command = f"python3 {root}/scripts/agent-checks/secret_output_guard.py"
 pre_tool_groups = hooks.setdefault("PreToolUse", [])
-if not any(
-    guard_command == str(hook.get("command") or "")
+for group in pre_tool_groups:
+    if not isinstance(group, dict):
+        continue
+    group["hooks"] = [
+        hook
+        for hook in group.get("hooks", [])
+        if not (
+            isinstance(hook, dict)
+            and "secret_output_guard.py" in str(hook.get("command") or "")
+        )
+    ]
+pre_tool_groups[:] = [
+    group
     for group in pre_tool_groups
-    if isinstance(group, dict)
-    for hook in group.get("hooks", [])
-    if isinstance(hook, dict)
-):
-    bash_group = next(
-        (group for group in pre_tool_groups if isinstance(group, dict) and group.get("matcher") == "Bash"),
-        None,
-    )
-    if bash_group is None:
-        bash_group = {"matcher": "Bash", "hooks": []}
-        pre_tool_groups.append(bash_group)
-    bash_group.setdefault("hooks", []).insert(
-        0,
-        {
-            "type": "command",
-            "command": guard_command,
-            "timeout": 10,
-        },
-    )
+    if not isinstance(group, dict) or group.get("hooks")
+]
+pre_tool_groups.insert(
+    0,
+    {
+        "matcher": ".*",
+        "hooks": [
+            {
+                "type": "command",
+                "command": guard_command,
+                "timeout": 10,
+            }
+        ],
+    },
+)
 hooks.setdefault(
     "PostToolUse",
     [
@@ -392,13 +400,18 @@ settings_json='{
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
             "command": "python3 '"$ROOT"'/scripts/agent-checks/secret_output_guard.py",
             "timeout": 10
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
           {
             "type": "command",
             "command": "python3 '"$ROOT"'/.claude/hooks/validate-branch-name.py"

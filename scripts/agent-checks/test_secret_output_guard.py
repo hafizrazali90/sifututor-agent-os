@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 
 
@@ -120,6 +121,11 @@ class SecretOutputGuardTest(unittest.TestCase):
                 "Screenshot the provider page that shows the full token"
             )
         )
+        self.assertTrue(
+            self.guard.prompt_requests_secret_reveal(
+                "Screenshot the provider page with the complete token even though the field says hidden"
+            )
+        )
         self.assertFalse(
             self.guard.prompt_requests_secret_reveal(
                 "Create a new API key and let me enter it through a hidden prompt"
@@ -130,6 +136,169 @@ class SecretOutputGuardTest(unittest.TestCase):
                 "Inspect the provider dashboard to verify the API key is masked"
             )
         )
+        self.assertFalse(
+            self.guard.prompt_requests_secret_reveal(
+                "Inspect the provider page to verify the API key is not visible"
+            )
+        )
+
+    def test_secret_visual_boundary_stores_metadata_only(self) -> None:
+        payload = {"session_id": "private-session-name", "cwd": str(ROOT)}
+        prompt = "Screenshot the provider page showing the complete API key"
+        with tempfile.TemporaryDirectory() as state_dir:
+            self.assertTrue(
+                self.guard.sync_secret_visual_boundary(
+                    payload, prompt, state_dir=Path(state_dir), now=1000
+                )
+            )
+            markers = list(Path(state_dir).iterdir())
+            self.assertEqual(len(markers), 1)
+            marker = markers[0]
+            self.assertNotIn("private-session-name", marker.name)
+            contents = marker.read_text()
+            self.assertNotIn(prompt, contents)
+            self.assertNotIn("API key", contents)
+            self.assertTrue(
+                self.guard.secret_visual_boundary_active(
+                    payload, state_dir=Path(state_dir), now=1001
+                )
+            )
+
+    def test_active_boundary_blocks_visual_capture_but_allows_nonvisual_tools(self) -> None:
+        payload = {"session_id": "visual-boundary", "cwd": str(ROOT)}
+        with tempfile.TemporaryDirectory() as state_dir:
+            state_path = Path(state_dir)
+            self.guard.mark_secret_visual_boundary(payload, state_dir=state_path, now=1000)
+            self.assertFalse(
+                self.guard.evaluate_tool_request(
+                    "mcp__browser__take_screenshot",
+                    {"ref_id": "opaque-page-reference"},
+                    payload,
+                    state_dir=state_path,
+                    now=1001,
+                ).allowed
+            )
+            self.assertFalse(
+                self.guard.evaluate_tool_request(
+                    "functions.exec",
+                    {"input": "await tools.web__run({screenshot: [{ref_id: 'opaque'}]});"},
+                    payload,
+                    state_dir=state_path,
+                    now=1001,
+                ).allowed
+            )
+            self.assertFalse(
+                self.guard.evaluate_tool_request(
+                    "functions.exec",
+                    {
+                        "input": (
+                            "const request = {\"screenshot\": [{ref_id: 'opaque'}]}; "
+                            "await tools.web__run(request);"
+                        )
+                    },
+                    payload,
+                    state_dir=state_path,
+                    now=1001,
+                ).allowed
+            )
+            self.assertFalse(
+                self.guard.evaluate_tool_request(
+                    "exec_command",
+                    {"cmd": "screencapture /tmp/provider-page.png"},
+                    payload,
+                    state_dir=state_path,
+                    now=1001,
+                ).allowed
+            )
+            self.assertTrue(
+                self.guard.evaluate_tool_request(
+                    "functions.exec",
+                    {"input": "await tools.web__run({open: [{ref_id: 'opaque'}]});"},
+                    payload,
+                    state_dir=state_path,
+                    now=1001,
+                ).allowed
+            )
+
+    def test_visual_capture_is_allowed_outside_secret_boundary(self) -> None:
+        payload = {"session_id": "ordinary-visual-review", "cwd": str(ROOT)}
+        with tempfile.TemporaryDirectory() as state_dir:
+            self.assertTrue(
+                self.guard.evaluate_tool_request(
+                    "mcp__browser__take_screenshot",
+                    {"ref_id": "ordinary-page"},
+                    payload,
+                    state_dir=Path(state_dir),
+                    now=1000,
+                ).allowed
+            )
+
+    def test_cli_denies_visual_tool_during_active_boundary(self) -> None:
+        payload = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "mcp__browser__take_screenshot",
+            "tool_input": {"ref_id": "opaque-page-reference"},
+            "session_id": "cli-visual-boundary",
+            "cwd": str(ROOT),
+        }
+        with tempfile.TemporaryDirectory() as state_dir:
+            self.guard.mark_secret_visual_boundary(
+                payload, state_dir=Path(state_dir)
+            )
+            result = subprocess.run(
+                [sys.executable, str(GUARD_PATH)],
+                input=json.dumps(payload),
+                text=True,
+                capture_output=True,
+                check=False,
+                env={
+                    "HOME": str(Path.home()),
+                    "PATH": str(Path(sys.executable).parent),
+                    "SIFUTUTOR_SECRET_GUARD_STATE_DIR": state_dir,
+                },
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            response = json.loads(result.stdout)
+            reason = response["hookSpecificOutput"]["permissionDecisionReason"]
+            self.assertEqual(
+                response["hookSpecificOutput"]["permissionDecision"], "deny"
+            )
+            self.assertNotIn("opaque-page-reference", reason)
+
+    def test_boundary_clears_explicitly_and_expires(self) -> None:
+        payload = {"session_id": "reset-boundary", "cwd": str(ROOT)}
+        with tempfile.TemporaryDirectory() as state_dir:
+            state_path = Path(state_dir)
+            self.guard.mark_secret_visual_boundary(payload, state_dir=state_path, now=1000)
+            self.assertFalse(
+                self.guard.sync_secret_visual_boundary(
+                    payload,
+                    "The credential page is closed and the key is hidden; clear the visual guard",
+                    state_dir=state_path,
+                    now=1001,
+                )
+            )
+            self.assertFalse(
+                self.guard.secret_visual_boundary_active(
+                    payload, state_dir=state_path, now=1002
+                )
+            )
+            self.guard.mark_secret_visual_boundary(payload, state_dir=state_path, now=2000)
+            self.assertTrue(
+                self.guard.sync_secret_visual_boundary(
+                    payload,
+                    "Do not clear the visual guard because the API key is still visible",
+                    state_dir=state_path,
+                    now=2001,
+                )
+            )
+            self.assertFalse(
+                self.guard.secret_visual_boundary_active(
+                    payload,
+                    state_dir=state_path,
+                    now=2000 + self.guard.SECRET_VISUAL_BOUNDARY_TTL_SECONDS + 1,
+                )
+            )
 
     def test_cli_blocks_functions_exec_payload_before_execution(self) -> None:
         payload = {
@@ -238,29 +407,54 @@ class SecretOutputGuardTest(unittest.TestCase):
 
     def test_claude_prompt_bridge_warns_before_provider_visual_capture(self) -> None:
         payload = {
+            "session_id": "claude-secret-visual-fixture",
+            "cwd": str(ROOT),
             "user_prompt": (
                 "Open the provider dashboard and take an accessibility snapshot "
                 "of the complete API key."
             )
         }
-        result = subprocess.run(
-            [sys.executable, str(ROOT / ".claude" / "hooks" / "koda-context-injector.py")],
-            input=json.dumps(payload),
-            text=True,
-            capture_output=True,
-            check=False,
-            env={"HOME": str(Path.home()), "PATH": str(Path(sys.executable).parent)},
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("do not take screenshots", context.lower())
-        self.assertIn("owner-only", context.lower())
+        with tempfile.TemporaryDirectory() as state_dir:
+            result = subprocess.run(
+                [sys.executable, str(ROOT / ".claude" / "hooks" / "koda-context-injector.py")],
+                input=json.dumps(payload),
+                text=True,
+                capture_output=True,
+                check=False,
+                env={
+                    "HOME": str(Path.home()),
+                    "PATH": str(Path(sys.executable).parent),
+                    "SIFUTUTOR_SECRET_GUARD_STATE_DIR": state_dir,
+                },
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("do not take screenshots", context.lower())
+            self.assertIn("owner-only", context.lower())
+            self.assertEqual(len(list(Path(state_dir).iterdir())), 1)
 
-    def test_codex_hook_matches_nested_exec_tools(self) -> None:
-        config = (ROOT / ".codex" / "config.toml").read_text()
-        self.assertIn("exec_command", config)
-        self.assertIn("functions\\\\.exec", config)
-        self.assertIn("secret_output_guard.py", config)
+    def test_codex_guard_runs_for_all_tools(self) -> None:
+        config = tomllib.loads((ROOT / ".codex" / "config.toml").read_text())
+        groups = config["hooks"]["PreToolUse"]
+        self.assertTrue(
+            any(
+                group.get("matcher") == ".*"
+                and any(
+                    "secret_output_guard.py" in hook.get("command", "")
+                    for hook in group.get("hooks", [])
+                )
+                for group in groups
+            )
+        )
+
+    def test_installer_requires_wildcard_claude_guard(self) -> None:
+        installer = (ROOT / "scripts" / "agent-checks" / "agent-os-install.sh").read_text()
+        self.assertIn('group.get("matcher") == ".*"', installer)
+        self.assertIn('\"matcher\": \".*\"', installer)
+        self.assertIn(
+            '"secret_output_guard.py" in str(hook.get("command") or "")',
+            installer,
+        )
 
 
 if __name__ == "__main__":

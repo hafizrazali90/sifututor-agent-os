@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tomllib
 from typing import Any
 
 
@@ -187,6 +188,29 @@ def check_codex_adapter() -> list[CheckResult]:
                 detail=f"Codex config contains {marker}",
             )
         )
+
+    try:
+        codex_hooks = tomllib.loads(config).get("hooks", {})
+        visual_guard_wildcard = any(
+            isinstance(group, dict)
+            and group.get("matcher") == ".*"
+            and any(
+                isinstance(hook, dict)
+                and "secret_output_guard.py" in str(hook.get("command") or "")
+                for hook in group.get("hooks", [])
+            )
+            for group in codex_hooks.get("PreToolUse", [])
+        )
+    except tomllib.TOMLDecodeError:
+        visual_guard_wildcard = False
+    results.append(
+        CheckResult(
+            id="CX-033",
+            adapter="codex",
+            passed=visual_guard_wildcard,
+            detail="Codex secret guard runs before every tool type",
+        )
+    )
 
     for index, skill in enumerate(REQUIRED_CODEX_SKILLS, start=9):
         skill_file = SKILL_DIR / skill / "SKILL.md"
@@ -460,13 +484,22 @@ def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
             )
         )
 
-    claude_settings_text = json.dumps(settings)
+    claude_visual_guard_wildcard = any(
+        isinstance(group, dict)
+        and group.get("matcher") == ".*"
+        and any(
+            isinstance(hook, dict)
+            and "secret_output_guard.py" in str(hook.get("command") or "")
+            for hook in group.get("hooks", [])
+        )
+        for group in hooks.get("PreToolUse", [])
+    )
     results.append(
         CheckResult(
             id="CL-023",
             adapter="claude",
-            passed="secret_output_guard.py" in claude_settings_text,
-            detail="Claude PreToolUse includes the shared secret-output guard",
+            passed=claude_visual_guard_wildcard,
+            detail="Claude PreToolUse runs the shared secret-output guard for every tool type",
         )
     )
 
