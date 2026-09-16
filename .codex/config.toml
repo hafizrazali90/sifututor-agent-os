@@ -2,13 +2,16 @@
 hooks = true
 
 [[hooks.PreToolUse]]
-matcher = "^(Bash|exec_command|functions\\.exec)$"
+matcher = ".*"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
 command = 'python3 scripts/agent-checks/secret_output_guard.py'
 timeout = 10
 statusMessage = "Preventing secret-bearing tool output"
+
+[[hooks.PreToolUse]]
+matcher = "^(Bash|exec_command|functions\\.exec)$"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"

@@ -8,9 +8,13 @@ submitted command because the command itself may contain a credential.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
+import os
+from pathlib import Path
 import re
 import sys
+import time
 from typing import Any
 
 
@@ -18,6 +22,25 @@ from typing import Any
 class Decision:
     allowed: bool
     reason: str = ""
+
+
+SECRET_VISUAL_BOUNDARY_TTL_SECONDS = 30 * 60
+_VISUAL_TOOL_NAME = re.compile(
+    r"(?:screenshot|screen[_-]?capture|snapshot|accessibility|ax[_-]?tree|dom[_-]?(?:capture|snapshot)|"
+    r"page[_-]?(?:content|text)|clipboard[_-]?read|view[_-]?image)",
+    re.I,
+)
+_NESTED_VISUAL_CALL = re.compile(
+    r"tools\.[A-Za-z0-9_]*(?:screenshot|snapshot|accessibility|ax[_-]?tree|"
+    r"dom|page[_-]?(?:content|text)|clipboard|view[_-]?image)[A-Za-z0-9_]*\s*\(",
+    re.I,
+)
+_SCREENSHOT_ARGUMENT = re.compile(r"[\"']?screenshot[\"']?\s*:", re.I)
+_VISUAL_COMMAND = re.compile(
+    r"(?:^|[;&|]\s*)(?:screencapture\b|cua-driver\b[^\n;&|]*\b(?:snapshot|screenshot)\b|"
+    r"(?:npx\s+)?playwright\b[^\n;&|]*\bscreenshot\b)",
+    re.I,
+)
 
 
 _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -159,12 +182,170 @@ def prompt_requests_secret_reveal(prompt: str) -> bool:
     """Detect requests to visually expose a complete provider credential."""
 
     normalized = " ".join(str(prompt).lower().split())
-    if re.search(r"\b(?:redacted|masked|hidden|concealed|last four|last 4|prefix only)\b", normalized):
-        return False
     reveal = re.search(r"\b(?:screenshot|snapshot|inspect|view|show|read|copy|extract)\b", normalized)
     secret = re.search(r"\b(?:api[ _-]?key|token|credential|secret|password|private key)\b", normalized)
     surface = re.search(r"\b(?:page|dashboard|provider|console|accessibility|ax tree|developer portal)\b", normalized)
-    return bool(reveal and secret and surface)
+    if not (reveal and secret and surface):
+        return False
+    complete = re.search(
+        r"\b(?:full|complete|entire|unmasked|revealed|plain[ -]?text)\b",
+        normalized,
+    )
+    if complete:
+        return True
+    safe_display = re.search(
+        r"\b(?:redacted|masked|hidden|concealed|last four|last 4|prefix only|not visible|no longer visible)\b",
+        normalized,
+    )
+    return not bool(safe_display)
+
+
+def prompt_clears_secret_visual_boundary(prompt: str) -> bool:
+    """Recognize an explicit statement that the credential surface is closed."""
+
+    normalized = " ".join(str(prompt).lower().split())
+    if re.search(r"\b(?:do not|don't|never)\s+(?:clear|reset)\s+(?:the\s+)?visual guard\b", normalized):
+        return False
+    if "clear the visual guard" in normalized or "reset the visual guard" in normalized:
+        return True
+    secret = re.search(r"\b(?:api[ _-]?key|token|credential|secret|password|private key)\b", normalized)
+    safe_state = re.search(
+        r"\b(?:is|page is|screen is|now)\s+(?:closed|hidden|masked|concealed)\b|"
+        r"\b(?:closed|left|exited|navigated away from)\s+(?:the\s+)?(?:provider|credential|key|secret)\b",
+        normalized,
+    )
+    return bool(secret and safe_state)
+
+
+def _visual_scope(payload: dict[str, Any]) -> str:
+    for key in ("session_id", "sessionId", "conversation_id", "conversationId"):
+        value = str(payload.get(key) or "").strip()
+        if value:
+            return f"session:{value}"
+    cwd = str(payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or "").strip()
+    return f"cwd:{cwd}" if cwd else ""
+
+
+def _visual_state_root(state_dir: Path | None = None) -> Path:
+    if state_dir is not None:
+        return Path(state_dir)
+    configured = os.environ.get("SIFUTUTOR_SECRET_GUARD_STATE_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    return Path.home() / ".cache" / "sifututor-agent-os" / "secret-visual-guard"
+
+
+def _visual_marker(payload: dict[str, Any], state_dir: Path | None = None) -> Path | None:
+    scope = _visual_scope(payload)
+    if not scope:
+        return None
+    digest = hashlib.sha256(scope.encode("utf-8")).hexdigest()
+    return _visual_state_root(state_dir) / f"{digest}.active"
+
+
+def mark_secret_visual_boundary(
+    payload: dict[str, Any], *, state_dir: Path | None = None, now: float | None = None
+) -> bool:
+    """Create a short-lived metadata-only marker for a credential reveal surface."""
+
+    marker = _visual_marker(payload, state_dir)
+    if marker is None:
+        return False
+    marker.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    try:
+        marker.parent.chmod(0o700)
+    except OSError:
+        pass
+    marker.write_text("active\n", encoding="utf-8")
+    try:
+        marker.chmod(0o600)
+    except OSError:
+        pass
+    timestamp = time.time() if now is None else now
+    os.utime(marker, (timestamp, timestamp))
+    return True
+
+
+def clear_secret_visual_boundary(
+    payload: dict[str, Any], *, state_dir: Path | None = None
+) -> None:
+    marker = _visual_marker(payload, state_dir)
+    if marker is not None:
+        marker.unlink(missing_ok=True)
+
+
+def secret_visual_boundary_active(
+    payload: dict[str, Any], *, state_dir: Path | None = None, now: float | None = None
+) -> bool:
+    marker = _visual_marker(payload, state_dir)
+    if marker is None or not marker.is_file():
+        return False
+    timestamp = time.time() if now is None else now
+    try:
+        age = timestamp - marker.stat().st_mtime
+    except OSError:
+        return False
+    if age > SECRET_VISUAL_BOUNDARY_TTL_SECONDS:
+        marker.unlink(missing_ok=True)
+        return False
+    return True
+
+
+def sync_secret_visual_boundary(
+    payload: dict[str, Any],
+    prompt: str,
+    *,
+    state_dir: Path | None = None,
+    now: float | None = None,
+) -> bool:
+    """Update the marker from a prompt and return the resulting active state."""
+
+    if prompt_requests_secret_reveal(prompt):
+        mark_secret_visual_boundary(payload, state_dir=state_dir, now=now)
+    elif prompt_clears_secret_visual_boundary(prompt):
+        clear_secret_visual_boundary(payload, state_dir=state_dir)
+    return secret_visual_boundary_active(payload, state_dir=state_dir, now=now)
+
+
+def _is_visual_capture_request(tool_name: str, tool_input: Any) -> bool:
+    if _VISUAL_TOOL_NAME.search(str(tool_name)):
+        return True
+    if isinstance(tool_input, dict) and any(
+        str(key).lower() == "screenshot" and bool(value)
+        for key, value in tool_input.items()
+    ):
+        return True
+    if str(tool_name) in {"functions.exec", "functions_exec"}:
+        source = str(tool_input.get("input") if isinstance(tool_input, dict) else tool_input)
+        if _NESTED_VISUAL_CALL.search(source):
+            return True
+        if "tools.web__run" in source and _SCREENSHOT_ARGUMENT.search(source):
+            return True
+    return any(_VISUAL_COMMAND.search(command) for command in _collect_command_text(tool_input))
+
+
+def evaluate_tool_request(
+    tool_name: str,
+    tool_input: Any,
+    payload: dict[str, Any],
+    *,
+    state_dir: Path | None = None,
+    now: float | None = None,
+) -> Decision:
+    """Evaluate visual-capture state first, then existing command-output rules."""
+
+    if secret_visual_boundary_active(payload, state_dir=state_dir, now=now) and _is_visual_capture_request(
+        tool_name, tool_input
+    ):
+        return Decision(
+            False,
+            "Visual capture is temporarily blocked while a complete credential may be visible. Hide or leave the credential page, then explicitly clear the visual guard.",
+        )
+    for command in _collect_command_text(tool_input):
+        decision = evaluate_command(command)
+        if not decision.allowed:
+            return decision
+    return Decision(True)
 
 
 def safe_command_label(command: str) -> str:
@@ -283,12 +464,11 @@ def main() -> int:
     except (json.JSONDecodeError, TypeError):
         return 0
 
+    tool_name = str(payload.get("tool_name") or payload.get("toolName") or "")
     tool_input = payload.get("tool_input") or payload.get("toolInput") or {}
-    for command in _collect_command_text(tool_input):
-        decision = evaluate_command(command)
-        if not decision.allowed:
-            _deny(decision.reason)
-            return 0
+    decision = evaluate_tool_request(tool_name, tool_input, payload)
+    if not decision.allowed:
+        _deny(decision.reason)
     return 0
 
 

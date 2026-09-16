@@ -26,7 +26,7 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecyc
 | `SessionStart` | Adds startup project/task context and verifies Koda read/write health |
 | `UserPromptSubmit` | Dispatches the right Codex workflow skill and injects Koda context when safe |
 | `PreToolUse` | Blocks unsafe Bash patterns and runs the shared guard before commit |
-| `PreToolUse` secret guard | Blocks commands that can emit complete credentials, including nested `functions.exec` and `exec_command` calls |
+| `PreToolUse` secret guard | Runs for every tool. It blocks commands that can emit complete credentials and blocks visual/text capture tools while a short-lived provider credential-reveal boundary is active. |
 | `PostToolUse` | Logs metadata-only failed-command diagnostics to `~/.codex-friction.log` |
 | `PreCompact` | Reminds Codex to snapshot or save |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
