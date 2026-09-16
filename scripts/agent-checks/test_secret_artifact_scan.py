@@ -55,6 +55,14 @@ Use `pm2 jlist` only as an example of a blocked command.
 """
         self.assertEqual(self.scanner.find_secret_findings(safe), [])
 
+    def test_placeholder_does_not_hide_a_real_secret_on_the_same_line(self) -> None:
+        real_token = "sk-ant-api03-" + "Z" * 40
+        findings = self.scanner.find_secret_findings(
+            f"EXAMPLE_KEY=<redacted> ANTHROPIC_API_KEY={real_token}"
+        )
+        self.assertTrue(findings)
+        self.assertNotIn(real_token, " ".join(f.rule for f in findings))
+
 
 if __name__ == "__main__":
     unittest.main()

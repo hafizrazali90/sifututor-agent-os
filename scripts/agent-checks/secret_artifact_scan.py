@@ -44,10 +44,9 @@ _RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
 def find_secret_findings(text: str) -> list[Finding]:
     findings: list[Finding] = []
     for line_number, line in enumerate(text.splitlines(), start=1):
-        if _PLACEHOLDER.search(line):
-            continue
+        candidate = _PLACEHOLDER.sub("<placeholder>", line)
         for rule, pattern in _RULES:
-            if pattern.search(line):
+            if pattern.search(candidate):
                 findings.append(Finding(line_number, rule))
     return findings
 

@@ -211,21 +211,35 @@ def _collect_command_text(value: Any) -> list[str]:
     if isinstance(value, dict):
         source = value.get("input")
         if isinstance(source, str) and "tools." in source:
+            if "tools.exec_command" not in source:
+                return []
             matches = re.findall(
-                r"tools\.exec_command\s*\(\s*\{.*?\bcmd\s*:\s*(\"(?:\\.|[^\"\\])*\")",
+                r"\bcmd\s*:\s*(\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|[A-Za-z_$][A-Za-z0-9_$]*)",
                 source,
                 flags=re.S,
             )
             extracted: list[str] = []
-            for encoded in matches:
+            for expression in matches:
+                encoded = expression
+                if expression[0] not in "\"'`":
+                    assignment = re.search(
+                        rf"\b(?:const|let|var)\s+{re.escape(expression)}\s*=\s*"
+                        r"(\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)",
+                        source,
+                        flags=re.S,
+                    )
+                    if assignment is None:
+                        return [source]
+                    encoded = assignment.group(1)
                 try:
-                    extracted.append(json.loads(encoded))
-                except json.JSONDecodeError:
+                    if encoded.startswith('"'):
+                        extracted.append(json.loads(encoded))
+                    else:
+                        extracted.append(encoded[1:-1])
+                except (json.JSONDecodeError, IndexError):
                     return [source]
             if extracted:
                 return extracted
-            if "tools.exec_command" not in source:
-                return []
             return [source]
         preferred = [
             value[key]

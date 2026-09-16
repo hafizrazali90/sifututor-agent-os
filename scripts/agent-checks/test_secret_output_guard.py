@@ -152,6 +152,31 @@ class SecretOutputGuardTest(unittest.TestCase):
         self.assertEqual(hook["permissionDecision"], "deny")
         self.assertNotIn("pm2 jlist", hook["permissionDecisionReason"])
 
+    def test_cli_scans_entire_mixed_functions_exec_payload(self) -> None:
+        payload = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "functions.exec",
+            "tool_input": {
+                "input": (
+                    "const unsafe = `pm2 jlist`; "
+                    "await tools.exec_command({cmd: \"git status --short\"}); "
+                    "await tools.exec_command({cmd: unsafe});"
+                )
+            },
+        }
+        result = subprocess.run(
+            [sys.executable, str(GUARD_PATH)],
+            input=json.dumps(payload),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        response = json.loads(result.stdout)
+        self.assertEqual(
+            response["hookSpecificOutput"]["permissionDecision"], "deny"
+        )
+
     def test_cli_ignores_apply_patch_documentation_text(self) -> None:
         payload = {
             "hook_event_name": "PreToolUse",
