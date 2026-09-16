@@ -177,6 +177,7 @@ def check_codex_adapter() -> list[CheckResult]:
         ("CX-006", "PreToolUse"),
         ("CX-007", "Stop"),
         ("CX-008", "codex-lifecycle-hook.py"),
+        ("CX-032", "secret_output_guard.py"),
     ]:
         results.append(
             CheckResult(
@@ -458,6 +459,16 @@ def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
                 detail=f"Claude hook configured: {hook_name}",
             )
         )
+
+    claude_settings_text = json.dumps(settings)
+    results.append(
+        CheckResult(
+            id="CL-023",
+            adapter="claude",
+            passed="secret_output_guard.py" in claude_settings_text,
+            detail="Claude PreToolUse includes the shared secret-output guard",
+        )
+    )
 
     for index, hook in enumerate(REQUIRED_CLAUDE_HOOKS, start=30):
         hook_path = ROOT / hook

@@ -13,6 +13,7 @@ from typing import Any
 import urllib.request
 
 from koda_contract import capability_report
+from secret_output_guard import prompt_requests_secret_reveal
 
 
 _THIS_FILE = globals().get("__file__")
@@ -862,6 +863,17 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "",
             [],
             "Prompt is a quoted or pasted report with no direct action request.",
+        )
+
+    if prompt_requests_secret_reveal(prompt):
+        return (
+            "$task-router",
+            [
+                "Treat provider pages that display complete credentials as a blocked visual-inspection boundary.",
+                "Do not take screenshots, accessibility snapshots, DOM captures, or copied text from a revealed-key page.",
+                "Use owner-only hidden entry and verify only non-secret status or a boolean match through an approved wrapper.",
+            ],
+            "Prompt requests visual exposure of a provider credential.",
         )
 
     if re.search(r"(^|\s|/|\\)\.env($|\b|[./_-])", normalized) or re.search(r"(^|\s|/|\\)live(/|\\)", normalized):

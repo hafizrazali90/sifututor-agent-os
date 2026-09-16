@@ -23,9 +23,13 @@ import os
 import sys
 from pathlib import Path
 
+AGENT_CHECKS = Path(__file__).resolve().parents[2] / "scripts" / "agent-checks"
+if str(AGENT_CHECKS) not in sys.path:
+    sys.path.insert(0, str(AGENT_CHECKS))
+
+from secret_output_guard import safe_command_label
+
 LOG_FILE = Path.home() / ".claude-friction.log"
-MAX_STDERR_CHARS = 250
-MAX_CMD_CHARS = 300
 
 
 def _detect_project(cwd: str) -> str:
@@ -89,18 +93,21 @@ def main():
 
     timestamp = datetime.datetime.now().isoformat(timespec="seconds")
     cmd_raw = (tool_input.get("command") or "").strip()
-    cmd = cmd_raw[:MAX_CMD_CHARS].replace("\n", " ⏎ ")
+    cmd = safe_command_label(cmd_raw)
 
     stderr_raw = ""
     if isinstance(tool_response, dict):
-        stderr_raw = (tool_response.get("stderr") or tool_response.get("error") or "").strip()
-    stderr = stderr_raw[:MAX_STDERR_CHARS].replace("\n", " ⏎ ")
+        stderr_raw = str(tool_response.get("stderr") or tool_response.get("error") or "").strip()
+    stderr_chars = len(stderr_raw)
 
     exit_code = tool_response.get("exit_code", "?")
     project = _detect_project(cwd)
     sid = (session_id or "unknown")[:8]
 
-    entry = f"[{timestamp}] [{sid}] [{project}] [exit={exit_code}] {cmd} | {stderr}\n"
+    entry = (
+        f"[{timestamp}] [{sid}] [{project}] [exit={exit_code}] "
+        f"command={cmd} output=redacted chars={stderr_chars}\n"
+    )
 
     try:
         with LOG_FILE.open("a", encoding="utf-8") as f:

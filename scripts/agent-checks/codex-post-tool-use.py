@@ -8,6 +8,8 @@ import json
 import os
 import sys
 
+from secret_output_guard import safe_command_label
+
 
 def main() -> int:
     try:
@@ -17,7 +19,12 @@ def main() -> int:
 
     tool_input = payload.get("tool_input") or {}
     tool_response = payload.get("tool_response") or {}
-    command = str(tool_input.get("command") or "").strip()
+    command = str(
+        tool_input.get("command")
+        or tool_input.get("cmd")
+        or tool_input.get("input")
+        or ""
+    ).strip()
     exit_code = tool_response.get("exit_code")
 
     if not command or exit_code in (None, 0):
@@ -27,7 +34,7 @@ def main() -> int:
     timestamp = dt.datetime.now(dt.timezone.utc).isoformat()
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(f"[{timestamp}] exit={exit_code} cwd={os.getcwd()}\n")
-        handle.write(command + "\n\n")
+        handle.write(f"command={safe_command_label(command)} output=redacted\n\n")
 
     return 0
 

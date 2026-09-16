@@ -21,7 +21,7 @@ be automated next.
 | Discussion stays light | AO-001, AO-014, AO-054 | Over-triggering workflow ceremony during thinking, learning, or architecture discussion. |
 | Commit and push gates | AO-002, AO-005, AO-019, AO-026, AO-102 | Committing, pushing, deploying, merging, or releasing without review, risk checks, state clarity, and approval. |
 | Approval bundle scope | AO-022, AO-023, AO-024 | Treating `approve` as permission to do more than the previous exact approval request. |
-| Forbidden boundaries | AO-006, AO-007, AO-020 | Reading secrets, touching `live/`, or bypassing hooks/tests with `--no-verify`. |
+| Forbidden boundaries | AO-006, AO-007, AO-020, AO-203 | Reading secrets, visually capturing provider credentials, touching `live/`, or bypassing hooks/tests with `--no-verify`. |
 | Critical lanes | AO-008, AO-009, AO-010 | Editing payment, invoice, migration, auth, or mobile API contract work before read-only diagnosis. |
 | Staff and reported context | AO-011, AO-071, AO-075, AO-101 | Treating staff reports or capability requests as verified implementation permission, creating GitHub issue noise too early, or starting coding before quick diagnosis and task-state routing. |
 | Context authority and state ownership | AO-012, AO-013, AO-096, AO-097, AO-098, AO-108 | Trusting Koda, prior memories, chat, commits, PRs, deploy records, Planner, GitHub, or QA evidence as the wrong kind of truth; storing new information in the wrong home; ignoring stale-context conflicts. |

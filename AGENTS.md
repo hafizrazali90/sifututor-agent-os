@@ -55,6 +55,17 @@ Use it only as read-only reference.
 
 - Never read or modify repository `.env*` files, production secrets, or files under
   `live/`.
+- Never run or expose broad process, container, service, shell, or secret-store
+  environment dumps. Use an approved `scripts/agent-access/` wrapper or request
+  only the exact non-secret status field needed. Raw commands such as `pm2
+  jlist`, `pm2 env`, `printenv`, `/proc/*/environ`, unformatted `docker
+  inspect`, and secret-value retrieval are blocked by the shared tool guard.
+- Never take a screenshot, accessibility snapshot, DOM capture, or copied-text
+  dump of a provider page that displays a complete key, token, password, or
+  private credential. Hafiz enters new credentials through hidden owner-only
+  input; agents verify only non-secret status or a boolean match.
+- Failure and diagnostic logs must store metadata only. Do not persist raw
+  commands, stderr, provider responses, credentials, or credential fingerprints.
 - Agents may read explicitly approved, scoped credential files outside repositories
   when needed for the task, such as read-only agent access files under
   `~/.config/sifututor/`. Do not reveal, commit, copy into the repo, or log

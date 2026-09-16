@@ -25,6 +25,34 @@ Use the lightest reliable enforcement:
 | Current-session continuity | Session Map | Long work needs a visible return path. |
 | Durable lesson | Koda plus docs when needed | Future agents need the lesson without reading old chat. |
 
+## Secret-output prevention
+
+Credential safety is a hard guard because a warning after tool execution is too
+late. The shared owner is `scripts/agent-checks/secret_output_guard.py`.
+
+Use these layers together:
+
+1. The shared pre-tool guard blocks known whole-environment, raw process,
+   container, secret-store, credential-file, shell-tracing, and verbose
+   authenticated-request output before execution.
+2. Agents use reviewed `scripts/agent-access/` wrappers that return status,
+   counts, names, or boolean comparisons without returning credentials.
+3. Provider pages that reveal complete credentials are outside screenshot,
+   accessibility-snapshot, DOM-capture, and copied-text workflows. Hafiz uses
+   hidden owner-only entry.
+4. `secret_artifact_scan.py` inspects staged additions before commit and
+   reports only the file, line, and detection rule.
+5. Claude and Codex failure logs retain metadata only; command arguments and
+   error output are redacted before persistence.
+
+Do not weaken a block by adding an inline pipe such as `grep`, `jq`, or `sed`
+after a raw environment command. The sensitive output already exists inside
+the tool path. Add or update a reviewed wrapper instead.
+
+If a new dangerous pattern is found, add one failing regression, extend the
+shared guard, prove the safe alternative still works, then update the eval or
+playbook only when agent judgment is also involved.
+
 Short version:
 
 ```text

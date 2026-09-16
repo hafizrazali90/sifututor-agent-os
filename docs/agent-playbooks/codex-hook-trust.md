@@ -14,6 +14,7 @@ Expected commands:
 
 ```text
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-pre-tool-use.py
+python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/secret_output_guard.py
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-post-tool-use.py
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py
 ```
@@ -25,7 +26,8 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecyc
 | `SessionStart` | Adds startup project/task context and verifies Koda read/write health |
 | `UserPromptSubmit` | Dispatches the right Codex workflow skill and injects Koda context when safe |
 | `PreToolUse` | Blocks unsafe Bash patterns and runs the shared guard before commit |
-| `PostToolUse` | Logs failed Bash commands to `~/.codex-friction.log` |
+| `PreToolUse` secret guard | Blocks commands that can emit complete credentials, including nested `functions.exec` and `exec_command` calls |
+| `PostToolUse` | Logs metadata-only failed-command diagnostics to `~/.codex-friction.log` |
 | `PreCompact` | Reminds Codex to snapshot or save |
 | `Stop` | Reminds Codex to run `$save-session` after meaningful work |
 
@@ -53,6 +55,7 @@ Do not trust a hook if it:
 
 - points outside `/Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/`
 - reads `.env` files or secrets
+- prints raw process/container environments or records raw failed-command output
 - pushes, deploys, commits, or mutates repos by itself
 - uses `curl`/network calls other than the Koda memory helper behavior
 - hides errors by modifying files silently
