@@ -35,7 +35,8 @@ anyone copies. Check both before assuming an agent has a rule.
 | `agents/` | The seven agent definitions |
 | `runner-skill.md` | The `/autopilot` skill |
 | `reviewer-codex.sh` | The second reviewer, on a different model |
-| `misses.md` | Every wrong finding a reviewer has made |
+| `misses.md` | Every wrong finding a reviewer or a check has made |
+| `how-others-do-this.md` | What the rest of the industry does, what we took, what we still owe |
 
 ## The checks live in the design repo, not here
 
