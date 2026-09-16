@@ -49,6 +49,20 @@ or by the CTO himself:
    typed answer and an on-screen keyboard. Read the name, then look at the
    picture, then say whether they agree.
 
+## Read the right screen, not just the right pixels
+
+Every wrong finding this system has produced so far is a correct measurement
+read without the context that makes it correct. On 16/09/2026 a reviewer
+reported that a tutor is paid into Maybank on one screen and CIMB on another.
+Both were true. The CIMB screens are the **bank-change flow**, where she is
+entering a new bank and the screen says so: "New bank: CIMB ····4482",
+"changed 14/09/2026. Payouts wait until the check is complete."
+
+Before reporting an inconsistency between two screens, ask what each screen is
+**for**. A screen in the middle of a flow shows a state, not a fact. Read the
+flow's spec, or at least the other screens with the same nouns on them, and say
+in the finding which screens you compared.
+
 ## Rules for a finding
 
 Every finding must have:

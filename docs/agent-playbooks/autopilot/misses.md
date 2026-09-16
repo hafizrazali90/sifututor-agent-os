@@ -90,3 +90,28 @@ carrying an asset a spec had retired the day before.
 draft. Tighten the exemption until every line it prints is true, then fix. A
 check that reports correct work is worse than no check, because the real
 findings drown in it.
+
+## The blind reviewer test, 16/09/2026
+
+Five screens, no brief beyond "report what you find". Seventeen findings. Five
+verified so far.
+
+| Finding | Verdict | Evidence |
+|---|---|---|
+| Twelve surfaces within 1.06:1 of what is behind them | **CONFIRMED** | It found every one of the planted faults and measured them correctly. On the worst it said the useful thing: at 1.002:1 it is not a faint edge, it is no edge |
+| The home indicator cuts the last subtotal row in half | **CONFIRMED** | Visible in the export. `measure.figma.py` called that page clean; the rule that catches it was written the same hour |
+| The class picker and the record sheet disagree about three classes | **CONFIRMED** | Same slot, two students, two states. Fixed, and the missing vocabulary row added |
+| The sheet title is centred while the other three are left-aligned | **CONFIRMED** | Visible in the export |
+| The tutor is paid into Maybank on one screen and CIMB on another | **WRONG** | The CIMB screens are the **bank-change flow**: `20 Bank details / edit`, `19 Bank details / OTP` ("New bank: CIMB ····4482"), `31 My account / bank details being checked` ("changed 14/09/2026. Payouts wait until the check is complete"). The bank on file is Maybank ····4821 on all 20 other screens that mention it. The reviewer read one screen of a flow and judged it without the flow |
+
+**The wrong one has the shape every wrong finding has had:** a correct
+measurement, read without the context that makes it correct. Its instructions
+already warn about measuring the right thing; they now need the same warning
+about **reading the right screen**. A screen mid-flow shows a state, not a
+fact.
+
+**What the test settles.** This was the first time an agent here has been
+scored against known faults rather than believed. It found all of them, found
+two real things nothing else could, and was wrong once out of the five checked.
+That is the number to beat next time, and it is why an evaluation set is worth
+keeping: five screens, twelve known faults, rerun after any prompt change.
