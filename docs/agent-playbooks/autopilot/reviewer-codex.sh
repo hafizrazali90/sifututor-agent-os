@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The Codex twin. Same job as autopilot-twin, different model, run blind.
-# usage: twin-codex.sh <contact-sheet.png> <spec.md> <out.md> [extra -i image ...]
+# The Codex reviewer. Same job as autopilot-reviewer, different model, run blind.
+# usage: reviewer-codex.sh <contact-sheet.png> <spec.md> <out.md> [extra -i image ...]
 set -euo pipefail
 SHEET="$1"; SPEC="$2"; OUT="$3"; shift 3
 PROFILE="$HOME/Projects/Sifututor/docs/agent-playbooks/autopilot/hafiz-profile.md"
@@ -15,7 +15,7 @@ The attached profile lists the eight checks he runs. Run all eight against
 the attached contact sheet. The attached spec records the decisions he has
 already made; those are not open.
 
-Every finding needs: the board, what is wrong in one sentence, the evidence
+Every finding needs: the screen, what is wrong in one sentence, the evidence
 (a quoted rule, a named reference app and screen, or a number), and the exact
 fix. A finding with no evidence must be dropped by you, not by someone else.
 

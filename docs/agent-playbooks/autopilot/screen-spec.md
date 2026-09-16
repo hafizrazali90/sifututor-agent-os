@@ -1,4 +1,4 @@
-# The board spec, written before drawing
+# The screen spec, written before drawing
 
 Hafiz, 14/09/2026: "check the overall where you should improve so that we
 dont have to waste time going in loop so many times for things that can be
@@ -10,17 +10,17 @@ On Becoming verified, three rounds raised 67 findings. Sorted by cause:
 |---|---|---|
 | A written rule not applied | about half | A pre-flight run before export |
 | A tappable thing with no destination | a fifth | Listing every tap before drawing |
-| Copy that promised or counted something with no source | a tenth | A source column in the board spec |
+| Copy that promised or counted something with no source | a tenth | A source column in the screen spec |
 | No rule existed yet | a tenth | These become rules; unavoidable |
 | Execution slip (clipped, wrong asset in slot) | the rest | Looking at the export |
 
-So two things now happen before any board is drawn.
+So two things now happen before any screen is drawn.
 
-## 1. A line per board in the flow spec
+## 1. A line per screen in the flow spec
 
-Under a heading **Boards** in `design/specs/<flow>.md`, one row per board:
+Under a heading **Screens** in `design/specs/<flow>.md`, one row per screen:
 
-| # | Board | One action, colour | State it shows | Header | Every tap and where it goes | Numbers on it and their source |
+| # | Screen | One action, colour | State it shows | Header | Every tap and where it goes | Numbers on it and their source |
 |---|---|---|---|---|---|---|
 
 Rules that fill the columns:
@@ -28,31 +28,58 @@ Rules that fill the columns:
 - **One action.** Blue if it commits (save, send, apply, pay, agree). Black
   if it proceeds (continue, next, open, see). Text for the safe option. The
   colour is decided here, in words, not in Figma.
-- **State.** Which of the flow's states this board is: the common case, the
+- **State.** Which of the flow's states this screen is: the common case, the
   single item, the long list, the other brand, the addition, the Malay, the
   sent-back. B17: the common case is listed first.
 - **Header.** Standard, Coloured or Hero, per patterns.md 1a. Coloured when
   one task fills the screen and has one outcome; Hero for a celebration or
   a programme page with an illustration; Standard otherwise.
 - **Every tap.** Text buttons, chevron rows, links in a sentence, header
-  actions. Each names a board in this flow, a flow that owns it, or a
+  actions. Each names a screen in this flow, a flow that owns it, or a
   not-drawn entry with the reason. B14.
 - **Numbers.** Every duration, count, limit, rate and money figure, with the
   production query, code line, or document that backs it. B20. If the cell is
-  empty the number does not go on the board.
+  empty the number does not go on the screen.
 
-The twins review against this table. Drift is any board that disagrees with
+  **Amended 16/09/2026: the source has to be upstream of the design.**
+  Production, a PRD under `sifu-tutor/docs/features/`, a backend contract, or
+  the code. **"The card on screen 11 says RM240" is not a source.** Three
+  Nakngaji rates filled this column that way, passed every round by being
+  arithmetically consistent with each other, and were all invented. If the only
+  thing that agrees with a number is another screen in this file, the number is
+  a guess that has been copied.
+
+- **The name.** Added 16/09/2026. The screen's name in Figma has to describe
+  what the export shows. `39 About you, answering out loud` showed a typed
+  answer and an on-screen keyboard, and the name had been believed for days,
+  hiding the fact that the speaking route had no screen at all. A name is a
+  claim like any other and it is checked against the picture.
+
+The reviewers review against this table. Drift is any screen that disagrees with
 its row.
+
+## 3. Every promise in the table gets walked
+
+`design/scripts/links.figma.py` reads back every promise actually drawn: a row
+with a chevron, a button by its label, text in the link blue. Compare that list
+with the **Every tap** column. Anything in the file and not in the table is an
+undeclared promise; anything in the table and not in the file is a decision that
+never reached the screen.
+
+This is the step that found the two biggest holes in the whole run: a commission
+sheet linked from 19 screens and drawn on none, and a read-back for a sent
+report linked from 6. Both specs had been written and approved days before. The
+screen table had the rows. Nothing had ever compared the two.
 
 ## 2. The pre-flight runs before every export
 
 `design/scripts/preflight.figma.js` in the app repo, pasted into
 `use_figma` with the page id. It reports: button colour against the verb, checklist rows against
-patterns.md 8, comparative claims in copy, the same object twice on a board,
+patterns.md 8, comparative claims in copy, the same object twice on a screen,
 chevron rows and text buttons for the destinations column,
 the done tick outside a done row, white cards with no edge, tertiary text on
 a pastel, counts written as words, unbound white wrapper fills, empty space
-above the pinned bar, board overlap, and every text button so it can be
+above the pinned bar, screen overlap, and every text button so it can be
 checked against the destinations column.
 
 A non-empty report is fixed, not disclosed. The export happens only when it
@@ -61,7 +88,7 @@ is empty.
 ## After Being worth picking, 14/09/2026
 
 Four rounds, 71 findings, 59 confirmed, 2 wrong. One round fewer than the
-first flow, on more boards. Sorted by cause:
+first flow, on more screens. Sorted by cause:
 
 | Cause | Share | What now catches it |
 |---|---|---|
@@ -74,12 +101,12 @@ first flow, on more boards. Sorted by cause:
 Three things change in the table and the run:
 
 - **Header style column.** Standard, Coloured or Hero, from patterns.md 1a,
-  decided per board in words. The Profile was named as the first hero
+  decided per screen in words. The Profile was named as the first hero
   candidate in the pattern file and drawn standard for four rounds because
   nobody chose.
 - **Empty state row.** Every editor and every list gets its empty state as
   its own row before drawing, listed next to the filled one. 92.8% of tutors
-  start empty; the empty board is the common case, B17.
+  start empty; the empty screen is the common case, B17.
 - **Rules from previous flows.** Before drawing, read the change logs of
   every flow that shares a component with this one and the rules list in
   `learning.md`. Each rule is either enforced by the pre-flight or written
@@ -103,35 +130,35 @@ by cause, excluding those two:
 
 | Cause | Share | What now catches it |
 |---|---|---|
-| A rule applied on one board and not its siblings | a third | Pre-flight checks 9 to 14; the rules step before drawing |
-| Two boards showing the same request with different facts | a fifth | Check 13, one request one set of facts |
+| A rule applied on one screen and not its siblings | a third | Pre-flight checks 9 to 14; the rules step before drawing |
+| Two screens showing the same request with different facts | a fifth | Check 13, one request one set of facts |
 | A control or a toast below the fold | a tenth | Check 14, a control a tutor must reach ends above 812 |
-| A variant named in the table and never drawn | a tenth | The table is read back board by board before export |
+| A variant named in the table and never drawn | a tenth | The table is read back screen by screen before export |
 | Copy claiming more than the data holds | a tenth | The writer, on the table before drawing and on the export |
 | Execution slips (clipped, placeholder, overlap) | the rest | Looking at the export, every round |
 
 Four things change in the run:
 
 - **The writer is a step, not an option.** `autopilot-copy` writes the copy
-  table from the board table before anything is drawn, and audits the
+  table from the screen table before anything is drawn, and audits the
   export. On this flow it cut two unsourced claims, caught eleven Malay
   register errors and found the app translating text the backend never
   translates.
 - **A rule conflict gets a reference pass, not a question.** When the stack
   card needed something the flat card rule forbids, measuring Tinder and
   five flat design systems answered it in one pass and the rule survived.
-- **Every board is a phone screen.** At least 812, taller boards mark the
+- **Every screen is a phone screen.** At least 812, taller screens mark the
   fold, and no control a tutor must reach sits below it.
 - **Clone in one call, edit in the next.** Instance text in a same-script
   clone silently ignores edits (B19, third trap).
 
 ## After Settings and account, 14/09/2026
 
-Five rounds, 33 boards, 62 findings, 53 confirmed, 1 wrong. The flow was
+Five rounds, 33 screens, 62 findings, 53 confirmed, 1 wrong. The flow was
 picked up mid-run by a second session after the first hit a model limit,
 which is itself a finding: everything the next session needed was on disk
-(the three lane reports, the spec with its board table, the frozen round
-sheets and the twin reports beside them), so it resumed at the verifier
+(the three lane reports, the spec with its screen table, the frozen round
+sheets and the reviewer reports beside them), so it resumed at the verifier
 rather than at research. Keep writing those files even when nothing seems to
 need them.
 
@@ -139,11 +166,11 @@ Sorted by cause:
 
 | Cause | Share | What now catches it |
 |---|---|---|
-| The document and the boards disagreed: a change log claiming a fix that was never drawn, a renamed string left in the table and in two sibling specs | about a third | Pre-flight check 15, the banned-string list, for the strings. For the rest: the change log is written after the export, and every rename is applied to the specs in the same pass as the boards |
-| A screen or variant nobody owned: the un-verified Profile, the unsaved-work sheet, one preference switched off, the third mode, the unfiltered list | a quarter | The Empty and Header columns already exist; add a **status** row to the board table for any flow with a tab root, naming what the screen shows at each account state, and a row per value of any enumerated field the code holds |
+| The document and the screens disagreed: a change log claiming a fix that was never drawn, a renamed string left in the table and in two sibling specs | about a third | Pre-flight check 15, the banned-string list, for the strings. For the rest: the change log is written after the export, and every rename is applied to the specs in the same pass as the screens |
+| A screen or variant nobody owned: the un-verified Profile, the unsaved-work sheet, one preference switched off, the third mode, the unfiltered list | a quarter | The Empty and Header columns already exist; add a **status** row to the screen table for any flow with a tab root, naming what the screen shows at each account state, and a row per value of any enumerated field the code holds |
 | Copy that promised what the backend does not send | a sixth | The copy pass now reads the backend's category or job map before it writes a line that names a message. Three of these were in one card |
 | A written rule not applied: the ink placeholder, the tertiary empty values, the sheet clearance, the scrim colour | a sixth | Pre-flight checks exist for the colour rules; the scrim and the sheet clearance are new candidates, both measurable from the node tree |
-| Execution slips: the fold through text, the toast over a value, a cloned card bringing its old subtitles | the rest | Looking at the export, which caught two of the three before the twins did |
+| Execution slips: the fold through text, the toast over a value, a cloned card bringing its old subtitles | the rest | Looking at the export, which caught two of the three before the reviewers did |
 
 Two things change in the table for the next flow:
 

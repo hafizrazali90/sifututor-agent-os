@@ -11,22 +11,50 @@ cp docs/agent-playbooks/autopilot/runner-skill.md ~/.claude/skills/autopilot/SKI
 ```
 
 New agents and skills are registered when a session starts. After copying,
-start a new session before `/autopilot` or the five agent types will not be
-found.
+start a new session before `/autopilot` or the agent types will not be found.
+
+**This was not theory.** Running the copy on 16/09/2026 turned up
+`autopilot-measure.md` living only in `~/.claude/agents/`, never versioned,
+about to be silently overwritten by the next copy. It is in this folder now.
+
+**The copy is one-way and it goes stale.** `~/.claude/agents/` is what actually
+runs; this folder is only the versioned original. Every edit here needs the copy
+re-run, and an edit made directly in `~/.claude/agents/` is lost the next time
+anyone copies. Check both before assuming an agent has a rule.
 
 ## What is in here
 
 | File | What it is |
 |---|---|
-| `decisions.md` | The seven decisions that set this up, in his words |
-| `hafiz-profile.md` | The eight checks, built from 20,077 of his messages |
+| `decisions.md` | Every decision he has made about how this runs, in his words |
+| `hafiz-profile.md` | The nine checks, built from 20,077 of his messages |
 | `sources.md` | What the agents read, in authority order |
-| `loop.md` | The run: research, decide, draw, review, hand back |
-| `learning.md` | The four signals, the scoreboard, when to add an agent |
-| `agents/` | The five agent definitions |
+| `loop.md` | The run: research, decide, draw, check, review, hand back |
+| `learning.md` | The five signals, the scoreboard, when to add an agent |
+| `screen-spec.md` | The table written before any screen is drawn |
+| `agents/` | The seven agent definitions |
 | `runner-skill.md` | The `/autopilot` skill |
-| `twin-codex.sh` | The second twin, on a different model |
-| `misses.md` | Every wrong finding a twin has made |
+| `reviewer-codex.sh` | The second reviewer, on a different model |
+| `misses.md` | Every wrong finding a reviewer has made |
+
+## The checks live in the design repo, not here
+
+`loop.md` and `runner-skill.md` name six scripts. They are in
+`design/scripts/` in the design worktree, not in this folder, because they read
+one specific Figma file over the REST API:
+
+| Script | What it alone can see |
+|---|---|
+| `measure.figma.py` | where a node sits: clipped, off centre, past the fold, overflowing |
+| `system.figma.py` | contrast, tap size, a surface too pale to see, a typed colour |
+| `malay-check.py` | a Malay screen holding less than its English one |
+| `links.figma.py` | every promise a screen makes |
+| `artwork.figma.py` | a drawn object cropped through itself |
+| `dates.figma.py` | a weekday that does not match its date |
+
+They need `~/.config/sifututor/agent-access/figma-readonly.conf` and
+`/usr/bin/python3`, which has Pillow and pymysql. `api.figma.com` does not
+resolve from the Codex sandbox, so this lane is Claude-side only.
 
 ## Portability
 
