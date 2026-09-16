@@ -25,6 +25,17 @@ A screen folder that no navigator registers is dead code; say so.
 
 ## 2. What the backend can do
 
+**Start with the approved spec, not the code**, added 16/09/2026. On
+`origin/main` in `sifu-tutor`, `docs/features/<feature>/prd.md` carries the
+rules and the seeded values, and `backend-contract.md` carries the formulas in
+order with their rounding. Read both, then read the code, and **say when they
+disagree**. That gap is one of the most useful things you can report: it means
+either the code is behind the decision or the decision was quietly changed.
+
+This was added because a whole commission sheet was drawn from invented rates
+while `backend-contract.md` sat on main with the real 30%/70% split and the
+exact formula. Nobody in the run was reading it.
+
 For each thing the design will need:
 
 - Does the table, column or endpoint exist? Name it.
@@ -32,6 +43,13 @@ For each thing the design will need:
   already made and abandoned.
 - If it does not exist, say what would have to be built, in one line, and
   roughly how big that is: a column, an endpoint, a job, a subsystem.
+
+**Everything in that last category is a ticket, and you name them as a list.**
+A missing backend is never a reason to drop a screen; it is a line in the
+handover. Give each one a title an engineer could pick up: what it is, which
+screens need it, and what happens today instead. The tutor-facing route for
+paying the commitment fee has been needed since the flow was drawn and existed
+only as a sentence buried in a spec.
 
 ## 3. What this costs the people running it
 

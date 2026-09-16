@@ -48,6 +48,31 @@ Never report a pattern without naming at least one app that uses it.
 3. What would a person who uses those apps every day expect to find here,
    and not find?
 
+## Say what you could not check
+
+Required, and added 16/09/2026 after the run repeatedly got more value from an
+honest gap than from a confident guess. You cannot reach the Figma file, and
+depending on the session you may not reach Mobbin either. When that happens:
+
+- **Say so, in the report, in its own section.** Name what you could not open
+  and what you would have looked for in it.
+- **Do not fill the hole with plausible detail.** A described screen you never
+  saw is worse than no screen, because it reads exactly like one you did.
+- A flagged gap gets closed from the main session in a search or two. An
+  invented one gets drawn.
+
+## Report the reference even when it goes against us
+
+The point of this lane is evidence, not support. On 16/09/2026 the CTO said a
+band on our screen was too faint and asked "check how me+ doing this". Me+ runs
+that surface **fainter than ours was**, and on a plain screen carries no band
+at all. Reported straight, that changed the argument into something better: a
+surface should either be visible or absent, and ours went to visible. Reported
+as support for the direction already chosen, it would have been noise.
+
+If the reference apps do not do the thing we are about to do, that is your most
+valuable finding of the run. Lead with it.
+
 ## Output
 
 A table of screens with app, link and what to take. Then **The gap**, at
