@@ -222,3 +222,110 @@ Plain version:
 ```text
 Use one inventory command to prove worktree state; keep all mutations explicit.
 ```
+
+## Executable Lifecycle Helper
+
+Use the provider-neutral lifecycle helper when a dedicated worktree will live
+beyond one quick command or when several sessions may run together:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py lease \
+  --repo <repository> \
+  --worktree <worktree> \
+  --owner <agent-or-human> \
+  --session <exact-session-id> \
+  --purpose <short-purpose> \
+  --issue <issue-url-or-number> \
+  --cleanup-condition <plain-condition>
+```
+
+Lease state is machine-local under
+`~/.local/state/sifututor-agent-os/worktrees/` by default. It must contain only
+non-secret ownership metadata. Ten or more separate worktrees may hold leases
+at once; the helper serializes updates and refuses a second live owner for the
+same canonical path.
+
+Refresh long-running work periodically:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py heartbeat \
+  --worktree <worktree> --session <exact-session-id>
+```
+
+At handback, mark it `parked` when work remains or `released` when the cleanup
+condition is satisfied. A parked lease does not expire automatically. An
+expired active heartbeat is a review signal, not deletion authority.
+
+### Cross-repository proposal
+
+Run this from the umbrella workspace:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py inventory \
+  --workspace /Users/hafizrazali/Projects/Sifututor
+```
+
+The classifications mean:
+
+| Classification | Meaning | Mutation allowed |
+| --- | --- | --- |
+| `preserve` | Primary, dirty, locked, leased, active-task, unmerged or uncertain work. | None. Investigate or park. |
+| `reclaim_candidate` | Clean, unlocked, inactive and fully contained by the configured base. Process ownership is still rechecked at apply time. | Exact-path removal may be considered. |
+| `prunable_registration` | The checkout path is already missing; only stale Git administration metadata remains. | `prune-missing --apply` may remove the registration; branches/commits remain. |
+
+Age never creates permission. Before applying reclamation, the helper requires
+the exact expected HEAD and re-runs status, ignored-file, task, lease, ancestry,
+lock and process-cwd checks. It uses ordinary `git worktree remove`, never
+`--force`, and never deletes branches:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py reclaim \
+  --repo <repository> --worktree <exact-path> \
+  --expected-head <full-sha> --apply
+```
+
+The output records measured size, reason, exact HEAD and recovery command for
+the final summary. If any check is unavailable or changes between proposal and
+apply, the action refuses safely.
+
+After measuring size, apply repeats the safety checks while holding the same
+lock used for lease updates, through completion of Git removal. This prevents
+cooperating sessions from acquiring ownership between that check and removal.
+Malformed lease records, including valid JSON with an invalid schema, must be
+preserved for investigation. This lock does not coordinate arbitrary tools
+that ignore the lease system; no universal filesystem race protection is claimed.
+
+Git maintenance and other concurrent sessions may prune registrations while an
+inventory is running. Therefore, never use a before/after registration count as
+proof that this helper removed a checkout. Report only the exact paths whose
+`reclaim --apply` result says `applied: true` and `removed: true`, plus exact
+paths returned by an explicit `prune-missing --apply` action. Treat every other
+count change as concurrent or implicit metadata maintenance until independently
+proved.
+
+### Dependency reuse
+
+Do not symlink mutable dependency directories between worktrees. First find a
+donor with byte-identical lockfiles:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py dependency-donors \
+  --repo <repository> --worktree <new-worktree>
+```
+
+Then use the exact donor in proposal mode before adding `--apply`:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py seed-dependencies \
+  --source <donor-worktree> --target <new-worktree>
+```
+
+The helper uses APFS copy-on-write cloning on this Mac (or reflink-capable copy
+elsewhere), refuses a pre-existing target dependency directory, and refuses
+any lockfile mismatch. Node projects still run their normal project dependency
+version check and focused build/tests. Composer projects must run
+`composer dump-autoload --no-interaction --no-scripts` in the target before
+tests so absolute autoload paths are regenerated.
+
+This is a fast seed, not proof the environment is ready. Project-native checks
+remain mandatory.

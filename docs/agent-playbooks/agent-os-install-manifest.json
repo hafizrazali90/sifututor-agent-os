@@ -60,6 +60,8 @@
     "scripts/agent-checks/agent-os-install.sh",
     "scripts/agent-checks/agent-os-eval-runner.py",
     "scripts/agent-checks/agent-os-response-shape-runner.py",
+    "scripts/agent-checks/communication-samples.json",
+    "scripts/agent-checks/test_communication_samples.py",
     "scripts/agent-checks/agent-os-transcript-retrospective.py",
     "scripts/agent-checks/agent-os-workflow-example-runner.py",
     "scripts/agent-checks/agent-os-state-fixture-runner.py",
@@ -80,6 +82,9 @@
     "scripts/agent-checks/agent-os-validation-loop.py",
     "scripts/agent-checks/agent-os-scenario-lab-runner.py",
     "scripts/agent-checks/agent-os-behavior-trace-runner.py",
+    "scripts/agent-checks/agent-os-task-context.py",
+    "scripts/agent-checks/agent-os-approval-guard.py",
+    "scripts/agent-checks/test_agent_os_task_context.py",
     "scripts/agent-checks/agent-os-claude-delegation.py",
     "scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py",
     "scripts/agent-checks/agent-os-koda-retrieval-quality.py",
@@ -99,6 +104,8 @@
     "docs/agent-playbooks/templates/live-evidence-probe-report.md",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/worktree-inventory.sh",
+    "scripts/agent-checks/worktree-lifecycle.py",
+    "scripts/agent-checks/test_worktree_lifecycle.py",
     "scripts/agent-checks/workflow-doctor.sh"
   ],
   "codex_skill_files": [

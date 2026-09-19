@@ -60,6 +60,23 @@ be automated next.
 
 ## Manual Scenario Coverage
 
+Additional state/dispatch proof: `test_agent_os_task_context.py`, run by health,
+checks Session Map discovery never becoming authority, exact session/task
+identity, identity-only prompt injection, supervised enrollment/extension without
+reading prompt labels or changing the saved boundary, approval transfer without
+expansion, malformed state, adapter calls,
+and a controlled failure/correction/retry/follow-up sequence. Temporary enrolled
+tool packets exercise shared PreToolUse subprocess dispatch, matched versus
+denied actual inputs, worktree isolation, and resume scope reload. Config tests
+check local Claude/Codex hook registration. These support AO-022 through AO-024,
+AO-093, AO-098 and AO-105 but do not add live-provider enforcement/compliance
+proof to classifier cases. The trusted-supervisor seam has local unit/subprocess
+proof. A bounded manual live check on 2026-09-19 additionally proved identity
+delivery plus enrolled allow/deny behavior in fresh Codex and Claude sessions on
+this machine. It is recorded in the first-bundle handoff, not treated as a
+deterministic health check or cross-machine guarantee. Unenrolled fallback is not
+a pass.
+
 These are important but not honest as simple router-classifier tests yet.
 
 | Area | Eval IDs | Why manual for now |
@@ -132,3 +149,14 @@ When adding or changing an eval:
 
 Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
 deciding which layer should own a new harness case.
+
+## Communication supplied-sample coverage
+
+The response-shape runner retains 56 built-in fixtures. The separate
+`test_communication_samples.py` suite checks the supplied-sample CLI contract
+and 17 synthetic examples in `communication-samples.json`. Semantic labels
+are recorded reviewer judgments; the runner validates and reports them rather
+than independently detecting factual accuracy, language or attribution.
+Unreviewed samples remain pending. Health runs the regression suite, not the
+mixed positive/negative sample file expecting a zero exit. These checks do not
+establish a live-agent compliance rate; real sanitized samples need review.

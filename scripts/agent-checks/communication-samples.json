@@ -85,7 +85,7 @@
       "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
       "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
       "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
-      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+      "C6": {"verdict": "fail", "reason": "Reporter and channel are asserted without supporting evidence."}
     },
     "expected_status": "failed"
   },
@@ -100,7 +100,7 @@
       "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
       "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
       "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
-      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+      "C6": {"verdict": "fail", "reason": "The source only suspects a filter mismatch; the reply asserts an unverified exact cause."}
     },
     "expected_status": "failed"
   },
@@ -175,7 +175,7 @@
       "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
       "C4": {"verdict": "fail", "reason": "Identifier casing changed from the authoritative value even though prose is correct."},
       "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
-      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+      "C6": {"verdict": "fail", "reason": "The claimed identifier contradicts the authoritative context."}
     },
     "expected_status": "failed"
   },

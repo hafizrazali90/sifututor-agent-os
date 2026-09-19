@@ -92,6 +92,8 @@ check_file "related impact audit" "$ROOT/docs/agent-playbooks/related-impact-aud
 check_file "live evidence template" "$ROOT/docs/agent-playbooks/templates/live-evidence-probe-report.md"
 check_file "Koda CLI" "$ROOT/scripts/agent-checks/koda"
 check_file "worktree inventory" "$ROOT/scripts/agent-checks/worktree-inventory.sh"
+check_file "worktree lifecycle" "$ROOT/scripts/agent-checks/worktree-lifecycle.py"
+check_file "worktree lifecycle fixtures" "$ROOT/scripts/agent-checks/test_worktree_lifecycle.py"
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"
@@ -161,6 +163,13 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-response-shape.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-response-shape.out $TMP_DIR/agent-os-response-shape.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_communication_samples.py' >$TMP_DIR/communication-samples.out 2>$TMP_DIR/communication-samples.err; then
+  pass "communication samples" "sample input, manual-review state and CLI regressions passed"
+else
+  fail "communication samples" "sample regression tests failed"
+fi
+rm -f "$TMP_DIR/communication-samples.out" "$TMP_DIR/communication-samples.err"
 
 if python3 "$ROOT/scripts/agent-checks/agent-os-transcript-retrospective.py" --self-test >$TMP_DIR/agent-os-transcript-retrospective.out 2>$TMP_DIR/agent-os-transcript-retrospective.err; then
   transcript_summary="$(tail -1 $TMP_DIR/agent-os-transcript-retrospective.out 2>/dev/null || true)"
@@ -323,6 +332,23 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-behavior-trace.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-behavior-trace.out $TMP_DIR/agent-os-behavior-trace.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_worktree_lifecycle.py' >$TMP_DIR/worktree-lifecycle.out 2>$TMP_DIR/worktree-lifecycle.err; then
+  worktree_lifecycle_summary="$(tail -1 $TMP_DIR/worktree-lifecycle.out 2>/dev/null || true)"
+  pass "worktree lifecycle" "${worktree_lifecycle_summary:-lease, classification, reclaim and dependency fixtures passed}"
+else
+  fail "worktree lifecycle" "worktree lifecycle regression tests failed"
+  sed -n '1,12p' $TMP_DIR/worktree-lifecycle.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/worktree-lifecycle.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/worktree-lifecycle.out $TMP_DIR/worktree-lifecycle.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_task_context.py' >$TMP_DIR/task-context.out 2>$TMP_DIR/task-context.err; then
+  pass "Agent OS task context" "session isolation, approval transfer and controlled continuation passed"
+else
+  fail "Agent OS task context" "task-context regression tests failed"
+fi
+rm -f "$TMP_DIR/task-context.out" "$TMP_DIR/task-context.err"
 
 if "$ROOT/scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py" >$TMP_DIR/agent-os-claude-delegation.out 2>$TMP_DIR/agent-os-claude-delegation.err; then
   claude_delegation_summary="$(tail -1 $TMP_DIR/agent-os-claude-delegation.out 2>/dev/null || true)"
