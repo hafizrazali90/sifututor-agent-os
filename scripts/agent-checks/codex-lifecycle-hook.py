@@ -429,6 +429,9 @@ def read_json_arg_or_stdin(flag: str) -> tuple[dict[str, Any], str]:
 
 
 def koda_direct_cli(tool_name: str, arguments: dict[str, Any]) -> int:
+    if tool_name == "memory_update":
+        from koda_write import write_cli
+        return write_cli(tool_name, arguments, koda_initialize, koda_tool_call)
     session, init_error = koda_initialize("codex-koda-direct-cli")
     if init_error:
         print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
@@ -450,71 +453,9 @@ def canonical_memory_content(value: object) -> str:
 
 
 def koda_store_deduplicated(arguments: dict[str, Any]) -> int:
-    """Store through Koda only when no exact-content memory already exists."""
-
-    content = str(arguments.get("content") or "").strip()
-    if not content:
-        print("KODA DIRECT FAIL: memory_store requires non-empty content", file=sys.stderr)
-        return 1
-
-    session, init_error = koda_initialize("codex-koda-deduplicated-store")
-    if init_error:
-        print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
-        return 1
-
-    search_arguments: dict[str, Any] = {"query": content[:500], "limit": 20}
-    if arguments.get("project"):
-        search_arguments["project"] = arguments["project"]
-
-    search_response, search_error = koda_tool_call(
-        session,
-        "memory_search",
-        search_arguments,
-        request_id=2,
-    )
-    if search_error:
-        print(
-            f"KODA DIRECT FAIL: duplicate preflight failed; memory was not stored: {search_error}",
-            file=sys.stderr,
-        )
-        return 1
-
-    target = canonical_memory_content(content)
-    search_payload = parse_tool_content(search_response)
-    if not isinstance(search_payload, list):
-        print(
-            "KODA DIRECT FAIL: duplicate preflight did not return a memory list; memory was not stored",
-            file=sys.stderr,
-        )
-        return 1
-
-    for memory in search_payload:
-        if not isinstance(memory, dict):
-            continue
-        if canonical_memory_content(memory.get("content")) != target:
-            continue
-        print(
-            json.dumps(
-                {
-                    "status": "skipped_exact_duplicate",
-                    "existing_id": memory.get("id") or "unknown",
-                    "next": "use koda update when the canonical memory needs sharper wording",
-                }
-            )
-        )
-        return 0
-
-    store_response, store_error = koda_tool_call(
-        session,
-        "memory_store",
-        arguments,
-        request_id=3,
-    )
-    if store_error:
-        print(f"KODA DIRECT FAIL: {store_error}", file=sys.stderr)
-        return 1
-    print_koda_tool_result(store_response)
-    return 0
+    """Store once, retaining duplicate protection and verifying exact-ID readback."""
+    from koda_write import write_cli
+    return write_cli("memory_store", arguments, koda_initialize, koda_tool_call)
 
 
 def parse_tool_content(response: dict) -> object:

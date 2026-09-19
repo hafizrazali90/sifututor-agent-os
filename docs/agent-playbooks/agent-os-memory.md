@@ -275,3 +275,46 @@ New Agent OS memories should prefer sharper tags:
 - risk tag, such as `risk-critical`, `risk-normal`, or `risk-low`
 
 Do not bulk migrate old memories without a read-only audit report first.
+
+## Verify accepted writes
+
+Repository integration: the shared lifecycle hook now routes store/update through
+the verification module. Permanent CLI tests exercise all three entrypoints;
+the install manifest and health runner include the implementation and tests.
+This does not by itself prove installed adapters were updated or a live server
+write was verified. Check the release evidence before claiming either.
+
+An accepted write is not proof that the saved record matches the request.
+The `koda_write` client verifies `memory_store` and `memory_update` by calling
+`memory_recall` with the exact returned ID. It compares supplied supported
+fields, treats tags as an unordered set, and does not invent expectations for
+omitted server defaults. A duplicate result also needs exact-ID verification;
+it is an existing record, never a newly verified save.
+
+The client returns safe JSON metadata and exit status:
+
+| Verification state | Exit | Meaning |
+| --- | --- | --- |
+| `verified` | 0 | Supplied supported fields matched at readback time. |
+| `persisted_but_mismatched` | 1 | A record was read, but named fields differ. |
+| `verification_unavailable` | 1 | The contract could not be fully checked. |
+
+Always inspect `write_outcome`: `accepted`, `existing_record`, `unknown`,
+`rejected`, or `not_attempted`. Exit 1 does **not** mean no write occurred.
+Keep `id`/`existing_id` for reconciliation. Do not automatically retry a write,
+retag, confirm, or repair a record; a concurrent edit or ownership denial is
+not permission to overwrite it. Diagnostics contain field names and safe IDs,
+never requested/stored values, raw errors, or provider payloads.
+
+The inspected server accepts `scope` on store but does not expose it on recall.
+An explicit scope request therefore remains `verification_unavailable` unless
+a future compatible read response exposes scope. Do not infer scope from
+creator, project, tags, or visibility. Store does not support `confidence`;
+update does not support category/project/scope. Unsupported fields are rejected
+before writing. Omitted fields remain server defaults, outside the verification
+claim. See [memory architecture](agent-os-memory-architecture.md) for ownership
+and rollout boundaries.
+
+One empty broad search is not evidence that no memory exists. Retry narrower
+individual task topics with the **same project and scope constraints**. Do not
+relax filters to obtain results or interpret an unavailable search as empty.

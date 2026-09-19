@@ -164,6 +164,13 @@ else
 fi
 rm -f $TMP_DIR/agent-os-response-shape.out $TMP_DIR/agent-os-response-shape.err
 
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_communication_samples.py' >$TMP_DIR/communication-samples.out 2>$TMP_DIR/communication-samples.err; then
+  pass "communication samples" "sample input, manual-review state and CLI regressions passed"
+else
+  fail "communication samples" "sample regression tests failed"
+fi
+rm -f "$TMP_DIR/communication-samples.out" "$TMP_DIR/communication-samples.err"
+
 if python3 "$ROOT/scripts/agent-checks/agent-os-transcript-retrospective.py" --self-test >$TMP_DIR/agent-os-transcript-retrospective.out 2>$TMP_DIR/agent-os-transcript-retrospective.err; then
   transcript_summary="$(tail -1 $TMP_DIR/agent-os-transcript-retrospective.out 2>/dev/null || true)"
   pass "Agent OS transcript safety" "${transcript_summary:-passed}"
@@ -223,6 +230,13 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-koda-fixtures.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-koda-fixtures.out $TMP_DIR/agent-os-koda-fixtures.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_*koda*.py' >$TMP_DIR/koda-write-tests.out 2>$TMP_DIR/koda-write-tests.err; then
+  pass "Koda write integrity" "client contracts and CLI readback journeys passed"
+else
+  fail "Koda write integrity" "client regression tests failed; inspect locally without exposing provider data"
+fi
+rm -f "$TMP_DIR/koda-write-tests.out" "$TMP_DIR/koda-write-tests.err"
 
 if "$ROOT/scripts/agent-checks/agent-os-capability-fixture-runner.py" >$TMP_DIR/agent-os-capability-fixtures.out 2>$TMP_DIR/agent-os-capability-fixtures.err; then
   capability_fixture_summary="$(tail -1 $TMP_DIR/agent-os-capability-fixtures.out 2>/dev/null || true)"

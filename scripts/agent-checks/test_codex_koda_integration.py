@@ -127,7 +127,7 @@ class KodaContractTests(unittest.TestCase):
             "why": "Avoid repeating the same deterministic suite.",
         }
         duplicate = {
-            "id": "mem_existing",
+            "id": "mem_1234",
             "content": "  use one FULL agent os health sweep after focused checks. ",
         }
         with (
@@ -135,13 +135,15 @@ class KodaContractTests(unittest.TestCase):
             patch.object(
                 lifecycle,
                 "koda_tool_call",
-                return_value=(tool_response([duplicate]), ""),
+                side_effect=[(tool_response([duplicate]), ""),
+                             (tool_response({"id": "mem_1234", **arguments}), "")],
             ) as tool_call,
-            patch.object(lifecycle, "print", create=True),
+            patch("koda_write.print", create=True),
         ):
             self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
-        self.assertEqual(tool_call.call_count, 1)
-        self.assertEqual(tool_call.call_args.args[1], "memory_search")
+        self.assertEqual(tool_call.call_count, 2)
+        self.assertEqual([call.args[1] for call in tool_call.call_args_list],
+                         ["memory_search", "memory_recall"])
 
     def test_unique_memory_is_stored_after_duplicate_preflight(self):
         arguments = {
@@ -154,17 +156,18 @@ class KodaContractTests(unittest.TestCase):
         }
         responses = [
             (tool_response([]), ""),
-            (tool_response({"id": "mem_new"}), ""),
+            (tool_response({"id": "mem_1234"}), ""),
+            (tool_response({"id": "mem_1234", **arguments}), ""),
         ]
         with (
             patch.object(lifecycle, "koda_initialize", return_value=({"headers": {}, "session_id": "x"}, "")),
             patch.object(lifecycle, "koda_tool_call", side_effect=responses) as tool_call,
-            patch.object(lifecycle, "print_koda_tool_result"),
+            patch("koda_write.print", create=True),
         ):
             self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
         self.assertEqual(
             [call.args[1] for call in tool_call.call_args_list],
-            ["memory_search", "memory_store"],
+            ["memory_search", "memory_store", "memory_recall"],
         )
 
 
