@@ -188,7 +188,8 @@ not delegation automation.
 
 ### Readiness And Launch
 
-Run the filtered preflight before Claude starts:
+Run the filtered preflight before Claude starts. Do not launch delegated work
+with a direct `claude` command; the watchdog is the only approved launcher.
 
 ```bash
 scripts/agent-checks/agent-os-claude-delegation.py preflight \
@@ -197,10 +198,19 @@ scripts/agent-checks/agent-os-claude-delegation.py preflight \
 
 The preflight proves:
 
+- the runner itself did not inherit a Claude auth token, API key, endpoint, or
+  provider-selection override; it fails closed before probing Claude at all
+  and reports only unsafe variable names, never their values. Unset every
+  named variable before relaunch; never edit the job file to route around this
+  block;
 - Claude CLI, version, and read-only installation doctor are healthy;
-- authentication is logged in through `claude.ai` with a Max subscription;
-- `ANTHROPIC_API_KEY` is removed from every Claude child process, so an unused
-  API credit path cannot silently replace the subscription;
+- authentication is a genuine first-party Max subscription: `authMethod`,
+  `subscriptionType`, and `apiProvider` must all agree. A login that looks
+  like Max on the first two fields but reports a non-first-party `apiProvider`
+  is exactly the reported #28 incident (Max login shown, request actually
+  billed through an inherited API key) and still fails closed;
+- recognized billing override variables are also removed from every Claude child process as
+  defence in depth;
 - required MCP servers are connected when the job names them;
 - the declared worktree and branch match current Git state;
 - no live worker owns the same worktree;
@@ -212,6 +222,20 @@ The preflight proves:
 
 Identity fields, organization identifiers, raw auth output, prompts, and Claude
 response text are not written into preflight or evidence files.
+
+#### Paid provider evaluation or canary work
+
+This watchdog is Max-only. A job may optionally declare `paid_evaluation`
+metadata (`approved_by`, `estimate_usd`, `hard_cap_usd`, with the hard cap at
+or above the estimate) for planning visibility. Because the job file is locally
+editable, it is explicitly an untrusted declaration: it does not prove Hafiz
+approved spending and never unlocks paid billing here. Preflight still fails
+closed on an inherited override or non-Max auth. If paid provider evaluation
+or canary work is genuinely needed, run it through a separate,
+manually-supervised path outside this automated runner. That path must obtain
+Hafiz's approval from a trusted current-session source and record a visible
+cost estimate and hard spend cap before the first call; never infer authority
+from `paid_evaluation` in this job file.
 
 Start the bounded worker only after `READY`:
 

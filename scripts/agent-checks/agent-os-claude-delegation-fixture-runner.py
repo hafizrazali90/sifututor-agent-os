@@ -29,17 +29,50 @@ if marker and os.environ.get("ANTHROPIC_API_KEY"):
 prompt_marker = os.environ.get("FAKE_PROMPT_ARG_MARKER")
 if prompt_marker and any("exercise the watchdog" in arg for arg in sys.argv[1:]):
     Path(prompt_marker).write_text("prompt exposed in argv")
+probe_marker = os.environ.get("FAKE_PROBE_MARKER")
+if probe_marker:
+    Path(probe_marker).write_text("probed")
 
 args = sys.argv[1:]
 if args[:2] == ["auth", "status"]:
-    print(json.dumps({
-        "loggedIn": True,
-        "authMethod": "claude.ai",
-        "apiProvider": "firstParty",
-        "subscriptionType": "max",
-        "email": "must-not-persist@example.test",
-        "orgId": "must-not-persist",
-    }))
+    auth_mode = os.environ.get("FAKE_AUTH_MODE", "max")
+    if auth_mode == "api_key":
+        response = {
+            "loggedIn": True,
+            "authMethod": "api-key",
+            "apiProvider": "anthropic",
+            "subscriptionType": None,
+            "email": "must-not-persist@example.test",
+            "orgId": "must-not-persist",
+        }
+    elif auth_mode == "ambiguous":
+        response = {
+            "loggedIn": True,
+            "authMethod": "claude.ai",
+            "apiProvider": None,
+            "subscriptionType": None,
+            "email": "must-not-persist@example.test",
+            "orgId": "must-not-persist",
+        }
+    elif auth_mode == "max_login_api_billed":
+        response = {
+            "loggedIn": True,
+            "authMethod": "claude.ai",
+            "apiProvider": "anthropic",
+            "subscriptionType": "max",
+            "email": "must-not-persist@example.test",
+            "orgId": "must-not-persist",
+        }
+    else:
+        response = {
+            "loggedIn": True,
+            "authMethod": "claude.ai",
+            "apiProvider": "firstParty",
+            "subscriptionType": "max",
+            "email": "must-not-persist@example.test",
+            "orgId": "must-not-persist",
+        }
+    print(json.dumps(response))
     raise SystemExit(0)
 if args[:2] == ["mcp", "list"]:
     print("koda: connected")
@@ -167,33 +200,67 @@ def main() -> int:
 
         marker = tmp / "api-key-leak-marker"
         prompt_marker = tmp / "prompt-argv-marker"
+        probe_marker = tmp / "probe-marker"
         base_env = os.environ.copy()
         base_env["PATH"] = f"{fake_bin}{os.pathsep}{base_env.get('PATH', '')}"
         base_env["ANTHROPIC_API_KEY"] = "fixture-key-must-be-unset"
         base_env["FAKE_API_KEY_MARKER"] = str(marker)
         base_env["FAKE_PROMPT_ARG_MARKER"] = str(prompt_marker)
 
+        # DF-001: an inherited ANTHROPIC_API_KEY must fail preflight closed before
+        # Claude is ever probed, so a stray evaluation key cannot silently replace
+        # the intended Max subscription billing.
         job = make_job(tmp, worktree, "DF-001")
-        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(job), "--json"], base_env)
+        probe_env = base_env | {"FAKE_PROBE_MARKER": str(probe_marker)}
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(job), "--json"], probe_env)
         try:
             payload = json.loads(result.stdout)
         except json.JSONDecodeError:
             payload = {}
         errors: list[str] = []
-        check(result.returncode == 0, f"preflight exit={result.returncode}: {result.stderr}", errors)
-        check(payload.get("ready") is True, "preflight did not report ready", errors)
+        check(result.returncode != 0, "inherited API key unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "inherited API key preflight did not fail closed", errors)
+        billing_guard = payload.get("checks", {}).get("api_billing_guard", {})
+        check(billing_guard.get("state") == "blocked", "inherited API key was not identified as a billing risk", errors)
+        check(
+            billing_guard.get("blocked_variable_names") == ["ANTHROPIC_API_KEY"],
+            "blocked result did not identify the inherited variable by name",
+            errors,
+        )
+        serialized = json.dumps(payload)
+        check("fixture-key-must-be-unset" not in serialized, "the API key value leaked into preflight output", errors)
+        check(not probe_marker.exists(), "Claude was probed before the inherited API key was rejected", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-001 fail-closed on inherited API key")
+        failures.extend(f"DF-001: {error}" for error in errors)
+
+        # DF-002 (this file's numbering continues below): once the key is removed
+        # (the documented `env -u ANTHROPIC_API_KEY` relaunch), the same job must
+        # pass and prove an authenticated first-party Max subscription.
+        max_only_env = dict(base_env)
+        max_only_env.pop("ANTHROPIC_API_KEY")
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(job), "--json"], max_only_env)
+        try:
+            payload = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            payload = {}
+        errors = []
+        check(result.returncode == 0, f"Max-only preflight exit={result.returncode}: {result.stderr}", errors)
+        check(payload.get("ready") is True, "Max-only preflight did not report ready", errors)
+        billing_guard = payload.get("checks", {}).get("api_billing_guard", {})
+        check(billing_guard.get("state") == "ready", "billing guard did not clear once the key was removed", errors)
         auth = payload.get("checks", {}).get("auth", {})
         check(auth.get("subscription_type") == "max", "Claude Max subscription not proven", errors)
+        check(auth.get("api_provider") == "firstParty", "first-party API provider not proven", errors)
         serialized = json.dumps(payload)
         check("must-not-persist" not in serialized, "identity fields leaked into preflight", errors)
         check(not marker.exists(), "ANTHROPIC_API_KEY reached Claude child process", errors)
-        print(("PASS" if not errors else "FAIL") + " DF-001 filtered Claude Max preflight")
-        failures.extend(f"DF-001: {error}" for error in errors)
+        print(("PASS" if not errors else "FAIL") + " DF-001B Max-only preflight after key removal")
+        failures.extend(f"DF-001B: {error}" for error in errors)
 
         (worktree / "README.md").write_text("fixture\nchanged\n")
         happy_job = make_job(tmp, worktree, "DF-002")
         happy_spec = json.loads(happy_job.read_text())
-        happy_env = base_env | {
+        happy_env = max_only_env | {
             "FAKE_CLAUDE_MODE": "happy",
             "FAKE_HANDBACK": happy_spec["handback_file"],
         }
@@ -228,7 +295,7 @@ def main() -> int:
 
         silent_job = make_job(tmp, worktree, "DF-003")
         silent_spec = json.loads(silent_job.read_text())
-        silent_env = base_env | {
+        silent_env = max_only_env | {
             "FAKE_CLAUDE_MODE": "silent",
             "FAKE_HANDBACK": silent_spec["handback_file"],
         }
@@ -246,7 +313,7 @@ def main() -> int:
 
         setup_job = make_job(tmp, worktree, "DF-004")
         setup_spec = json.loads(setup_job.read_text())
-        setup_env = base_env | {"FAKE_CLAUDE_MODE": "setup"}
+        setup_env = max_only_env | {"FAKE_CLAUDE_MODE": "setup"}
         result = run([sys.executable, str(RUNNER), "run", "--job", str(setup_job)], setup_env)
         evidence_path = Path(setup_spec["state_dir"]) / "evidence.json"
         evidence = json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
@@ -274,7 +341,7 @@ def main() -> int:
         block_job = make_job(tmp, worktree, "DF-006-A", lane="shared-lane")
         block_spec = json.loads(block_job.read_text())
         contender_job = make_job(tmp, worktree, "DF-006-B", lane="different-owner-same-worktree")
-        block_env = base_env | {
+        block_env = max_only_env | {
             "FAKE_CLAUDE_MODE": "blocking",
             "FAKE_HANDBACK": block_spec["handback_file"],
         }
@@ -289,7 +356,7 @@ def main() -> int:
         time.sleep(0.15)
         result = run(
             [sys.executable, str(RUNNER), "preflight", "--job", str(contender_job), "--json"],
-            base_env,
+            max_only_env,
         )
         active.communicate(timeout=5)
         contender = json.loads(result.stdout)
@@ -303,7 +370,7 @@ def main() -> int:
         unsafe = json.loads(unsafe_job.read_text())
         unsafe["claude_args"].append("--dangerously-skip-permissions")
         unsafe_job.write_text(json.dumps(unsafe, indent=2) + "\n")
-        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(unsafe_job), "--json"], base_env)
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(unsafe_job), "--json"], max_only_env)
         payload = json.loads(result.stdout)
         errors = []
         check(result.returncode != 0, "unsafe approval bypass unexpectedly passed", errors)
@@ -315,7 +382,7 @@ def main() -> int:
         release = json.loads(release_job.read_text())
         release["approved_stop_point"] = "production monitored"
         release_job.write_text(json.dumps(release, indent=2) + "\n")
-        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(release_job), "--json"], base_env)
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(release_job), "--json"], max_only_env)
         payload = json.loads(result.stdout)
         errors = []
         check(result.returncode != 0, "production delegation boundary unexpectedly passed", errors)
@@ -353,12 +420,176 @@ def main() -> int:
         print(("PASS" if not errors else "FAIL") + " DF-009 dead-watchdog detection")
         failures.extend(f"DF-009: {error}" for error in errors)
 
+        # DF-010: the CLI's own reported billing identity is the authoritative
+        # signal, independent of the parent shell's environment. An API-key
+        # authenticated session must fail closed even with no inherited key.
+        api_key_auth_job = make_job(tmp, worktree, "DF-010")
+        api_key_auth_env = max_only_env | {"FAKE_AUTH_MODE": "api_key"}
+        result = run(
+            [sys.executable, str(RUNNER), "preflight", "--job", str(api_key_auth_job), "--json"],
+            api_key_auth_env,
+        )
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "API-key authenticated session unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "API-key authenticated session did not fail closed", errors)
+        auth = payload.get("checks", {}).get("auth", {})
+        check(auth.get("state") == "failed", "API-key billing mode was not reported as failed auth", errors)
+        check(auth.get("api_provider") == "anthropic", "API provider identity was not preserved for diagnosis", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-010 API-billed auth refusal")
+        failures.extend(f"DF-010: {error}" for error in errors)
+
+        # DF-011: an ambiguous auth response (missing subscription/provider
+        # fields) must never be treated as a proven Max subscription.
+        ambiguous_auth_job = make_job(tmp, worktree, "DF-011")
+        ambiguous_auth_env = max_only_env | {"FAKE_AUTH_MODE": "ambiguous"}
+        result = run(
+            [sys.executable, str(RUNNER), "preflight", "--job", str(ambiguous_auth_job), "--json"],
+            ambiguous_auth_env,
+        )
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "ambiguous auth unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "ambiguous auth did not fail closed", errors)
+        auth = payload.get("checks", {}).get("auth", {})
+        check(auth.get("state") == "failed", "ambiguous auth was not reported as failed", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-011 ambiguous auth refusal")
+        failures.extend(f"DF-011: {error}" for error in errors)
+
+        # DF-011B: reproduces the reported incident directly. `authMethod` and
+        # `subscriptionType` alone can both look like a genuine Max login while
+        # `apiProvider` shows the request is actually routed through metered API
+        # billing. Checking only the first two fields would incorrectly pass.
+        max_billed_job = make_job(tmp, worktree, "DF-011B")
+        max_billed_env = max_only_env | {"FAKE_AUTH_MODE": "max_login_api_billed"}
+        result = run(
+            [sys.executable, str(RUNNER), "preflight", "--job", str(max_billed_job), "--json"],
+            max_billed_env,
+        )
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "Max-labeled login with API billing unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "Max-labeled login with API billing did not fail closed", errors)
+        auth = payload.get("checks", {}).get("auth", {})
+        check(auth.get("state") == "failed", "apiProvider billing mismatch was not reported as failed auth", errors)
+        check(auth.get("subscription_type") == "max", "diagnostic subscription_type was not preserved", errors)
+        check(auth.get("api_provider") == "anthropic", "diagnostic api_provider was not preserved", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-011B Max login with API-billed provider refusal")
+        failures.extend(f"DF-011B: {error}" for error in errors)
+
+        # DF-012: a well-formed paid_evaluation declaration (approved_by, a
+        # positive estimate, and a hard cap at or above the estimate) is
+        # accepted as audit metadata and does not block an otherwise-ready job.
+        valid_paid_job = make_job(tmp, worktree, "DF-012")
+        valid_paid_spec = json.loads(valid_paid_job.read_text())
+        valid_paid_spec["paid_evaluation"] = {
+            "approved_by": "Hafiz Razali",
+            "estimate_usd": 5.0,
+            "hard_cap_usd": 10.0,
+        }
+        valid_paid_job.write_text(json.dumps(valid_paid_spec, indent=2) + "\n")
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(valid_paid_job), "--json"], max_only_env)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode == 0, f"valid paid_evaluation exit={result.returncode}: {result.stderr}", errors)
+        check(payload.get("ready") is True, "valid paid_evaluation metadata unexpectedly blocked the job", errors)
+        paid = payload.get("checks", {}).get("paid_evaluation", {})
+        check(paid.get("state") == "ready", "valid paid_evaluation metadata was not accepted", errors)
+        check(paid.get("declared") is True, "paid_evaluation declaration was not recorded", errors)
+        check(paid.get("trust") == "untrusted_job_declaration", "job metadata was presented as trusted approval", errors)
+        check(paid.get("proves_human_approval") is False, "job metadata incorrectly claimed to prove approval", errors)
+        check(paid.get("executes_paid_billing") is False, "paid_evaluation metadata must never claim execution authority", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-012 valid untrusted paid-evaluation metadata")
+        failures.extend(f"DF-012: {error}" for error in errors)
+
+        # DF-013: an incomplete or invalid paid_evaluation declaration (missing
+        # approver, non-positive estimate, or a hard cap below the estimate)
+        # must fail closed with the specific field errors.
+        invalid_paid_job = make_job(tmp, worktree, "DF-013")
+        invalid_paid_spec = json.loads(invalid_paid_job.read_text())
+        invalid_paid_spec["paid_evaluation"] = {
+            "approved_by": "",
+            "estimate_usd": 25.0,
+            "hard_cap_usd": 10.0,
+        }
+        invalid_paid_job.write_text(json.dumps(invalid_paid_spec, indent=2) + "\n")
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(invalid_paid_job), "--json"], max_only_env)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "invalid paid_evaluation metadata unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "invalid paid_evaluation metadata did not fail closed", errors)
+        paid = payload.get("checks", {}).get("paid_evaluation", {})
+        check(paid.get("state") == "blocked", "invalid paid_evaluation metadata was not blocked", errors)
+        paid_errors = " ".join(paid.get("errors", []))
+        check("approved_by" in paid_errors, "missing approver was not reported", errors)
+        check("hard_cap_usd" in paid_errors, "hard cap below estimate was not reported", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-013 invalid paid-evaluation planning metadata")
+        failures.extend(f"DF-013: {error}" for error in errors)
+
+        # DF-014: a valid paid_evaluation declaration must never unlock the
+        # inherited ANTHROPIC_API_KEY. This is the anti-bypass regression: this
+        # Max-only watchdog never launches Claude with API billing, no matter
+        # what a locally-editable job file claims.
+        bypass_job = make_job(tmp, worktree, "DF-014")
+        bypass_spec = json.loads(bypass_job.read_text())
+        bypass_spec["paid_evaluation"] = {
+            "approved_by": "Hafiz Razali",
+            "estimate_usd": 5.0,
+            "hard_cap_usd": 10.0,
+        }
+        bypass_job.write_text(json.dumps(bypass_spec, indent=2) + "\n")
+        bypass_probe_marker = tmp / "df-014-probe-marker"
+        bypass_env = base_env | {"FAKE_PROBE_MARKER": str(bypass_probe_marker)}
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(bypass_job), "--json"], bypass_env)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "declared paid_evaluation unlocked the inherited API key", errors)
+        check(payload.get("ready") is False, "declared paid_evaluation bypassed the billing guard", errors)
+        billing_guard = payload.get("checks", {}).get("api_billing_guard", {})
+        check(billing_guard.get("state") == "blocked", "billing guard did not block despite a declared paid_evaluation", errors)
+        check(not bypass_probe_marker.exists(), "Claude was probed despite the inherited API key", errors)
+        serialized = json.dumps(payload)
+        check("fixture-key-must-be-unset" not in serialized, "the API key value leaked into preflight output", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-014 paid-evaluation metadata cannot unlock API billing")
+        failures.extend(f"DF-014: {error}" for error in errors)
+
+        # DF-015: every supported auth, endpoint, or provider override fails
+        # before the first Claude probe and its value never enters output.
+        billing_overrides = [
+            "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "ANTHROPIC_CUSTOM_HEADERS",
+            "ANTHROPIC_BEDROCK_BASE_URL", "ANTHROPIC_BEDROCK_MANTLE_BASE_URL",
+            "ANTHROPIC_VERTEX_BASE_URL", "ANTHROPIC_VERTEX_PROJECT_ID",
+            "ANTHROPIC_FOUNDRY_BASE_URL", "ANTHROPIC_FOUNDRY_RESOURCE",
+            "ANTHROPIC_FOUNDRY_API_KEY", "ANTHROPIC_FOUNDRY_AUTH_TOKEN",
+            "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY",
+            "CLAUDE_CODE_USE_MANTLE",
+            "CLAUDE_CODE_USE_ANTHROPIC_AWS",
+        ]
+        df_015_errors: list[str] = []
+        for variable in billing_overrides:
+            override_job = make_job(tmp, worktree, f"DF-015-{variable}")
+            override_probe = tmp / f"df-015-{variable}-probe"
+            override_env = max_only_env | {
+                variable: "fixture-value-must-not-reach-claude",
+                "FAKE_PROBE_MARKER": str(override_probe),
+            }
+            result = run([sys.executable, str(RUNNER), "preflight", "--job", str(override_job), "--json"], override_env)
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+            billing_guard = payload.get("checks", {}).get("api_billing_guard", {})
+            check(result.returncode != 0, f"{variable} unexpectedly passed preflight", df_015_errors)
+            check(billing_guard.get("state") == "blocked", f"{variable} was not blocked", df_015_errors)
+            check(billing_guard.get("blocked_variable_names") == [variable], f"{variable} was not identified by name", df_015_errors)
+            check(not override_probe.exists(), f"Claude was probed with inherited {variable}", df_015_errors)
+            check("fixture-value-must-not-reach-claude" not in json.dumps(payload), f"{variable} value leaked", df_015_errors)
+        print(("PASS" if not df_015_errors else "FAIL") + " DF-015 alternate billing override refusal")
+        failures.extend(f"DF-015: {error}" for error in df_015_errors)
+
     if failures:
         for failure in failures:
             print(f"  - {failure}")
         print(f"agent-os-claude-delegation-fixtures: FAIL ({len(failures)} issue(s))")
         return 1
-    print("agent-os-claude-delegation-fixtures: 9/9 passed")
+    print("agent-os-claude-delegation-fixtures: 17/17 passed")
     return 0
 
 
