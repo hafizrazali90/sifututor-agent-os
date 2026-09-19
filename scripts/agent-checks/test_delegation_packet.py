@@ -33,6 +33,85 @@ def example():
 
 
 class PacketTests(unittest.TestCase):
+    def test_symlink_resolution_runtime_error_is_metadata_only(self):
+        from unittest.mock import patch
+        p=example();p['artifact_checks']=[{'path':'report.md','required_lines':[], 'forbidden_lines':[], 'max_words':10,'sha256':None}]
+        with patch.object(Path,'resolve',side_effect=[Path('/tmp/task'),RuntimeError('PRIVATE loop')]):
+            self.assertEqual(packet.artifact_errors(p),['artifact.0.unavailable'])
+
+    def test_legacy_brief_does_not_require_unconfigured_artifact_check(self):
+        self.assertNotIn('run check-artifacts',packet.render_brief(example()))
+
+    def test_invalid_artifact_contracts_fail_closed(self):
+        good={'path':'report.md','required_lines':[], 'forbidden_lines':[], 'max_words':150,'sha256':None}
+        for key,value in [('path','../outside'),('path','.env.local'),('path','live/report.md'),
+                          ('max_words',True),('max_words',0),('sha256','invalid'),
+                          ('required_lines',['two\nlines']),('forbidden_lines','not-list')]:
+            p=example();p['artifact_checks']=[{**good,key:value}]
+            self.assertTrue(packet.validate_packet(p,now=NOW),key)
+        for checks in [[],[good,good],[{**good,'command':'arbitrary'}]]:
+            p=example();p['artifact_checks']=checks
+            self.assertTrue(packet.validate_packet(p,now=NOW))
+
+    def test_artifact_outside_symlink_is_rejected_before_read(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as other:
+            target=Path(other)/'outside.md';target.write_text('private fixture')
+            (Path(tmp)/'report.md').symlink_to(target)
+            p=example();p['worktree']=tmp
+            p['artifact_checks']=[{'path':'report.md','required_lines':[],'forbidden_lines':[], 'max_words':10,'sha256':None}]
+            with patch.object(Path,'open',side_effect=AssertionError('must not read')):
+                self.assertEqual(packet.artifact_errors(p),['artifact.0.unsafe_path'])
+
+    def test_artifact_cli_requires_supervisor_digest_and_reports_no_content(self):
+        root = Path(__file__).resolve().parents[2]
+        runtime = root/'.agent-os/delegations'; runtime.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=runtime) as tmp:
+            p = example(); p['worktree'] = str(root)
+            p['branch'] = subprocess.check_output(['git','branch','--show-current'],cwd=root,text=True).strip()
+            p['base_revision'] = subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+            p['expires_at'] = (datetime.now(timezone.utc)+timedelta(hours=1)).isoformat()
+            brief=Path(tmp)/'brief.md'; brief.write_text('Approved requirement REQ-1')
+            p['brief_file']=brief.relative_to(root).as_posix()
+            p['artifact_checks']=[{'path':p['brief_file'],'required_lines':['Approved requirement REQ-1'],
+                                  'forbidden_lines':[], 'max_words':10,'sha256':p['brief_sha256']}]
+            config=Path(tmp)/'packet.json'; config.write_text(json.dumps(p))
+            cmd=[sys.executable, str(Path(packet.__file__)), 'check-artifacts','--packet',str(config)]
+            result=subprocess.run(cmd,capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            result=subprocess.run(cmd+['--expected-contract-sha256',packet.contract_digest(p)],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stdout)
+            self.assertFalse(json.loads(result.stdout)['semantic_acceptance_proven'])
+            p['artifact_checks'][0]['max_words']=1; config.write_text(json.dumps(p))
+            result=subprocess.run(cmd+['--expected-contract-sha256',packet.contract_digest(p)],capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertNotIn('Approved requirement',result.stdout+result.stderr)
+
+    def test_artifact_protected_symlink_and_changed_source_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=example();p['worktree']=tmp
+            f=Path(tmp)/'source.md'; f.write_text('unchanged')
+            p['artifact_checks']=[{'path':'source.md','required_lines':[], 'forbidden_lines':[],
+                'max_words':10,'sha256':packet.hashlib.sha256(b'unchanged').hexdigest()}]
+            self.assertEqual(packet.artifact_errors(p),[])
+            f.write_text('changed')
+            self.assertIn('artifact.0.hash_changed',packet.artifact_errors(p))
+            f.unlink(); f.symlink_to(Path(tmp)/'.env.synthetic')
+            self.assertTrue(packet.artifact_errors(p))
+
+    def test_artifact_contract_detects_wording_drift_and_long_handback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = example(); p['worktree'] = tmp
+            f = Path(tmp)/'report.md'; f.write_text('Status: Not started\nLocal only\n')
+            p['artifact_checks'] = [{'path': 'report.md', 'required_lines': ['Status: Not started'],
+                'forbidden_lines': ['Status: Exploring'], 'max_words': 8, 'sha256': None}]
+            self.assertEqual(packet.validate_packet(p, now=NOW), [])
+            self.assertEqual(packet.artifact_errors(p), [])
+            f.write_text('Status: Exploring\n' + 'extra '*10)
+            errors = packet.artifact_errors(p)
+            for code in ['required_line', 'forbidden_line', 'word_limit']:
+                self.assertIn('artifact.0.'+code, errors)
+
     def test_brief_symlink_to_protected_runtime_path_is_not_opened(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as tmp:
@@ -84,6 +163,15 @@ class PacketTests(unittest.TestCase):
             self.assertEqual(code, 0, result)
             self.assertFalse(result["semantic_acceptance_proven"])
             self.assertEqual(result["next"], "independent_evidence_review")
+            p['artifact_checks']=[{'path':p['brief_file'],'required_lines':['absent line'],
+                                  'forbidden_lines':[], 'max_words':10,'sha256':None}]
+            paths[0].write_text(json.dumps(p))
+            receipt['contract_sha256']=packet.contract_digest(p)
+            paths[2].write_text(json.dumps(receipt))
+            options=["--receipt",str(paths[2]),"--expected-contract-sha256",packet.contract_digest(p),"--expected-target-revision",snapshot]
+            code,result=cli('assess-handback',*options)
+            self.assertEqual(code,1)
+            self.assertIn('artifact.0.required_line',result['errors'])
             receipt["target"]["revision"] = "stale-diff"
             paths[2].write_text(json.dumps(receipt))
             self.assertEqual(cli("assess-handback", *options)[0], 1)
