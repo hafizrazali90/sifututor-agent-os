@@ -6,6 +6,15 @@ matcher = ".*"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
+command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py'
+timeout = 10
+statusMessage = "Checking the current task approval boundary"
+
+[[hooks.PreToolUse]]
+matcher = ".*"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
 command = 'python3 scripts/agent-checks/secret_output_guard.py'
 timeout = 10
 statusMessage = "Preventing secret-bearing tool output"
@@ -29,6 +38,15 @@ timeout = 10
 statusMessage = "Recording Bash result"
 
 [[hooks.SessionStart]]
+matcher = ".*"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py --resume'
+timeout = 10
+statusMessage = "Restoring the current task approval boundary"
+
+[[hooks.SessionStart]]
 matcher = "^(startup|resume|clear|compact)$"
 
 [[hooks.SessionStart.hooks]]
@@ -39,6 +57,12 @@ statusMessage = "Loading Sifututor session context"
 
 [[hooks.UserPromptSubmit]]
 matcher = ".*"
+
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py --identity'
+timeout = 10
+statusMessage = "Reading the current Agent OS session identity"
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"

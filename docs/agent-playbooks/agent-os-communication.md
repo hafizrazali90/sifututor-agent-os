@@ -31,6 +31,22 @@ allowed when they are useful for:
 Do not use those labels as filler. If the label does not make the message
 clearer, leave it out.
 
+## Language Default
+
+Reply to Hafiz in English by default, even when the underlying report, staff
+quote, screenshot, or source material is in Bahasa Malaysia or mixed
+language. Translate or summarize the Malay content inline instead of
+switching the whole reply into Malay.
+
+- Quoting a Malay staff message or a Malay screenshot does not change the
+  reply language; keep the reply in English and translate the quoted part.
+- Switch to Malay only when Hafiz explicitly asks for a Malay reply, or when
+  producing app/user-facing copy that a project's own rules already require in
+  Bahasa Malaysia (for example, tutor/parent app UI, which stays EN+BM).
+- If the reporter's identity or language is unclear from the source, such as
+  an unattributed screenshot or a forwarded quote, say the reporter is unknown
+  instead of guessing a name or channel.
+
 ## Explain The Story Before Judging Or Fixing It
 
 For a bug, PR, feature, architecture change, or unfamiliar technical concept,

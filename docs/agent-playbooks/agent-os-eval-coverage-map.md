@@ -60,6 +60,23 @@ be automated next.
 
 ## Manual Scenario Coverage
 
+Additional state/dispatch proof: `test_agent_os_task_context.py`, run by health,
+checks Session Map discovery never becoming authority, exact session/task
+identity, identity-only prompt injection, supervised enrollment/extension without
+reading prompt labels or changing the saved boundary, approval transfer without
+expansion, malformed state, adapter calls,
+and a controlled failure/correction/retry/follow-up sequence. Temporary enrolled
+tool packets exercise shared PreToolUse subprocess dispatch, matched versus
+denied actual inputs, worktree isolation, and resume scope reload. Config tests
+check local Claude/Codex hook registration. These support AO-022 through AO-024,
+AO-093, AO-098 and AO-105 but do not add live-provider enforcement/compliance
+proof to classifier cases. The trusted-supervisor seam has local unit/subprocess
+proof. A bounded manual live check on 2026-09-19 additionally proved identity
+delivery plus enrolled allow/deny behavior in fresh Codex and Claude sessions on
+this machine. It is recorded in the first-bundle handoff, not treated as a
+deterministic health check or cross-machine guarantee. Unenrolled fallback is not
+a pass.
+
 These are important but not honest as simple router-classifier tests yet.
 
 | Area | Eval IDs | Why manual for now |
