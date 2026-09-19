@@ -315,6 +315,85 @@ The agent should not:
 - ask for another access approval when Hafiz already asked the agent to finish
   an end-to-end task and the scoped access is necessary to complete it
 
+## Machine-checkable transfer status
+
+`scripts/agent-checks/agent-os-task-context.py` provides schema-validated,
+task-specific approval transfer and a guarded callback seam. Transfer preserves
+the same task and owner-approval reference; adding operations or removing
+exclusions is rejected even if a worker invents a different reference string.
+Only a trusted adapter that independently verifies actual owner authorization
+may issue a new boundary. Initial boundary creation is a trusted-caller API,
+not proof that arbitrary files or worker-supplied references are authentic.
+
+The controlled fixture worker exercises reload -> check -> invoke, routine
+failure -> diagnosis -> correction -> rerun, follow-up tracking -> return to
+main, and rejection before an unapproved tool is invoked.
+
+The shared `scripts/agent-checks/agent-os-approval-guard.py` is registered locally
+in Codex and Claude `UserPromptSubmit`, `PreToolUse`, and `SessionStart` hooks.
+It reloads `.agent-os/approval-state/tool-packets/<session-key>.json` on each
+invocation. Registered paths are absolute for this machine so a subdirectory cwd
+does not lose the guard. Claude's `.claude/settings.json` is local/gitignored;
+the registration is not a committed cross-machine rollout.
+
+`UserPromptSubmit --identity` exposes only the provider's exact current session
+identifier and canonical cwd. `SessionStart --resume` provides the same identity
+at startup/resume/compaction, then appends a saved boundary only when it validates
+for that same identity. The identity and lifecycle commands share one matching
+hook group per event so every required command is reviewed and dispatched
+together. Neither path stores prompt text, inspects approval words, chooses a
+newest session, or creates authority. Interleaved
+sessions therefore carry their own identity instead of inheriting whichever task
+ran most recently. Missing or invalid identity emits no usable enrollment data.
+
+Trusted-supervisor enrollment uses `supervised_enroll`: verify the real owner's
+task instruction, retain its approval reference, review exact NON-SECRET tool
+calls inside the approved operations, and pass the current hook payload so the
+packet binds to that payload's session and canonical worktree. The lower-level
+`activate_approval_packet` remains available for controlled adapters/tests.
+When the task later needs another exact call inside the same owner-approved
+operations, `supervisor_extend_packet` appends the newly reviewed signature while
+deriving task identity, scope, exclusions, and provenance only from the existing
+validated packet. It cannot change the boundary, use another session/worktree,
+or add a call mapped to an excluded operation. Repeated calls are deduplicated.
+Only hashes of these reviewed calls are persisted, never raw commands or secret
+values/fingerprints. Never enroll credential-bearing input. Runtime checks use
+actual `tool_name` and full `tool_input`; labels/approval references supplied in
+the payload are not authority. Different inputs (including another workdir),
+unknown calls, corrupt enrolled state, and a mismatched cwd are denied. Matching
+produces context, never `permissionDecision: allow`, so other guards and native
+permission checks remain effective. Transfers cannot add grants silently;
+new invocations require supervisor review inside existing owner scope through
+the extension API, not a routine request for Hafiz to repeat the same approval.
+Codex normalizes unified shell execution to canonical hook tool name `Bash` with
+the command in `tool_input.command`; enrollment must use the provider's canonical
+hook payload rather than its user-facing tool alias.
+
+Unenrolled sessions or providers without a supported session identifier fall
+back quietly to existing gates; this is NOT an authorization or enforcement
+success. A resume hook restores included/excluded operations only for the
+matching session and canonical worktree. No newest-map discovery or automatic
+natural-language approval parser can create a packet.
+
+Automated tests prove local guard subprocess dispatch, current-identity output,
+supervised enrollment/extension, and temporary enrolled packets. A bounded live
+check on 2026-09-19 additionally proved identity delivery and enrolled allow/deny
+behavior in fresh Claude Code 2.1.222 and Codex CLI 0.154.0 sessions: reviewed
+`pwd` executed, while unreviewed `pwd -P` was denied in both adapters. Codex hook
+trust was then persisted interactively and a fresh non-interactive session loaded
+the identity hook without the automation-only trust override. This proves the
+current machine/configuration, not cross-machine rollout or every provider/tool.
+Fresh owner-authorization authentication remains intentionally outside the
+natural-language worker. A trusted Agent OS supervisor can enroll and extend the
+current session from verified owner scope without asking Hafiz to repeat it, but
+prompt wording alone must never trigger enrollment. Writable local metadata/hooks
+are not a security sandbox against a malicious worker with filesystem access.
+Existing approval/safety rules apply.
+
+Protocol references checked during implementation: [OpenAI hooks](https://developers.openai.com/es-419/docs/hooks)
+and [Claude Code hooks](https://code.claude.com/docs/en/hooks). Provider support
+does not prove installed dispatch.
+
 ## Review Later
 
 This model should be reviewed after real use.
