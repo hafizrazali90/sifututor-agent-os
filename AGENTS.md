@@ -55,6 +55,20 @@ Use it only as read-only reference.
 
 - Never read or modify repository `.env*` files, production secrets, or files under
   `live/`.
+- Claude delegation must use
+  `scripts/agent-checks/agent-os-claude-delegation.py`; do not launch delegated
+  work with a direct `claude` command. If preflight names inherited auth,
+  endpoint, or provider override variables, unset every named variable before
+  relaunch; never edit the job file to route around the block. Preflight also requires a first-party
+  `claude.ai` Max subscription (`authMethod`, `subscriptionType`, and
+  `apiProvider` must all agree) and fails closed on API-billed or ambiguous
+  auth. A job's optional `paid_evaluation` metadata (`approved_by`,
+  `estimate_usd`, `hard_cap_usd`) is an untrusted job declaration only: it
+  neither proves human approval nor grants this Max-only watchdog permission
+  to use paid billing. Paid provider
+  evaluation or canary work runs through a separate, manually-supervised path
+  outside this automated runner, with Hafiz's explicit approval, a visible
+  cost estimate, and a hard spend cap agreed before any call.
 - Never run or expose broad process, container, service, shell, or secret-store
   environment dumps. Use an approved `scripts/agent-access/` wrapper or request
   only the exact non-secret status field needed. Raw commands such as `pm2

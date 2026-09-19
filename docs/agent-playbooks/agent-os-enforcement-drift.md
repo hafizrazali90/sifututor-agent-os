@@ -119,15 +119,25 @@ their covered paths; fresh installed-agent evidence is a separate release
 check. Never describe fixture success as universal model compliance.
 
 Cost safety is separate from secret-output safety. The existing Claude
-delegation runner strips `ANTHROPIC_API_KEY` for probes and worker launch and
-requires an authenticated `claude.ai` Max result during preflight. An older
-#28 worktree adds refusal when the parent has that variable; do not blindly
-port it or call the current protection missing. Review that remaining policy
-delta separately. Absence of a key alone never proves subscription billing,
-and those Claude-specific checks do not establish another provider's billing
-mode. Provider/auth configuration changes and paid evaluations stay outside
-this local secret-guard reconciliation. Keep #28 open until its owner resolves
-the remaining policy and verification scope.
+delegation runner strips recognized auth, endpoint, and provider overrides for
+probes and worker launch and requires an authenticated `claude.ai` Max result
+during preflight. The #28 implementation closes the remaining runner gap:
+`api_billing_guard()` fails closed before probing Claude at all when the
+runner's own process inherited one of those overrides (`agent-os-claude-
+delegation.py`), and `filtered_auth()` now also requires `apiProvider` to
+agree with `authMethod`/`subscriptionType`, because absence of a key alone
+never proved subscription billing and a Max-looking login can still report a
+non-first-party `apiProvider` (the exact reported incident). A job's optional
+`paid_evaluation` metadata (`approved_by`, `estimate_usd`, `hard_cap_usd`) is
+validated but remains an untrusted job declaration; it neither proves approval
+nor unlocks API billing through
+this Max-only watchdog, so a locally-editable job file can never self-approve
+real spend. Those Claude-specific checks still do not establish another
+provider's billing mode; provider/auth configuration changes for other
+providers, and any genuine paid evaluation or canary run, stay outside this
+watchdog and this local secret-guard reconciliation, on a separate
+manually-supervised path with Hafiz's explicit approval, an estimate, and a
+hard cap. See DF-001, DF-001B, DF-010 through DF-015, and AO-204.
 
 Short version:
 

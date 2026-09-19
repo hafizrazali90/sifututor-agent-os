@@ -57,6 +57,25 @@ SETUP_MARKERS = (
     "mcp server requires",
     "press enter to continue",
 )
+CLAUDE_BILLING_OVERRIDE_ENV = {
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_CUSTOM_HEADERS",
+    "ANTHROPIC_BEDROCK_BASE_URL",
+    "ANTHROPIC_BEDROCK_MANTLE_BASE_URL",
+    "ANTHROPIC_VERTEX_BASE_URL",
+    "ANTHROPIC_VERTEX_PROJECT_ID",
+    "ANTHROPIC_FOUNDRY_BASE_URL",
+    "ANTHROPIC_FOUNDRY_API_KEY",
+    "ANTHROPIC_FOUNDRY_AUTH_TOKEN",
+    "ANTHROPIC_FOUNDRY_RESOURCE",
+    "CLAUDE_CODE_USE_BEDROCK",
+    "CLAUDE_CODE_USE_VERTEX",
+    "CLAUDE_CODE_USE_FOUNDRY",
+    "CLAUDE_CODE_USE_MANTLE",
+    "CLAUDE_CODE_USE_ANTHROPIC_AWS",
+}
 
 
 def utc_now() -> str:
@@ -85,8 +104,75 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def safe_child_env() -> dict[str, str]:
     child_env = os.environ.copy()
-    child_env.pop("ANTHROPIC_API_KEY", None)
+    for name in CLAUDE_BILLING_OVERRIDE_ENV:
+        child_env.pop(name, None)
     return child_env
+
+
+def api_billing_guard() -> dict[str, Any]:
+    """Reject inherited auth, endpoint, and provider overrides before probing."""
+    inherited = sorted(name for name in CLAUDE_BILLING_OVERRIDE_ENV if os.environ.get(name, "").strip())
+    if inherited:
+        return {
+            "state": "blocked",
+            "billing_override_inherited": True,
+            "blocked_variable_names": inherited,
+            "reason": (
+                "Claude billing auth, endpoint, or provider overrides are inherited by the delegation runner; "
+                "remove the named variables before preflight so Claude Max cannot silently use another billing route"
+            ),
+            "required_action": "unset every blocked_variable_name before relaunch",
+        }
+    return {"state": "ready", "billing_override_inherited": False}
+
+
+def paid_evaluation_check(job: dict[str, Any]) -> dict[str, Any]:
+    """Validate optional `paid_evaluation` job metadata (approved_by,
+    estimate_usd, hard_cap_usd). This is an untrusted planning declaration: a
+    valid declaration neither proves approval nor grants this Max-only watchdog permission to launch
+    Claude with API billing. Paid provider evaluation or canary work runs
+    through a separate, manually-supervised path outside this automated
+    runner; see docs/agent-playbooks/handoff.md."""
+    spec = job.get("paid_evaluation")
+    if spec is None:
+        return {"state": "ready", "declared": False}
+    if not isinstance(spec, dict):
+        return {
+            "state": "blocked",
+            "declared": True,
+            "reason": "paid_evaluation must be an object with approved_by, estimate_usd, and hard_cap_usd",
+        }
+    errors: list[str] = []
+    approved_by = spec.get("approved_by")
+    if not isinstance(approved_by, str) or not approved_by.strip():
+        errors.append("approved_by must be a non-empty string naming who approved paid billing")
+    estimate = spec.get("estimate_usd")
+    valid_estimate = isinstance(estimate, (int, float)) and not isinstance(estimate, bool) and estimate > 0
+    if not valid_estimate:
+        errors.append("estimate_usd must be a positive number")
+    hard_cap = spec.get("hard_cap_usd")
+    valid_cap = isinstance(hard_cap, (int, float)) and not isinstance(hard_cap, bool) and hard_cap > 0
+    if not valid_cap:
+        errors.append("hard_cap_usd must be a positive number")
+    if valid_estimate and valid_cap and hard_cap < estimate:
+        errors.append("hard_cap_usd must be greater than or equal to estimate_usd")
+    if errors:
+        return {
+            "state": "blocked",
+            "declared": True,
+            "reason": "paid provider evaluation planning metadata is incomplete or invalid",
+            "errors": errors,
+        }
+    return {
+        "state": "ready",
+        "declared": True,
+        "trust": "untrusted_job_declaration",
+        "approved_by": approved_by,
+        "estimate_usd": estimate,
+        "hard_cap_usd": hard_cap,
+        "executes_paid_billing": False,
+        "proves_human_approval": False,
+    }
 
 
 def run_probe(command: list[str], cwd: Path, timeout: float = 12) -> subprocess.CompletedProcess[str]:
@@ -330,12 +416,22 @@ def filtered_auth(raw: str, returncode: int) -> dict[str, Any]:
     logged_in = payload.get("loggedIn") is True
     auth_method = payload.get("authMethod")
     subscription_type = payload.get("subscriptionType")
-    is_max = logged_in and auth_method == "claude.ai" and subscription_type == "max"
+    api_provider = payload.get("apiProvider")
+    # `authMethod`/`subscriptionType` alone can report a genuine Max login
+    # while `apiProvider` shows the request is actually routed through
+    # metered API billing (the reported #28 incident). Require all three to
+    # agree before treating the job as first-party Max-billed.
+    is_max = (
+        logged_in
+        and auth_method == "claude.ai"
+        and subscription_type == "max"
+        and api_provider == "firstParty"
+    )
     return {
         "state": "ready" if is_max else "failed",
         "logged_in": logged_in,
         "auth_method": auth_method,
-        "api_provider": payload.get("apiProvider"),
+        "api_provider": api_provider,
         "subscription_type": subscription_type,
         "api_key_env_removed_for_child": True,
     }
@@ -364,6 +460,18 @@ def preflight(job: dict[str, Any]) -> dict[str, Any]:
     errors = validate_job(job)
     if errors:
         return {"schema_version": 1, "checked_at": utc_now(), "ready": False, "errors": errors, "checks": {}}
+
+    paid_evaluation = paid_evaluation_check(job)
+    billing_guard = api_billing_guard()
+    if billing_guard["state"] == "blocked":
+        return {
+            "schema_version": 1,
+            "job_id": job.get("job_id"),
+            "checked_at": utc_now(),
+            "ready": False,
+            "errors": errors,
+            "checks": {"api_billing_guard": billing_guard, "paid_evaluation": paid_evaluation},
+        }
 
     worktree = Path(job["worktree"]).expanduser().resolve()
     brief = Path(job["brief_file"]).expanduser().resolve()
@@ -430,6 +538,8 @@ def preflight(job: dict[str, Any]) -> dict[str, Any]:
         "state_dir_absent_before_start": not state_dir.exists(),
     }
     checks = {
+        "api_billing_guard": billing_guard,
+        "paid_evaluation": paid_evaluation,
         "claude_cli": {
             "state": "ready" if claude_path and version_probe and version_probe.returncode == 0 else "failed",
             "path": claude_path,
