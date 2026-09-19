@@ -273,3 +273,37 @@ Save less, but save sharper.
 
 Koda stores behavior-changing lessons. Docs hold the system rules. Agents must
 deduplicate, sanitize, tag, and verify memory before relying on it.
+
+## Write integrity client and integration boundary
+
+`koda_write.py` owns the verify-after-write state machine. It uses the existing
+client's initialized MCP transport through callbacks, without credential or
+server changes. The exact-ID readback compares caller-supplied content,
+category, tags, source, project and rationale where supported. Update also
+supports explicitly supplied confidence; none is invented for store. Missing
+readback fields are reported as unavailable, including scope in the inspected
+server schema. Tag order alone is equivalent. Matching is a point-in-time
+observation, not a lock against later server processing or concurrent edits.
+
+The current repository client is embedded in `codex-lifecycle-hook.py`;
+`koda-direct.py` forwards there, and `koda` invokes it directly. The Bundle 4
+file ownership boundary excludes the shared hook. Its **pending parent
+integration** is supplied as
+`scripts/agent-checks/fixtures/koda-write-integration.patch`, tested against
+copies of the real shell CLI, direct wrapper and hook. Until that patch is
+reviewed and applied by the parent lane, the production hook/CLI retains its
+previous behavior. Installed adapters are unchanged. Parent integration must
+also register the module/tests in its owned install manifest and health runner.
+
+The client performs no repair, confirmation, retagging, retries, or collection
+migration. Existing normalized-content preflight remains a best-effort
+20-result check; it is not an atomic idempotency guarantee. A transport failure
+on the write can mean the record exists even when no ID was returned. The
+caller must reconcile before another invocation. Server-side duplicate results
+are read back too and labeled existing records.
+
+Only safe result metadata is returned: canonical ID, duplicate status, boolean
+processing/embedding flags, supported updated-field names, verification state,
+and mismatched/unavailable field names. Free-form message/warning text and
+similar-memory bodies are intentionally omitted. Consumers requiring those
+provider strings must migrate to the explicit verification/write outcome.

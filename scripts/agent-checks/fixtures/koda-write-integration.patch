@@ -1,0 +1,140 @@
+--- a/scripts/agent-checks/codex-lifecycle-hook.py
++++ b/scripts/agent-checks/codex-lifecycle-hook.py
+@@ -403,6 +403,9 @@
+ 
+ 
+ def koda_direct_cli(tool_name: str, arguments: dict[str, Any]) -> int:
++    if tool_name == "memory_update":
++        from koda_write import write_cli
++        return write_cli(tool_name, arguments, koda_initialize, koda_tool_call)
+     session, init_error = koda_initialize("codex-koda-direct-cli")
+     if init_error:
+         print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
+@@ -424,71 +427,9 @@
+ 
+ 
+ def koda_store_deduplicated(arguments: dict[str, Any]) -> int:
+-    """Store through Koda only when no exact-content memory already exists."""
+-
+-    content = str(arguments.get("content") or "").strip()
+-    if not content:
+-        print("KODA DIRECT FAIL: memory_store requires non-empty content", file=sys.stderr)
+-        return 1
+-
+-    session, init_error = koda_initialize("codex-koda-deduplicated-store")
+-    if init_error:
+-        print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
+-        return 1
+-
+-    search_arguments: dict[str, Any] = {"query": content[:500], "limit": 20}
+-    if arguments.get("project"):
+-        search_arguments["project"] = arguments["project"]
+-
+-    search_response, search_error = koda_tool_call(
+-        session,
+-        "memory_search",
+-        search_arguments,
+-        request_id=2,
+-    )
+-    if search_error:
+-        print(
+-            f"KODA DIRECT FAIL: duplicate preflight failed; memory was not stored: {search_error}",
+-            file=sys.stderr,
+-        )
+-        return 1
+-
+-    target = canonical_memory_content(content)
+-    search_payload = parse_tool_content(search_response)
+-    if not isinstance(search_payload, list):
+-        print(
+-            "KODA DIRECT FAIL: duplicate preflight did not return a memory list; memory was not stored",
+-            file=sys.stderr,
+-        )
+-        return 1
+-
+-    for memory in search_payload:
+-        if not isinstance(memory, dict):
+-            continue
+-        if canonical_memory_content(memory.get("content")) != target:
+-            continue
+-        print(
+-            json.dumps(
+-                {
+-                    "status": "skipped_exact_duplicate",
+-                    "existing_id": memory.get("id") or "unknown",
+-                    "next": "use koda update when the canonical memory needs sharper wording",
+-                }
+-            )
+-        )
+-        return 0
+-
+-    store_response, store_error = koda_tool_call(
+-        session,
+-        "memory_store",
+-        arguments,
+-        request_id=3,
+-    )
+-    if store_error:
+-        print(f"KODA DIRECT FAIL: {store_error}", file=sys.stderr)
+-        return 1
+-    print_koda_tool_result(store_response)
+-    return 0
++    """Store once, retaining duplicate protection and verifying exact-ID readback."""
++    from koda_write import write_cli
++    return write_cli("memory_store", arguments, koda_initialize, koda_tool_call)
+ 
+ 
+ def parse_tool_content(response: dict) -> object:
+--- a/scripts/agent-checks/test_codex_koda_integration.py
++++ b/scripts/agent-checks/test_codex_koda_integration.py
+@@ -127,7 +127,7 @@
+             "why": "Avoid repeating the same deterministic suite.",
+         }
+         duplicate = {
+-            "id": "mem_existing",
++            "id": "mem_1234",
+             "content": "  use one FULL agent os health sweep after focused checks. ",
+         }
+         with (
+@@ -135,13 +135,15 @@
+             patch.object(
+                 lifecycle,
+                 "koda_tool_call",
+-                return_value=(tool_response([duplicate]), ""),
++                side_effect=[(tool_response([duplicate]), ""),
++                             (tool_response({"id": "mem_1234", **arguments}), "")],
+             ) as tool_call,
+-            patch.object(lifecycle, "print", create=True),
++            patch("koda_write.print", create=True),
+         ):
+             self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
+-        self.assertEqual(tool_call.call_count, 1)
+-        self.assertEqual(tool_call.call_args.args[1], "memory_search")
++        self.assertEqual(tool_call.call_count, 2)
++        self.assertEqual([call.args[1] for call in tool_call.call_args_list],
++                         ["memory_search", "memory_recall"])
+ 
+     def test_unique_memory_is_stored_after_duplicate_preflight(self):
+         arguments = {
+@@ -154,17 +156,18 @@
+         }
+         responses = [
+             (tool_response([]), ""),
+-            (tool_response({"id": "mem_new"}), ""),
++            (tool_response({"id": "mem_1234"}), ""),
++            (tool_response({"id": "mem_1234", **arguments}), ""),
+         ]
+         with (
+             patch.object(lifecycle, "koda_initialize", return_value=({"headers": {}, "session_id": "x"}, "")),
+             patch.object(lifecycle, "koda_tool_call", side_effect=responses) as tool_call,
+-            patch.object(lifecycle, "print_koda_tool_result"),
++            patch("koda_write.print", create=True),
+         ):
+             self.assertEqual(lifecycle.koda_store_deduplicated(arguments), 0)
+         self.assertEqual(
+             [call.args[1] for call in tool_call.call_args_list],
+-            ["memory_search", "memory_store"],
++            ["memory_search", "memory_store", "memory_recall"],
+         )
+ 
+ 
