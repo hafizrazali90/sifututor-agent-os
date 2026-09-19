@@ -77,6 +77,21 @@ CLAUDE_BILLING_OVERRIDE_ENV = {
     "CLAUDE_CODE_USE_ANTHROPIC_AWS",
 }
 
+BUILDER_PROOF_FIELDS = (
+    "acceptance_to_proof_map",
+    "entrypoint",
+    "production_caller",
+    "authoritative_result",
+    "bypass_paths",
+    "permissions_configuration",
+    "disabled_unavailable",
+    "failure_retry",
+    "negative_control",
+    "journey",
+    "regression",
+    "builder_evidence_not_acceptance",
+)
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -362,6 +377,7 @@ def validate_job(job: dict[str, Any]) -> list[str]:
         "branch",
         "lane_owner",
         "required_proof",
+        "builder_completion_proof",
         "reporting_cadence_seconds",
         "stall_after_seconds",
         "brief_file",
@@ -386,8 +402,28 @@ def validate_job(job: dict[str, Any]) -> list[str]:
         if key in job and (not isinstance(job[key], str) or not job[key].strip()):
             errors.append(f"{key} must be a non-empty string")
     for key in ("forbidden_actions", "required_proof"):
-        if key in job and (not isinstance(job[key], list) or not all(isinstance(v, str) for v in job[key])):
-            errors.append(f"{key} must be a list of strings")
+        if key in job and (
+            not isinstance(job[key], list)
+            or not job[key]
+            or not all(isinstance(v, str) and v.strip() for v in job[key])
+        ):
+            errors.append(f"{key} must be a non-empty list of non-empty strings")
+    proof_contract = job.get("builder_completion_proof")
+    if not isinstance(proof_contract, dict):
+        errors.append("builder_completion_proof must be an object")
+    else:
+        mode = proof_contract.get("mode")
+        reason = proof_contract.get("not_applicable_reason")
+        if mode not in {"required", "not_applicable"}:
+            errors.append("builder_completion_proof.mode must be required or not_applicable")
+        if mode == "not_applicable" and (not isinstance(reason, str) or not reason.strip()):
+            errors.append(
+                "builder_completion_proof.not_applicable_reason must explain why the delegated task is not implementation work"
+            )
+        if mode == "required" and reason not in {None, ""}:
+            errors.append(
+                "builder_completion_proof.not_applicable_reason must be empty when mode is required"
+            )
     for key in ("reporting_cadence_seconds", "stall_after_seconds"):
         value = job.get(key)
         if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
@@ -626,6 +662,80 @@ def handback_digest(path: Path) -> dict[str, Any]:
     return {"path": str(path), "exists": True, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
 
 
+def structured_handback_fields(text: str) -> dict[str, str]:
+    """Parse explicit ``field: value`` proof records without interpreting claims."""
+    fields: dict[str, str] = {}
+    in_fence = False
+    for line in text.splitlines():
+        if re.match(r"^\s*```", line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        match = re.match(r"^\s*(?:[-*]\s*)?([a-z][a-z0-9_]*)\s*:\s*(.+?)\s*$", line, re.I)
+        if match and match.group(1).lower() not in fields:
+            fields[match.group(1).lower()] = match.group(2).strip()
+    return fields
+
+
+def handback_contract(path: Path, job: dict[str, Any]) -> dict[str, Any]:
+    """Check the configured artifact shape without accepting its claims."""
+    result: dict[str, Any] = {
+        "structure_valid": False,
+        "configured_items": len(job["required_proof"]),
+        "addressed_items": 0,
+        "semantic_acceptance_proven": False,
+        "errors": [],
+    }
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(1_048_577)
+        if len(raw) > 1_048_576:
+            result["errors"].append("handback exceeds 1 MiB")
+            return result
+        text = raw.decode("utf-8")
+    except (OSError, UnicodeError):
+        result["errors"].append("handback is not readable UTF-8 text")
+        return result
+    if not text.strip():
+        result["errors"].append("handback is empty")
+        return result
+    fields = structured_handback_fields(text)
+    proof_contract = job["builder_completion_proof"]
+    if proof_contract["mode"] == "required":
+        missing_fields = [field for field in BUILDER_PROOF_FIELDS if not fields.get(field)]
+        result["proof_mode"] = "required"
+        result["required_fields"] = list(BUILDER_PROOF_FIELDS)
+        result["addressed_fields"] = len(BUILDER_PROOF_FIELDS) - len(missing_fields)
+        if missing_fields:
+            result["errors"].append("builder completion proof fields are missing")
+            result["missing_proof_fields"] = missing_fields
+            return result
+    else:
+        result["proof_mode"] = "not_applicable"
+        returned_reason = fields.get("builder_proof_not_applicable", "")
+        configured_reason = proof_contract["not_applicable_reason"].strip()
+        if returned_reason != configured_reason:
+            result["errors"].append(
+                "builder_proof_not_applicable must exactly match the configured reason"
+            )
+            return result
+
+    normalized = " ".join(text.lower().split())
+    missing = [
+        item
+        for item in job["required_proof"]
+        if " ".join(item.lower().split()) not in normalized
+    ]
+    result["addressed_items"] = len(job["required_proof"]) - len(missing)
+    if missing:
+        result["errors"].append("configured proof items are not addressed")
+        result["missing_required_proof"] = missing
+        return result
+    result["structure_valid"] = True
+    return result
+
+
 def render_evidence_markdown(evidence: dict[str, Any]) -> str:
     usage = evidence["usage"]
     lines = [
@@ -771,15 +881,29 @@ def run_job(job: dict[str, Any]) -> int:
 
         returncode = process.wait()
         handback_info = handback_digest(handback)
+        return_contract = (
+            handback_contract(handback, job)
+            if handback_info["exists"]
+            else {
+                "structure_valid": False,
+                "configured_items": len(job["required_proof"]),
+                "addressed_items": 0,
+                "semantic_acceptance_proven": False,
+                "errors": ["required handback is missing"],
+            }
+        )
         if returncode != 0:
             final_state = "failed"
             final_reason = "worker process exited unsuccessfully"
         elif not handback_info["exists"]:
             final_state = "incomplete"
             final_reason = "worker exited successfully but required handback is missing"
+        elif not return_contract["structure_valid"]:
+            final_state = "incomplete"
+            final_reason = "worker exited successfully but the configured return contract is incomplete"
         else:
-            final_state = "finished"
-            final_reason = "worker exited successfully and handback exists"
+            final_state = "returned"
+            final_reason = "worker finished and returned a structurally valid artifact for independent review"
         transition(final_state, final_reason)
         persist_state()
 
@@ -809,6 +933,8 @@ def run_job(job: dict[str, Any]) -> int:
             },
             "brief": brief_digest(brief),
             "handback": handback_info,
+            "worker_outcome": "finished" if returncode == 0 else "failed",
+            "return_contract": return_contract,
             "state_transitions": transitions,
             "liveness": {
                 "watchdog_heartbeat_source": "local process clock; no model call",
@@ -833,7 +959,7 @@ def run_job(job: dict[str, Any]) -> int:
         print(f"Claude delegation {job['job_id']}: {final_state}")
         print(f"Evidence: {state_dir / 'evidence.json'}")
         print(f"Handback: {handback}")
-        return 0 if final_state == "finished" else 1
+        return 0 if final_state == "returned" else 1
     except (OSError, RuntimeError, ValueError) as exc:
         if process is not None and process.poll() is None:
             transition("unmonitored", f"watchdog stopped after {type(exc).__name__}")

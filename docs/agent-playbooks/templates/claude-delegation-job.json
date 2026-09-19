@@ -21,6 +21,10 @@
     "changed-file inventory",
     "structured handback for independent Codex review"
   ],
+  "builder_completion_proof": {
+    "mode": "required",
+    "not_applicable_reason": ""
+  },
   "required_mcp_servers": [],
   "reporting_cadence_seconds": 60,
   "stall_after_seconds": 180,

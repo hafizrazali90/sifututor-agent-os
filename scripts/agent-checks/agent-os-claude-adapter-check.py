@@ -11,6 +11,9 @@ patterns identified in the 2026-08-01 Codex/Claude Agent OS parity audit:
 - ``~/.claude/skills/commit/SKILL.md``
 - ``~/.claude/skills/save-session/SKILL.md``
 - ``~/.claude/skills/workflow-improvement/SKILL.md``
+- ``~/.claude/skills/verify/SKILL.md``
+- ``~/.claude/skills/review/SKILL.md``
+- ``~/.claude/skills/handoff/SKILL.md``
 
 Unlike ``agent-os-adapter-readiness.py``, which checks repo-tracked marker
 files and documented command names, this script reads the real installed
@@ -18,12 +21,15 @@ global files that actually govern live Claude behavior on this machine.
 
 Scope: phase one plus the 2026-08-01 issue-30 correction (global CLAUDE.md,
 task-router skill, commit skill, save-session skill, workflow-improvement
-skill: linkage markers + forbidden-drift patterns). This does NOT prove full
-Claude/Codex parity -- see ``agent-os-parity-contract.md`` and
+skill: linkage markers + forbidden-drift patterns), plus the issue-56 builder
+completion-proof correction (verify, review, and handoff skills: shared
+playbook linkage and Builder Completion Proof Contract proof markers, so
+these three adapters cannot silently omit the contract). This does NOT prove
+full Claude/Codex parity -- see ``agent-os-parity-contract.md`` and
 ``agent-os-parity-fixture-runner.py`` for the broader parity surface. The
-still-deferred phase (handoff, snapshot, session-map, quick-check Claude
-wrappers, full registry accuracy) is tracked separately in the parity audit
-Session Map and is out of scope for this check.
+still-deferred phase (snapshot, session-map, quick-check Claude wrappers,
+full registry accuracy) is tracked separately in the parity audit Session Map
+and is out of scope for this check.
 
 Because a documented Claude alias is worthless if the file does not exist,
 this script is the real installed-path enforcement point: a missing adapter
@@ -48,6 +54,9 @@ ADAPTERS = (
     "commit_skill",
     "save_session_skill",
     "workflow_improvement_skill",
+    "verify_skill",
+    "review_skill",
+    "handoff_skill",
 )
 
 ENV_OVERRIDE = {
@@ -56,6 +65,9 @@ ENV_OVERRIDE = {
     "commit_skill": "CLAUDE_ADAPTER_COMMIT_SKILL",
     "save_session_skill": "CLAUDE_ADAPTER_SAVE_SESSION_SKILL",
     "workflow_improvement_skill": "CLAUDE_ADAPTER_WORKFLOW_IMPROVEMENT_SKILL",
+    "verify_skill": "CLAUDE_ADAPTER_VERIFY_SKILL",
+    "review_skill": "CLAUDE_ADAPTER_REVIEW_SKILL",
+    "handoff_skill": "CLAUDE_ADAPTER_HANDOFF_SKILL",
 }
 
 # Words that turn a forbidden phrase into an explicit prohibition instead of
@@ -129,6 +141,57 @@ REQUIRED_MARKERS: dict[str, list[str]] = {
         "fixture",
         "stop",
     ],
+    # issue-56 correction: the Claude Verify/Review/Handoff adapters must
+    # cannot silently omit the Builder Completion Proof Contract. These
+    # markers are the actual proof-contract vocabulary from the corrected
+    # adapters (production caller, bypass-path sweep, negative control), not
+    # just a shared-playbook pointer -- a thin adapter that only points at
+    # verify.md/review.md/handoff.md without carrying the proof language
+    # would still let a completion claim omit the contract.
+    "verify_skill": [
+        "verify.md",
+        "AGENTS.md",
+        "builder completion proof",
+        "production caller",
+        "bypass-path sweep",
+        "negative-control",
+        "independent acceptance",
+    ],
+    "review_skill": [
+        "review.md",
+        "AGENTS.md",
+        "builder completion proof",
+        "fresh-context",
+        "production caller",
+        "bypass-path sweep",
+        "negative control",
+    ],
+    "handoff_skill": [
+        "handoff.md",
+        "AGENTS.md",
+        "builder completion proof",
+        "acceptance-to-proof map",
+        "production caller",
+        "bypass-path sweep",
+        "negative-control",
+        "independent acceptance",
+    ],
+}
+
+REQUIRED_AFFIRMATIVE_MARKERS: dict[str, list[str]] = {
+    "verify_skill": ["builder completion proof", "production caller", "bypass-path sweep", "negative-control"],
+    "review_skill": ["builder completion proof", "fresh-context", "production caller", "bypass-path sweep", "negative control"],
+    "handoff_skill": ["builder completion proof", "acceptance-to-proof map", "production caller", "bypass-path sweep", "negative-control"],
+}
+
+AFFIRMATIVE_ACTIONS: dict[str, str] = {
+    "builder completion proof": r"\b(?:apply|use|enforce|verify|review|challenge)\b",
+    "production caller": r"\b(?:prove|trace|name|inspect|exercise|verify)\b",
+    "bypass-path sweep": r"\b(?:run|challenge|record|inspect|verify)\b",
+    "negative-control": r"\b(?:use|inspect|record|require|run|verify)\b",
+    "negative control": r"\b(?:use|inspect|record|require|run|verify)\b",
+    "fresh-context": r"\b(?:review|apply|use)\b",
+    "acceptance-to-proof map": r"\b(?:include|record|provide|compare|verify)\b",
 }
 
 # Literal strings that must never appear, in any context. These ARE the known
@@ -162,6 +225,23 @@ FORBIDDEN_LITERAL: dict[str, list[str]] = {
         "update all project docs",
     ],
     "workflow_improvement_skill": [],
+    # These literal strings never legitimately appear in the corrected
+    # verify/review/handoff adapters, even inside a prohibition sentence --
+    # the real corrected text uses generic language ("do not inspect or list
+    # repository .env* files") instead of naming the exact bypass command, the
+    # same discipline save_session_skill uses for "session_start"/"session_end".
+    "verify_skill": [
+        "Test failures do not block verify",
+        "Green tests alone prove completion",
+    ],
+    "review_skill": [
+        "A green test suite is sufficient for review approval",
+    ],
+    "handoff_skill": [
+        "ls .env*",
+        "session_end",
+        "archive handoff files older than 7 days",
+    ],
 }
 
 # Phrases that are fine ONLY inside an explicit prohibition sentence (e.g.
@@ -185,6 +265,21 @@ FORBIDDEN_PERMISSIVE: dict[str, list[str]] = {
         "self-rewrite",
         "auto-apply",
     ],
+    # issue-56 correction: these phrases are safe only when the adapter is
+    # explicitly banning them (matching the real corrected "Hard rules"
+    # wording); a bare/unprotected occurrence means the adapter is offering
+    # the exact weak-completion behavior issue #56 was opened to stop.
+    "verify_skill": [
+        "unit tests alone",
+        "ask hafiz to perform a safe check",
+    ],
+    "review_skill": [
+        "tests are green",
+        "rubber stamp",
+    ],
+    "handoff_skill": [
+        "claim acceptance from claude's own review",
+    ],
 }
 
 
@@ -199,6 +294,12 @@ def default_path(name: str, claude_home: Path) -> Path:
         return claude_home / "skills" / "save-session" / "SKILL.md"
     if name == "workflow_improvement_skill":
         return claude_home / "skills" / "workflow-improvement" / "SKILL.md"
+    if name == "verify_skill":
+        return claude_home / "skills" / "verify" / "SKILL.md"
+    if name == "review_skill":
+        return claude_home / "skills" / "review" / "SKILL.md"
+    if name == "handoff_skill":
+        return claude_home / "skills" / "handoff" / "SKILL.md"
     raise ValueError(f"unknown adapter: {name}")
 
 
@@ -314,6 +415,46 @@ def unprotected_occurrences(text: str, phrase: str) -> list[str]:
     return hits
 
 
+def affirmative_occurrences(text: str, phrase: str) -> list[str]:
+    """Return action-bearing occurrences not negated before the required action.
+
+    Unlike forbidden-phrase checking, a later safety clause (for example
+    "so mistakes do not pass") must not negate an earlier affirmative action.
+    """
+    pattern = re.compile(r"\s+".join(re.escape(part) for part in phrase.split()), re.IGNORECASE)
+    hits: list[str] = []
+    for match in pattern.finditer(text):
+        instruction = instruction_context(text, match.start(), match.end())
+        instruction_match = pattern.search(instruction)
+        direct_prefix = instruction[:instruction_match.start()] if instruction_match else ""
+        action_pattern = AFFIRMATIVE_ACTIONS[phrase]
+        actions = [
+            action
+            for action in re.finditer(action_pattern, direct_prefix, re.IGNORECASE)
+            if direct_prefix[action.end():action.end() + 3].lower() != ".md"
+        ]
+        direct_ok = False
+        if actions:
+            action_to_marker = direct_prefix[max(0, actions[-1].start() - 30):].lower()
+            direct_ok = not any(marker in action_to_marker for marker in NEGATION_MARKERS)
+
+        # The installed Verify adapter uses an action-bearing list stem and
+        # noun-phrase sub-bullets. Accept that explicit grammar, but do not
+        # borrow an arbitrary verb from a neighboring heading or paragraph.
+        paragraph_start = text.rfind("\n\n", 0, match.start()) + 2
+        paragraph_prefix = text[paragraph_start:match.start()]
+        list_stem_ok = bool(
+            re.search(
+                r"for\s+builder\s+completion\s+proof\s+work\s*,\s*verify\s*:",
+                paragraph_prefix,
+                re.IGNORECASE,
+            )
+        )
+        if direct_ok or list_stem_ok:
+            hits.append(" ".join(instruction.split()))
+    return hits
+
+
 SAFE_PLAYBOOK_PREFIX = "Projects/Sifututor/"
 
 
@@ -374,6 +515,12 @@ def check_adapter(name: str, path: Path) -> dict:
     for marker in REQUIRED_MARKERS[name]:
         if marker.lower() not in lower_text:
             result["errors"].append(f"missing required phase-one linkage marker: {marker!r}")
+
+    for marker in REQUIRED_AFFIRMATIVE_MARKERS.get(name, []):
+        if not affirmative_occurrences(text, marker):
+            result["errors"].append(
+                f"required proof marker has no affirmative instruction: {marker!r}"
+            )
 
     for phrase in FORBIDDEN_LITERAL[name]:
         if phrase.lower() in lower_text:
@@ -458,6 +605,61 @@ GOOD_WORKFLOW_IMPROVEMENT = (
     "6. Stop before uncontrolled self-rewriting of Agent OS files.\n\n"
     "Never self-rewrite durable workflow files without Hafiz's approval, and "
     "do not auto-apply proposed changes.\n"
+)
+
+# issue-56 correction: canonical corrected shapes for the Verify, Review, and
+# Handoff adapters, so they cannot silently omit the Builder Completion Proof
+# Contract. Synthetic fixtures (not the real installed files) so they stay
+# stable independent of real adapter wording drift.
+GOOD_VERIFY = (
+    "Shared source of truth: "
+    "`~/Projects/Sifututor/docs/agent-playbooks/verify.md`. AGENTS.md governs "
+    "routing, gates, and evidence.\n\n"
+    "## Required behavior\n\n"
+    "- Apply the Builder Completion Proof contract for cross-system, "
+    "cross-module, user-facing, or AI-to-AI handed-off work.\n"
+    "- Prove every production caller for new services, jobs, and event "
+    "handlers.\n"
+    "- Run the bypass-path sweep across legacy screens, writers, and jobs.\n"
+    "- Use a negative-control check proving the test detects the exact "
+    "weaker implementation.\n\n"
+    "## Hard rules\n\n"
+    "- Never claim completion from unit tests alone.\n"
+    "- Never ask Hafiz to perform a safe check Claude can perform.\n"
+    "- Do not convert builder evidence into independent acceptance.\n"
+)
+
+GOOD_REVIEW = (
+    "Shared source of truth: "
+    "`~/Projects/Sifututor/docs/agent-playbooks/review.md`. AGENTS.md governs "
+    "routing, gates, and evidence.\n\n"
+    "## Required behavior\n\n"
+    "- Review from a fresh-context position; treat the builder's tests as "
+    "evidence to challenge, not acceptance.\n"
+    "- Apply the Builder Completion Proof contract for cross-system, "
+    "cross-module, and AI-to-AI handed-off work.\n"
+    "- Prove every production caller before accepting a service as wired in.\n"
+    "- Challenge the bypass-path sweep across legacy screens and alternate "
+    "writers.\n"
+    "- Inspect one safe negative control or failing-first record when "
+    "practical.\n\n"
+    "## Hard rules\n\n"
+    "- Do not approve because the builder's tests are green.\n"
+)
+
+GOOD_HANDOFF = (
+    "Shared source of truth: "
+    "`~/Projects/Sifututor/docs/agent-playbooks/handoff.md`. AGENTS.md "
+    "governs routing, gates, and evidence.\n\n"
+    "## Required behavior\n\n"
+    "- For a builder handback, say plainly that it is builder evidence, not "
+    "independent acceptance.\n"
+    "- Apply the Builder Completion Proof contract and include the "
+    "acceptance-to-proof map for every requirement.\n"
+    "- Name the real entry points and production callers exercised.\n"
+    "- Record the bypass-path sweep and negative-control proof.\n\n"
+    "## Hard rules\n\n"
+    "- Do not claim acceptance from Claude's own review.\n"
 )
 
 SELF_TEST_CASES: list[dict] = [
@@ -595,6 +797,220 @@ SELF_TEST_CASES: list[dict] = [
         "expect_passed": False,
         "expect_inspected": False,
         "expect_error_substring": "does not exist",
+    },
+    # --- issue-56 correction: verify/review/handoff adapters ---------------
+    {
+        "name": "corrected thin verify adapter passes",
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY,
+        "expect_passed": True,
+    },
+    {
+        "name": "verify adapter missing the negative-control requirement fails",
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY.replace(
+            "- Use a negative-control check proving the test detects the "
+            "exact weaker implementation.\n",
+            "",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "negative-control",
+    },
+    {
+        "name": "verify adapter with bare proof-marker headings fails",
+        "adapter": "verify_skill",
+        "content": (
+            "verify.md AGENTS.md\nBuilder Completion Proof\nProduction caller\n"
+            "Bypass-path sweep\nNegative-control\nIndependent acceptance\n"
+            "Never claim completion from unit tests alone.\n"
+            "Never ask Hafiz to perform a safe check.\n"
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": "verify adapter missing the bypass-path sweep requirement fails",
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY.replace(
+            "- Run the bypass-path sweep across legacy screens, writers, "
+            "and jobs.\n",
+            "",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "bypass-path sweep",
+    },
+    {
+        "name": "verify adapter negating required proof markers fails",
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY.replace(
+            "- Apply the Builder Completion Proof contract for cross-system,",
+            "- Do not apply the Builder Completion Proof contract for cross-system,",
+        ).replace("- Prove every production caller", "- Never prove every production caller")
+        .replace("- Run the bypass-path sweep", "- Avoid the bypass-path sweep")
+        .replace("- Use a negative-control check", "- Do not use a negative-control check"),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": (
+            "verify adapter that stops blocking on failing tests fails "
+            "(issue-56 weak-completion regression)"
+        ),
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY + "\nTest failures do not block verify.\n",
+        "expect_passed": False,
+        "expect_error_substring": "Test failures do not block verify",
+    },
+    {
+        "name": (
+            "verify adapter that permits unit-tests-alone completion "
+            "without a Never guard fails"
+        ),
+        "adapter": "verify_skill",
+        "content": GOOD_VERIFY.replace(
+            "- Never claim completion from unit tests alone.\n",
+            "- Unit tests alone are enough to report completion.\n",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "unit tests alone",
+    },
+    {
+        "name": "corrected thin review adapter passes",
+        "adapter": "review_skill",
+        "content": GOOD_REVIEW,
+        "expect_passed": True,
+    },
+    {
+        "name": "review adapter with bare proof-marker headings fails",
+        "adapter": "review_skill",
+        "content": (
+            "review.md AGENTS.md\nBuilder Completion Proof\nFresh-context\n"
+            "Production caller\nBypass-path sweep\nNegative control\n"
+            "Do not approve because tests are green.\n"
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": "review adapter missing production-caller proof fails",
+        "adapter": "review_skill",
+        "content": GOOD_REVIEW.replace(
+            "- Prove every production caller before accepting a service as "
+            "wired in.\n",
+            "",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "production caller",
+    },
+    {
+        "name": "review adapter missing the fresh-context requirement fails",
+        "adapter": "review_skill",
+        "content": GOOD_REVIEW.replace(
+            "fresh-context position; treat the builder's tests as evidence "
+            "to challenge, not acceptance",
+            "the builder's stated intent",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "fresh-context",
+    },
+    {
+        "name": "review adapter negating the proof contract fails",
+        "adapter": "review_skill",
+        "content": GOOD_REVIEW.replace(
+            "- Apply the Builder Completion Proof contract for cross-system,",
+            "- Do not apply the Builder Completion Proof contract for cross-system,",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": (
+            "review adapter that permits approving on green tests without a "
+            "Do-not guard fails (issue-56 weak-completion regression)"
+        ),
+        "adapter": "review_skill",
+        "content": GOOD_REVIEW.replace(
+            "- Do not approve because the builder's tests are green.\n",
+            "- Approve once the builder's tests are green.\n",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "tests are green",
+    },
+    {
+        "name": "corrected thin handoff adapter passes",
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF,
+        "expect_passed": True,
+    },
+    {
+        "name": "handoff adapter with bare proof-marker headings fails",
+        "adapter": "handoff_skill",
+        "content": (
+            "handoff.md AGENTS.md\nBuilder Completion Proof\nAcceptance-to-proof map\n"
+            "Production caller\nBypass-path sweep\nNegative-control\n"
+            "Independent acceptance\nDo not claim acceptance from Claude's own review.\n"
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": "handoff adapter missing the acceptance-to-proof map fails",
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF.replace(
+            "- Apply the Builder Completion Proof contract and include the "
+            "acceptance-to-proof map for every requirement.\n",
+            "- Apply the Builder Completion Proof contract.\n",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "acceptance-to-proof map",
+    },
+    {
+        "name": "handoff adapter negating the proof contract fails",
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF.replace(
+            "- Apply the Builder Completion Proof contract and include the",
+            "- Do not apply the Builder Completion Proof contract; merely mention the",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "no affirmative instruction",
+    },
+    {
+        "name": (
+            "handoff adapter that drops the builder-evidence-not-acceptance "
+            "distinction fails"
+        ),
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF.replace(
+            "- For a builder handback, say plainly that it is builder "
+            "evidence, not independent acceptance.\n",
+            "",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "independent acceptance",
+    },
+    {
+        "name": (
+            "handoff adapter that inspects .env files fails (issue-56 "
+            "unsafe-legacy-instruction regression)"
+        ),
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF + "\nRun `ls .env*` to capture the environment.\n",
+        "expect_passed": False,
+        "expect_error_substring": "ls .env*",
+    },
+    {
+        "name": (
+            "handoff adapter that permits claiming acceptance from Claude's "
+            "own review without a Do-not guard fails"
+        ),
+        "adapter": "handoff_skill",
+        "content": GOOD_HANDOFF.replace(
+            "- Do not claim acceptance from Claude's own review.\n",
+            "- It is fine to claim acceptance from Claude's own review when "
+            "the builder is confident.\n",
+        ),
+        "expect_passed": False,
+        "expect_error_substring": "claim acceptance from claude's own review",
     },
     # --- issue-30 correction: save-session adapter ------------------------
     {
@@ -851,7 +1267,7 @@ def run_self_test_case(case: dict) -> tuple[bool, str]:
 
 def run_self_test() -> int:
     all_ok = True
-    print("Phase-one Claude installed-adapter check -- self-test (synthetic fixtures)")
+    print("Claude installed-adapter check -- self-test (synthetic fixtures)")
     for case in SELF_TEST_CASES:
         ok, detail = run_self_test_case(case)
         status = "PASS" if ok else "FAIL"
@@ -875,6 +1291,9 @@ def main() -> int:
         "--workflow-improvement-skill",
         help="override path for the global workflow-improvement SKILL.md",
     )
+    parser.add_argument("--verify-skill", help="override path for the global verify SKILL.md")
+    parser.add_argument("--review-skill", help="override path for the global review SKILL.md")
+    parser.add_argument("--handoff-skill", help="override path for the global handoff SKILL.md")
     parser.add_argument("--json", action="store_true", help="print machine-readable results")
     parser.add_argument(
         "--self-test",
@@ -897,6 +1316,9 @@ def main() -> int:
         "commit_skill": args.commit_skill,
         "save_session_skill": args.save_session_skill,
         "workflow_improvement_skill": args.workflow_improvement_skill,
+        "verify_skill": args.verify_skill,
+        "review_skill": args.review_skill,
+        "handoff_skill": args.handoff_skill,
     }
 
     results = [check_adapter(name, resolve_path(name, overrides, claude_home)) for name in ADAPTERS]
@@ -907,7 +1329,8 @@ def main() -> int:
     else:
         print(
             "Claude installed-adapter check (scope: global CLAUDE.md, task-router, "
-            "commit, save-session, workflow-improvement skills -- not full parity)"
+            "commit, save-session, workflow-improvement, verify, review, and "
+            "handoff skills -- not full parity)"
         )
         for result in results:
             status = "PASS" if result["passed"] else "FAIL"
@@ -918,7 +1341,7 @@ def main() -> int:
                 if result["inspected"]:
                     print(f"  - {error}")
         overall = "PASS" if all_passed else "FAIL"
-        print(f"claude-adapter-check: {overall} (phase one only; not full Claude/Codex parity)")
+        print(f"claude-adapter-check: {overall} (installed adapter slice only; not full Claude/Codex parity)")
 
     return 0 if all_passed else 1
 
