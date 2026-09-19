@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -21,6 +22,25 @@ from secret_output_guard import (
 
 
 _THIS_FILE = globals().get("__file__")
+if _THIS_FILE:
+    _THIS_DIR = Path(_THIS_FILE).resolve().parent
+elif (Path.cwd() / "scripts" / "agent-checks").is_dir():
+    _THIS_DIR = Path.cwd() / "scripts" / "agent-checks"
+else:
+    _THIS_DIR = Path.cwd()
+
+
+def _load_sibling_module(module_name: str, filename: str):
+    """Load a hyphenated sibling script as an importable module."""
+
+    spec = importlib.util.spec_from_file_location(module_name, _THIS_DIR / filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    return module
+
+
+task_context = _load_sibling_module("agent_os_task_context", "agent-os-task-context.py")
+
 _DEFAULT_WORKSPACE = Path(_THIS_FILE).resolve().parents[2] if _THIS_FILE else Path.cwd()
 WORKSPACE = Path(os.environ.get("SIFUTUTOR_AGENT_OS_ROOT", _DEFAULT_WORKSPACE)).resolve()
 SESSION_MAP_DIR = WORKSPACE / ".agent-os" / "session-maps"
@@ -138,13 +158,9 @@ def active_task_summary(project: str) -> str:
 
 
 def latest_session_map() -> Path | None:
-    if not SESSION_MAP_DIR.exists():
-        return None
-    candidates = sorted(
-        SESSION_MAP_DIR.glob("*.md"),
-        key=lambda path: (path.stat().st_mtime, path.name),
-        reverse=True,
-    )
+    """Return the globally newest map only for callers lacking task identity."""
+
+    candidates = task_context.discover_session_maps(SESSION_MAP_DIR)
     return candidates[0] if candidates else None
 
 
@@ -186,8 +202,13 @@ def continuation_signal(normalized: str) -> bool:
     return any(re.search(pattern, normalized) for pattern in patterns)
 
 
-def smart_resume_actions(normalized: str) -> list[str]:
-    latest_map = latest_session_map()
+def smart_resume_actions(normalized: str, session_id: str = "", project: str = "") -> list[str]:
+    selection = task_context.select_session_map(
+        SESSION_MAP_DIR,
+        session_id=session_id,
+        project=project if project and project != "Sifututor" else "",
+    )
+    latest_map = selection["path"]
     git_signal = git_ahead_summary()
     has_signal = continuation_signal(normalized) or latest_map is not None or bool(git_signal)
     if not has_signal:
@@ -201,7 +222,12 @@ def smart_resume_actions(normalized: str) -> list[str]:
             display_path = latest_map.relative_to(WORKSPACE)
         except ValueError:
             display_path = latest_map
-        actions.append(f"Read the latest active Session Map Reference Pack first: `{display_path}`.")
+        tier_note = {
+            "verified_session_binding": "bound to this session",
+            "explicit_task_binding": "bound to the current task",
+            "discovery_candidate": "discovery candidate only, not authority; confirm it actually matches before trusting it",
+        }.get(selection["tier"], "")
+        actions.append(f"Read the latest relevant Session Map Reference Pack first: `{display_path}` ({tier_note}).")
     if git_signal:
         actions.append(git_signal)
     actions.extend(
@@ -403,6 +429,9 @@ def read_json_arg_or_stdin(flag: str) -> tuple[dict[str, Any], str]:
 
 
 def koda_direct_cli(tool_name: str, arguments: dict[str, Any]) -> int:
+    if tool_name == "memory_update":
+        from koda_write import write_cli
+        return write_cli(tool_name, arguments, koda_initialize, koda_tool_call)
     session, init_error = koda_initialize("codex-koda-direct-cli")
     if init_error:
         print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
@@ -424,71 +453,9 @@ def canonical_memory_content(value: object) -> str:
 
 
 def koda_store_deduplicated(arguments: dict[str, Any]) -> int:
-    """Store through Koda only when no exact-content memory already exists."""
-
-    content = str(arguments.get("content") or "").strip()
-    if not content:
-        print("KODA DIRECT FAIL: memory_store requires non-empty content", file=sys.stderr)
-        return 1
-
-    session, init_error = koda_initialize("codex-koda-deduplicated-store")
-    if init_error:
-        print(f"KODA DIRECT FAIL: {init_error}", file=sys.stderr)
-        return 1
-
-    search_arguments: dict[str, Any] = {"query": content[:500], "limit": 20}
-    if arguments.get("project"):
-        search_arguments["project"] = arguments["project"]
-
-    search_response, search_error = koda_tool_call(
-        session,
-        "memory_search",
-        search_arguments,
-        request_id=2,
-    )
-    if search_error:
-        print(
-            f"KODA DIRECT FAIL: duplicate preflight failed; memory was not stored: {search_error}",
-            file=sys.stderr,
-        )
-        return 1
-
-    target = canonical_memory_content(content)
-    search_payload = parse_tool_content(search_response)
-    if not isinstance(search_payload, list):
-        print(
-            "KODA DIRECT FAIL: duplicate preflight did not return a memory list; memory was not stored",
-            file=sys.stderr,
-        )
-        return 1
-
-    for memory in search_payload:
-        if not isinstance(memory, dict):
-            continue
-        if canonical_memory_content(memory.get("content")) != target:
-            continue
-        print(
-            json.dumps(
-                {
-                    "status": "skipped_exact_duplicate",
-                    "existing_id": memory.get("id") or "unknown",
-                    "next": "use koda update when the canonical memory needs sharper wording",
-                }
-            )
-        )
-        return 0
-
-    store_response, store_error = koda_tool_call(
-        session,
-        "memory_store",
-        arguments,
-        request_id=3,
-    )
-    if store_error:
-        print(f"KODA DIRECT FAIL: {store_error}", file=sys.stderr)
-        return 1
-    print_koda_tool_result(store_response)
-    return 0
+    """Store once, retaining duplicate protection and verifying exact-ID readback."""
+    from koda_write import write_cli
+    return write_cli("memory_store", arguments, koda_initialize, koda_tool_call)
 
 
 def parse_tool_content(response: dict) -> object:
@@ -1568,7 +1535,7 @@ def main() -> int:
         if skill == "$task-router":
             actions = [
                 *actions,
-                *smart_resume_actions(normalized),
+                *smart_resume_actions(normalized, session_id=task_context.extract_session_id(payload), project=project),
                 "If the prompt may be a follow-up, adjacent task, paused question, or part of a bigger goal, search `docs/agent-playbooks/mission-ledger` with `rg` and read only the relevant section.",
             ]
         elif skill == "$save-session":

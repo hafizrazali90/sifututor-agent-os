@@ -285,15 +285,15 @@ readback fields are reported as unavailable, including scope in the inspected
 server schema. Tag order alone is equivalent. Matching is a point-in-time
 observation, not a lock against later server processing or concurrent edits.
 
-The current repository client is embedded in `codex-lifecycle-hook.py`;
-`koda-direct.py` forwards there, and `koda` invokes it directly. The Bundle 4
-file ownership boundary excludes the shared hook. Its **pending parent
-integration** is supplied as
-`scripts/agent-checks/fixtures/koda-write-integration.patch`, tested against
-copies of the real shell CLI, direct wrapper and hook. Until that patch is
-reviewed and applied by the parent lane, the production hook/CLI retains its
-previous behavior. Installed adapters are unchanged. Parent integration must
-also register the module/tests in its owned install manifest and health runner.
+The repository client is embedded in `codex-lifecycle-hook.py`;
+`koda-direct.py` forwards there, and `koda` invokes it directly. Parent integration
+wires store/update to the module and registers its module, tests and fixture in
+the install manifest and health runner. The historical integration patch at
+`scripts/agent-checks/fixtures/koda-write-integration.patch` is retained for the
+CLI fixture's before/after compatibility check, not as an outstanding rollout
+step. Tests run copies of the real shell CLI, direct wrapper and hook with a
+controlled transport. Repository wiring does not establish installed-client
+activation or live-server write verification; those require separate evidence.
 
 The client performs no repair, confirmation, retagging, retries, or collection
 migration. Existing normalized-content preflight remains a best-effort

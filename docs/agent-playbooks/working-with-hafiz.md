@@ -587,7 +587,11 @@ The agent should not proactively:
 ## Communication And Close-Out
 
 Use [agent-os-communication.md](agent-os-communication.md) as the source of
-truth for day-to-day explanation style.
+truth for day-to-day explanation style, language defaults, audience drafts and
+response-sample assessment. English remains the default even for Malay source
+material or mixed-language requests; explicit requested output language and
+localized product copy are scoped separately. Use Sifututor in prose while
+preserving literal technical names.
 
 Hafiz prefers natural language first. The agent should explain the work like
 code translated into plain English:
@@ -603,8 +607,11 @@ non-technical explanation before or after the code-level detail.
 
 For a bug, PR, or feature review, do not start from the code. Start from the
 person using the system: what they do, what they see now, what they should see,
-and why the gap matters. If Hafiz asks to go one by one, finish that explanation
-for one item and stop before the next item.
+and why the gap matters. State the report origin only when confirmed; unknown
+reporters and channels stay unknown. Explain the proposed solution before the
+technical evidence, remaining gaps and honest release state. If Hafiz asks to
+go one by one, finish that explanation for one item and stop before the next
+item.
 
 Workflow labels are allowed when they help Hafiz learn what the industry or the
 Agent OS calls something, but they should not be used as filler. If the agent
@@ -641,7 +648,13 @@ For WhatsApp replies, developer/staff messages, and equivalent copy-paste
 requests, follow the copy-ready outbound-message rule in
 [agent-os-communication.md](agent-os-communication.md). The send-ready content
 belongs in one plain-text fenced block with bare URLs; explanations stay
-outside it.
+outside it. Proactively draft when an outside person needs the outcome or next
+action, including completed access changes; drafting is not permission to send.
+Skip the draft when no outside audience needs it.
+
+Keep short answers short. The guidance below scales with the task and does not
+require headings or a lengthy template for trivial questions. Unresolved
+scenario preferences remain open for Hafiz; do not invent decisions for them.
 
 Minimum content:
 

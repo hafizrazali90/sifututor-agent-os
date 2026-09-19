@@ -106,36 +106,59 @@ Use these defaults unless Hafiz names a different boundary:
 | --- | --- |
 | Docs/research cleanup | 3 loops, then report progress or commit-ready state. |
 | Product implementation | 1 vertical slice at a time. |
-| Test/CI failure fix | 2 attempts, then stop and explain. |
-| Repeated unknown error | 2 failed attempts, then stop. |
-| New adjacent issue found | Record follow-up instead of expanding unless clearly in scope. |
+| Test/CI failure fix | Diagnose the actual failure, fix it, rerun, and continue. Stop only when diagnosis stops producing new information (see Resolvable Obstacles below). |
+| Repeated unknown error | Diagnose before retrying; continue once a concrete, evidence-based fix is identified. Stop only after diagnosis genuinely runs out of new leads. |
+| New adjacent issue found | Assess it against the current task boundary: fix it now only if it is clearly in scope; otherwise create/reuse a GitHub issue or Mission Ledger item and return to the main work without asking a routine permission question. |
 | Long-running command | Give a progress update after about 30 seconds when possible. |
 
 Plain version:
 
 ```text
 Autonomy should make progress, not wander forever.
+Ordinary confusion, a failing check, or a follow-up finding is something to
+diagnose and resolve, not an automatic stop.
 ```
+
+## Resolvable Obstacles (Diagnose, Fix, Continue)
+
+Most things that go wrong mid-packet are routine, not a reason to stop and
+hand control back to Hafiz. Treat these as resolvable by default:
+
+| Obstacle | Expected agent behavior |
+| --- | --- |
+| A test, build, or CI check fails | Read the actual failure output, form a concrete hypothesis, fix it, rerun, and record the result. Continue the packet once it passes. |
+| The agent is briefly unsure which of two safe options to take | Pick the one that matches the approved boundary and current evidence, note the choice, and continue. Only escalate if the choice would change scope, risk, or product meaning. |
+| A command needs a small retry (timeout, transient network error, flaky check) | Retry once with the same or a corrected command; if it now has new diagnostic information, keep going. |
+| A follow-up or adjacent finding appears | Record it (GitHub issue, Mission Ledger, or in-scope fix) per the New Adjacent Issue Found row above, then return to the main work in the same reply. Do not stop the packet only to ask whether to log it. |
+| An earlier step's output was ambiguous but re-reading the code/docs/evidence resolves it | Resolve it from current evidence and continue; do not pause to ask a question the agent can answer itself. |
+
+The difference between a resolvable obstacle and a genuine stop is whether
+diagnosis is still producing new, actionable information. Retrying the same
+action with no new hypothesis is not diagnosis; it is a blind loop and must
+stop per the Loop Limits above.
 
 ## Stop Rules
 
-Stop and report when:
+Stop and report only when the situation is a genuinely unresolved
+consequential decision or a safety boundary, not ordinary confusion, a first
+test failure, or a normal follow-up finding:
 
 - the finish point is reached
 - Hafiz's product/business decision is needed
-- scope changes
-- a new task or feature appears
+- scope changes materially
+- a new task or feature appears that is not a small in-scope adjacent finding
 - a critical lane appears
 - evidence is missing and no safe fallback exists
-- the same loop fails twice
-- tests fail for an unclear reason
+- diagnosis of a repeated failure stops producing new information (a blind
+  retry loop, not an ordinary fix-and-rerun cycle)
 - a push, PR, merge, deploy, destructive, production, or secret boundary appears
 - branch/worktree state becomes confusing
-- a rollback/retry decision is needed
+- a rollback/retry decision is needed that the agent cannot safely make itself
 - the work should become a follow-up issue, Mission Ledger item, or separate
-  worktree
+  worktree, and continuing to fix it now would expand scope
 
-Stopping is not failure. It is the safe edge of the packet.
+Stopping is not failure. It is the safe edge of the packet. The bar for
+stopping is a real decision or safety boundary, not the presence of friction.
 
 ## Commit Behavior
 

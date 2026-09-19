@@ -43,6 +43,7 @@ be automated next.
 | State fixtures | ST-001, ST-002, ST-003, ST-004, ST-005, ST-006, ST-007, ST-008, ST-009, ST-010, ST-011, ST-012, ST-013, ST-014 | Saying local, committed, pushed, PR-open, merged, deployed, or smoke-passed work is further along than evidence proves; claiming PR/deploy state without a PR/link, commit, release, or deployment evidence. |
 | Koda fixtures | KO-001, KO-002, KO-003, KO-004, KO-005, KO-006, KO-007, KO-008, KO-009, KO-010, KO-011, KO-012, KO-013, KO-014, KO-015 | Storing unsafe, vague, unscoped, duplicate, or invalid memories; trusting stale memory without current evidence; silently dropping memory work when CLI fallback is healthy; using wrong correction source; mutating Koda during bulk cleanup before a read-only audit. |
 | Koda retrieval quality | KR-001 through KR-004 | Important Agent OS memories can be found again by future sessions using the direct Koda helper. Checked on demand by `scripts/agent-checks/agent-os-koda-retrieval-quality.py`; health checks syntax only because live retrieval depends on current Koda service state. |
+| Koda write integrity | K1–K6; `test_koda_write.py`, `test_koda_write_cli.py` | Exact-ID readback, supplied-field agreement, honest mismatch/unavailable results, duplicate handling, no blind retry and sanitized output. Real CLI processes run with a controlled transport; these tests prove repository wiring, not installed-client activation, live-server parity or atomic exactly-once writes. |
 | Capability fixtures | CP-001, CP-002, CP-003, CP-004, CP-005, CP-006, CP-007, CP-008, CP-009, CP-010, CP-011, CP-012, CP-013, CP-014, CP-015, CP-016, CP-017 | Claiming unverified tools, using blocked tools without approval, asking again for task-relevant approved auto-read evidence, using auto-read as broad/unrelated access, granting staff unsafe capability, or treating forbidden boundaries as workaroundable. |
 | Capability probe | Local capability report | Claiming local filesystem, git, Koda, agent-access wrapper, commit, push, deploy, secret, or live-write capability without checking current-session state first. Checked by `scripts/agent-checks/agent-os-capability-probe.py` and health. |
 | GitHub probe | GitHub CLI read probe | Claiming GitHub repo metadata access without checking `gh` auth and a tiny read-only repo metadata call first. Checked on demand by `scripts/agent-checks/agent-os-github-probe.py`; health checks file presence only to stay fast. |
@@ -59,6 +60,23 @@ be automated next.
 | Scenario Lab | RW-001 through RW-018 | Realistic Hafiz work moments across commit, push, critical lane, staff intake, agent-as-tester, memory, session map, production, forbidden secrets, validation target, readiness, product design, GitHub PR readiness, Planner read-only intake, production monitoring, stale Koda conflict, Claude/Codex behavior comparison, and live evidence probe reporting. Checked by `python3 scripts/agent-checks/agent-os-scenario-lab-runner.py --target 0.90`. |
 
 ## Manual Scenario Coverage
+
+Additional state/dispatch proof: `test_agent_os_task_context.py`, run by health,
+checks Session Map discovery never becoming authority, exact session/task
+identity, identity-only prompt injection, supervised enrollment/extension without
+reading prompt labels or changing the saved boundary, approval transfer without
+expansion, malformed state, adapter calls,
+and a controlled failure/correction/retry/follow-up sequence. Temporary enrolled
+tool packets exercise shared PreToolUse subprocess dispatch, matched versus
+denied actual inputs, worktree isolation, and resume scope reload. Config tests
+check local Claude/Codex hook registration. These support AO-022 through AO-024,
+AO-093, AO-098 and AO-105 but do not add live-provider enforcement/compliance
+proof to classifier cases. The trusted-supervisor seam has local unit/subprocess
+proof. A bounded manual live check on 2026-09-19 additionally proved identity
+delivery plus enrolled allow/deny behavior in fresh Codex and Claude sessions on
+this machine. It is recorded in the first-bundle handoff, not treated as a
+deterministic health check or cross-machine guarantee. Unenrolled fallback is not
+a pass.
 
 These are important but not honest as simple router-classifier tests yet.
 
@@ -132,3 +150,14 @@ When adding or changing an eval:
 
 Use [agent-os-evaluation-harness.md](agent-os-evaluation-harness.md) when
 deciding which layer should own a new harness case.
+
+## Communication supplied-sample coverage
+
+The response-shape runner retains 56 built-in fixtures. The separate
+`test_communication_samples.py` suite checks the supplied-sample CLI contract
+and 17 synthetic examples in `communication-samples.json`. Semantic labels
+are recorded reviewer judgments; the runner validates and reports them rather
+than independently detecting factual accuracy, language or attribution.
+Unreviewed samples remain pending. Health runs the regression suite, not the
+mixed positive/negative sample file expecting a zero exit. These checks do not
+establish a live-agent compliance rate; real sanitized samples need review.

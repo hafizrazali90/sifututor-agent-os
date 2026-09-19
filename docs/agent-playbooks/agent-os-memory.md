@@ -278,9 +278,11 @@ Do not bulk migrate old memories without a read-only audit report first.
 
 ## Verify accepted writes
 
-Integration status: the verification module and tested parent patch are present;
-the shared lifecycle hook is not yet wired to it. See the architecture boundary
-below before claiming the existing CLI has this guarantee.
+Repository integration: the shared lifecycle hook now routes store/update through
+the verification module. Permanent CLI tests exercise all three entrypoints;
+the install manifest and health runner include the implementation and tests.
+This does not by itself prove installed adapters were updated or a live server
+write was verified. Check the release evidence before claiming either.
 
 An accepted write is not proof that the saved record matches the request.
 The `koda_write` client verifies `memory_store` and `memory_update` by calling

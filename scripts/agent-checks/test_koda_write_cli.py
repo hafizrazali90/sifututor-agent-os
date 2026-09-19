@@ -57,6 +57,7 @@ class IntegratedCLIJourneyTests(unittest.TestCase):
             target = root / 'scripts/agent-checks'
             target.mkdir(parents=True)
             for filename in ('koda', 'koda-direct.py', 'codex-lifecycle-hook.py',
+                             'agent-os-task-context.py',
                              'koda_contract.py', 'koda_write.py', 'secret_output_guard.py',
                              'test_codex_koda_integration.py'):
                 shutil.copy2(HERE / filename, target / filename)
@@ -137,6 +138,7 @@ class IntegratedCLIJourneyTests(unittest.TestCase):
             target = root / 'scripts/agent-checks'
             target.mkdir(parents=True)
             for name in ('codex-lifecycle-hook.py', 'secret_output_guard.py', 'koda_contract.py',
+                         'agent-os-task-context.py',
                          'koda_write.py', 'koda-verify.py', 'koda-direct.py',
                          'test_codex_koda_integration.py', 'test_koda_direct.py', 'test_koda_write.py'):
                 shutil.copy2(HERE / name, target / name)
