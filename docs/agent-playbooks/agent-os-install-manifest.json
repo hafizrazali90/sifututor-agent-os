@@ -102,6 +102,8 @@
     "docs/agent-playbooks/templates/live-evidence-probe-report.md",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/worktree-inventory.sh",
+    "scripts/agent-checks/worktree-lifecycle.py",
+    "scripts/agent-checks/test_worktree_lifecycle.py",
     "scripts/agent-checks/workflow-doctor.sh"
   ],
   "codex_skill_files": [

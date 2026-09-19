@@ -217,6 +217,25 @@ print credentials to the terminal or to files.
 
 ## Branches And Commits
 
+## Worktree Lifecycle
+
+For parallel or long-running work, use
+`scripts/agent-checks/worktree-lifecycle.py` with the shared
+[`parallel-work-and-worktrees.md`](docs/agent-playbooks/parallel-work-and-worktrees.md)
+playbook. Register an owner/session lease when a dedicated worktree is created,
+refresh its heartbeat during long work, and release or park it when handing
+back. Lease records contain non-secret metadata only.
+
+Cleanup is proposal-first. A worktree may be reclaimed only after the helper
+revalidates the exact HEAD, clean tracked/untracked state, ignored-file safety,
+active-task state, lease state, base-branch containment, Git lock and live
+process ownership. Never force removal, delete the branch, or treat age,
+missing registration, or apparent dormancy alone as deletion authority.
+
+Dependency reuse requires identical lockfile hashes. Use copy-on-write seeding
+where supported; never share mutable `node_modules` or `vendor` directories by
+symlink. Composer seeds must regenerate autoload files in the target worktree.
+
 ## GitHub Issue Automation
 
 This applies to every substantive task, not only coding work: bugfixes,
