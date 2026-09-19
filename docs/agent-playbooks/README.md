@@ -93,6 +93,7 @@ Use these when the user asks for:
 | --- | --- | --- |
 | Claude Code | `/task-router` or project router skill | [task-router.md](task-router.md) |
 | Codex | `$task-router` | [task-router.md](task-router.md) |
+| Kilo Code | Select `Sifututor Agent OS`; it routes through `.agents/skills/task-router/SKILL.md` | [task-router.md](task-router.md) |
 | Claude Code | `/verify` | [verify.md](verify.md) |
 | Codex | `$verify` | [verify.md](verify.md) |
 | Claude Code | `/qa` | [qa.md](qa.md) |
@@ -120,6 +121,32 @@ Use these when the user asks for:
 | Claude/Codex | `/workflow-improvement` later, `$workflow-improvement`, or "improve the workflow" | [agent-os-improvement-loop.md](agent-os-improvement-loop.md) |
 | Claude/Codex | Mission Ledger capture/review | [mission-ledger.md](mission-ledger.md) |
 | Claude/Codex | Session Map capture/review | [session-map.md](session-map.md) |
+
+Kilo Code's thin project agent lives at
+`.kilo/agents/sifututor-agent-os.md`. Kilo natively discovers `AGENTS.md`,
+`CLAUDE.md`, and `.agents/skills/`; the adapter adds Kilo-specific provider,
+permission, Koda-helper, and explicit-guard behavior without creating a second
+workflow definition.
+
+The configured Z.ai Coding Plan connection is text-only. Leave the Image
+capability disabled for its models. If an image was added and Z.ai returns a
+`messages.content.type` 400 response, reload Kilo's config and start a new task
+so the retained image is not replayed from the failed conversation.
+
+For Coding Plan visual work in Kilo, install Z.ai's local Vision MCP Server and
+refer to an image saved in the workspace, such as `./screenshots/error.png`.
+Do not paste or attach it directly: Kilo otherwise sends the image block to the
+text-only model endpoint instead of calling the MCP tool. The Sifututor agent
+keeps `zai-vision_*` on `ask`; approve the specific image-analysis call in
+Kilo's permission dock rather than granting silent access to local images.
+
+After changing the Kilo adapter, verify portable behavior first, then explicitly
+check the installed adapter and real GLM traces when rollout evidence is needed:
+
+```bash
+python3 scripts/agent-checks/kilo-agent-os-adapter-check.py --installed
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --require-installed-kilo --require-live-kilo
+```
 
 ## Codex Hook Layer
 

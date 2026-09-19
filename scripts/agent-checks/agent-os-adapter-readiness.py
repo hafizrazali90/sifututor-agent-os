@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check whether Codex and Claude adapters are ready for the Agent OS."""
+"""Check whether Codex, Claude, and Kilo adapters are ready for the Agent OS."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ PLAYBOOK_DIR = ROOT / "docs" / "agent-playbooks"
 SKILL_DIR = ROOT / ".agents" / "skills"
 CLAUDE_SETTINGS = ROOT / ".claude" / "settings.json"
 CODEX_CONFIG = ROOT / ".codex" / "config.toml"
+KILO_AGENT = ROOT / ".kilo" / "agents" / "sifututor-agent-os.md"
 GLOBAL_CLAUDE_INSTRUCTIONS = Path.home() / ".claude" / "CLAUDE.md"
 ACTIVE_ADAPTER_INSTRUCTIONS = (
     GLOBAL_CLAUDE_INSTRUCTIONS,
@@ -667,6 +668,113 @@ def check_optional_live_claude(require_live: bool) -> list[CheckResult]:
     ]
 
 
+def check_kilo_adapter(*, check_installed: bool, require_installed: bool) -> list[CheckResult]:
+    results = [file_check("KO-001", "kilo", KILO_AGENT, "Kilo project agent present")]
+    checks = [
+        (
+            "KO-002",
+            [sys.executable, "scripts/agent-checks/kilo-agent-os-adapter-check.py"],
+            "portable Kilo adapter definition passes",
+        ),
+        (
+            "KO-003",
+            [sys.executable, "scripts/agent-checks/kilo-agent-os-adapter-check.py", "--self-test"],
+            "Kilo adapter checker rejects unsafe and drifted fixtures",
+        ),
+        (
+            "KO-004",
+            [
+                sys.executable,
+                "scripts/agent-checks/agent-os-behavior-trace-runner.py",
+                "--self-test-kilo",
+            ],
+            "Kilo event parser and staff-report drift detector pass",
+        ),
+    ]
+    for check_id, command, detail in checks:
+        proc = run_command(command)
+        results.append(
+            CheckResult(
+                id=check_id,
+                adapter="kilo",
+                passed=proc.returncode == 0,
+                detail=detail,
+                warnings=[]
+                if proc.returncode == 0
+                else (proc.stderr or proc.stdout or "no output").splitlines()[-4:],
+            )
+        )
+
+    if check_installed:
+        proc = run_command(
+            [sys.executable, "scripts/agent-checks/kilo-agent-os-adapter-check.py", "--installed"],
+            timeout=90,
+        )
+        results.append(
+            CheckResult(
+                id="KO-005",
+                adapter="kilo-installed",
+                passed=proc.returncode == 0,
+                detail=(
+                    "installed Kilo agent, configured Z.ai/GLM default, extension CLI, "
+                    "and Vision MCP pass; runtime model identity is unobserved"
+                ),
+                required=require_installed,
+                warnings=[]
+                if proc.returncode == 0
+                else (proc.stderr or proc.stdout or "no output").splitlines()[-4:],
+            )
+        )
+    return results
+
+
+def check_optional_live_kilo(require_live: bool) -> list[CheckResult]:
+    live = run_command(
+        [
+            sys.executable,
+            "scripts/agent-checks/agent-os-behavior-trace-runner.py",
+            "--live-kilo",
+            "--json",
+        ],
+        timeout=540,
+    )
+    warnings: list[str] = []
+    passed = live.returncode == 0
+    detail = "Kilo live behavior trace completed"
+    if live.returncode == 0:
+        try:
+            payload = json.loads(live.stdout)
+            kilo_results = [case.get("kilo") or {} for case in payload.get("cases", [])]
+            available = sum(1 for result in kilo_results if result.get("state") == "available")
+            behavior_failures = sum(
+                1 for case in payload.get("cases", []) if case.get("kilo_errors")
+            )
+            total = len(kilo_results)
+            passed = total > 0 and available == total and behavior_failures == 0
+            detail = (
+                f"Kilo live behavior traces available for {available}/{total}; "
+                f"behavior drift in {behavior_failures}/{total}"
+            )
+            if not passed:
+                warnings.append("Kilo did not return a conforming live trace for every case")
+        except json.JSONDecodeError:
+            passed = False
+            warnings.append("live Kilo output was not JSON")
+    else:
+        warnings.extend((live.stderr or live.stdout or "live Kilo trace failed").splitlines()[-4:])
+
+    return [
+        CheckResult(
+            id="LV-002",
+            adapter="kilo-live",
+            passed=passed,
+            detail=detail,
+            required=require_live,
+            warnings=warnings,
+        )
+    ]
+
+
 def summarize(results: list[CheckResult], print_json: bool) -> int:
     required_results = [result for result in results if result.required]
     required_failures = [result for result in required_results if not result.passed]
@@ -717,6 +825,24 @@ def main() -> int:
         action="store_true",
         help="fail instead of warn when cloned project repos lack Claude hook wiring",
     )
+    parser.add_argument(
+        "--installed-kilo",
+        action="store_true",
+        help="check this machine's installed Kilo adapter and GLM/Vision wiring",
+    )
+    parser.add_argument(
+        "--require-installed-kilo",
+        action="store_true",
+        help="fail when this machine's installed Kilo adapter is not ready",
+    )
+    parser.add_argument(
+        "--live-kilo", action="store_true", help="run optional live Kilo/GLM traces"
+    )
+    parser.add_argument(
+        "--require-live-kilo",
+        action="store_true",
+        help="fail when live Kilo traces are unavailable or behaviorally different",
+    )
     args = parser.parse_args()
 
     if args.capability_preflight:
@@ -753,8 +879,21 @@ def main() -> int:
     results.extend(check_claude_adapter(strict_project_hooks=args.strict_project_hooks))
     results.extend(check_claude_installed_adapter())
     results.extend(check_claude_installed_adapter_self_test())
+    results.extend(
+        check_kilo_adapter(
+            check_installed=(
+                args.installed_kilo
+                or args.require_installed_kilo
+                or args.live_kilo
+                or args.require_live_kilo
+            ),
+            require_installed=args.require_installed_kilo,
+        )
+    )
     if args.live_claude or args.require_live_claude:
         results.extend(check_optional_live_claude(require_live=args.require_live_claude))
+    if args.live_kilo or args.require_live_kilo:
+        results.extend(check_optional_live_kilo(require_live=args.require_live_kilo))
     return summarize(results, args.json)
 
 

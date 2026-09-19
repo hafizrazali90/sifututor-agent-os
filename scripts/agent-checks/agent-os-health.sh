@@ -52,6 +52,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "Detected"
 check_file "root AGENTS" "$ROOT/AGENTS.md"
+check_file "Kilo Agent OS adapter" "$ROOT/.kilo/agents/sifututor-agent-os.md"
 check_file "Agent OS overview" "$ROOT/docs/agent-playbooks/agent-os.md"
 check_file "Agent OS infrastructure" "$ROOT/docs/agent-playbooks/agent-os-infrastructure.md"
 check_file "Agent OS parity contract" "$ROOT/docs/agent-playbooks/agent-os-parity-contract.md"
@@ -124,6 +125,7 @@ check_file "Claude delegation fixtures" "$ROOT/scripts/agent-checks/agent-os-cla
 check_file "Claude delegation template" "$ROOT/docs/agent-playbooks/templates/claude-delegation-job.json"
 check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py"
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
+check_file "Kilo adapter check" "$ROOT/scripts/agent-checks/kilo-agent-os-adapter-check.py"
 check_file "secret output guard" "$ROOT/scripts/agent-checks/secret_output_guard.py"
 check_file "secret artifact scan" "$ROOT/scripts/agent-checks/secret_artifact_scan.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
@@ -383,6 +385,16 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-adapter-readiness.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-adapter-readiness.out $TMP_DIR/agent-os-adapter-readiness.err
+
+if python3 "$ROOT/scripts/agent-checks/kilo-agent-os-adapter-check.py" >$TMP_DIR/kilo-agent-os-adapter.out 2>$TMP_DIR/kilo-agent-os-adapter.err; then
+  kilo_adapter_summary="$(tail -1 $TMP_DIR/kilo-agent-os-adapter.out 2>/dev/null || true)"
+  pass "Kilo Agent OS adapter" "${kilo_adapter_summary:-passed}"
+else
+  fail "Kilo Agent OS adapter" "portable adapter validation failed"
+  sed -n '1,12p' $TMP_DIR/kilo-agent-os-adapter.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/kilo-agent-os-adapter.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/kilo-agent-os-adapter.out $TMP_DIR/kilo-agent-os-adapter.err
 
 if python3 -m py_compile "$ROOT/scripts/agent-checks/agent-os-koda-retrieval-quality.py" >$TMP_DIR/agent-os-koda-retrieval.out 2>$TMP_DIR/agent-os-koda-retrieval.err; then
   pass "Agent OS Koda retrieval" "py_compile ok; run directly for live retrieval quality"
