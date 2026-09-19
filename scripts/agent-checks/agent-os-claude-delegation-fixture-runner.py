@@ -14,6 +14,16 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "scripts" / "agent-checks" / "agent-os-claude-delegation.py"
+BRIEF_TEMPLATE = ROOT / "docs" / "agent-playbooks" / "templates" / "codex-to-claude.md"
+JOB_TEMPLATE = ROOT / "docs" / "agent-playbooks" / "templates" / "claude-delegation-job.json"
+HANDOFF_PLAYBOOK = ROOT / "docs" / "agent-playbooks" / "handoff.md"
+
+PROOF_FIELDS = (
+    "acceptance_to_proof_map", "entrypoint", "production_caller",
+    "authoritative_result", "bypass_paths", "permissions_configuration",
+    "disabled_unavailable", "failure_retry", "negative_control", "journey",
+    "regression", "builder_evidence_not_acceptance",
+)
 
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
@@ -86,6 +96,12 @@ if "--version" in args:
 
 mode = os.environ.get("FAKE_CLAUDE_MODE", "happy")
 handback = os.environ.get("FAKE_HANDBACK")
+proof = "\n".join(f"{name}: fixture evidence" for name in (
+    "acceptance_to_proof_map", "entrypoint", "production_caller",
+    "authoritative_result", "bypass_paths", "permissions_configuration",
+    "disabled_unavailable", "failure_retry", "negative_control", "journey",
+    "regression", "builder_evidence_not_acceptance",
+))
 if mode == "setup":
     print("Authentication required before continuing", file=sys.stderr, flush=True)
     time.sleep(0.08)
@@ -93,14 +109,24 @@ if mode == "setup":
 if mode in {"silent", "blocking"}:
     time.sleep(0.30 if mode == "silent" else 0.75)
     if handback:
-        Path(handback).write_text("# Fixture handback\n\nCompleted without raw output capture.\n")
+        Path(handback).write_text("# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n" + proof + "\n")
     raise SystemExit(0)
 
 print(json.dumps({"type": "system", "subtype": "init", "session_id": "fixture-session"}), flush=True)
 print(json.dumps({"type": "assistant", "usage": {"input_tokens": 999}, "message": {"content": [{"type": "text", "text": "SENSITIVE RAW OUTPUT and authentication required as ordinary prose"}]}}), flush=True)
 print(json.dumps({"type": "result", "subtype": "success", "usage": {"input_tokens": 12, "output_tokens": 7}}), flush=True)
 if handback:
-    Path(handback).write_text("# Fixture handback\n\nCompleted without secrets.\n")
+    content = "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n" + proof + "\n"
+    if mode == "incomplete_handback":
+        content = "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\nentrypoint: only one field\n"
+    elif mode == "quoted_template_handback":
+        content = "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n```text\n" + proof + "\n```\n"
+    elif mode == "not_applicable_handback":
+        content = (
+            "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n"
+            "builder_proof_not_applicable: read-only inventory with no implementation or behavior change\n"
+        )
+    Path(handback).write_text(content)
 '''
 
 
@@ -137,6 +163,10 @@ def make_job(base: Path, worktree: Path, job_id: str, lane: str = "fixture-lane"
         "branch": "feat/fixture",
         "lane_owner": lane,
         "required_proof": ["structured handback", "watchdog evidence"],
+        "builder_completion_proof": {
+            "mode": "required",
+            "not_applicable_reason": "",
+        },
         "reporting_cadence_seconds": 60,
         "stall_after_seconds": 0.10,
         "poll_interval_seconds": 0.02,
@@ -188,6 +218,56 @@ def check(condition: bool, message: str, errors: list[str]) -> None:
 
 def main() -> int:
     failures: list[str] = []
+
+    # issue-56: the Codex-To-Claude brief template's Required Return Contract
+    # must itself name the Builder Completion Proof Contract fields, so a
+    # filled-in delegation brief cannot satisfy the template's own checklist
+    # while silently omitting the evidence issue #56 requires. The handoff
+    # playbook's delegation section must also link to that contract by name,
+    # not only cite the pre-work Build-Ready Pack.
+    df010_errors: list[str] = []
+    brief_text = BRIEF_TEMPLATE.read_text() if BRIEF_TEMPLATE.is_file() else ""
+    handoff_text = HANDOFF_PLAYBOOK.read_text() if HANDOFF_PLAYBOOK.is_file() else ""
+    job_template = json.loads(JOB_TEMPLATE.read_text()) if JOB_TEMPLATE.is_file() else {}
+    brief_markers = (
+        "acceptance-to-proof map",
+        "production caller",
+        "bypass-path sweep",
+        "negative-control",
+        "builder evidence",
+        "independent acceptance",
+        "authoritative",
+        "permission/configuration",
+        "flag-off/unavailable",
+    )
+    for marker in brief_markers:
+        check(
+            marker in brief_text.lower(),
+            f"brief template Required Return Contract missing {marker!r}",
+            df010_errors,
+        )
+    check(
+        "builder completion proof" in handoff_text.lower(),
+        "handoff.md delegation section does not name the Builder Completion Proof Contract",
+        df010_errors,
+    )
+    check(
+        job_template.get("builder_completion_proof")
+        == {"mode": "required", "not_applicable_reason": ""},
+        "canonical job template does not default to the required Builder Completion Proof mode",
+        df010_errors,
+    )
+    for field in PROOF_FIELDS:
+        check(
+            f"{field}:" in brief_text,
+            f"brief template missing structured proof field {field!r}",
+            df010_errors,
+        )
+    print(("PASS" if not df010_errors else "FAIL") + " DF-016 delegation template builder completion proof linkage")
+    for error in df010_errors:
+        print(f"  - {error}")
+    failures.extend(f"DF-016: {error}" for error in df010_errors)
+
     with tempfile.TemporaryDirectory(prefix="agent-os-claude-delegation-fixtures.") as raw_tmp:
         tmp = Path(raw_tmp)
         fake_bin = tmp / "bin"
@@ -269,7 +349,10 @@ def main() -> int:
         evidence = json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
         errors = []
         check(result.returncode == 0, f"happy worker exit={result.returncode}: {result.stderr}", errors)
-        check(evidence.get("final_state") == "finished", "happy worker did not finish", errors)
+        check(evidence.get("worker_outcome") == "finished", "happy worker process did not finish", errors)
+        check(evidence.get("final_state") == "returned", "valid handback was not returned for review", errors)
+        check(evidence.get("return_contract", {}).get("structure_valid") is True, "return contract was not structurally validated", errors)
+        check(evidence.get("return_contract", {}).get("semantic_acceptance_proven") is False, "structural validation falsely granted semantic acceptance", errors)
         check(evidence.get("usage", {}).get("state") == "available", "usage was not captured", errors)
         check(
             evidence.get("usage", {}).get("counters", {}).get("input_tokens") == 12,
@@ -306,10 +389,69 @@ def main() -> int:
         errors = []
         check(result.returncode == 0, f"silent worker exit={result.returncode}: {result.stderr}", errors)
         check("stalled" in states, "silent worker did not raise a stalled state", errors)
-        check(evidence.get("final_state") == "finished", "watchdog killed or misreported successful worker", errors)
+        check(evidence.get("worker_outcome") == "finished", "watchdog killed or misreported successful worker", errors)
+        check(evidence.get("final_state") == "returned", "valid silent-worker handback was not returned for review", errors)
         check(evidence.get("usage", {}).get("state") == "unavailable", "missing usage was not honest", errors)
         print(("PASS" if not errors else "FAIL") + " DF-003 non-token silent-stall detection")
         failures.extend(f"DF-003: {error}" for error in errors)
+
+        incomplete_job = make_job(tmp, worktree, "DF-017")
+        incomplete_spec = json.loads(incomplete_job.read_text())
+        incomplete_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "incomplete_handback",
+            "FAKE_HANDBACK": incomplete_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(incomplete_job)], incomplete_env)
+        evidence_path = Path(incomplete_spec["state_dir"]) / "evidence.json"
+        evidence = json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+        errors = []
+        check(result.returncode != 0, "incomplete return artifact unexpectedly passed", errors)
+        check(evidence.get("worker_outcome") == "finished", "worker process outcome was not preserved", errors)
+        check(evidence.get("final_state") == "incomplete", "incomplete proof artifact was not rejected", errors)
+        check(evidence.get("return_contract", {}).get("structure_valid") is False, "incomplete contract reported structurally valid", errors)
+        check(evidence.get("return_contract", {}).get("semantic_acceptance_proven") is False, "incomplete contract granted semantic acceptance", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-017 configured return artifact validation")
+        failures.extend(f"DF-017: {error}" for error in errors)
+
+        quoted_job = make_job(tmp, worktree, "DF-018")
+        quoted_spec = json.loads(quoted_job.read_text())
+        quoted_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "quoted_template_handback",
+            "FAKE_HANDBACK": quoted_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(quoted_job)], quoted_env)
+        evidence = json.loads((Path(quoted_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode != 0, "quoted template unexpectedly satisfied proof fields", errors)
+        check(evidence.get("final_state") == "incomplete", "quoted template was not incomplete", errors)
+        check(
+            len(evidence.get("return_contract", {}).get("missing_proof_fields", [])) == len(PROOF_FIELDS),
+            "proof fields inside a code fence were accepted",
+            errors,
+        )
+        print(("PASS" if not errors else "FAIL") + " DF-018 quoted proof template rejection")
+        failures.extend(f"DF-018: {error}" for error in errors)
+
+        na_job = make_job(tmp, worktree, "DF-019")
+        na_spec = json.loads(na_job.read_text())
+        na_spec["builder_completion_proof"] = {
+            "mode": "not_applicable",
+            "not_applicable_reason": "read-only inventory with no implementation or behavior change",
+        }
+        na_job.write_text(json.dumps(na_spec, indent=2) + "\n")
+        na_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "not_applicable_handback",
+            "FAKE_HANDBACK": na_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(na_job)], na_env)
+        evidence = json.loads((Path(na_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode == 0, f"truthful not-applicable job exit={result.returncode}", errors)
+        check(evidence.get("final_state") == "returned", "truthful not-applicable job did not return", errors)
+        check(evidence.get("return_contract", {}).get("proof_mode") == "not_applicable", "not-applicable mode was not recorded", errors)
+        check(evidence.get("return_contract", {}).get("semantic_acceptance_proven") is False, "not-applicable mode granted semantic acceptance", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-019 explicit not-applicable contract")
+        failures.extend(f"DF-019: {error}" for error in errors)
 
         setup_job = make_job(tmp, worktree, "DF-004")
         setup_spec = json.loads(setup_job.read_text())
@@ -589,7 +731,7 @@ def main() -> int:
             print(f"  - {failure}")
         print(f"agent-os-claude-delegation-fixtures: FAIL ({len(failures)} issue(s))")
         return 1
-    print("agent-os-claude-delegation-fixtures: 17/17 passed")
+    print("agent-os-claude-delegation-fixtures: 21/21 passed")
     return 0
 
 

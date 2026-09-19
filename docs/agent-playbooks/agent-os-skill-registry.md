@@ -296,6 +296,9 @@ the playbook's routing, gates, evidence standard, or state model.
 | `/commit` | `~/.claude/skills/commit/SKILL.md` | `commit.md` | Installed thin adapter. |
 | `/save-session` | `~/.claude/skills/save-session/SKILL.md` | `save-session.md` | Installed thin adapter. |
 | `/workflow-improvement` | `~/.claude/skills/workflow-improvement/SKILL.md` | `agent-os-improvement-loop.md` | Installed thin adapter. |
+| `/verify` | `~/.claude/skills/verify/SKILL.md` | `verify.md` | Installed thin adapter; must carry the Builder Completion Proof Contract markers. |
+| `/review` | `~/.claude/skills/review/SKILL.md` | `review.md` | Installed thin adapter; must carry the Builder Completion Proof Contract markers. |
+| `/handoff` | `~/.claude/skills/handoff/SKILL.md` | `handoff.md` | Installed thin adapter; must carry the Builder Completion Proof Contract markers. |
 
 Installed-path enforcement for these adapters lives in
 `scripts/agent-checks/agent-os-claude-adapter-check.py` and its readiness

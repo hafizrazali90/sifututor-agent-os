@@ -238,6 +238,9 @@ CLAUDE_ADAPTER_SKILLS = {
     "Commit": "commit",
     "Save Session": "save-session",
     "Workflow Improvement": "workflow-improvement",
+    "Verify": "verify",
+    "Review": "review",
+    "Handoff": "handoff",
 }
 
 
@@ -416,6 +419,28 @@ ADAPTER_SELF_TEST_CASES = [
         "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "save-session"],
         "expect_errors": True,
         "expect_substring": "save-session",
+    },
+    # issue-56 correction: verify/review/handoff must be spot-checked for
+    # installed-adapter presence the same way the original four adapters are,
+    # so a missing installed Claude Verify/Review/Handoff skill fails loudly
+    # here instead of being silently skipped.
+    {
+        "name": "missing verify adapter fails",
+        "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "verify"],
+        "expect_errors": True,
+        "expect_substring": "verify",
+    },
+    {
+        "name": "missing review adapter fails",
+        "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "review"],
+        "expect_errors": True,
+        "expect_substring": "review",
+    },
+    {
+        "name": "missing handoff adapter fails",
+        "present": [name for name in CLAUDE_ADAPTER_SKILLS.values() if name != "handoff"],
+        "expect_errors": True,
+        "expect_substring": "handoff",
     },
     {
         "name": "empty adapter root fails for every promised adapter",

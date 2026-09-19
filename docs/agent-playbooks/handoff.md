@@ -182,6 +182,29 @@ point, business rule, scope, evidence, and exact return contract. Use the
 Build-Ready Pack from `ai-implementation-readiness.md` for critical,
 cross-module, user-facing, or AI-to-AI implementation work.
 
+For the return side, `required_proof` and the brief's return contract must
+also apply the [Builder Completion Proof
+Contract](agent-os-evidence-model.md#builder-completion-proof-contract) for
+delegated, cross-system, cross-module, and user-facing work: the
+acceptance-to-proof map, real entry point and production callers, the
+bypass-path sweep, authoritative-result convergence, permission/configuration
+reachability, flag-off/unavailable behavior, and a negative-control or
+failing-first proof. The Build-Ready Pack governs what to build; the Builder
+Completion Proof Contract governs what a completion claim must prove. A
+handback that only satisfies the brief's literal checklist without this
+evidence is builder evidence, not a proven completion state.
+
+The job must set `builder_completion_proof.mode` explicitly. Normal delegated
+implementation uses `required`; the runner then requires every named proof
+field from the return template as a nonempty `field: value` record. Generic
+`required_proof` labels cannot substitute for those fields. A genuinely
+non-implementation task may use `not_applicable` only with a nonempty reason
+configured before launch, and the handback must repeat that exact reason in
+`builder_proof_not_applicable`. The worker cannot downgrade the contract after
+launch. Supplementary `required_proof` labels must still occur verbatim. These
+checks prove structural completeness only, not that the associated claims are
+true.
+
 The first runner release refuses merge, deploy, production, live-check, and
 monitoring finish points. Those remain normal human-approved release workflows,
 not delegation automation.
@@ -266,7 +289,7 @@ scripts/agent-checks/agent-os-claude-delegation.py status \
 | `waiting_setup` | Authentication, trust, MCP, or another first-run setup prompt was detected. | Resolve the named setup outside the worker, rerun preflight, then launch a fresh job. |
 | `unmonitored` | Claude is still alive, but the local watchdog process has stopped. | Tell Hafiz immediately, preserve the lane lock, and reconcile the worker before any relaunch. |
 | `stale` | State says active but the recorded worker process is gone. | Reconcile Git and handback evidence before deciding whether to relaunch. |
-| `finished` | Claude exited successfully and the required handback exists. | Begin independent Codex review; do not call the product work accepted yet. |
+| `returned` | Claude exited successfully and the configured handback items are structurally present. This is not semantic acceptance. | Begin independent Codex review; do not call the product work accepted yet. |
 | `incomplete` or `failed` | The handback is missing or the worker exited unsuccessfully. | Preserve evidence, diagnose, and report the exact next action. |
 
 The watchdog never kills, restarts, resumes, approves, commits, pushes, merges,
@@ -279,7 +302,7 @@ start/end state, brief/handback hashes, available usage counters, and whether a
 stall occurred. It deliberately stores no raw Claude stream content. If the CLI
 does not expose usage, record `unavailable`; never estimate savings.
 
-After `finished`, Codex must still:
+After `returned`, Codex must still:
 
 1. read the sanitized handback;
 2. inspect the real diff and Git state;

@@ -41,6 +41,7 @@ REQUIRED_PLAYBOOKS = [
     "review.md",
     "commit.md",
     "save-session.md",
+    "handoff.md",
 ]
 
 REQUIRED_CODEX_SKILLS = [
@@ -582,10 +583,10 @@ def check_claude_installed_adapter() -> list[CheckResult]:
             adapter="claude",
             passed=passed,
             detail=(
-                "installed Claude global adapters pass the phase-one "
-                "linkage/drift check (CLAUDE.md, task-router, commit, "
-                "save-session, and workflow-improvement skills; a missing "
-                "installed file fails here; not full parity)"
+                "installed Claude global adapters pass the linkage/drift "
+                "check (CLAUDE.md, task-router, commit, save-session, "
+                "workflow-improvement, verify, review, and handoff skills; "
+                "a missing installed file fails here; not full parity)"
             ),
             warnings=warnings[:10],
         )
@@ -615,8 +616,9 @@ def check_claude_installed_adapter_self_test() -> list[CheckResult]:
             detail=(
                 "installed-adapter checker's own synthetic-fixture self-test "
                 "passes (proves the negation-scoping/detection logic itself "
-                "across all five checked adapters, including the save-session "
-                "and workflow-improvement correction fixtures; phase one only)"
+                "across all eight checked adapters, including the "
+                "save-session, workflow-improvement, and issue-56 "
+                "verify/review/handoff correction fixtures)"
             ),
             warnings=warnings[:10],
         )

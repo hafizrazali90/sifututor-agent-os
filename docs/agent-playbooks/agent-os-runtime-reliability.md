@@ -202,7 +202,7 @@ in `handoff.md`.
 
 Do not translate `stalled` into automatic recovery. Report the state, preserve
 the evidence, and let the supervising Codex or human decide whether setup,
-retry, or a fresh job is safe. A `finished` worker is ready for independent
+retry, or a fresh job is safe. A `returned` worker is ready for independent
 review, not automatically accepted or ready for release.
 
 ## Session Map Reliability
