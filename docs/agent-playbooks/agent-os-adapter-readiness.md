@@ -12,6 +12,67 @@ Each LLM still needs its own adapter setup so it can read and follow the SOP.
 
 ## Readiness Levels
 
+### Provider-neutral capability preflight
+
+Select workers by observed capabilities, not tool/provider/model names. Kilo,
+GLM, Claude and Codex are adapter candidates, not owners of the shared workflow.
+Use `agent_os_adapter_contract.evaluate_capabilities(record, required,
+expected_identity=identity)` or the isolated CLI entry point:
+
+```bash
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --capability-preflight
+```
+
+The CLI reads one JSON envelope from stdin containing exactly `record`,
+`required` and `expected_identity`; it does not run normal readiness probes,
+read installed configuration, execute provider commands or invoke live tests.
+Do not send secrets or raw transcripts. The envelope is limited to 64 KiB,
+duplicate JSON keys are rejected, and output contains verdict metadata only.
+
+Version-one record fields:
+
+- `schema_version`: integer `1`.
+- `identity`: exact `tool`, `tool_version`, `provider`, `model`,
+  `configuration_id`, `environment_id` strings. The supervisor obtains the
+  expected identity independently from the selected setup. Environment identity
+  must distinguish the actual host/worktree/environment and configuration
+  identity must change when tools, permissions, model routing or access change.
+- `observed_at`, `expires_at`: UTC ISO timestamps, chosen by the supervisor
+  according to the task risk; observation must already exist and not expire.
+- `capabilities`: mapping of lowercase hyphenated names (for example,
+  `read-files`, `image-input`, `run-tests`) to `status` (`supported`,
+  `unsupported`, `unknown`), `evidence_kind` (`live`, `fixture`, `declared`),
+  and a non-secret `evidence_ref`. Capability names are not vendor allowlists.
+
+`required` is a nonempty list of distinct capability names. Unknown, unsupported,
+fixture-only, declared-only, expired or identity-mismatched requirements fail
+closed. Native image input and a separate vision-tool path are different
+capabilities; one never silently substitutes for the other. Rerunning this
+pure validation is safe and has no write/retry/provider side effects.
+
+Exit `0` means the supplied attestation meets this task's capability requirements;
+`1` means it does not; `2` means invalid input or incompatible CLI modes. This
+is **not independent evidence verification**: references are not opened or
+authenticated. The supervisor must inspect the evidence and control its
+provenance/freshness. Output always states `live_parity_proven: false` and
+`execution_authorized: false`. Do not turn a worker's self-written record into
+approval, a launch command, or a claim of whole-workflow parity.
+
+Existing launch adapters retain their own reviewed invocation contracts. An
+unknown adapter can receive a portable brief, but cannot acquire a guessed CLI
+command, fallback provider, paid API path or new permission from this preflight.
+
+CP-08 reconciliation: issues #65/#68 and the retained Kilo parity worktree are
+historical implementation candidates. Their pinned model, installed-config
+checks and sampled live traces do not prove current universal adapter parity.
+The newer candidate remains preserved for separate exact-diff integration;
+this capability layer neither installs it nor claims it has been rolled out.
+Root `glm`/`glm-switch` files and provider credentials remain untouched.
+
+Permanent regression evidence lives in `test_agent_os_adapter_contract.py`:
+pure evaluator negatives and the actual CLI JSON journey. No product browser
+E2E is required (`not user-facing`); no real provider compliance is claimed.
+
 | Level | Meaning | Example proof |
 | --- | --- | --- |
 | Shared core ready | The common rules and playbooks exist. | `AGENTS.md`, `docs/agent-playbooks/*`, Koda, health checks. |

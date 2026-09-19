@@ -122,6 +122,29 @@ clarify, not code.
 | Human-journey proof | Which browser/mobile/API smoke or E2E proves the user workflow, or why is it not feasible? |
 | Verifier acceptance | What must Codex/reviewer check before the slice can be marked accepted? |
 
+## Proof-Bounded Builder Packets
+
+Use the [Builder Completion Proof Contract](agent-os-evidence-model.md#builder-completion-proof-contract)
+for delegated, cross-system, cross-module and user-facing work. The evidence
+model owns the acceptance dimensions and optional machine receipt; do not
+create provider-specific definitions of completion.
+
+Before dispatch, bind one packet to one complete vertical slice, its approved
+contract, target revision, normal entrypoint, real callers, state transition
+and negative/failure/retry proof. Name bypass paths and the source of truth.
+Keep explicit exclusions and an accountable integrator. A tiny safe edit may
+use a brief, but must not claim a stronger state than its evidence supports.
+
+The receiving builder checks current code against the brief before editing.
+If a new finding changes the contract, record it and route it through the
+existing scope/approval rules instead of silently changing acceptance criteria.
+Ordinary in-scope fixes and retries continue without another routine approval.
+
+When an independent reviewer returns a slice, correct and recheck that slice
+before dependent execution. Parallel discovery for genuinely independent slices
+is allowed. Builder completion, independent technical acceptance, owner product
+acceptance and release authorization remain separate states.
+
 ## Anti-Weak-Test Rule
 
 Tests must prove the specific production rule, not a softer nearby behavior.

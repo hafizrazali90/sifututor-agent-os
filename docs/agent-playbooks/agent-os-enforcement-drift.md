@@ -57,6 +57,53 @@ If a new dangerous pattern is found, add one failing regression, extend the
 shared guard, prove the safe alternative still works, then update the eval or
 playbook only when agent judgment is also involved.
 
+### Inspection formats are not automatically safe
+
+`docker inspect --format` is not a safety boundary by itself: a template can
+return the whole object, including its environment. The shared guard accepts
+only literal scalar templates for `State.Status`, `State.Running`,
+`State.Restarting`, `State.Paused`, `State.Dead`, `State.ExitCode`,
+`State.Health.Status`, `RestartCount`, and `Id`, optionally using `json` on
+that scalar. Whitespace and the ordinary `--format`, `--format=`, `-f`, and
+attached `-f` forms are supported. Every supplied format must be safe.
+Formats in comments or later commands cannot satisfy an earlier inspect.
+Docker global-option and line-continuation forms are deliberately refused;
+use the reviewed wrapper instead of trying alternate spellings.
+For recognized simple invocations, shell tokenization ensures a quoted
+positional argument cannot masquerade as an option; `--` ends options.
+Dynamic expressions, redirections, and ambiguous nested quoting are refused.
+
+Whole objects, health logs, error text, dynamic templates, and other fields
+need a reviewed non-printing wrapper; do not bypass the guard or pipe unsafe
+output into a filter. Ordinary approved wrappers and documentation searches
+remain available without additional routine approval.
+
+Permanent synthetic coverage lives in
+`scripts/agent-checks/test_secret_guard_reconciliation.py`. It exercises the
+actual pre-tool CLI without executing Docker or reading a real credential.
+This recognizer is deliberately narrow, not a complete shell/JavaScript
+interpreter or proof that all indirect command construction is safe.
+
+### Reconcile shipped protection before reviving old patches
+
+PRs #70, #72, and #73 established the shared output guard, metadata-only
+failure logs, staged-artifact scan, and session-wide reveal quarantine.
+Compare source and adapter registration separately: a merged guard file does
+not prove a particular live agent invokes it. Deterministic tests prove only
+their covered paths; fresh installed-agent evidence is a separate release
+check. Never describe fixture success as universal model compliance.
+
+Cost safety is separate from secret-output safety. The existing Claude
+delegation runner strips `ANTHROPIC_API_KEY` for probes and worker launch and
+requires an authenticated `claude.ai` Max result during preflight. An older
+#28 worktree adds refusal when the parent has that variable; do not blindly
+port it or call the current protection missing. Review that remaining policy
+delta separately. Absence of a key alone never proves subscription billing,
+and those Claude-specific checks do not establish another provider's billing
+mode. Provider/auth configuration changes and paid evaluations stay outside
+this local secret-guard reconciliation. Keep #28 open until its owner resolves
+the remaining policy and verification scope.
+
 Short version:
 
 ```text

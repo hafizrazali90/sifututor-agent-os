@@ -171,6 +171,13 @@ else
 fi
 rm -f "$TMP_DIR/communication-samples.out" "$TMP_DIR/communication-samples.err"
 
+if PYTHONPATH="$ROOT/scripts/agent-checks" python3 -m unittest test_completion_receipt test_delegation_packet test_agent_os_adapter_contract test_secret_guard_reconciliation >$TMP_DIR/delegation-contracts.out 2>$TMP_DIR/delegation-contracts.err; then
+  pass "delegation contracts" "completion, packet, capability and secret-format regressions passed"
+else
+  fail "delegation contracts" "focused contract tests failed; inspect local sanitized test output"
+fi
+rm -f "$TMP_DIR/delegation-contracts.out" "$TMP_DIR/delegation-contracts.err"
+
 if python3 "$ROOT/scripts/agent-checks/agent-os-transcript-retrospective.py" --self-test >$TMP_DIR/agent-os-transcript-retrospective.out 2>$TMP_DIR/agent-os-transcript-retrospective.err; then
   transcript_summary="$(tail -1 $TMP_DIR/agent-os-transcript-retrospective.out 2>/dev/null || true)"
   pass "Agent OS transcript safety" "${transcript_summary:-passed}"

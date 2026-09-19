@@ -48,6 +48,12 @@ and unchecked.
   changes, use Playwright or an equivalent browser smoke before asking for human
   QA. For deployed changes, prove the changed behavior against the deployed
   environment when safe credentials and representative data are available.
+- For delegated, cross-module, cross-system or user-facing implementation, use
+  the [Builder Completion Proof Contract](agent-os-evidence-model.md#builder-completion-proof-contract).
+  Map each requirement to normal entrypoint, production caller, source of truth,
+  bypass paths, applicable configuration/flag behavior, failure/retry and safe
+  negative-control evidence. A helper test does not prove runtime wiring. The
+  receipt validator checks structure only; inspect the evidence and target.
 - Before counting browser, screenshot, staging, or production evidence, prove
   the checked target identity. For local UI work, name the URL, serving process,
   worktree/checkout, branch, commit or local-dirty state, and restart/rebuild
@@ -124,6 +130,10 @@ Gate 2A:
 - task-caused failures: none | listed
 - readiness gaps: none | listed, especially where tests prove a weaker behavior
   than the acceptance rule
+- completion proof: <acceptance map and evidence checked | named gaps | not
+  applicable with reason; receipt shape alone is not semantic proof>
+- independent technical acceptance: <pending | returned | accepted, exact
+  reviewer/revision/evidence; not owner acceptance or release authorization>
 
 Next:
 - <qa/review/blocked action>
