@@ -39,7 +39,7 @@ def validate_packet(p, *, now=None):
     if not isinstance(p, dict):
         return ["packet.object_required"]
     errors = []
-    if set(p) != FIELDS:
+    if set(p) not in (FIELDS, FIELDS | {"artifact_checks"}):
         errors.append("packet.fields")
     if type(p.get("schema_version")) is not int or p["schema_version"] != 1:
         errors.append("packet.version")
@@ -78,6 +78,58 @@ def validate_packet(p, *, now=None):
     rounds = p.get("max_correction_rounds")
     if type(rounds) is not int or not 0 <= rounds <= 3:
         errors.append("packet.max_correction_rounds")
+    if "artifact_checks" in p:
+        checks = p["artifact_checks"]
+        if not isinstance(checks, list) or not 1 <= len(checks) <= 32:
+            errors.append("packet.artifact_checks")
+        else:
+            paths = []
+            for c in checks:
+                if not isinstance(c, dict) or set(c) != {"path", "required_lines", "forbidden_lines", "max_words", "sha256"}:
+                    errors.append("packet.artifact_check.fields"); continue
+                paths.append(c["path"])
+                if not safe_relative(c["path"]):
+                    errors.append("packet.artifact_check.path")
+                for key in ("required_lines", "forbidden_lines"):
+                    if not isinstance(c[key], list) or len(c[key]) > 100 or any(not nonempty(v) or '\n' in v or '\r' in v for v in c[key]):
+                        errors.append("packet.artifact_check.lines")
+                if type(c["max_words"]) is not int or not 1 <= c["max_words"] <= 100000:
+                    errors.append("packet.artifact_check.max_words")
+                if c["sha256"] is not None and (not isinstance(c["sha256"], str) or not re.fullmatch(r"[a-f0-9]{64}", c["sha256"])):
+                    errors.append("packet.artifact_check.sha256")
+            if all(isinstance(v, str) for v in paths) and len(paths) != len(set(paths)):
+                errors.append("packet.artifact_check.duplicates")
+    return errors
+
+
+def artifact_errors(p):
+    """Literal evidence only. No commands, authority, or semantic acceptance."""
+    errors = []
+    root = Path(p["worktree"]).resolve()
+    for i, check in enumerate(p.get("artifact_checks", [])):
+        prefix = f"artifact.{i}."
+        try:
+            target = (root/check["path"]).resolve(strict=True)
+            if not target.is_relative_to(root) or not safe_relative(target.relative_to(root).as_posix()):
+                errors.append(prefix+"unsafe_path"); continue
+            if not target.is_file():
+                errors.append(prefix+"not_file"); continue
+            with target.open('rb') as stream:
+                raw = stream.read(1048577)
+            if len(raw) > 1048576:
+                errors.append(prefix+"oversized"); continue
+            text = raw.decode('utf-8')
+            lines = text.splitlines()
+            if any(line not in lines for line in check["required_lines"]):
+                errors.append(prefix+"required_line")
+            if any(line in lines for line in check["forbidden_lines"]):
+                errors.append(prefix+"forbidden_line")
+            if len(text.split()) > check["max_words"]:
+                errors.append(prefix+"word_limit")
+            if check["sha256"] is not None and hashlib.sha256(raw).hexdigest() != check["sha256"]:
+                errors.append(prefix+"hash_changed")
+        except (OSError, UnicodeError, ValueError, RuntimeError):
+            errors.append(prefix+"unavailable")
     return errors
 
 
@@ -94,6 +146,8 @@ def render_brief(p):
         "Worktree: "+p["worktree"], "Branch: "+p["branch"], "Base revision: "+p["base_revision"],
         "Owned paths: "+", ".join(p["owned_paths"]), "Exclusions: "+"; ".join(p["exclusions"]),
         "Acceptance IDs: "+", ".join(p["acceptance_ids"]),
+        ("Artifact assertions: "+str(len(p["artifact_checks"]))+"; run check-artifacts with supervisor-pinned digest before return."
+         if p.get("artifact_checks") else "Artifact assertions: not configured; independent evidence review remains required."),
         "Read the task's source-backed build brief: "+p["brief_file"],
         "Return the completion_receipt.py format at: "+p["handback_file"],
         "Do not commit, push, merge, deploy, change production, read secrets or delete unrelated work.",
@@ -198,7 +252,7 @@ class SafeParser(argparse.ArgumentParser):
 
 def main():
     parser = SafeParser(description=__doc__)
-    parser.add_argument("action", choices=["check", "brief", "preflight", "assess-handback"])
+    parser.add_argument("action", choices=["check", "brief", "preflight", "check-artifacts", "assess-handback"])
     parser.add_argument("--packet", type=Path, required=True)
     parser.add_argument("--capabilities", type=Path)
     parser.add_argument("--receipt", type=Path)
@@ -215,6 +269,15 @@ def main():
         result["contract_sha256"] = contract_digest(p)
         if args.action == "brief":
             print(render_brief(p)); return 0
+        if args.action == "check-artifacts":
+            errors.extend(worktree_errors(p))
+            if args.expected_contract_sha256 != contract_digest(p):
+                errors.append("contract.changed")
+            if not p.get("artifact_checks"):
+                errors.append("artifact_checks.required")
+            if not errors:
+                errors.extend(artifact_errors(p))
+            result["next"] = "independent_evidence_review" if not errors else "repair_artifact_evidence"
         if args.action == "preflight":
             from agent_os_adapter_contract import evaluate_capabilities
             errors.extend(worktree_errors(p))
@@ -235,10 +298,12 @@ def main():
                 errors.extend(validate_receipt(receipt))
                 errors.extend(binding_errors(p, receipt, args.expected_contract_sha256, args.expected_target_revision))
                 if not errors:
+                    errors.extend(artifact_errors(p))
+                if not errors:
                     result["next"] = next_action(receipt["review"]["verdict"], args.correction_round, p["max_correction_rounds"])
         print(json.dumps(result, sort_keys=True))
         return 1 if errors else 0
-    except (OSError, ValueError, TypeError, KeyError, ImportError, RecursionError):
+    except (OSError, ValueError, TypeError, KeyError, ImportError, RuntimeError):
         print(json.dumps({"errors": ["input_or_dependency_unavailable"], "authority_granted": False, "semantic_acceptance_proven": False}))
         return 2
 

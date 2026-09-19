@@ -138,6 +138,35 @@ Codex still checks the result independently before the next approval gate.
 
 ### Standard Job Brief
 
+### Literal artifact acceptance (optional, model-neutral)
+
+Before launch, pin known failure patterns in the packet's optional
+`artifact_checks` list. Each entry has `path` (worktree-relative),
+`required_lines`, `forbidden_lines`, `max_words` and `sha256` (null or an exact
+source-content hash). Required/forbidden values match whole lines, not meaning.
+The packet digest includes these checks; keep the trusted digest outside the
+worker's control. Paths must stay inside the worktree and outside protected paths.
+
+Run `delegation_packet.py check-artifacts --packet <packet.json>
+--expected-contract-sha256 <supervisor-pin>` before accepting the handback.
+`assess-handback` also runs declared artifact checks. Results contain only error
+codes; no artifact text is printed, no commands executed, no authority granted.
+Old version-1 packets without this optional field remain valid.
+
+Use unchanged-source hashes for archival inputs and short exact assertions for
+facts that must not drift. Limit ordinary handbacks to 300 words unless the
+task requires more. Pin the actual worker worktree separately from the eventual
+installation target. A local candidate is never automatically installed in root.
+Check repeated sections and stale continuation instructions independently:
+literal matches can be satisfied inside quotes and cannot prove semantic truth.
+Unknown dates, owners, runtime identities and status remain explicitly unknown;
+do not invent them or relabel historical status to make formatting checks pass.
+
+After one consolidated correction, reconcile surviving defects and decide whether
+to take back narrowly scoped work; do not launch repeated review-only jobs blindly.
+Record parent edits, setup errors and actual elapsed time. A clean process exit,
+short report or passed assertions does not prove net savings or autonomous quality.
+
 Prepare two ignored local files under the delegated worktree's
 `.agent-os/delegations/` directory:
 
