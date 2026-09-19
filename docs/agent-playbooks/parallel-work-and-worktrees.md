@@ -288,6 +288,13 @@ The output records measured size, reason, exact HEAD and recovery command for
 the final summary. If any check is unavailable or changes between proposal and
 apply, the action refuses safely.
 
+After measuring size, apply repeats the safety checks while holding the same
+lock used for lease updates, through completion of Git removal. This prevents
+cooperating sessions from acquiring ownership between that check and removal.
+Malformed lease records, including valid JSON with an invalid schema, must be
+preserved for investigation. This lock does not coordinate arbitrary tools
+that ignore the lease system; no universal filesystem race protection is claimed.
+
 Git maintenance and other concurrent sessions may prune registrations while an
 inventory is running. Therefore, never use a before/after registration count as
 proof that this helper removed a checkout. Report only the exact paths whose

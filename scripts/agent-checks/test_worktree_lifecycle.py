@@ -95,6 +95,14 @@ class LeaseTests(unittest.TestCase):
                 cleanup_condition="released", ttl_hours=2, now=self.now,
             )
 
+    def test_invalid_schema_lease_cannot_be_overwritten(self):
+        path = self.store.path_for(self.worktree)
+        path.parent.mkdir(parents=True)
+        path.write_text('{}')
+        with self.assertRaises(worktree_lifecycle.LifecycleError):
+            self.lease()
+        self.assertEqual(path.read_text(), '{}')
+
     def test_expired_lease_can_be_reassigned(self):
         self.lease()
         later = self.now + dt.timedelta(hours=3)
@@ -252,6 +260,21 @@ class ClassificationTests(unittest.TestCase):
                     self.repo, self.worktree, "wrong", self.store,
                     base_ref="origin/main", apply=True,
                 )
+        self.assertTrue(self.worktree.exists())
+
+    def test_lease_acquired_during_size_check_prevents_removal(self):
+        head = run("git", "rev-parse", "HEAD", cwd=self.worktree)
+        def acquire_lease(path):
+            self.store.create(
+                repo=self.repo, worktree=path, owner="Claude", session="new",
+                purpose="resumed work", issue="#74", cleanup_condition="released",
+            )
+            return 1
+        with mock.patch.object(worktree_lifecycle, "process_uses_path", return_value=False), \
+                mock.patch.object(worktree_lifecycle, "disk_kib", side_effect=acquire_lease):
+            with self.assertRaises(worktree_lifecycle.LifecycleError):
+                worktree_lifecycle.reclaim(self.repo, self.worktree, head, self.store,
+                                          base_ref="origin/main", apply=True)
         self.assertTrue(self.worktree.exists())
 
     def test_prune_missing_registration_keeps_branch(self):

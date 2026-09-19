@@ -151,8 +151,12 @@ class LeaseStore:
         head = git(worktree, "rev-parse", "HEAD").stdout.strip()
         handle = self._locked()
         try:
+            # Reclamation uses this lock too. A checkout may have disappeared
+            # while this caller waited; never register ownership of a removed path.
+            if not worktree.is_dir():
+                raise LifecycleError("Worktree disappeared before lease registration")
             existing = self._read(worktree)
-            if self.path_for(worktree).exists() and existing is None:
+            if self.path_for(worktree).exists() and not valid_lease(existing, worktree):
                 raise LifecycleError("Existing lease record is invalid; refusing to overwrite it")
             if existing and lease_is_live(existing, now) and existing.get("session") != session:
                 raise LifecycleError("Worktree already has a live lease owned by another session")
@@ -458,9 +462,24 @@ def reclaim(repo: Path, worktree: Path, expected_head: str, store: LeaseStore,
         "recovery": checked["recovery"], "reasons": checked["reasons"],
     }
     if apply:
-        git(repo, "worktree", "remove", str(worktree))
-        outcome["applied"] = True
-        outcome["removed"] = not worktree.exists()
+        handle = store._locked()
+        try:
+            # Measurement can take minutes. Check again after it, under the
+            # same lock used by cooperating lease writers, until Git finishes.
+            fresh = next((item for item in parse_worktrees(repo)
+                          if Path(item["path"]).resolve() == worktree), None)
+            if fresh is None:
+                raise LifecycleError("Target registration changed before removal")
+            final = inspect_worktree(repo, fresh, store, base_ref=base_ref, check_process=True)
+            if final["classification"] != "reclaim_candidate":
+                raise LifecycleError("Target failed final reclamation checks")
+            if git(worktree, "rev-parse", "HEAD").stdout.strip() != expected_head:
+                raise LifecycleError("Target HEAD changed before removal")
+            git(repo, "worktree", "remove", str(worktree))
+            outcome["applied"] = True
+            outcome["removed"] = not worktree.exists()
+        finally:
+            handle.close()
     return outcome
 
 
