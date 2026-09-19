@@ -334,6 +334,22 @@ def sync_secret_visual_boundary(
     return secret_visual_boundary_active(payload, state_dir=state_dir, now=now)
 
 
+def _direct_patch_data(tool_name: str, tool_input: Any) -> bool:
+    """Recognize inert direct patch payloads, never an executable wrapper."""
+    if tool_name not in {"apply_patch", "functions.apply_patch"}:
+        return False
+    value = tool_input
+    if isinstance(value, dict):
+        if set(value) not in ({"input"}, {"patch"}, {"command"}):
+            return False
+        value = next(iter(value.values()))
+    return (
+        isinstance(value, str)
+        and value.startswith("*** Begin Patch\n")
+        and value.rstrip().endswith("\n*** End Patch")
+    )
+
+
 def evaluate_tool_request(
     tool_name: str,
     tool_input: Any,
@@ -349,6 +365,12 @@ def evaluate_tool_request(
             False,
             "Tools are blocked while a complete credential may be visible. Hide or leave the credential page, then explicitly clear the visual guard.",
         )
+    # Quarantine above still covers every tool. Direct patch contents are data,
+    # not shell invocations; native patch/path permissions remain responsible
+    # for writes. Unknown tools, mixed payloads and execution wrappers retain
+    # the existing command-inspection path.
+    if _direct_patch_data(tool_name, tool_input):
+        return Decision(True)
     for command in _collect_command_text(tool_input):
         decision = evaluate_command(command)
         if not decision.allowed:

@@ -57,6 +57,31 @@ If a new dangerous pattern is found, add one failing regression, extend the
 shared guard, prove the safe alternative still works, then update the eval or
 playbook only when agent judgment is also involved.
 
+### Direct patch data is not a shell command
+
+The shared guard classifies exact direct tool names `apply_patch` and
+`functions.apply_patch` as inert patch data only when the input is a patch
+string, or a single-key `input`, `patch`, or `command` object containing that
+string. It must start with the patch opening marker and end with its closing
+marker. The actual local adapter's `command` object shape was observed during
+the issue #86 repair; other supported shapes have deterministic fixture proof,
+not a claim that every adapter emits them.
+`Edit`, `Write`, and other aliases are not added by this narrow change.
+
+The all-tool credential-reveal quarantine is checked first and still denies
+patches. Unknown or suffixed tool names, mixed/malformed objects, and execution
+tools retain command inspection. There is no blanket exemption for
+`functions.exec`; mixed orchestration with an executable call is still checked.
+Native protected-path permissions, secret-artifact scanning, and approval
+controls remain separate and unchanged: classifying patch prose as data does
+not authorize its target path or make arbitrary patch content safe to publish.
+
+`test_secret_guard_reconciliation.py` includes literal direct-tool and actual
+hook-CLI regression journeys, including metadata-only denials and quarantine.
+The installed edit path must also be retried normally after activation; mocked
+routing tests alone missed the adapter's actual payload shape in issue #86.
+Do not disable guards or encode/re-route edits to make a failing trial pass.
+
 ### Inspection formats are not automatically safe
 
 `docker inspect --format` is not a safety boundary by itself: a template can

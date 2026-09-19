@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 GUARD_PATH = Path(__file__).with_name("secret_output_guard.py")
 
@@ -19,7 +20,115 @@ def load_guard():
     return module
 
 
+class PatchToolClassificationTest(unittest.TestCase):
+    def test_direct_patch_data_does_not_enter_command_classifier(self):
+        guard = load_guard()
+        data = "*** Begin Patch\n*** Add File: example.txt\n+synthetic prose\n*** End Patch"
+        for name in ("apply_patch", "functions.apply_patch"):
+            for value in (data, {"input": data}, {"patch": data}, {"command": data}):
+                with self.subTest(name=name, shape=type(value).__name__), patch.object(
+                    guard, "evaluate_command", return_value=guard.Decision(False, "synthetic denial")
+                ) as classifier:
+                    self.assertTrue(guard.evaluate_tool_request(name, value, {}).allowed)
+                    classifier.assert_not_called()
+
+    def test_execution_unknown_and_malformed_payloads_still_inspected(self):
+        guard = load_guard()
+        data = "*** Begin Patch\n*** Add File: example.txt\n+synthetic prose\n*** End Patch"
+        cases = [(name, {"input": data}) for name in
+                 ("Bash", "exec_command", "functions.exec", "untrusted.apply_patch")]
+        cases.extend(("apply_patch", value) for value in (
+            {"input": data, "command": "synthetic"}, {"input": data, "patch": data},
+            {"input": [data]}, "not a patch", data + "\ntrailing executable text"))
+        for name, value in cases:
+            with self.subTest(name=name, shape=type(value).__name__), patch.object(
+                guard, "evaluate_command", return_value=guard.Decision(False, "synthetic denial")
+            ) as classifier:
+                self.assertFalse(guard.evaluate_tool_request(name, value, {}).allowed)
+                classifier.assert_called()
+
+    def test_quarantine_precedes_direct_patch_classification(self):
+        guard = load_guard()
+        data = "*** Begin Patch\n*** Add File: example.txt\n+synthetic prose\n*** End Patch"
+        with patch.object(guard, "secret_visual_boundary_active", return_value=True), patch.object(
+            guard, "_direct_patch_data"
+        ) as classify:
+            self.assertFalse(guard.evaluate_tool_request("apply_patch", data, {}).allowed)
+            classify.assert_not_called()
+
+
+class PatchToolCLIJourneyTest(unittest.TestCase):
+    DATA = "*** Begin Patch\n*** Add File: docs/example.md\n+Synthetic example: pm2 jlist\n*** End Patch"
+
+    def run_hook(self, name, value, *, active=False, aliases=False):
+        guard = load_guard()
+        with tempfile.TemporaryDirectory() as state_dir:
+            payload = {"session_id": "synthetic-patch-journey"}
+            payload.update({"toolName" if aliases else "tool_name": name,
+                            "toolInput" if aliases else "tool_input": value})
+            if active:
+                guard.mark_secret_visual_boundary(payload, state_dir=Path(state_dir))
+            result = subprocess.run(
+                [sys.executable, str(GUARD_PATH)], input=json.dumps(payload),
+                text=True, capture_output=True, check=False,
+                env={"SIFUTUTOR_SECRET_GUARD_STATE_DIR": state_dir},
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stderr, "")
+            return result.stdout
+
+    def assert_denied_without_payload(self, output):
+        verdict = json.loads(output)["hookSpecificOutput"]
+        self.assertEqual(verdict["permissionDecision"], "deny")
+        for fragment in (self.DATA, "pm2 jlist", "docs/example.md", "SYNTHETIC_PRIVATE_MARKER"):
+            self.assertNotIn(fragment, output)
+
+    def test_cli_accepts_known_direct_patch_shapes(self):
+        for name in ("apply_patch", "functions.apply_patch"):
+            for value in (self.DATA, {"input": self.DATA}, {"patch": self.DATA}, {"command": self.DATA}):
+                for aliases in (False, True):
+                    with self.subTest(name=name, shape=type(value).__name__, aliases=aliases):
+                        self.assertEqual(self.run_hook(name, value, aliases=aliases), "")
+
+    def test_cli_retains_malformed_mixed_unknown_and_execution_denials(self):
+        cases = [
+            ("apply_patch", "pm2 jlist SYNTHETIC_PRIVATE_MARKER"),
+            ("apply_patch", self.DATA + "\ntrailing text"),
+            ("apply_patch", {"input": self.DATA, "command": "pm2 jlist"}),
+            ("apply_patch", {"input": self.DATA, "patch": self.DATA}),
+            ("apply_patch", {"input": [self.DATA]}),
+            ("Bash", {"command": "pm2 jlist"}),
+            ("exec_command", {"cmd": "pm2 jlist"}),
+            ("untrusted.apply_patch", self.DATA),
+            ("apply_patch_extra", {"input": self.DATA}),
+            ("functions.exec", {"input": 'await tools.apply_patch("synthetic"); await tools.exec_command({cmd: "pm2 jlist"});'}),
+        ]
+        for name, value in cases:
+            with self.subTest(name=name, shape=type(value).__name__):
+                self.assert_denied_without_payload(self.run_hook(name, value))
+
+    def test_cli_quarantine_still_denies_every_tool(self):
+        for name, value in (
+            ("apply_patch", self.DATA),
+            ("functions.apply_patch", {"command": self.DATA}),
+            ("functions.exec", {"input": 'await tools.apply_patch("synthetic");'}),
+            ("Bash", {"command": "git status --short"}),
+            ("unknown_tool", {}),
+        ):
+            with self.subTest(name=name):
+                self.assert_denied_without_payload(self.run_hook(name, value, active=True))
+
+
 class InspectFormatSafetyTest(unittest.TestCase):
+    def test_direct_patch_payload_is_inert_data(self):
+        guard = load_guard()
+        patch = "*** Begin Patch\n*** Add File: docs/example.md\n+Synthetic example: pm2 jlist\n*** End Patch"
+        for name in ("apply_patch", "functions.apply_patch"):
+            for tool_input in (patch, {"input": patch}, {"patch": patch}, {"command": patch}):
+                with self.subTest(name=name, shape=type(tool_input).__name__):
+                    self.assertTrue(guard.evaluate_tool_request(name, tool_input, {}).allowed)
+                    self.assertTrue(guard.evaluate_tool_request(name, tool_input, {}).allowed)
+
     def test_broad_inspect_format_is_blocked(self):
         guard = load_guard()
         for template in ("{{json .}}", "{{json .Config}}", "{{.Config}}", "{{.Config.Env}}"):
