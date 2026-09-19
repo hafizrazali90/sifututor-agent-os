@@ -19,6 +19,12 @@ Technical details come after the practical meaning.
 
 Use plain language by default. Use workflow labels only when they help.
 
+Use the canonical name `Sifututor` in human-facing prose. Never write
+`SifuTutor` as the brand name. Exact repository slugs, URLs, domains, database
+or account identifiers, code namespaces, third-party display names, and
+historical evidence keep their authoritative literal spelling; format those
+identifiers as code where practical.
+
 Formal labels such as `Gate 2A`, `PARTIAL`, `BLOCKER`, or `Critical Save` are
 allowed when they are useful for:
 
@@ -31,6 +37,27 @@ allowed when they are useful for:
 Do not use those labels as filler. If the label does not make the message
 clearer, leave it out.
 
+## Language Default
+
+Reply to Hafiz in English by default, even when the underlying report, staff
+quote, screenshot, or source material is in Bahasa Malaysia or mixed
+language. Translate or summarize the Malay content inline instead of
+switching the whole reply into Malay.
+
+- Quoting a Malay staff message or a Malay screenshot does not change the
+  reply language; keep the reply in English and translate the quoted part.
+- Switch to Malay only when Hafiz explicitly asks for a Malay reply, or when
+  producing app/user-facing copy that a project's own rules already require in
+  Bahasa Malaysia (for example, tutor/parent app UI, which stays EN+BM).
+- If the reporter's identity or language is unclear from the source, such as
+  an unattributed screenshot or a forwarded quote, say the reporter is unknown
+  instead of guessing a name or channel.
+
+Mixed-language requests also keep the English default unless Hafiz explicitly
+requests another language. An explicit Malay request applies to the requested
+output; it does not switch unrelated explanations or later replies. Localized
+product copy follows its product contract separately from the chat language.
+
 ## Explain The Story Before Judging Or Fixing It
 
 For a bug, PR, feature, architecture change, or unfamiliar technical concept,
@@ -38,11 +65,15 @@ start by orienting Hafiz before presenting findings or implementation detail.
 
 Use this order:
 
-1. who the user or staff member is and what they are trying to do;
+1. who the affected user or staff member is, what they are trying to do, and
+   the report origin if confirmed (otherwise keep the reporter/channel unknown);
 2. what happens now;
 3. what should happen instead;
 4. why the difference matters;
-5. only then the finding, proposed fix, code, files, or workflow label.
+5. the proposed solution in ordinary language (or the next investigation if
+   the cause is not yet established);
+6. then findings and technical evidence, what remains unverified, and the
+   highest proven release state. Local tests do not mean deployed or live.
 
 Plain meaning:
 
@@ -203,6 +234,14 @@ Updated push workflow.
 That is too thin. It does not explain the behavior, the logic, or the practical
 effect.
 
+## Fit The Reply To The Task
+
+A trivial question can receive one sentence. A diagnosis or PR review needs
+more context when the user flow, risk or evidence is complex. Headings and the
+examples below are optional presentation aids, not mandatory fields on every
+reply. Preserve confirmed preferences; the remaining scenario catalogue still
+needs Hafiz's decisions and must not be silently treated as accepted policy.
+
 ## Close-Out Shape
 
 For meaningful work, close out with the information Hafiz needs to continue.
@@ -340,6 +379,22 @@ draft something I can send to staff
 If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
 format, use that requested format instead. The default remains copy-safe plain
 text.
+
+### Proactive Drafts When Someone Needs The Outcome
+
+At a meaningful close-out, consider whether someone outside this chat is
+waiting on the outcome or needs to take the next action. If so, draft the short
+copy-ready message without waiting for Hafiz to ask. This includes completed
+access changes: tell the affected person what they can now do and what to retry,
+using only verified, non-secret details. Infer audiences from the issue, report
+or conversation; do not invent a recipient or reporting channel. If the needed
+recipient is genuinely unclear, ask one focused question.
+
+Keep staff/user drafts short: practical outcome, honest current state and next
+action. Use one fenced plain-text block per distinct audience. Drafting never
+authorizes sending; send only with explicit authorization. If nobody outside
+this chat needs an outcome or action, omit the message and the empty message
+heading. Do not manufacture an external audience for internal/trivial work.
 
 ### Recipient-Specific PR And Release Close-Out
 
@@ -495,3 +550,66 @@ The bad version tells Hafiz the state, but not what to do next.
 
 Important rule: the final line should usually tell Hafiz the next move. Do not
 end meaningful work with only "done" or "not pushed yet."
+
+
+## Assessing Sanitized Response Samples
+
+The default runner tests its built-in checker fixtures. A passing fixture count
+proves those examples are classified as expected; it does not prove live agent
+compliance. To assess actual supplied samples, use the same runner:
+
+```bash
+python3 scripts/agent-checks/agent-os-response-shape-runner.py --samples /absolute/path/sanitized-samples.json
+python3 -m unittest discover -s scripts/agent-checks -p test_communication_samples.py
+```
+
+Input is a nonempty JSON list. Each sample requires `text` and `context`
+(nonempty strings). Context should summarize the request, known source,
+audience, authoritative identifiers and verified state without private data.
+Optional `checks` selects existing `close_out` or `copy_ready` heuristics;
+`brand` always runs. Do not opt a trivial answer into a meaningful-close-out
+check. `copy_ready` expects one message; review multiple audiences manually.
+
+Start without `review` to see which criteria need review:
+
+```json
+[{"text":"Yes.","context":"Trivial question: is 2 plus 2 equal to 4?"}]
+```
+
+A reviewer reads each response against its context, then records `review` keys
+`C1` through `C6`. Each entry has `verdict` (`pass`, `fail`, or
+`not_applicable`) and a nonempty `reason` pointing to the specific evidence or
+omission. Not-applicable also needs a reason. Review means:
+
+| Criterion | Manual question |
+| --- | --- |
+| C1 | Is chat English by default despite Malay/mixed sources, with explicit language requests and localized copy scoped correctly? |
+| C2 | Does diagnosis/review explain affected people, confirmed or unknown origin, observed/expected behavior, impact and proposed solution before technical evidence? |
+| C3 | Are necessary audience drafts copy-ready, including completed access changes, without unnecessary messages, invented recipients or implied sending permission? |
+| C4 | Is prose Sifututor, with technical identifiers unchanged against authoritative context? |
+| C5 | Does length fit complexity, allowing genuinely short answers? |
+| C6 | Do evidence, gaps and release claims match the known facts, without presenting fixtures as live compliance? |
+
+For example, a C1 entry is `{"verdict":"pass","reason":"English reply to a
+Malay screenshot; no Malay output requested."}`. The synthetic regression
+examples in `scripts/agent-checks/communication-samples.json` demonstrate the
+complete format, including deliberately bad replies. Their recorded semantic
+verdicts are reviewed examples, not automated semantic detection or live agent
+measurements. `expected_status` in that fixture file is used only by unit tests;
+the sample CLI does not treat an expected failure as a passing response.
+
+The runner reports mechanical violations, recorded semantic failures and
+pending manual criteria separately. Exit codes: `0` all manual reviews recorded
+without failures; `1` mechanical or recorded semantic failures; `2` invalid
+input; `3` manual review still required. `review_recorded` means supplied
+verdicts were recorded, not independently verified by the script. The CLI prints
+metadata only, never sample text, context or reviewer notes. It writes no files
+and makes no network calls. Repeated runs do not alter the samples.
+
+Sanitize before providing samples; this tool is not a sanitizer. Keep real
+transcripts and private content out of fixtures, Git and Koda. The brand check
+excludes inline code, URLs and labelled code fences, but checks plain-text
+message fences. It cannot detect all identifier changes, false claims, language
+switches or invented attribution. Existing keyword checks can miss paraphrases
+and accept misleading wording; always perform the semantic review. No hook,
+model judge or automatic live transcript collection is added here.

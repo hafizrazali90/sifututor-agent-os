@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+from pathlib import Path
 import re
 
 
@@ -1328,10 +1330,83 @@ def run(verbose: bool = False) -> int:
     return 0
 
 
+# Semantic verdicts are supplied by a reviewer, never inferred from keywords.
+COMMUNICATION_CRITERIA = {
+    "C1": "English default; explicit requested language and localized content scoped correctly",
+    "C2": "Affected user, known origin, observed/expected behavior, impact and solution before technical evidence",
+    "C3": "Appropriate copy-ready audience drafts, including access updates; no invented recipient or sending authority",
+    "C4": "Sifututor prose and unchanged authoritative technical identifiers",
+    "C5": "Length fits complexity; trivial replies stay short without mandatory headings",
+    "C6": "Evidence, gaps and release claims match supplied facts; fixtures are not live compliance proof",
+}
+
+
+def brand_capitalization_violations(text: str) -> list[str]:
+    """A narrow spelling check, not proof that technical identifiers are accurate."""
+    # Outbound text fences contain human prose. Only labelled code is excluded.
+    prose = re.sub(r"```([^\n]*)\n(.*?)```",
+                   lambda m: m[2] if m[1].strip() in ("", "text", "plain") else "",
+                   text, flags=re.DOTALL)
+    prose = re.sub(r"`[^`\n]+`|https?://[^\s<>]+", "", prose)
+    if re.search(r"\bSifuTutor\b", prose):
+        return ["incorrect brand capitalization in prose"]
+    return []
+
+
+def assess_sample(sample: dict) -> dict:
+    """Evaluate opted-in shape checks and report separately recorded manual review."""
+    if not isinstance(sample, dict) or any(
+        not isinstance(sample.get(key), str) or not sample[key].strip()
+        for key in ("text", "context")
+    ):
+        raise ValueError("sample requires nonempty text and sanitized context")
+    checks = sample.get("checks", [])
+    available = {"close_out": missing_groups, "copy_ready": copy_ready_violations,
+                 "brand": brand_capitalization_violations}
+    if not isinstance(checks, list) or any(not isinstance(c, str) or c not in available for c in checks):
+        raise ValueError("unknown shape check")
+    review = sample.get("review", {})
+    if not isinstance(review, dict) or set(review) - set(COMMUNICATION_CRITERIA):
+        raise ValueError("unknown manual criterion")
+    for entry in review.values():
+        if (not isinstance(entry, dict) or entry.get("verdict") not in ("pass", "fail", "not_applicable")
+                or not isinstance(entry.get("reason"), str) or not entry["reason"].strip()):
+            raise ValueError("manual verdict requires a reason")
+    violations = brand_capitalization_violations(sample["text"])
+    for check in dict.fromkeys(checks):
+        if check != "brand":
+            violations.extend(available[check](sample["text"]))
+    pending = [key for key in COMMUNICATION_CRITERIA if key not in review]
+    failed = [key for key, entry in review.items() if entry["verdict"] == "fail"]
+    status = "failed" if violations or failed else "manual_review_required" if pending else "review_recorded"
+    return {"status": status, "mechanical_violations": violations,
+            "manual_failures": failed, "manual_pending": pending}
+
+
+def assess_file(path: Path) -> int:
+    # No sample text, context, IDs, paths, reviewer notes or raw exceptions in output.
+    try:
+        samples = json.loads(path.read_text())
+        if not isinstance(samples, list) or not samples:
+            raise ValueError("expected nonempty sample list")
+        results = [assess_sample(sample) for sample in samples]
+    except (OSError, UnicodeError, ValueError, TypeError):
+        print(json.dumps({"error": "invalid sample input; see documented schema"}))
+        return 2
+    print(json.dumps({"evidence_kind": "supplied_samples_with_recorded_manual_review",
+                      "live_agent_compliance_proven": False, "results": results}, indent=2))
+    if any(result["status"] == "failed" for result in results):
+        return 1
+    return 3 if any(result["manual_pending"] for result in results) else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Agent OS response-shape checks.")
     parser.add_argument("--verbose", action="store_true", help="print every response-shape case")
+    parser.add_argument("--samples", type=Path, help="assess a sanitized JSON sample list; does not run built-in fixtures")
     args = parser.parse_args()
+    if args.samples is not None:
+        return assess_file(args.samples)
     return run(verbose=args.verbose)
 
 

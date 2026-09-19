@@ -1,0 +1,257 @@
+[
+  {
+    "id": "english-malay-comment",
+    "context": "English request: explain the unattributed staff comment \"senarai kosong\". No diagnosis yet.",
+    "text": "The comment means “the list is empty.” The reporter and channel are unknown; I need to inspect the affected screen before identifying the cause.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "english-malay-screenshot",
+    "context": "A Malay screenshot reads \"Tiada rekod\". Asked only to translate.",
+    "text": "It says “No records.”",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "english-mixed-request",
+    "context": "Mixed-language request: \"check this, senarai kosong\". No explicit Malay output request.",
+    "text": "The list appears empty. I will check which filters are active before drawing a conclusion.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "explicit-malay",
+    "context": "Explicit request: give this one translation in Malay: \"No records\".",
+    "text": "Tiada rekod.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Malay was explicitly requested for this translation only."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "wrong-language",
+    "context": "Malay source screenshot; Hafiz asks in English for its meaning.",
+    "text": "Maksudnya tiada rekod.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "fail", "reason": "Reply switches to Malay despite no explicit request."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "invented-reporter",
+    "context": "Unattributed screenshot of an empty list; no source or identity confirmed.",
+    "text": "Aina reported this on WhatsApp. Staff should see matching tutors but the list is empty, delaying assignment. I recommend checking the filter; no cause is verified yet.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "fail", "reason": "Aina and WhatsApp are invented; neither is in the evidence."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "technical-only",
+    "context": "PR review: staff matching tutors see an empty list instead of eligible tutors, delaying assignment. A filter mismatch is suspected; local tests only.",
+    "text": "ClassService.filter() uses the wrong enum. Change the controller.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "fail", "reason": "No affected-user story, current/expected behavior or impact precedes code."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "story-first",
+    "context": "PR review of an unattributed staff report: local filter fix passes focused tests; browser smoke not run; no deployment.",
+    "text": "Staff assigning tutors currently see an empty list where eligible tutors should appear, delaying assignment. The reporter and channel are unknown. I recommend correcting the mismatched filter. The local fix passes focused tests; browser verification remains, and nothing is deployed.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "pass", "reason": "User, unknown origin, observed/expected behavior, impact and solution precede evidence and gaps."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "missing-access-message",
+    "context": "Verified completion: support team dashboard access restored; support team is waiting to retry.",
+    "text": "Support dashboard access is restored and verified.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "fail", "reason": "Waiting support team needs a copy-ready retry message even without an explicit drafting request."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "access-message",
+    "context": "Verified completion: support team dashboard access restored; team is waiting. No permission to send messages.",
+    "text": "Support access is restored and verified. Draft for the support team:\n\n```text\nYour dashboard access is restored. Please sign in again and let us know if you still cannot open it.\n```",
+    "checks": ["copy_ready"],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "pass", "reason": "Short audience-specific retry draft, with no claim to have sent it."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "unnecessary-message",
+    "context": "Only a local spelling edit requested; nobody outside chat is waiting.",
+    "text": "Updated the spelling.\n\n```text\nDear customers, we changed an internal spelling. Please review it.\n```",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "fail", "reason": "Invents a customer audience and an unnecessary action."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "altered-identifier",
+    "context": "Authoritative database identifier is example_SifuTutorDev. Asked to name it.",
+    "text": "Sifututor uses `example_SifututorDev`.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "fail", "reason": "Identifier casing changed from the authoritative value even though prose is correct."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "preserved-identifier",
+    "context": "Authoritative database identifier is example_SifuTutorDev. Asked to name it.",
+    "text": "Sifututor uses `example_SifuTutorDev`.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "pass", "reason": "Canonical prose and exact technical casing are both preserved."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "wrong-brand-in-draft",
+    "context": "Support needs a short message that Sifututor dashboard access is restored.",
+    "text": "```text\nSifuTutor dashboard access is restored. Please retry.\n```",
+    "checks": ["copy_ready"],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "pass", "reason": "Copy-ready operational retry draft."},
+      "C4": {"verdict": "fail", "reason": "Brand spelling is wrong in outbound human prose."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "false-live",
+    "context": "Only local unit tests passed; no push, merge, deployment or smoke.",
+    "text": "The fix is live and verified for everyone.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "fail", "reason": "Local tests cannot support a live claim."}
+    },
+    "expected_status": "failed"
+  },
+  {
+    "id": "short-stays-short",
+    "context": "Trivial question: is 2 plus 2 equal to 4?",
+    "text": "Yes.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "pass", "reason": "Claims stay within the supplied context; no stronger release or compliance state is asserted."}
+    },
+    "expected_status": "review_recorded"
+  },
+  {
+    "id": "fixture-not-live",
+    "context": "56 canned checker fixtures passed; no actual agent response sampling.",
+    "text": "All agents now follow the communication policy.",
+    "checks": [],
+    "review": {
+      "C1": {"verdict": "pass", "reason": "Narrative is English; source language does not change the default."},
+      "C2": {"verdict": "not_applicable", "reason": "No diagnosis or PR review requested."},
+      "C3": {"verdict": "not_applicable", "reason": "Context identifies no outside recipient awaiting an operational outcome."},
+      "C4": {"verdict": "not_applicable", "reason": "No brand name or technical identifier occurs in this sample."},
+      "C5": {"verdict": "pass", "reason": "Reply length fits the supplied task without unnecessary headings."},
+      "C6": {"verdict": "fail", "reason": "Fixture results were inflated into universal live compliance."}
+    },
+    "expected_status": "failed"
+  }
+]
