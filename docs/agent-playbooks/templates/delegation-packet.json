@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task_id": "issue-83-example",
+  "goal": "Prove the scoped change",
+  "issue": "83",
+  "supervisor": "parent",
+  "worker": "worker-1",
+  "worktree": "/tmp/task",
+  "branch": "fix/example",
+  "base_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "expires_at": "2026-09-20T00:00:00Z",
+  "finish": "local proof",
+  "owned_paths": [
+    "docs/example.md"
+  ],
+  "exclusions": [
+    "unrelated changes"
+  ],
+  "acceptance_ids": [
+    "REQ-1"
+  ],
+  "required_capabilities": [
+    "read-files",
+    "edit-files"
+  ],
+  "adapter_identity": {
+    "tool": "example",
+    "tool_version": "1",
+    "provider": "example",
+    "model": "example",
+    "configuration_id": "local-fixture",
+    "environment_id": "local-task"
+  },
+  "brief_file": ".agent-os/delegations/task/brief.md",
+  "brief_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "handback_file": ".agent-os/delegations/task/receipt.json",
+  "state_dir": ".agent-os/delegations/task/state",
+  "max_correction_rounds": 1
+}

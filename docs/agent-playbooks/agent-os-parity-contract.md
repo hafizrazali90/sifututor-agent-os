@@ -11,6 +11,20 @@ both of them.
 
 ## Core Principle
 
+This contract is model-, provider- and coding-tool-agnostic. Supervisor,
+implementer and independent verifier roles are portable; none is permanently
+owned by Codex, Claude or Kilo. Shared task packets, approvals, evidence, memory
+and access boundaries remain unchanged when a worker changes.
+
+Use the provider-neutral capability preflight in
+[agent-os-adapter-readiness.md](agent-os-adapter-readiness.md) before matching
+a worker to required operations. It validates scoped supervisor attestations,
+not actual provider behavior or execution authority. A version/configuration/
+environment change invalidates the matching identity. Unsupported capabilities
+must be named explicitly; no model-name inference or hidden provider fallback.
+Deterministic fixtures and a few live samples must not be promoted into
+whole-workflow or daily-use parity claims.
+
 The Agent OS does not require every agent to think identically.
 
 It requires every agent to follow the same:

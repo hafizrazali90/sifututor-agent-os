@@ -29,6 +29,19 @@ baseline quality habits: do not hide generated-file edits, do not ignore
 lint/test/flaky-check failures, be picky about touched UI, and keep quality
 high without silently widening scope.
 
+For delegated, cross-module, cross-system and user-facing work, challenge the
+[Builder Completion Proof Contract](agent-os-evidence-model.md#builder-completion-proof-contract).
+Trace the normal entry and real callers, inspect scoped bypass paths, compare
+authoritative state after failures/retries and check applicable flag-off and
+configuration behavior. Verify the negative control failed for the actual weak
+behavior, not an unrelated import or environment error, and was restored.
+
+A structurally valid receipt, green builder suite, self-supplied reviewer ID or
+contract digest is not independent acceptance. Compare the full requirement set
+and target to the trusted task, inspect evidence and reviewer provenance, and
+reject unjustified `not_applicable` entries. No helper can infer these facts from
+strings alone. A builder's own adversarial review must be labelled self-review.
+
 ## Fresh-Context Review
 
 Use fresh-context review when the next state matters enough that the builder's

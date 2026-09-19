@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import sys
 import time
 from typing import Any
@@ -68,14 +69,6 @@ _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"\blaunchctl\s+(?:print|export|getenv)\b", re.I),
         "Raw launch service output is blocked because it may include environment values.",
-    ),
-    (
-        re.compile(r"\bdocker\s+(?:container\s+)?inspect\b(?![^;&|]*(?:--format|-f)\s)", re.I),
-        "Raw container inspection is blocked; use --format for one approved non-secret field.",
-    ),
-    (
-        re.compile(r"\bdocker\s+(?:container\s+)?inspect\b[^;&|]*(?:\.Config\.Env|json\s+\.Config\.Env)", re.I),
-        "Container environment inspection is blocked.",
     ),
     (
         re.compile(r"\bdocker\s+compose\s+config\b", re.I),
@@ -136,15 +129,71 @@ _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
 )
 
 
+def _safe_inspect_formats(command: str) -> bool:
+    """Accept only literal scalar status templates, never whole inspect objects.
+
+    This is a deliberately narrow command recognizer, not a shell interpreter.
+    Unknown/dynamic templates need a reviewed non-printing wrapper.
+    """
+    for docker in re.finditer(r"\bdocker\b([^;\n\r&|#]*)", command, re.I):
+        tail = docker.group(1)
+        if tail.rstrip().endswith("\\"):
+            return False
+        if not re.search(r"\binspect\b", tail, re.I):
+            continue
+        inspect = re.match(r"\s+(?:container\s+)?inspect\b(.*)", tail, re.I)
+        if inspect is None:
+            # Global options/unknown command forms require a reviewed wrapper.
+            return False
+        arguments = inspect.group(1)
+        # Tokenize only this bounded simple segment. A format-looking string
+        # inside one quoted positional argument is not a Docker option.
+        try:
+            tokens = shlex.split(arguments)
+        except ValueError:
+            return False
+        if any(any(c in token for c in "$`<>()") for token in tokens):
+            return False
+        templates = []
+        index = 0
+        while index < len(tokens):
+            token = tokens[index]
+            if token == "--":
+                break
+            if token in {"--format", "-f"}:
+                index += 1
+                if index >= len(tokens):
+                    return False
+                templates.append(tokens[index])
+            elif token.startswith("--format="):
+                templates.append(token[len("--format="):])
+            elif token.startswith("-f"):
+                templates.append(token[2:].removeprefix("="))
+            index += 1
+        if not templates:
+            return False
+        for template in templates:
+            if not template:
+                return False
+            if not re.fullmatch(
+                r"\{\{\s*(?:json\s+)?\.(?:State\.(?:Status|Running|Restarting|Paused|Dead|ExitCode|Health\.Status)|RestartCount|Id)\s*\}\}",
+                template,
+            ):
+                return False
+    return True
+
+
 def evaluate_command(command: str) -> Decision:
     """Return a safe decision without including submitted command text."""
 
-    compact = " ".join(str(command).split())
+    # Newlines delimit shell commands; flattening them lets a following command
+    # lend its harmless-looking format to a preceding raw inspect command.
+    compact = str(command).strip()
     if not compact:
         return Decision(True)
     if (
         re.match(r"^\s*(?:rg|grep)\b", compact, re.I)
-        and not re.search(r"(?:\$|<)\(|[;&|]", compact)
+        and not re.search(r"(?:\$|<)\(|[;&|\n\r]", compact)
         and not re.search(
             r"(?:\.env(?:\b|[._-])|\.config/sifututor/[^\s'\"]*(?:\.conf|\.env)|"
             r"credentials(?:\.json)?|id_(?:rsa|ed25519))",
@@ -153,6 +202,8 @@ def evaluate_command(command: str) -> Decision:
         )
     ):
         return Decision(True)
+    if not _safe_inspect_formats(compact):
+        return Decision(False, "Container inspection requires a literal approved non-secret status field; use a reviewed wrapper for other output.")
     for pattern, reason in _BLOCKS:
         if pattern.search(compact):
             return Decision(False, reason)

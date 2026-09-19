@@ -57,6 +57,74 @@ Do not change: <boundaries>.
 
 ## Codex-To-Claude Max Delegation
 
+### Provider-neutral packet and reconciliation
+
+Use the same task contract for every worker, with provider-specific execution
+remaining in the proven adapter. `delegation_packet.py` supports `check`,
+`brief`, `preflight` and `assess-handback`. It does not launch a provider, grant
+permission, run evidence commands, restart a worker or certify semantic truth.
+The existing Claude Max runner below keeps its version-1 job format unchanged.
+Other workers may consume the portable brief through their approved adapter;
+an unsupported launch path remains unsupported, not a guessed CLI command.
+
+Start from `templates/delegation-packet.json` and fill in the real task, issue,
+supervisor/worker IDs, exact worktree/branch/base revision, expiry, owned paths,
+acceptance IDs, exclusions and source-backed brief. This envelope supplements
+the Build-Ready Pack, not replaces it. Use the model-neutral completion receipt
+defined in `agent-os-evidence-model.md`; do not invent another handback schema.
+
+`brief_sha256` pins the original brief's exact bytes; both preflight and return
+reconciliation verify those bytes (maximum 1 MiB). Pin source requirements and
+their meaning inside the brief, not just mutable links. An unchanged brief path
+is not an unchanged contract. A revised brief requires a new supervisor-approved
+packet and digest, never a worker silently renewing the old one.
+
+```bash
+python3 scripts/agent-checks/delegation_packet.py check --packet /absolute/path/packet.json
+python3 scripts/agent-checks/delegation_packet.py brief --packet /absolute/path/packet.json
+python3 scripts/agent-checks/delegation_packet.py preflight --packet /absolute/path/packet.json --capabilities /absolute/path/capabilities.json
+python3 scripts/agent-checks/delegation_packet.py assess-handback --packet /absolute/path/packet.json --receipt /absolute/path/receipt.json --expected-contract-sha256 <supervisor-pinned-sha256> --expected-target-revision <reviewed-diff-snapshot>
+```
+
+Keep packets and handbacks in the worktree's ignored `.agent-os/delegations/`
+area. Keep the digest and task-to-contract binding in the supervisor's own
+session record before launch, outside worker control. A digest supplied by the
+worker or recomputed after it changes the packet is not approval. The capability
+record must match the supervisor-selected tool/version/provider/model/config
+and environment identity, be current, and contain observed evidence for every
+required capability. It is still an attestation; the supervisor verifies access
+through the approved adapter. Never weaken capability requirements to pass.
+
+Also pin the independently reviewed target snapshot separately from the starting
+Git commit. For uncommitted work, inventory and hash the complete relevant dirty
+diff and new files; the base commit alone cannot identify the tested candidate.
+`--expected-target-revision` compares that supervisor-controlled identifier to
+the receipt. The local-only receipt must name the exact worktree as environment
+and `changed_locally` as state. The helper does not generate or authenticate the
+snapshot: the supervisor must retain and inspect its underlying evidence.
+
+The loop is prepare -> adapter preflight -> scoped worker -> receipt -> exact
+binding/obligation check -> independent evidence review. A process exit only
+starts reconciliation. A receipt with missing obligations or wrong task/worker
+or contract binding cannot advance. A structurally valid accepted receipt still
+requires reading the actual diff and challenging its evidence. Retain per-round
+counts in supervisor state; `--correction-round` is an input, not a tamper-proof
+counter. At the packet's correction limit, reconcile the failure before creating
+a new packet; do not restart blindly or widen access automatically.
+
+This release's neutral helper accepts local implementation/local proof only.
+It does not silently inherit release authority or extend the existing runner's
+merge/deploy restrictions. Release-capable adapters and unattended supervision
+remain separate work requiring exact approval and live adapter proof. Unknown
+usage stays `unavailable`; faster parallel execution is not measured net savings.
+
+`check` returns 0 for valid structure, not authority. `preflight` returns 0 for
+matching Git identity and declared observations, not an authenticated provider
+launch. `assess-handback` returns 0 for valid receipt shape and binding, never
+product acceptance. Metadata always says `semantic_acceptance_proven: false`.
+The `brief` action intentionally prints the supplied task content; supply only
+sanitized context. Other results contain field codes, not raw input/errors.
+
 Use this path when Claude is the bounded execution worker and Codex remains the
 owner of supervision, evidence reconciliation, and independent review.
 

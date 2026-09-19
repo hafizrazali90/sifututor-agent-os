@@ -704,6 +704,7 @@ def summarize(results: list[CheckResult], print_json: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--capability-preflight", action="store_true", help="validate a vendor-neutral attestation envelope from stdin only; never launch providers")
     parser.add_argument("--json", action="store_true", help="print machine-readable results")
     parser.add_argument("--live-claude", action="store_true", help="run optional live Claude CLI traces")
     parser.add_argument(
@@ -717,6 +718,34 @@ def main() -> int:
         help="fail instead of warn when cloned project repos lack Claude hook wiring",
     )
     args = parser.parse_args()
+
+    if args.capability_preflight:
+        # This branch deliberately precedes every installed/config/hook check.
+        # No provider calls, credential/config discovery, or external subprocess.
+        from agent_os_adapter_contract import evaluate_capabilities
+        if args.live_claude or args.require_live_claude or args.strict_project_hooks:
+            print(json.dumps({"ready": False, "reasons": ["incompatible_modes"], "live_parity_proven": False, "execution_authorized": False}))
+            return 2
+        try:
+            raw = sys.stdin.read(65537)
+            if len(raw) > 65536:
+                raise ValueError("input_too_large")
+            def unique_keys(pairs):
+                value = {}
+                for key, item in pairs:
+                    if key in value:
+                        raise ValueError("duplicate_key")
+                    value[key] = item
+                return value
+            envelope = json.loads(raw, object_pairs_hook=unique_keys)
+            if not isinstance(envelope, dict) or set(envelope) != {"record", "required", "expected_identity"}:
+                raise ValueError("invalid_envelope")
+            result = evaluate_capabilities(envelope["record"], envelope["required"], expected_identity=envelope["expected_identity"])
+        except (ValueError, TypeError, RecursionError):
+            print(json.dumps({"ready": False, "reasons": ["invalid_input"], "live_parity_proven": False, "execution_authorized": False}))
+            return 2
+        print(json.dumps(result))
+        return 0 if result["ready"] else 1
 
     results: list[CheckResult] = []
     results.extend(check_shared_core())

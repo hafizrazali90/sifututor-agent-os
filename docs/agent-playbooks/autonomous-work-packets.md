@@ -1,5 +1,11 @@
 # Autonomous Work Packets
 
+For delegated work, use the provider-neutral packet and reconciliation loop in
+[handoff.md](handoff.md#provider-neutral-packet-and-reconciliation). Completion
+receipt structure is owned by [agent-os-evidence-model.md](agent-os-evidence-model.md),
+not a separate worker definition of done. Capability observations, an exit code
+or a valid receipt cannot grant approval or prove the underlying behavior.
+
 Use this when Hafiz asks the agent to keep working for a longer stretch without
 asking for every small step.
 
