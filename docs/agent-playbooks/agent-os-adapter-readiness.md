@@ -69,6 +69,16 @@ The newer candidate remains preserved for separate exact-diff integration;
 this capability layer neither installs it nor claims it has been rolled out.
 Root `glm`/`glm-switch` files and provider credentials remain untouched.
 
+CP-08 reconciliation update (2026-09-19): the separate exact-diff integration
+above landed the portable `.kilo/agents/sifututor-agent-os.md` adapter and
+deterministic Kilo checks described in the "Kilo Adapter" section below. This
+is wiring and fixture proof only. It does not upgrade any claim in this
+document to "current universal adapter parity"; installed-Kilo and live-GLM
+evidence remain explicit optional flags (`--installed-kilo`, `--live-kilo`,
+`--require-installed-kilo`, `--require-live-kilo`) that stay outside normal
+health/CI. Any rollout claim must record those results separately; portable
+wiring alone never implies installed or live parity.
+
 Permanent regression evidence lives in `test_agent_os_adapter_contract.py`:
 pure evaluator negatives and the actual CLI JSON journey. No product browser
 E2E is required (`not user-facing`); no real provider compliance is claimed.
@@ -131,16 +141,56 @@ Long-form thinking, product/design exploration, structured docs, explaining
 options, and review.
 ```
 
+## Kilo Adapter
+
+Kilo should be ready when:
+
+- `.kilo/agents/sifututor-agent-os.md` selects `zai/glm-5.3` and points to the
+  shared `AGENTS.md`, playbooks, and native `.agents/skills/` wrappers;
+- the selected workflow skill is invoked visibly so the route is auditable;
+- safe reads and state inspection proceed without a new approval, while edits,
+  writes, shell commands, delegation, and sensitive operations keep their
+  configured boundaries;
+- vague staff or Planner reports route to diagnosis/triage before bugfix, and
+  a confirmed GitHub issue is auto-created without a redundant approval;
+- the machine-local Kilo config keeps GLM input modalities text-only and does
+  not embed credentials in MCP configuration;
+- image work uses the separately approved `zai-vision` MCP path rather than an
+  image message sent to the text-only Coding Plan endpoint;
+- Koda uses the approved repository helper and never exposes its credential;
+- portable adapter checks (`kilo-agent-os-adapter-check.py`) and deterministic
+  Kilo parser/drift self-tests (`agent-os-behavior-trace-runner.py
+  --self-test-kilo`) pass;
+- installed-path discovery (`--installed-kilo`) and real GLM traces
+  (`--live-kilo`) pass when explicitly requested as rollout evidence.
+
+Kilo strength:
+
+```text
+An additional coding worker through the Z.ai subscription, using the same
+repository workflow and evidence contract without duplicating Claude Code.
+```
+
+Kilo's configured model name is declared routing configuration, not a
+live-observed runtime identity. Do not claim exact GLM build/version identity
+from the config file alone; treat Kilo output as supervised-only until a
+capability-preflight attestation records an observed `tool_version`/`model`
+for the current environment.
+
 ## What Counts As Ready
 
-Use this table when Hafiz asks whether Codex and Claude are "set up".
+Use this table when Hafiz asks whether Codex, Claude, and Kilo are "set up".
 
 | Claim | Allowed when |
 | --- | --- |
 | Codex is wired | Codex config, skills, hooks, behavior trace, health, and validation checks pass. |
 | Claude is wired | Claude settings, hooks, command docs, and parity mappings are present and compile. |
 | Claude is live-proven | Real Claude extension/CLI prompts pass behavior comparison. |
+| Kilo is wired | The project agent, native skills, portable checks, model boundary, and deterministic Kilo trace tests pass. |
+| Kilo is installed | `kilo-agent-os-adapter-check.py --installed` confirms the machine-installed agent, declared Z.ai/GLM default, and Vision MCP boundaries. It does not observe the runtime model identity. |
+| Kilo is live-proven | Real `kilo run` prompts pass the behavior trace comparison (`--live-kilo`); not claimed until that flag has actually been run and reviewed. |
 | Claude/Codex parity is proven | Both live adapters answer the same test prompts with matching workflow behavior. |
+| Claude/Codex/Kilo parity is proven | All three live adapters answer the same test prompts with matching workflow decisions and boundaries; deterministic wiring alone is not this claim. |
 | Agent OS adapter setup is daily-use ready | Wired checks pass and real daily tasks no longer expose repeated adapter drift. |
 
 Plain version:
@@ -225,8 +275,8 @@ Use:
 python3 scripts/agent-checks/agent-os-adapter-readiness.py
 ```
 
-This checks the deterministic setup for the shared core, Codex adapter, and
-Claude adapter.
+This checks the deterministic setup for the shared core and the Codex, Claude,
+and portable Kilo adapters.
 
 For an optional live Claude CLI comparison:
 
@@ -234,9 +284,20 @@ For an optional live Claude CLI comparison:
 python3 scripts/agent-checks/agent-os-adapter-readiness.py --live-claude
 ```
 
-If Claude hits a budget, rate-limit, or extension context issue, report that as
-an external live-proof gap. Do not mark the shared core or deterministic adapter
-wiring as failed unless the wiring itself is broken.
+For machine-installed Kilo proof and an optional real GLM comparison:
+
+```bash
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --installed-kilo
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --live-kilo
+```
+
+Use `--require-installed-kilo` or `--require-live-kilo` only when that evidence
+is required for the current rollout. Live calls are evidence-only and consume
+the configured provider allowance; normal CI and health remain deterministic.
+
+If Claude or Kilo hits a budget, rate-limit, or extension context issue, report
+that as an external live-proof gap. Do not mark the shared core or deterministic
+adapter wiring as failed unless the wiring itself is broken.
 
 ## Fixing Drift
 

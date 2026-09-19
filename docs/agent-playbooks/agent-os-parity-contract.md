@@ -68,31 +68,77 @@ questions, decisions, evidence, and stopping points match.
 
 | Area | Allowed difference |
 | --- | --- |
-| Command name | Claude can use slash commands. Codex can use `$skill` wrappers. Future agents can use another adapter. |
+| Command name | Claude can use slash commands. Codex can use `$skill` wrappers. Kilo selects the `Sifututor Agent OS` agent and invokes the same native `.agents/skills/` wrappers. Future agents can use another adapter. |
 | Internal tool | One agent may use MCP; another may use CLI or local scripts. The result and evidence standard must match. |
 | UI | Claude, Codex, Cursor, Copilot, Gemini, or another tool can show different interfaces. |
 | Packaging | Claude may split a workflow into several commands while Codex exposes one umbrella skill. |
 | Automation strength | Hooks may differ by tool. Missing hooks must be compensated by shared scripts, playbooks, and explicit checks. |
 
+## Kilo Code Adapter Boundary
+
+Kilo is an additional model worker, not a new Agent OS source of truth. Select
+the `Sifututor Agent OS` agent in Kilo when using the configured Z.ai GLM
+Coding Plan. The adapter declares the provider/model default, denies `.env*`
+and `live/` reads, edits, or writes, asks before other edits/writes, shell
+commands, or delegation, and points
+the model at the existing task router, skills, playbooks, Koda helper, and
+pre-commit guard.
+
+The provider credential remains in Kilo or VS Code's machine-local credential
+storage. It must never be copied into `.kilo/`, repository docs, tests, logs,
+Koda, or Git. Run
+`scripts/agent-checks/kilo-agent-os-adapter-check.py --installed` for local
+installed-path proof; the normal repository health check validates only the
+portable adapter and stays safe for CI and other machines.
+
+The configured Z.ai Coding Plan `chat/completions` endpoint is text-only. Keep
+the Kilo model input modalities set to `text` and start a fresh task after an
+image-related 400 response, because the failed task retains its image part in
+conversation history. Vision remains available through Z.ai's Coding Plan
+Vision MCP Server: Kilo must pass a workspace image filename or path to the
+`zai-vision` tool instead of embedding the image in the chat message. The
+machine-local MCP wrapper may reuse Kilo's private credential store at
+runtime, but credentials must never be copied into this repository or written
+to logs.
+
+Kilo's configured `model: zai/glm-5.3` is a declared routing target, not a
+live-observed runtime build. No current check exposes Kilo/GLM's exact
+runtime model or build version, matching the identity fields defined by the
+provider-neutral capability preflight above. Treat Kilo delegation as
+supervised-only: a human reviews its output before it is trusted for
+unattended or critical-lane work, until a capability-preflight attestation
+records an actual observed `tool_version`/`model` identity for this
+environment.
+
+CP-08 reconciliation update (2026-09-19, issues #65/#68): this reconciliation
+adds the portable `.kilo/agents/sifututor-agent-os.md` adapter, the
+`kilo-agent-os-adapter-check.py` validator (portable and installed modes), and
+deterministic Kilo parity coverage in the behavior trace and parity fixture
+runners to this repository. It does not change the CP-08 status above:
+installed-adapter and live-GLM evidence are optional flags
+(`--installed-kilo`, `--live-kilo`) outside normal health/CI. Their results
+must be recorded separately for the current environment and must not be read
+as universal adapter parity.
+
 ## Workflow Parity Matrix
 
-| Workflow | Claude adapter | Codex adapter | Shared source | Parity requirement |
-| --- | --- | --- | --- | --- |
-| Task Router | `/task-router` or project router | `$task-router` | `task-router.md` | Same route, context checks, approval boundary, next action. |
-| Diagnose | `/diagnose` | `$diagnose` | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
-| Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
-| Verify | `/verify` | `$verify` | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
-| QA | `/qa` | `$qa` | `qa.md` | Same human-journey and regression evidence standard. |
-| Review | `/review` | `$review` | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
-| Commit | `/commit` | `$commit` | `commit.md` | Same guard checks, exact file-list approval, local commit boundary. |
-| Save Session | `/save-session` | `$save-session` | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
-| Handoff | `/handoff` | `$handoff` | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
-| Snapshot | `/snapshot` | `$snapshot` | `snapshot.md` | Same pause/compact context capture. |
-| Session Map | `/session-map` or natural-language update | `$session-map` | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
-| Quick Check | `/quick-check` or doctor | `$quick-check` | `quick-check.md` | Same health and drift check before real work. |
-| Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
-| Workflow Improvement | `/workflow-improvement` (installed global Claude adapter skill) | `$workflow-improvement` | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
-| SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
+| Workflow | Claude adapter | Codex adapter | Kilo adapter | Shared source | Parity requirement |
+| --- | --- | --- | --- | --- | --- |
+| Task Router | `/task-router` or project router | `$task-router` | Native `task-router` skill | `task-router.md` | Same route, context checks, approval boundary, next action. |
+| Diagnose | `/diagnose` | `$diagnose` | Native `diagnose` skill | `diagnose.md` | Same read-only diagnosis before critical-lane implementation. |
+| Product Design | `/lite-prd`, `/prd-clarifier`, `/prd-to-ux`, `/ux-to-prompts` | `$product-design` phases | Native `product-design` skill | `product-design.md` | Same brainstorm-first behavior, questions, decisions, and output phases. |
+| Verify | `/verify` | `$verify` | Native `verify` skill | `verify.md` | Same focused proof, baseline failure handling, and evidence report. |
+| QA | `/qa` | `$qa` | Native `qa` skill | `qa.md` | Same human-journey and regression evidence standard. |
+| Review | `/review` | `$review` | Native `review` skill | `review.md` | Same risk-first review behavior and no quiet fixing in review-only mode. |
+| Commit | `/commit` | `$commit` | Native `commit` skill | `commit.md` | Same guard checks, exact file-list approval, local commit boundary. |
+| Save Session | `/save-session` | `$save-session` | Native `save-session` skill | `save-session.md` | Same durable memory, state, evidence, and next-action preservation. |
+| Handoff | `/handoff` | `$handoff` | Native `handoff` skill | `handoff.md` | Same written state transfer and no reliance on hidden chat context. |
+| Snapshot | `/snapshot` | `$snapshot` | Native `snapshot` skill | `snapshot.md` | Same pause/compact context capture. |
+| Session Map | `/session-map` or natural-language update | `$session-map` | Native `session-map` skill | `session-map.md` | Same human-first current-session map, side paths, decisions, evidence, and continuation prompt. |
+| Quick Check | `/quick-check` or doctor | `$quick-check` | Native `quick-check` skill | `quick-check.md` | Same health and drift check before real work. |
+| Production Monitor | `/monitor-production-logs` | `$monitor-production-logs` | Native `monitor-production-logs` skill | `monitor-production-logs.md` | Same read-only post-deploy monitoring boundary. |
+| Workflow Improvement | `/workflow-improvement` (installed global Claude adapter skill) | `$workflow-improvement` | Native `workflow-improvement` skill | `agent-os-improvement-loop.md` | Same controlled self-learning loop: classify the Agent OS mistake, update the owning layer and connected files, avoid Koda-only fixes, run checks, and stop before uncontrolled self-rewriting. |
+| SIMS UI Audit | `/sims-ui-audit` plus `ux-reviewer` | `$sims-ui-audit` | Native `sims-ui-audit` skill | `sims-ui-audit.md` | Same screenshot-backed UI/UX judgment, design-doc checks, evidence requirements, and pass/fail findings before Hafiz review. |
 
 ### A Listed Adapter Must Actually Be Installed
 
@@ -183,6 +229,9 @@ Add or maintain checks that prove:
 - every workflow in the skill registry has a shared playbook,
 - every shared playbook has a Claude adapter or stated exception,
 - every shared playbook has a Codex adapter or stated exception,
+- every shared playbook has a Kilo-native skill path or stated exception,
+- the repository Kilo adapter contains no endpoint or credential and the
+  installed adapter is checked separately,
 - Product Design phase mapping remains documented,
 - commit/push/deploy gates are identical across adapters,
 - save-session produces the same durable state shape,
@@ -232,7 +281,7 @@ workflow, evidence standard, or state model.
 
 ## Behavior Parity Review Standard
 
-Use this when comparing Claude, Codex, or another LLM on the same prompt.
+Use this when comparing Claude, Codex, Kilo, or another LLM on the same prompt.
 
 Plain meaning:
 

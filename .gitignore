@@ -53,6 +53,12 @@ plugins/*
 .codex/*
 !.codex/config.toml
 
+# Track the repo-local Kilo Code Agent OS adapter.
+!.kilo/
+.kilo/*
+!.kilo/agents/
+!.kilo/agents/sifututor-agent-os.md
+
 # Always ignore local/system files even if future patterns change.
 .DS_Store
 .claude/
