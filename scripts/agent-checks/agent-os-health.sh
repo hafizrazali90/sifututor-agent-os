@@ -336,6 +336,13 @@ else
 fi
 rm -f $TMP_DIR/worktree-lifecycle.out $TMP_DIR/worktree-lifecycle.err
 
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_task_context.py' >$TMP_DIR/task-context.out 2>$TMP_DIR/task-context.err; then
+  pass "Agent OS task context" "session isolation, approval transfer and controlled continuation passed"
+else
+  fail "Agent OS task context" "task-context regression tests failed"
+fi
+rm -f "$TMP_DIR/task-context.out" "$TMP_DIR/task-context.err"
+
 if "$ROOT/scripts/agent-checks/agent-os-claude-delegation-fixture-runner.py" >$TMP_DIR/agent-os-claude-delegation.out 2>$TMP_DIR/agent-os-claude-delegation.err; then
   claude_delegation_summary="$(tail -1 $TMP_DIR/agent-os-claude-delegation.out 2>/dev/null || true)"
   pass "Claude delegation fixtures" "${claude_delegation_summary:-passed}"
