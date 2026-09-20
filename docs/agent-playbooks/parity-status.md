@@ -16,8 +16,12 @@ All active workspace projects now have the shared Claude/Codex baseline:
 | `lls-frontend` | yes | yes | yes | Has dedicated frontend workflow skills |
 | `lls-mobile` | yes | yes | yes | Shared playbooks only; Flutter-specific skills not created yet |
 | `creative-hub` | yes | yes | yes | Shared playbooks only |
-| `team-inbox` | yes | yes | yes | Confirm active product direction before substantial work |
 | `finch-inbox` | yes | yes | existing + tasks | Keeps Finch workflow, adds shared active task pointer |
+| `cx-call-capture-android` | no (`AI-RULES.md` instead) | not yet | not yet | Active project; Claude/Codex adapter rollout still pending |
+| `sims-owner-analytics` | yes | not yet | not yet | Active project; Claude/Codex adapter rollout still pending |
+
+`team-inbox` is retired and replaced by `finch-inbox`. Its archived checkout
+`team-inbox.archived-2026-08-26/` is read-only history, not an active project.
 
 ## Source Of Truth
 
@@ -56,8 +60,13 @@ not part of the pushed umbrella GitHub repo.
 
 ## Remaining Optional Hardening
 
-- Create project-specific workflow skills for `lls-mobile`, `creative-hub`, and
-  `team-inbox` only after their development cadence justifies it.
+- Create project-specific workflow skills for `lls-mobile` and `creative-hub`
+  only after their development cadence justifies it.
+- Finish the Claude/Codex adapter rollout for `cx-call-capture-android` and
+  `sims-owner-analytics`. `cx-call-capture-android` still uses `AI-RULES.md`
+  instead of `AGENTS.md`; both are missing `CLAUDE.md`,
+  `.claude/tasks/active.json`, and `.claude/hooks/`. Until that is done the
+  workflow doctor warns instead of failing for those two.
 - Trust/review Codex project hooks through `/hooks` when Codex prompts for it.
   Continue using `scripts/agent-checks/pre-commit-guard.sh` as the portable
   manual guard.

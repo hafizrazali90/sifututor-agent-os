@@ -30,8 +30,12 @@ The umbrella workflow repo is separate:
 ## Commands Used / Still Relevant
 
 The approved push has already been performed for all projects except
-`team-inbox`. Do not run the `team-inbox` push below without a fresh decision,
-because the remote has diverged heavily.
+`team-inbox`.
+
+`team-inbox` was later retired in favour of `finch-inbox`, and its local
+checkout was archived as `team-inbox.archived-2026-08-26/`. There is no live
+`team-inbox` push command any more; the rows and caveats below are kept as the
+historical record of what happened on 2026-05-26.
 
 ```bash
 git -C sifu-tutor push origin sifu-staging
@@ -42,7 +46,6 @@ git -C lls push origin main
 git -C lls-frontend push origin main
 git -C lls-mobile push origin main
 git -C creative-hub push origin main
-git -C team-inbox push origin main
 git -C finch-inbox push origin main
 ```
 

@@ -436,6 +436,7 @@ PROJECT_TAG_MARKERS = (
     "project tag",
     "sifututor",
     "codex-parity",
+    "kelas",
     "sifu-tutor",
     "ripple-suite",
     "sifututor_tutor",
@@ -444,8 +445,9 @@ PROJECT_TAG_MARKERS = (
     "lls-frontend",
     "lls-mobile",
     "creative-hub",
-    "team-inbox",
     "finch-inbox",
+    "cx-call-capture-android",
+    "sims-owner-analytics",
 )
 NEXT_ACTION_MARKERS = ("recommended next", "next action", "next step")
 

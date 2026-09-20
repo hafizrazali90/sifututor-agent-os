@@ -12,6 +12,7 @@ ALLOWED_CATEGORIES = {"decision", "lesson", "rule", "preference", "fact"}
 ALLOWED_SOURCES = {"user-stated", "auto-captured", "correction"}
 PROJECT_TAGS = {
     "sifututor",
+    "kelas",
     "sifu-tutor",
     "ripple-suite",
     "sifututor_tutor",
@@ -20,8 +21,9 @@ PROJECT_TAGS = {
     "lls-frontend",
     "lls-mobile",
     "creative-hub",
-    "team-inbox",
     "finch-inbox",
+    "cx-call-capture-android",
+    "sims-owner-analytics",
 }
 SECRET_PATTERNS = (
     r"\bapi[_-]?key\b",

@@ -73,7 +73,7 @@ are optional extras that never replace it.
 
 | Tag kind | Purpose | Required? | Allowed values |
 | --- | --- | --- | --- |
-| Project tag | Says which product or workspace the lesson belongs to. | Yes, at least one. | The project list in [save-session.md](save-session.md): `sifu-tutor`, `ripple-suite`, `sifututor_tutor`, `sifututor_parent`, `lls`, `lls-frontend`, `lls-mobile`, `creative-hub`, `team-inbox`, `finch-inbox`, `sifututor`, `codex-parity`. |
+| Project tag | Says which product or workspace the lesson belongs to. | Yes, at least one. | The project list in [save-session.md](save-session.md): `kelas`, `sifu-tutor`, `ripple-suite`, `sifututor_tutor`, `sifututor_parent`, `lls`, `lls-frontend`, `lls-mobile`, `creative-hub`, `finch-inbox`, `cx-call-capture-android`, `sims-owner-analytics`, `sifututor`, `codex-parity`. |
 | Domain tag | Says what the lesson is about. | No, but usually helpful. | Free-form topic tags such as `agent-os`, `router`, `workflow`, `memory`, `guardrails`, `koda`, `payment`, `qa`. |
 
 For umbrella Agent OS work that is not owned by one product, use `sifututor`
