@@ -888,7 +888,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         )
 
     direct_skill = re.search(
-        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs|sims-ui-audit|workflow-improvement)\b",
+        r"\$(task-router|verify|qa|commit|save-session|handoff|snapshot|session-map|diagnose|review|quick-check|product-design|monitor-production-logs|sims-ui-audit|workflow-improvement|weekly-delivery)\b",
         normalized,
     )
     if direct_skill:
@@ -900,6 +900,24 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
                 "Read the skill body, then the linked shared playbook before acting.",
             ],
             "User explicitly invoked a Codex workflow skill.",
+        )
+
+    weekly_delivery_patterns = (
+        "weekly delivery",
+        "weekly development report",
+        "weekly dev report",
+        "what did the team ship",
+        "what shipped this week",
+    )
+    if any(pattern in normalized for pattern in weekly_delivery_patterns):
+        return (
+            "$weekly-delivery",
+            [
+                "Use $weekly-delivery and the shared weekly-delivery-report playbook.",
+                "Collect team outcomes and source coverage; do not rank or score individuals.",
+                "Never interpret failed or partial collection as a quiet week.",
+            ],
+            "Prompt asks for the weekly delivery workflow.",
         )
 
     workflow_efficiency_patterns = (
