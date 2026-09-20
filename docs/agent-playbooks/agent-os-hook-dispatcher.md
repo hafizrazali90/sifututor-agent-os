@@ -44,8 +44,8 @@ The hook should never silently perform expensive state changes.
 | Event | When it runs | What it does |
 | --- | --- | --- |
 | `SessionStart` | Startup, resume, clear, or compact session start. | Loads Sifututor context and verifies Koda read/write health once for the session. |
-| `UserPromptSubmit` | Every Hafiz prompt. | Detects project, active task, likely workflow skill, and relevant Koda memories. |
-| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and quarantines all tool use while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. |
+| `UserPromptSubmit` | Every Hafiz prompt. | Emits one compact route hint when a workflow skill is genuinely useful. |
+| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and visual capture while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. |
 | `PostToolUse` | After shell/exec commands. | Records metadata-only failed-command diagnostics without command arguments or raw output. |
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
 | `Stop` | When Codex is about to stop. | Reminds Codex to save meaningful session state. |
@@ -70,27 +70,22 @@ The hook is the first guess, not the boss.
 
 ## What UserPromptSubmit Adds
 
-For a non-trivial prompt, `UserPromptSubmit` can add:
+For a non-trivial prompt, `UserPromptSubmit` adds only:
 
-- detected project,
-- active task summary,
-- selected workflow skill,
-- reason for selected skill,
-- required actions,
-- relevant Koda memories,
-- communication defaults,
-- an explanation-first, pre-implementation preview, and one-by-one walkthrough reminder,
-- a compact meaningful-work close-out reminder,
-- standing task access reminder,
-- critical-lane reminder.
+- one compact project/route/reason line,
+- the active task when one exists,
+- route-specific actions that materially change the next move,
+- Koda context only for product design, diagnosis, or session continuity.
 
-This is why a Codex turn may start with a message like:
+Do not repeat the full working agreement, communication rules, skill list,
+approval model, or default delivery pipeline on every prompt. Those remain in
+the source documents and selected skill. Ordinary task routing should stay
+quiet enough that it does not compete with the actual work.
+
+A route hint looks like:
 
 ```text
-Sifututor workflow dispatcher:
-- Detected project: Sifututor.
-- Selected workflow skill: $product-design.
-- Reason: Prompt is asking for product design...
+Sifututor route: $product-design for Sifututor (Prompt asks for product design.)
 ```
 
 Claude receives the same explanation-first, pre-implementation preview, and close-out behavior through the shared
@@ -277,8 +272,10 @@ Short replies depend on visible conversation context.
 | `approve` | Execute the last exact approval request only. |
 | `what next` | Give one next recommended action. |
 
-For continuation-like prompts, the hook should add a smart resume hint when
-there is an active Session Map or local Git state waiting. Codex should read
+Only continuation-like prompts should trigger smart resume. The mere presence
+of an old Session Map or diverged Git state must not turn a new prompt into a
+recovery workflow. For `continue`, `resume`, `go next`, and equivalent prompts,
+Codex should read
 the Session Map Reference Pack first, then say whether the map matches the
 prompt. If it matches, continue from the map. If it does not, treat the prompt
 as new work unless Hafiz asks to resume the old map.

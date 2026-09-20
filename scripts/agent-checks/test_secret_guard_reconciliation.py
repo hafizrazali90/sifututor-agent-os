@@ -47,14 +47,32 @@ class PatchToolClassificationTest(unittest.TestCase):
                 self.assertFalse(guard.evaluate_tool_request(name, value, {}).allowed)
                 classifier.assert_called()
 
-    def test_quarantine_precedes_direct_patch_classification(self):
+    def test_visual_boundary_does_not_freeze_ordinary_work(self):
         guard = load_guard()
         data = "*** Begin Patch\n*** Add File: example.txt\n+synthetic prose\n*** End Patch"
         with patch.object(guard, "secret_visual_boundary_active", return_value=True), patch.object(
             guard, "_direct_patch_data"
         ) as classify:
-            self.assertFalse(guard.evaluate_tool_request("apply_patch", data, {}).allowed)
-            classify.assert_not_called()
+            self.assertTrue(guard.evaluate_tool_request("apply_patch", data, {}).allowed)
+            classify.assert_called_once()
+
+        with patch.object(guard, "secret_visual_boundary_active", return_value=True):
+            self.assertTrue(guard.evaluate_tool_request(
+                "functions.exec", {"input": 'await tools.exec_command({cmd: "git status --short"});'}, {}
+            ).allowed)
+            self.assertFalse(guard.evaluate_tool_request(
+                "mcp__cua_repl", {"code": "await cua.getState();"}, {}
+            ).allowed)
+
+    def test_editor_content_is_not_executed_as_a_command(self):
+        guard = load_guard()
+        prose = "Document examples mentioning shell history, container inspection, and .env paths."
+        for name in ("Edit", "Write", "edit", "write"):
+            with self.subTest(name=name), patch.object(
+                guard, "evaluate_command", return_value=guard.Decision(False, "synthetic denial")
+            ) as classifier:
+                self.assertTrue(guard.evaluate_tool_request(name, {"content": prose}, {}).allowed)
+                classifier.assert_not_called()
 
 
 class PatchToolCLIJourneyTest(unittest.TestCase):
@@ -107,16 +125,18 @@ class PatchToolCLIJourneyTest(unittest.TestCase):
             with self.subTest(name=name, shape=type(value).__name__):
                 self.assert_denied_without_payload(self.run_hook(name, value))
 
-    def test_cli_quarantine_still_denies_every_tool(self):
+    def test_cli_visual_boundary_blocks_capture_but_not_normal_tools(self):
+        self.assert_denied_without_payload(self.run_hook(
+            "mcp__cua_repl", {"code": "await cua.getState();"}, active=True
+        ))
         for name, value in (
             ("apply_patch", self.DATA),
             ("functions.apply_patch", {"command": self.DATA}),
             ("functions.exec", {"input": 'await tools.apply_patch("synthetic");'}),
             ("Bash", {"command": "git status --short"}),
-            ("unknown_tool", {}),
         ):
             with self.subTest(name=name):
-                self.assert_denied_without_payload(self.run_hook(name, value, active=True))
+                self.assertEqual(self.run_hook(name, value, active=True), "")
 
 
 class InspectFormatSafetyTest(unittest.TestCase):

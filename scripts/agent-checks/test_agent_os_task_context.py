@@ -667,6 +667,24 @@ class AdapterAndContinuationTests(unittest.TestCase):
             self.assertEqual(denied["permissionDecision"], "deny")
             self.assertNotIn("git push", json.dumps(denied))  # metadata-only rejection
 
+    def test_codex_commit_guard_uses_requested_worktree(self):
+        import json
+        import subprocess
+        root = HERE.parents[1]
+        result = subprocess.run(
+            [sys.executable, str(HERE / "codex-pre-tool-use.py")],
+            input=json.dumps({
+                "cwd": str(root.parent),
+                "tool_input": {"command": f'cd "{root}" && git commit -m "synthetic"'},
+            }),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        output = json.loads(result.stdout)["hookSpecificOutput"]
+        self.assertIn("passed", output["additionalContext"])
+
     def test_tool_guard_denies_forged_operation_label(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -695,6 +713,19 @@ class AdapterAndContinuationTests(unittest.TestCase):
                 for _ in range(2):
                     actions = hook.smart_resume_actions("continue", "storage", "sifu-tutor")
                     self.assertIn("discovery candidate only, not authority", "\n".join(actions))
+
+    def test_lifecycle_adapter_does_not_force_resume_on_unrelated_prompt(self):
+        from unittest.mock import patch
+        hook = load_script("lifecycle_context_thin_default_test", "codex-lifecycle-hook.py")
+        with tempfile.TemporaryDirectory() as directory:
+            maps = Path(directory)
+            write_session_map(maps / "unrelated.md", project="ripple-suite")
+            with patch.object(hook, "SESSION_MAP_DIR", maps), \
+                    patch.object(hook, "git_ahead_summary", return_value="Git state signal"):
+                self.assertEqual(
+                    hook.smart_resume_actions("please fix this button", "storage", "sifu-tutor"),
+                    [],
+                )
 
     def test_controlled_worker_fixes_failure_and_returns_to_main_without_approval(self):
         # Deterministic worker/tool sequence, not an evaluation of a live LLM.
