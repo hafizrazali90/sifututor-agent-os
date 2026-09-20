@@ -39,6 +39,8 @@
     "stream-json",
     "--include-partial-messages",
     "--permission-mode",
-    "auto"
+    "auto",
+    "--model",
+    "opus"
   ]
 }

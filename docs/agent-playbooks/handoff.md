@@ -178,7 +178,16 @@ Prepare two ignored local files under the delegated worktree's
 The contract must name the goal, approved stop point, forbidden actions,
 worktree, branch, lane owner, required proof, reporting cadence, brief path,
 handback path, and Claude arguments. The brief must explain the real entry
-point, business rule, scope, evidence, and exact return contract. Use the
+point, business rule, scope, evidence, and exact return contract.
+
+`claude_args` must select the Claude model explicitly, as either a `--model
+<alias>` pair or `--model=<alias>`. A job that leaves the model implicit
+inherits whatever the workspace selected; an inherited `opusplan` selection
+reached Anthropic and returned HTTP 400 with zero recorded usage, while an
+otherwise identical `--model opus` job ran normally. Preflight therefore fails
+closed before launch when no explicit model is named, and the runner never
+picks one for you. Copy the currently proven alias from
+`docs/agent-playbooks/templates/claude-delegation-job.json`. Use the
 Build-Ready Pack from `ai-implementation-readiness.md` for critical,
 cross-module, user-facing, or AI-to-AI implementation work.
 
@@ -238,6 +247,7 @@ The preflight proves:
 - the declared worktree and branch match current Git state;
 - no live worker owns the same worktree;
 - non-interactive stream output is enabled for liveness;
+- `claude_args` selects the Claude model explicitly;
 - unsafe permission-bypass flags are absent; and
 - the brief/state/handback paths stay inside the worktree's Git-ignored
   `.agent-os/delegations/` runtime area; and
@@ -298,9 +308,26 @@ deploys, or mutates production. A stall is an alert, not permission to act.
 ### Evidence And Independent Review
 
 The evidence report stores timestamps, state transitions, event counts, Git
-start/end state, brief/handback hashes, available usage counters, and whether a
-stall occurred. It deliberately stores no raw Claude stream content. If the CLI
-does not expose usage, record `unavailable`; never estimate savings.
+start/end state, brief/handback hashes, the selected model, available usage
+counters, and whether a stall occurred. It deliberately stores no raw Claude
+stream content. If the CLI does not expose usage, record `unavailable`; never
+estimate savings.
+
+`terminal_diagnostic` explains how a worker ended without exposing what it
+said. It records only bounded values: whether a terminal result event was
+seen, its subtype, its `is_error` flag, any `api_error_status`, the terminal
+and stop reasons, the turn count, the permission-denial count, the fast-mode
+state, a known failure category, and the stderr line count. Absent values stay
+`unavailable` rather than being guessed. A failure category is derived from
+error-shaped events only, so a successful worker whose own prose mentions a
+denial or a limit is not mislabelled. `evidence.md` leads with the exit code,
+`result_is_error`, and `api_error_status` when the worker failed, so a launch
+failure is legible without reading raw output. Result text, assistant content,
+prompts, stderr text, paths, identities, and the raw stream are never stored.
+
+A zero-token failure is a launch problem, not delegated work. Read
+`terminal_diagnostic`, fix the named cause, and start a fresh job; do not
+report the task as attempted work or estimate what it would have cost.
 
 After `returned`, Codex must still:
 
