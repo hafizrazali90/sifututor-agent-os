@@ -335,7 +335,9 @@ def sync_secret_visual_boundary(
 
 
 def _direct_patch_data(tool_name: str, tool_input: Any) -> bool:
-    """Recognize inert direct patch payloads, never an executable wrapper."""
+    """Recognize inert direct editor payloads, never executable wrappers."""
+    if tool_name in {"Edit", "Write", "edit", "write"}:
+        return True
     if tool_name not in {"apply_patch", "functions.apply_patch"}:
         return False
     value = tool_input
@@ -350,6 +352,22 @@ def _direct_patch_data(tool_name: str, tool_input: Any) -> bool:
     )
 
 
+def _visual_capture_request(tool_name: str, tool_input: Any) -> bool:
+    """Return True only for tools capable of capturing a visible credential."""
+
+    normalized_name = tool_name.lower()
+    if any(marker in normalized_name for marker in ("cua", "computer_use", "view_image", "screenshot")):
+        return True
+    if normalized_name in {"web__run", "web.run"}:
+        return "screenshot" in json.dumps(tool_input).lower()
+    if normalized_name in {"functions.exec", "exec", "exec_command", "bash"}:
+        source = json.dumps(tool_input).lower()
+        return any(marker in source for marker in (
+            "cua.", "getstate", "screenshot", "screencapture", "view_image", "emitimage",
+        ))
+    return False
+
+
 def evaluate_tool_request(
     tool_name: str,
     tool_input: Any,
@@ -358,17 +376,19 @@ def evaluate_tool_request(
     state_dir: Path | None = None,
     now: float | None = None,
 ) -> Decision:
-    """Quarantine all tools during a credential reveal, then check commands."""
+    """Block visual capture during a credential reveal, then check commands."""
 
-    if secret_visual_boundary_active(payload, state_dir=state_dir, now=now):
+    if (
+        secret_visual_boundary_active(payload, state_dir=state_dir, now=now)
+        and _visual_capture_request(tool_name, tool_input)
+    ):
         return Decision(
             False,
-            "Tools are blocked while a complete credential may be visible. Hide or leave the credential page, then explicitly clear the visual guard.",
+            "Visual capture is blocked while a complete credential may be visible. Hide or leave the credential page before capturing it.",
         )
-    # Quarantine above still covers every tool. Direct patch contents are data,
-    # not shell invocations; native patch/path permissions remain responsible
-    # for writes. Unknown tools, mixed payloads and execution wrappers retain
-    # the existing command-inspection path.
+    # Direct editor contents are inert data, not shell invocations. Native
+    # path permissions and the separate secret-artifact scan remain responsible
+    # for writes. Execution wrappers retain command inspection.
     if _direct_patch_data(tool_name, tool_input):
         return Decision(True)
     for command in _collect_command_text(tool_input):

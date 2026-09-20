@@ -252,29 +252,23 @@ def check_codex_adapter() -> list[CheckResult]:
         input_text=json.dumps(
             {
                 "hook_event_name": "UserPromptSubmit",
-                "prompt": "Save this session for another agent.",
+                "prompt": "Save session.",
                 "cwd": str(ROOT),
             }
         ),
     )
     codex_output = codex_prompt.stdout if codex_prompt.returncode == 0 else ""
     closeout_markers = (
-        "Close-out default:",
-        "Explanation-first default:",
-        "who uses the workflow",
-        "intended build",
-        "evidence plan in English once",
-        "go one by one",
-        "highest proven state",
-        "recommended next action",
-        "whether Hafiz needs to decide",
+        "Sifututor route: $save-session",
+        "Use $save-session",
+        "Report Koda status",
     )
     results.append(
         CheckResult(
             id="CX-031",
             adapter="codex",
             passed=all(marker in codex_output for marker in closeout_markers),
-            detail="Codex prompt adapter emits the shared communication reminders",
+            detail="Codex prompt adapter emits the compact route-specific guidance",
             warnings=[]
             if codex_prompt.returncode == 0
             else (codex_prompt.stderr or codex_prompt.stdout).splitlines()[-3:],

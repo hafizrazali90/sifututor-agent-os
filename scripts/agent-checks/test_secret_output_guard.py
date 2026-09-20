@@ -174,7 +174,7 @@ class SecretOutputGuardTest(unittest.TestCase):
                 )
             )
 
-    def test_active_boundary_blocks_every_tool_until_safe_reset(self) -> None:
+    def test_active_boundary_blocks_visual_capture_without_freezing_work(self) -> None:
         payload = {"session_id": "visual-boundary", "cwd": str(ROOT)}
         with tempfile.TemporaryDirectory() as state_dir:
             state_path = Path(state_dir)
@@ -220,7 +220,7 @@ class SecretOutputGuardTest(unittest.TestCase):
                     now=1001,
                 ).allowed
             )
-            self.assertFalse(
+            self.assertTrue(
                 self.guard.evaluate_tool_request(
                     "functions.exec",
                     {"input": "await tools.web__run({open: [{ref_id: 'opaque'}]});"},
@@ -229,7 +229,7 @@ class SecretOutputGuardTest(unittest.TestCase):
                     now=1001,
                 ).allowed
             )
-            self.assertFalse(
+            self.assertTrue(
                 self.guard.evaluate_tool_request(
                     "exec_command",
                     {"cmd": "git status --short"},

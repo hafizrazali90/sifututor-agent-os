@@ -214,10 +214,12 @@ def smart_resume_actions(normalized: str, session_id: str = "", project: str = "
         project=project if project and project != "Sifututor" else "",
     )
     latest_map = selection["path"]
-    git_signal = git_ahead_summary()
-    has_signal = continuation_signal(normalized) or latest_map is not None or bool(git_signal)
-    if not has_signal:
+    # Resume discovery is useful only when Hafiz is actually continuing prior
+    # work. A stale map or diverged checkout must not turn every unrelated
+    # prompt into a recovery ceremony.
+    if not continuation_signal(normalized):
         return []
+    git_signal = git_ahead_summary()
 
     actions = [
         "Smart resume check: before broad exploration, check whether this prompt continues the active Session Map or starts a new task.",
@@ -1459,10 +1461,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         return (
             "$task-router",
             [
-                "Use $task-router before implementation.",
-                "Read nearest AGENTS.md and relevant CLAUDE.md.",
-                "Search Koda memory and read active task state when present.",
-                "If this chat contains multiple fixes, maintain a Session Release Ledger so no commit is stranded off main/live.",
+                "Use $task-router only to identify the project, requested scope, and next useful action; keep routine work moving.",
             ],
             "Prompt appears to be non-trivial work.",
         )
@@ -1536,13 +1535,7 @@ def main() -> int:
                     f"Project detected: {project}.",
                     active_summary,
                     *koda_lines,
-                    "Communication default: explain the practical meaning in natural language before technical details; Hafiz is a self-learning engineer without a CS background.",
-                    "Explanation-first default: for bugs, PRs, features, or unfamiliar technical topics, explain who uses the workflow, current behavior, expected behavior, and why it matters before findings or code. Before non-trivial implementation, explain the intended build, real options, recommendation, and evidence plan in English once; after approval, continue inside the agreed boundary without re-asking. If Hafiz asks to go one by one, cover one item with its effect, improvement, evidence, and decision, then stop before the next unless he approved an autonomous walkthrough.",
-                    "Close-out default: after meaningful work, make the final answer self-contained with what changed, how it was checked, the highest proven state, what remains, one recommended next action, and whether Hafiz needs to decide anything.",
-                    "Standing task access: when Hafiz asks Codex to finish a task end-to-end, use the narrowest required local agent-access files/tools without asking another permission question; never print secrets, read repo .env*, or use unrelated access.",
-                    "Workflow automation is active. For non-trivial prompts, the UserPromptSubmit hook will select the required Codex workflow skill.",
-                    "Available skills: $task-router, $product-design, $verify, $qa, $sims-ui-audit, $commit, $save-session, $handoff, $snapshot, $session-map, $diagnose, $review.",
-                    "Default implementation path: $task-router -> $verify -> $qa -> $review -> $commit -> $save-session. SIMS UI path adds $sims-ui-audit before Hafiz review or commit. Product-design path: $product-design -> PRD/UX/build prompts -> implementation approval.",
+                    "Default behavior: explain plainly, continue routine safe work autonomously, and load specialist workflows only when the task actually needs them.",
                 ]
             ),
         )
@@ -1559,7 +1552,6 @@ def main() -> int:
             actions = [
                 *actions,
                 *smart_resume_actions(normalized, session_id=task_context.extract_session_id(payload), project=project),
-                "If the prompt may be a follow-up, adjacent task, paused question, or part of a bigger goal, search `docs/agent-playbooks/mission-ledger` with `rg` and read only the relevant section.",
             ]
         elif skill == "$save-session":
             actions = [
@@ -1567,32 +1559,20 @@ def main() -> int:
                 "Check whether any follow-up, adjacent task, paused decision, or bigger-goal link should be captured in the Mission Ledger; search/open only the relevant project file.",
             ]
         action_text = "\n".join(f"- {action}" for action in actions)
-        memory_skills = {"$task-router", "$product-design", "$diagnose", "$verify", "$qa", "$sims-ui-audit", "$review", "$commit", "$session-map"}
+        # Koda is useful when historical knowledge can change the answer. Do
+        # not query and inject memory for ordinary routing, commit, or routine
+        # verification prompts.
+        memory_skills = {"$product-design", "$diagnose", "$session-map"}
         memory_text = koda_context(prompt, project) if skill in memory_skills else ""
-        memory_section = memory_text or "\n".join(
-            [
-                "Relevant Koda memories: none injected.",
-                "Trust the SessionStart Koda health result for this session. Do not rerun Koda health after every prompt; recheck only after a reported failure, configuration change, or long resume.",
-            ]
-        )
+        memory_section = f"\n{memory_text}" if memory_text else ""
         emit_context(
             "UserPromptSubmit",
             "\n".join(
                 [
-                    "Sifututor workflow dispatcher:",
-                    f"- Detected project: {project}.",
-                    f"- Selected workflow skill: {skill}.",
-                    f"- Reason: {reason}",
+                    f"Sifututor route: {skill} for {project} ({reason})",
                     active_summary,
-                    "Required actions:",
                     action_text,
                     memory_section,
-                    "Communication default: start with a plain-language explanation and practical meaning, then provide technical file/test/workflow detail.",
-                    "Explanation-first default: for bugs, PRs, features, or unfamiliar technical topics, explain who uses the workflow, current behavior, expected behavior, and why it matters before findings or code. Before non-trivial implementation, explain the intended build, real options, recommendation, and evidence plan in English once; after approval, continue inside the agreed boundary without re-asking. If Hafiz asks to go one by one, cover one item with its effect, improvement, evidence, and decision, then stop before the next unless he approved an autonomous walkthrough.",
-                    "Close-out default: after meaningful work, make the final answer self-contained with what changed, how it was checked, the highest proven state, what remains, one recommended next action, and whether Hafiz needs to decide anything.",
-                    "Standing task access: if the current task already requires scoped access for verify, QA, deploy, smoke, or monitoring, use the narrowest required access without another approval prompt; keep secrets hidden and stay inside the task.",
-                    "Do not bypass the selected skill. Read its SKILL.md and the linked docs/agent-playbooks/ file before acting.",
-                    "Critical lanes require Phase A diagnosis before implementation: auth, payments, invoices, commissions, migrations, deployment, and mobile API contracts.",
                 ]
             ),
         )

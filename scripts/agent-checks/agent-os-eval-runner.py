@@ -119,8 +119,8 @@ CASES = [
         "prompt": "Proceed with the Agent OS docs update.",
         "skill": "$task-router",
         "reason_contains": "non-trivial",
-        "actions_contain": ["AGENTS.md", "Koda", "active task"],
-        "why": "Scoped Agent OS docs updates should route before editing and stay medium intensity.",
+        "actions_contain": ["project", "scope", "next useful action"],
+        "why": "Scoped Agent OS docs updates should route without injecting unrelated startup ceremony.",
     },
     {
         "id": "AO-016",
@@ -167,8 +167,8 @@ CASES = [
         "prompt": "proceed next",
         "skill": "$task-router",
         "reason_contains": "non-trivial",
-        "actions_contain": ["AGENTS.md", "Koda", "active task"],
-        "why": "Proceed-next should route through task-router so the model can use visible chat context.",
+        "actions_contain": ["project", "scope", "next useful action"],
+        "why": "Proceed-next should continue from visible chat context without replaying startup checks.",
     },
     {
         "id": "AO-022",
@@ -191,8 +191,8 @@ CASES = [
         "prompt": "go next",
         "skill": "$task-router",
         "reason_contains": "non-trivial",
-        "actions_contain": ["AGENTS.md", "Koda", "active task"],
-        "why": "Hafiz uses go-next as a real continue command, not a trivial message.",
+        "actions_contain": ["project", "scope", "next useful action"],
+        "why": "Hafiz uses go-next as a real continue command, not a trigger for repeated workflow ceremony.",
     },
     {
         "id": "AO-024",

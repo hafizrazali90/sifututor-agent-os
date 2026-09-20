@@ -44,18 +44,24 @@ def context(message: str) -> None:
     sys.exit(0)
 
 
-def read_command() -> str:
+def read_request() -> tuple[str, str]:
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
-        return ""
+        return "", ""
     tool_input = payload.get("tool_input") or {}
-    return str(tool_input.get("command") or "")
+    command = tool_input.get("command") or tool_input.get("cmd") or ""
+    cwd = tool_input.get("workdir") or tool_input.get("cwd") or payload.get("cwd") or ""
+    explicit_cd = re.match(r"\s*cd\s+([^;&|]+?)\s*&&", str(command))
+    if explicit_cd:
+        cwd = explicit_cd.group(1).strip().strip("'\"")
+    return str(command), str(cwd)
 
 
-def run_guard() -> tuple[bool, str]:
+def run_guard(request_cwd: str = "") -> tuple[bool, str]:
+    candidate_cwd = Path(request_cwd).expanduser() if request_cwd else Path.cwd()
     root = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
+        ["git", "-C", str(candidate_cwd), "rev-parse", "--show-toplevel"],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -80,7 +86,7 @@ def run_guard() -> tuple[bool, str]:
     return result.returncode == 0, result.stdout.strip()
 
 
-command = read_command()
+command, request_cwd = read_request()
 compact = " ".join(command.split())
 
 if not compact:
@@ -115,7 +121,7 @@ if re.search(r"(^|[;&|]\s*)git\s+(checkout\s+-b|switch\s+-c)\s+([^\s]+)", compac
 if re.search(r"(^|[;&|]\s*)git\s+commit\b", compact):
     if "$(cat <<" in compact or "<<EOF" in compact or "<<'EOF'" in compact:
         deny("Use direct git commit -m flags. HEREDOC commit messages are not hook-safe.")
-    ok, output = run_guard()
+    ok, output = run_guard(request_cwd)
     if not ok:
         deny(f"pre-commit-guard failed before git commit:\n{output}")
     context("pre-commit-guard passed before git commit.")
