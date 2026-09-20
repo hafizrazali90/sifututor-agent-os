@@ -21,6 +21,26 @@ _PLACEHOLDER = re.compile(
     re.I,
 )
 
+# Match only an unquoted JavaScript property lookup, never a quoted value.
+_CONFIGURED_REFERENCE = re.compile(
+    r"([:=]\s*)process\.env\.[A-Z][A-Z0-9_]*(?=\s*[,;}\])!?]|\s*$)"
+)
+_FIXTURE_WORDS = re.compile(
+    r"([:=]\s*)([\"'])((?:[a-z]+-)*fixture(?:-[a-z]+)*)\2"
+)
+_FIXTURE_ARGUMENT = re.compile(
+    r"([\"'])([A-Z][A-Z0-9_]*=)(?:[a-z]+-)*fixture(?:-[a-z]+)*\1"
+)
+
+
+def is_test_source(path: str) -> bool:
+    return bool(re.fullmatch(
+        r"(?:scripts/fixtures/.+|scripts/agent-checks/test_[a-z0-9_]+\.py|"
+        r"tests/.+|.+/__tests__/.+|"
+        r"scripts/test-[a-z0-9-]+\.(?:cjs|mjs|ts)|"
+        r"scripts/start-[a-z0-9-]+-fixture\.(?:cjs|mjs|ts))", path
+    ))
+
 _RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("private-key material", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")),
     ("Anthropic/OpenAI-style token", re.compile(r"\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{24,}\b")),
@@ -41,12 +61,17 @@ _RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
 )
 
 
-def find_secret_findings(text: str) -> list[Finding]:
+def find_secret_findings(text: str, *, path: str = "") -> list[Finding]:
     findings: list[Finding] = []
     for line_number, line in enumerate(text.splitlines(), start=1):
         candidate = _PLACEHOLDER.sub("<placeholder>", line)
+        assignment_candidate = _CONFIGURED_REFERENCE.sub(r"\1<configured-reference>", candidate)
+        if is_test_source(path):
+            assignment_candidate = _FIXTURE_WORDS.sub(r"\1<fixture-placeholder>", assignment_candidate)
+            assignment_candidate = _FIXTURE_ARGUMENT.sub(r"\1\2<fixture-placeholder>\1", assignment_candidate)
         for rule, pattern in _RULES:
-            if pattern.search(candidate):
+            checked = assignment_candidate if rule == "credential assignment" else candidate
+            if pattern.search(checked):
                 findings.append(Finding(line_number, rule))
     return findings
 
@@ -92,7 +117,7 @@ def main() -> int:
 
     reported: list[tuple[str, int, str]] = []
     for path, line_number, text in added:
-        for finding in find_secret_findings(text):
+        for finding in find_secret_findings(text, path=path):
             reported.append((path, line_number, finding.rule))
 
     if not reported:
