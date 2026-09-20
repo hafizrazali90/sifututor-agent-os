@@ -99,6 +99,14 @@ check_file "Claude hook dispatcher" "$ROOT/scripts/agent-checks/claude_hook_disp
 check_file "Claude hook dispatcher fixtures" "$ROOT/scripts/agent-checks/test_claude_hook_dispatch.py"
 check_file "Claude quality-gate wrapper" "$ROOT/.claude/hooks/quality-gate.py"
 check_file "Claude workflow-gate wrapper" "$ROOT/.claude/hooks/workflow-gate.py"
+check_file "Claude shell hook dispatcher" "$ROOT/.claude/hooks/project-hook-dispatch.sh"
+check_file "Claude PowerShell dispatcher" "$ROOT/.claude/hooks/project-hook-dispatch.ps1"
+for hook in session-start.py memory-flush.py freshness-reminder.py koda-nudge.py \
+  consolidate-check.sh inject-context.sh enforce-migration-pair.sh \
+  cap-active-blocker-size.sh warn-unstamped-specs.sh run-shared-hook.sh \
+  validate-branch.ps1 validate-commit-msg.ps1 session-start.ps1; do
+  check_file "Claude project hook wrapper" "$ROOT/.claude/hooks/$hook"
+done
 check_file "Agent OS install doc" "$ROOT/docs/agent-playbooks/agent-os-installation.md"
 check_file "Agent OS install manifest" "$ROOT/docs/agent-playbooks/agent-os-install-manifest.json"
 check_file "Agent OS installer" "$ROOT/scripts/agent-checks/agent-os-install.sh"

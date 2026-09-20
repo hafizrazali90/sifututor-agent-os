@@ -34,6 +34,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 from typing import Any, Iterable
@@ -45,11 +46,6 @@ DISPATCHER_MARKER = "AGENT-OS-CLAUDE-HOOK-DISPATCHER"
 
 REENTRY_ENV_VAR = "SIFUTUTOR_AGENT_OS_HOOK_DISPATCH"
 TIMEOUT_ENV_VAR = "SIFUTUTOR_AGENT_OS_HOOK_TIMEOUT"
-
-# Hook names the umbrella publishes a dispatcher wrapper for. These are the
-# sub-project-only gates behind issue 96: a missing PreToolUse script exits 2,
-# which Claude reads as a hard block on every Bash call.
-DISPATCHER_HOOK_NAMES = frozenset({"quality-gate.py", "workflow-gate.py"})
 
 # Only PreToolUse can cancel a tool call. A SessionStart or Stop hook that fails
 # to resolve is real drift worth reporting, but it does not block work.
@@ -113,16 +109,13 @@ class HookConfigFinding:
         """True when this gap must fail readiness rather than only be reported.
 
         Two cases qualify: a script missing from its own project, which is
-        broken under any launch; and an umbrella-launch gap for one of the
-        gates the umbrella dispatcher owns, which is the issue-96 regression.
+        broken under any launch; and every unresolved PreToolUse hook. Hook
+        names are intentionally not allowlisted: an unknown missing gate can
+        block Claude just as completely as a known one.
         """
         if not self.resolves_in_project:
             return True
-        return (
-            self.event == BLOCKING_EVENT
-            and self.script_name in DISPATCHER_HOOK_NAMES
-            and not self.resolves_in_umbrella
-        )
+        return self.event == BLOCKING_EVENT and not self.resolves_in_umbrella
 
     @property
     def detail(self) -> str:
@@ -243,6 +236,7 @@ def dispatch(
     self_path: Path | None = None,
     stdin_bytes: bytes | None = None,
     env: dict[str, str] | None = None,
+    hook_args: list[str] | None = None,
 ) -> int:
     """Run the real sub-project hook for this payload and return its exit code."""
     env = dict(os.environ if env is None else env)
@@ -273,6 +267,30 @@ def dispatch(
         warn(f"no project hook named {hook_name} for this working directory; skipped without blocking")
         return 0
 
+    hook_args = list(hook_args or [])
+    suffix = resolution.hook_path.suffix.lower()
+    if suffix == ".py":
+        command = [sys.executable, str(resolution.hook_path), *hook_args]
+    elif suffix == ".sh":
+        command = ["bash", str(resolution.hook_path), *hook_args]
+    elif suffix == ".ps1":
+        powershell = shutil.which("powershell.exe") or shutil.which("pwsh") or shutil.which("powershell")
+        if powershell is None:
+            warn(f"{hook_name} requires PowerShell but no interpreter is available; reporting an error")
+            return 1
+        command = [
+            powershell,
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(resolution.hook_path),
+            *hook_args,
+        ]
+    else:
+        warn(f"{hook_name} has an unsupported interpreter; reporting an error")
+        return 1
+
     child_env = dict(env)
     child_env[REENTRY_ENV_VAR] = ",".join(sorted(active | {hook_name}))
     # The real gate is a project hook: it must see the project as its own root.
@@ -282,7 +300,7 @@ def dispatch(
         # stdout/stderr are intentionally not captured: the gate writes straight
         # through to the session, so its output survives byte-for-byte.
         completed = subprocess.run(
-            [sys.executable, str(resolution.hook_path)],
+            command,
             cwd=str(resolution.project_dir),
             input=stdin_bytes,
             env=child_env,
@@ -299,10 +317,10 @@ def dispatch(
     return _exit_code(completed.returncode)
 
 
-def wrapper_main(hook_name: str, self_file: str) -> int:
+def wrapper_main(hook_name: str, self_file: str, hook_args: list[str] | None = None) -> int:
     """Entry point used by the thin umbrella wrappers."""
     try:
-        return dispatch(hook_name, self_path=Path(self_file).resolve())
+        return dispatch(hook_name, self_path=Path(self_file).resolve(), hook_args=hook_args)
     except Exception:  # noqa: BLE001 - convert crashes into a controlled hook failure
         # Only *missing* hook infrastructure is allowed to fail open. Once the
         # dispatcher itself is present, an unexpected crash means we cannot
@@ -417,7 +435,14 @@ def main(argv: list[str] | None = None) -> int:
         help="umbrella workspace root to audit",
     )
     parser.add_argument("--json", action="store_true", help="print machine-readable findings")
+    parser.add_argument("--dispatch-hook", help="dispatch one project hook instead of auditing")
+    parser.add_argument("--self-path", help="wrapper path to exclude from project-hook resolution")
+    parser.add_argument("hook_args", nargs="*", help="arguments forwarded to the real project hook")
     args = parser.parse_args(argv)
+
+    if args.dispatch_hook:
+        self_path = Path(args.self_path).resolve() if args.self_path else None
+        return dispatch(args.dispatch_hook, self_path=self_path, hook_args=args.hook_args)
 
     findings = audit_workspace_hook_configuration(Path(args.root).resolve())
     blocking = [finding for finding in findings if finding.blocks_readiness]

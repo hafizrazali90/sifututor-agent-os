@@ -147,7 +147,22 @@
     ".claude/hooks/test-coverage-gate.py",
     ".claude/hooks/friction-logger.py",
     ".claude/hooks/quality-gate.py",
-    ".claude/hooks/workflow-gate.py"
+    ".claude/hooks/workflow-gate.py",
+    ".claude/hooks/session-start.py",
+    ".claude/hooks/memory-flush.py",
+    ".claude/hooks/freshness-reminder.py",
+    ".claude/hooks/koda-nudge.py",
+    ".claude/hooks/project-hook-dispatch.sh",
+    ".claude/hooks/consolidate-check.sh",
+    ".claude/hooks/inject-context.sh",
+    ".claude/hooks/enforce-migration-pair.sh",
+    ".claude/hooks/cap-active-blocker-size.sh",
+    ".claude/hooks/warn-unstamped-specs.sh",
+    ".claude/hooks/run-shared-hook.sh",
+    ".claude/hooks/project-hook-dispatch.ps1",
+    ".claude/hooks/validate-branch.ps1",
+    ".claude/hooks/validate-commit-msg.ps1",
+    ".claude/hooks/session-start.ps1"
   ],
   "project_baseline": {
     "required_existing_files": [

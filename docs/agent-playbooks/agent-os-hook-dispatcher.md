@@ -232,12 +232,19 @@ filesystem paths.
 
 ### Scope
 
-The dispatcher owns `quality-gate.py` and `workflow-gate.py`, the two
-sub-project gates that run on `PreToolUse`. Other project hooks
-(`session-start.py`, `memory-flush.py`, project-local shell hooks) still resolve
-only for a session launched inside that project. Those gaps degrade a single
-event rather than cancelling tool calls, so the readiness check reports them
-without failing.
+The dispatcher covers every project hook name currently referenced by an
+active Sifututor project when that name is otherwise missing from the umbrella.
+Thin Python, shell, and PowerShell wrappers all delegate to the same bounded
+Python owner. Shell wrapper arguments are forwarded, which preserves Kelas's
+`run-shared-hook.sh <shared-hook>` contract. PowerShell wrappers are installed
+and configuration-tested on macOS; actual PowerShell execution is tested only
+on a host with `powershell.exe`, `pwsh`, or `powershell` available.
+
+Readiness never relies on a hard-coded list of important gate names. Any
+unresolved `PreToolUse` hook fails readiness because an unknown safety gate can
+block commands just as completely as a known one. Missing hooks for lifecycle
+events remain advisory, but the current baseline provides wrappers for them so
+context and memory events are not silently lost in umbrella-launched sessions.
 
 ### Readiness check
 

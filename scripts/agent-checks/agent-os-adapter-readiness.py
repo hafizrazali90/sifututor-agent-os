@@ -73,6 +73,10 @@ REQUIRED_CLAUDE_HOOKS = [
     # Umbrella dispatcher wrappers for sub-project-only gates (issue 96).
     ".claude/hooks/quality-gate.py",
     ".claude/hooks/workflow-gate.py",
+    ".claude/hooks/session-start.py",
+    ".claude/hooks/memory-flush.py",
+    ".claude/hooks/freshness-reminder.py",
+    ".claude/hooks/koda-nudge.py",
 ]
 
 REQUIRED_CLAUDE_PROJECTS = [
