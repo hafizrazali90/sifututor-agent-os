@@ -706,29 +706,39 @@ def check_optional_live_claude(require_live: bool) -> list[CheckResult]:
             "--live-claude",
             "--json",
         ],
-        timeout=180,
+        timeout=480,
     )
     warnings: list[str] = []
     passed = live.returncode == 0
     detail = "Claude live behavior trace completed"
-    if live.returncode == 0:
+    try:
+        payload = json.loads(live.stdout)
+    except json.JSONDecodeError:
+        payload = None
+    if payload is not None:
         try:
-            payload = json.loads(live.stdout)
             claude_states = [
                 (case.get("claude") or {}).get("state")
                 for case in payload.get("cases", [])
                 if case.get("claude") is not None
             ]
             available = sum(1 for state in claude_states if state == "available")
+            behavior_failures = sum(
+                1 for case in payload.get("cases", []) if case.get("claude_errors")
+            )
             total = len(claude_states)
-            detail = f"Claude live behavior traces available for {available}/{total} cases"
-            if total == 0 or available != total:
+            detail = (
+                f"Claude live behavior traces available for {available}/{total}; "
+                f"behavior drift in {behavior_failures}/{total}"
+            )
+            if total == 0 or available != total or behavior_failures:
                 passed = False
-                warnings.append("Claude CLI did not return usable live traces for every case")
-        except json.JSONDecodeError:
+                warnings.append("Claude did not return a conforming live trace for every case")
+        except (AttributeError, TypeError):
             passed = False
-            warnings.append("live Claude output was not JSON")
+            warnings.append("live Claude output used an invalid result shape")
     else:
+        passed = False
         warnings.extend((live.stderr or live.stdout or "live Claude trace failed").splitlines()[-4:])
 
     return [
