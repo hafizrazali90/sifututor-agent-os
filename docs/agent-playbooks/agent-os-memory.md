@@ -152,8 +152,9 @@ scripts/agent-checks/agent-os-koda-fixture-runner.py
 
 This check does not write to Koda. It validates the memory discipline rules
 locally: allowed schema values, project tags, secret-like content rejection,
-vague-progress rejection, stale-memory handling, and CLI fallback behavior when
-chat MCP is unreliable.
+vague-progress rejection, stale-memory handling, CLI fallback behavior when
+chat MCP is unreliable, mismatched-write handling, project-scope ownership
+denials, and compound-query retrieval conclusions.
 
 Agent defaults:
 
@@ -306,6 +307,37 @@ retag, confirm, or repair a record; a concurrent edit or ownership denial is
 not permission to overwrite it. Diagnostics contain field names and safe IDs,
 never requested/stored values, raw errors, or provider payloads.
 
+### Correcting a mismatched memory
+
+A mismatched result carries a `correction` block naming who can fix what. The
+split matters because the inspected server accepts `category`, `project` and
+`scope` on store but not on update:
+
+| Mismatched field | Correctable by | How |
+| --- | --- | --- |
+| `content`, `why`, `tags`, `source`, `confidence` | you | `scripts/agent-checks/koda update` with the same requested values |
+| `category`, `project`, `scope` | memory owner or Koda admin | ask them to correct that record by exact ID |
+
+When the mismatch is on `tags`, `verification.tag_delta` counts how many
+requested tags were dropped (`missing`) and how many the server added
+(`unexpected`). Counts only; tag values are never echoed.
+
+A project-scope memory created by someone else refuses your update. That result
+is `write_outcome: rejected` with `correction.blocked_by:
+project_scope_ownership`. Report the memory ID and the named owner action. Do
+not store a corrected copy: a duplicate hides the conflict and leaves the wrong
+memory active.
+
+To read a verification result back in plain language, offline:
+
+```bash
+scripts/agent-checks/koda correction '<verification-result-json>'
+```
+
+That command performs no network call, no write, and no repair. It names the
+mismatched fields, the update command for the fields you can fix, and the owner
+action for the fields you cannot.
+
 The inspected server accepts `scope` on store but does not expose it on recall.
 An explicit scope request therefore remains `verification_unavailable` unless
 a future compatible read response exposes scope. Do not infer scope from
@@ -318,3 +350,27 @@ and rollout boundaries.
 One empty broad search is not evidence that no memory exists. Retry narrower
 individual task topics with the **same project and scope constraints**. Do not
 relax filters to obtain results or interpret an unavailable search as empty.
+
+### Compound-query retrieval gap
+
+A compound multi-topic query can return zero while a narrower query with the
+same filters returns the record. `agent-os-koda-retrieval-quality.py` now
+attributes each miss instead of only reporting it:
+
+| Attribution | Meaning | Who owns it |
+| --- | --- | --- |
+| `retrieved` | The compound query returned the expected record. | nobody |
+| `upstream_compound_query_gap` | Compound returned nothing, a narrower same-filter probe found it. | upstream Koda retrieval |
+| `not_retrievable` | No probe found it. Not proof of absence; check by exact ID. | unknown until checked |
+| `client_filter_relaxation` | A probe changed the project/tag filters. | this client |
+
+The narrowing probes are diagnosis, not retries. They never relax filters and
+never turn a failing case into a pass. Run the offline fixtures with:
+
+```bash
+scripts/agent-checks/agent-os-koda-retrieval-quality.py --self-test
+```
+
+Because of this gap, `koda store`'s duplicate preflight is a best-effort single
+compound search. It can miss an existing near-identical memory, so a clean
+preflight is not proof that no similar memory exists.

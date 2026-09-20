@@ -176,6 +176,74 @@ def validate_readonly_audit(scenario: dict) -> list[str]:
     return errors
 
 
+def validate_mismatch_handling(scenario: dict) -> list[str]:
+    """An accepted write whose readback disagrees must be reported, never repaired."""
+
+    errors = []
+    state = normalize(scenario.get("verification_state"))
+    mismatched = {normalize(field) for field in scenario.get("mismatched_fields") or []}
+    decision = normalize(scenario.get("decision"))
+
+    if state != "persisted_but_mismatched":
+        return errors
+
+    if "report" not in decision and "surface" not in decision and "correction" not in decision:
+        errors.append("mismatched write must be reported, not silently accepted")
+    for phrase in ("retry", "store again", "rewrite", "repair", "overwrite"):
+        if phrase in decision and "not" not in decision:
+            errors.append(f"mismatched write must not {phrase} automatically")
+    if "verified" in decision or "done" in decision:
+        errors.append("a mismatched write must not be claimed as verified")
+    # Update cannot change category, project, or scope on the inspected server.
+    if mismatched & {"category", "project", "scope"} and "owner" not in decision:
+        errors.append("fields update cannot change need a named memory owner or admin action")
+
+    return errors
+
+
+def validate_ownership_block(scenario: dict) -> list[str]:
+    """A project-scope ownership refusal names the real actor; it never forks a copy."""
+
+    errors = []
+    if normalize(scenario.get("write_outcome")) != "rejected":
+        return errors
+    if normalize(scenario.get("reason")) != "access_denied":
+        return errors
+
+    decision = normalize(scenario.get("decision"))
+    if "owner" not in decision and "admin" not in decision:
+        errors.append("ownership denial must name the owner or admin who can correct it")
+    if "store" in decision or "duplicate" in decision or "new memory" in decision:
+        errors.append("ownership denial must not be worked around with a replacement memory")
+    if any(word in decision for word in ("content", "value", "text")) and "without" not in decision:
+        errors.append("ownership reporting must not quote memory content")
+
+    return errors
+
+
+def validate_compound_retrieval(scenario: dict) -> list[str]:
+    """One empty compound search is not proof a memory is absent."""
+
+    errors = []
+    if normalize(scenario.get("compound_result")) != "zero":
+        return errors
+
+    narrowed = bool(scenario.get("narrowed_same_filters"))
+    relaxed = bool(scenario.get("relaxed_filters"))
+    conclusion = normalize(scenario.get("conclusion"))
+
+    if not narrowed:
+        errors.append("compound-query zero must be re-probed with narrower same-filter topics")
+    if relaxed:
+        errors.append("filters must not be relaxed to obtain results")
+    if "does not exist" in conclusion or "no memory exists" in conclusion:
+        errors.append("compound-query zero is not evidence that the memory does not exist")
+    if scenario.get("narrow_found") and "retrieval" not in conclusion:
+        errors.append("a narrow hit after a compound miss is a retrieval gap, not an absent memory")
+
+    return errors
+
+
 CASES: list[dict] = [
     {
         "id": "KO-001",
@@ -380,6 +448,111 @@ CASES: list[dict] = [
         },
         "should_pass": False,
         "why": "Bulk memory work should not mutate Koda before a read-only audit.",
+    },
+    {
+        "id": "KO-016",
+        "name": "mismatched write is reported with a split correction path",
+        "validator": validate_mismatch_handling,
+        "payload": {
+            "verification_state": "persisted_but_mismatched",
+            "mismatched_fields": ["category", "tags"],
+            "decision": (
+                "report the mismatch by exact id, offer the correction command for tags, "
+                "and ask the memory owner or a Koda admin to fix category"
+            ),
+        },
+        "should_pass": True,
+        "why": "Update can fix tags but not category, so the operator needs both paths named.",
+    },
+    {
+        "id": "KO-017",
+        "name": "mismatched write retried automatically is rejected",
+        "validator": validate_mismatch_handling,
+        "payload": {
+            "verification_state": "persisted_but_mismatched",
+            "mismatched_fields": ["tags"],
+            "decision": "retry the store until the tags come back correct",
+        },
+        "should_pass": False,
+        "why": "A blind retry can duplicate a record that already persisted.",
+    },
+    {
+        "id": "KO-018",
+        "name": "mismatched write called verified is rejected",
+        "validator": validate_mismatch_handling,
+        "payload": {
+            "verification_state": "persisted_but_mismatched",
+            "mismatched_fields": ["category"],
+            "decision": "report it as verified and done because the write returned an id",
+        },
+        "should_pass": False,
+        "why": "An accepted write is not proof the stored metadata matches the request.",
+    },
+    {
+        "id": "KO-019",
+        "name": "project-scope ownership denial names the real actor",
+        "validator": validate_ownership_block,
+        "payload": {
+            "write_outcome": "rejected",
+            "reason": "access_denied",
+            "decision": "report that only the memory owner or a Koda admin can correct it by exact id",
+        },
+        "should_pass": True,
+        "why": "Project-scope memories owned by another creator cannot be corrected by this client.",
+    },
+    {
+        "id": "KO-020",
+        "name": "ownership denial worked around by a new memory is rejected",
+        "validator": validate_ownership_block,
+        "payload": {
+            "write_outcome": "rejected",
+            "reason": "access_denied",
+            "decision": "store a new memory with the corrected wording instead",
+        },
+        "should_pass": False,
+        "why": "Forking a duplicate hides the conflict and leaves the wrong memory active.",
+    },
+    {
+        "id": "KO-021",
+        "name": "compound-query zero is re-probed with the same filters",
+        "validator": validate_compound_retrieval,
+        "payload": {
+            "compound_result": "zero",
+            "narrowed_same_filters": True,
+            "relaxed_filters": False,
+            "narrow_found": True,
+            "conclusion": "the memory exists; compound retrieval is the weak link",
+        },
+        "should_pass": True,
+        "why": "Narrower same-filter probes separate a retrieval gap from a missing memory.",
+    },
+    {
+        "id": "KO-022",
+        "name": "compound-query zero read as absence is rejected",
+        "validator": validate_compound_retrieval,
+        "payload": {
+            "compound_result": "zero",
+            "narrowed_same_filters": False,
+            "relaxed_filters": False,
+            "narrow_found": False,
+            "conclusion": "no memory exists for this topic, so store a new one",
+        },
+        "should_pass": False,
+        "why": "One empty broad search is not evidence that no memory exists.",
+    },
+    {
+        "id": "KO-023",
+        "name": "relaxing filters to obtain results is rejected",
+        "validator": validate_compound_retrieval,
+        "payload": {
+            "compound_result": "zero",
+            "narrowed_same_filters": True,
+            "relaxed_filters": True,
+            "narrow_found": True,
+            "conclusion": "dropped the project tag until the retrieval returned something",
+        },
+        "should_pass": False,
+        "why": "Dropping project scope produces unrelated results and hides the real gap.",
     },
 ]
 

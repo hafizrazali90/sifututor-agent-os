@@ -7,10 +7,17 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from collections.abc import Callable
 
 STORE_FIELDS = frozenset({'content', 'category', 'why', 'tags', 'source', 'project', 'scope'})
 UPDATE_FIELDS = frozenset({'id', 'content', 'why', 'tags', 'source', 'confidence'})
+# Fields the inspected server accepts on store but not on update. A client
+# cannot correct these; only the memory owner or a Koda admin can.
+OWNER_ONLY_FIELDS = STORE_FIELDS - UPDATE_FIELDS
+CORRECTION_COMMAND = 'scripts/agent-checks/koda update'
+CORRECTION_ACTOR = 'memory owner or Koda admin'
+OWNERSHIP_BLOCK = 'project_scope_ownership'
 # Current UUID suffix and legacy sequential IDs; reject arbitrary provider text.
 MEMORY_ID = re.compile(r'mem_(?:[0-9]{4,12}|[a-f0-9]{12})\Z')
 
@@ -39,6 +46,25 @@ def payload(response):
     return None
 
 
+DENIAL_MARKERS = ('not owned', 'access denied', 'forbidden', 'unauthorized', 'permission denied')
+
+
+def denies_ownership(*values):
+    """Classify an ownership refusal. Inspects text; never returns or prints it."""
+
+    for value in values:
+        if isinstance(value, str):
+            if any(marker in value.lower() for marker in DENIAL_MARKERS):
+                return True
+        elif isinstance(value, list):
+            if denies_ownership(*value):
+                return True
+        elif isinstance(value, dict):
+            if denies_ownership(*value.values()):
+                return True
+    return False
+
+
 def invoke(call, name, arguments):
     try:
         response, error = call(name, arguments)
@@ -46,18 +72,37 @@ def invoke(call, name, arguments):
         return None, 'transport_unavailable'
     if error:
         # Inspect only to classify; never return the provider's text.
-        lowered = str(error).lower()
-        if any(word in lowered for word in ('not owned', 'access denied', 'forbidden', 'unauthorized')):
+        if denies_ownership(error):
             return None, 'access_denied'
         return None, 'transport_unavailable'
     if isinstance(response, dict) and (response.get('error') or
             isinstance(response.get('result'), dict) and response['result'].get('isError')):
-        return None, 'tool_rejected'
+        # The server also refuses project-scope edits inside the tool result itself.
+        return None, 'access_denied' if denies_ownership(response) else 'tool_rejected'
     value = payload(response)
     return value, '' if value is not None else 'malformed_response'
 
 
-def result(state, outcome, record_id=None, *, reason=None, mismatched=(), unavailable=(), duplicate=False):
+def correction_plan(mismatched=(), *, blocked=False):
+    """Name the safe operator path. Field names only; never values, never a repair."""
+
+    fields = sorted(mismatched)
+    plan = {'automatic_repair': 'never',
+            'correctable_by_update': [f for f in fields if f in UPDATE_FIELDS - {'id'}],
+            'owner_action_required': [f for f in fields if f in OWNER_ONLY_FIELDS]}
+    if plan['correctable_by_update'] and not blocked:
+        plan['command'] = CORRECTION_COMMAND
+    if blocked:
+        plan['blocked_by'] = OWNERSHIP_BLOCK
+    if plan['owner_action_required'] or blocked:
+        plan['actor'] = CORRECTION_ACTOR
+        plan['action'] = ('Ask the owning creator or a Koda admin to correct the named fields '
+                          'by exact ID; this client cannot change them.')
+    return plan
+
+
+def result(state, outcome, record_id=None, *, reason=None, mismatched=(), unavailable=(),
+           duplicate=False, tag_delta=None, correction=None):
     value = {'status': 'skipped_exact_duplicate' if duplicate else outcome,
              'write_outcome': outcome,
              'verification': {'state': state}}
@@ -69,8 +114,12 @@ def result(state, outcome, record_id=None, *, reason=None, mismatched=(), unavai
         value['verification']['reason'] = reason
     if mismatched:
         value['verification']['mismatched_fields'] = sorted(mismatched)
+    if tag_delta:
+        value['verification']['tag_delta'] = tag_delta
     if unavailable:
         value['verification']['unavailable_fields'] = sorted(unavailable)
+    if correction:
+        value['correction'] = correction
     if state != 'verified':
         value['next'] = 'Reconcile by exact ID when available; do not blindly retry or repair.'
     return value, 0 if state == 'verified' else 1
@@ -85,7 +134,7 @@ def verify(arguments, record_id, call, outcome, duplicate=False):
     if error or not isinstance(record, dict) or record.get('id') != record_id:
         return result('verification_unavailable', outcome, record_id,
                       reason=error or 'readback_identity_missing_or_different', duplicate=duplicate)
-    mismatched, unavailable = [], []
+    mismatched, unavailable, tag_delta = [], [], None
     for field, expected in arguments.items():
         if field == 'id':
             continue
@@ -93,14 +142,21 @@ def verify(arguments, record_id, call, outcome, duplicate=False):
             unavailable.append(field)
         elif field == 'tags':
             actual = record[field]
-            if not isinstance(actual, list) or not all(isinstance(t, str) for t in actual) or set(actual) != set(expected):
+            if not isinstance(actual, list) or not all(isinstance(t, str) for t in actual):
                 mismatched.append(field)
+            elif set(actual) != set(expected):
+                mismatched.append(field)
+                # Counts only: a dropped requested tag and an added server tag
+                # need different correction decisions, but neither value is safe to echo.
+                tag_delta = {'missing': len(set(expected) - set(actual)),
+                             'unexpected': len(set(actual) - set(expected))}
         elif record[field] != expected:
             mismatched.append(field)
     state = ('persisted_but_mismatched' if mismatched else
              'verification_unavailable' if unavailable else 'verified')
     return result(state, outcome, record_id, mismatched=mismatched,
-                  unavailable=unavailable, duplicate=duplicate)
+                  unavailable=unavailable, duplicate=duplicate, tag_delta=tag_delta,
+                  correction=correction_plan(mismatched) if mismatched else None)
 
 
 def verified_write(tool, arguments, call: Callable):
@@ -142,7 +198,8 @@ def verified_write(tool, arguments, call: Callable):
     if error:
         return result('verification_unavailable',
                       'rejected' if error in {'access_denied', 'tool_rejected'} else 'unknown',
-                      safe_id(arguments.get('id')), reason=error)
+                      safe_id(arguments.get('id')), reason=error,
+                      correction=correction_plan(blocked=True) if error == 'access_denied' else None)
     if not isinstance(written, dict):
         return result('verification_unavailable', 'unknown', safe_id(arguments.get('id')), reason='malformed_response')
     record_id = safe_id(written.get('id'))
@@ -169,6 +226,66 @@ def verified_write(tool, arguments, call: Callable):
     return answer, code
 
 
+VERIFICATION_STATES = ('verified', 'persisted_but_mismatched', 'verification_unavailable')
+
+
+def correction_report(value):
+    """Explain a verification result offline. Reads only known keys, echoes no free text."""
+
+    verification = value.get('verification') if isinstance(value, dict) else None
+    if not isinstance(verification, dict) or verification.get('state') not in VERIFICATION_STATES:
+        return ['correction: unreadable verification result'], 2
+    state = verification['state']
+    supplied = value.get('id') or value.get('existing_id')
+    record_id = safe_id(value.get('id')) or safe_id(value.get('existing_id'))
+    if supplied and not record_id:
+        # An unsafe identifier means this is not a trustworthy sanitized result.
+        return ['correction: unreadable verification result'], 2
+    lines = [f'state: {state}']
+    if record_id:
+        lines.append(f'id: {record_id}')
+    if state == 'verified':
+        lines.append('action: none; the supplied supported fields matched at readback time')
+        return lines, 0
+
+    known = STORE_FIELDS | UPDATE_FIELDS
+    mismatched = [f for f in verification.get('mismatched_fields') or [] if f in known]
+    unavailable = [f for f in verification.get('unavailable_fields') or [] if f in known]
+    plan = value.get('correction') if isinstance(value.get('correction'), dict) else {}
+    correctable = [f for f in plan.get('correctable_by_update') or [] if f in known]
+    owner_only = [f for f in plan.get('owner_action_required') or [] if f in known]
+
+    if mismatched:
+        lines.append('mismatched fields: ' + ', '.join(mismatched))
+    if unavailable:
+        lines.append('unverifiable fields: ' + ', '.join(unavailable))
+    if plan.get('blocked_by') == OWNERSHIP_BLOCK:
+        lines.append(f'blocked by: {OWNERSHIP_BLOCK}')
+    lines.append('automatic repair: never; no retry, retag, or overwrite is performed')
+    if correctable:
+        lines.append('correct with: ' + CORRECTION_COMMAND
+                     + ' (resend the same requested values for: ' + ', '.join(correctable) + ')')
+    if owner_only or plan.get('blocked_by'):
+        lines.append(f'owner action: ask the {CORRECTION_ACTOR} to correct by exact ID'
+                     + (' (' + ', '.join(owner_only) + ')' if owner_only else ''))
+    if not correctable and not owner_only and not plan.get('blocked_by'):
+        lines.append('next: re-check by exact ID when Koda is reachable; do not rewrite blindly')
+    return lines, 1
+
+
+def correction_cli(raw):
+    """Offline operator entry point: no transport, no credentials, no writes."""
+
+    try:
+        value = json.loads(raw)
+    except (ValueError, TypeError):
+        value = None
+    lines, code = correction_report(value)
+    for line in lines:
+        print(line)
+    return code
+
+
 def write_cli(tool, arguments, initialize, tool_call):
     """Shared CLI adapter: use existing credentials/transport, sanitize all errors."""
     try:
@@ -186,3 +303,16 @@ def write_cli(tool, arguments, initialize, tool_call):
         answer, code = verified_write(tool, arguments, call)
     print(json.dumps(answer, sort_keys=True))
     return code
+
+
+def main(argv):
+    """Offline correction explainer. The write paths keep their own entry points."""
+
+    if len(argv) == 2 and argv[0] == '--correction-json':
+        return correction_cli(sys.stdin.read() if argv[1] == '-' else argv[1])
+    print("Usage: koda_write.py --correction-json '<verification-result-json>'|-", file=sys.stderr)
+    return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))

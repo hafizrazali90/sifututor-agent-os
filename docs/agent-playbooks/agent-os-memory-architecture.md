@@ -304,6 +304,50 @@ are read back too and labeled existing records.
 
 Only safe result metadata is returned: canonical ID, duplicate status, boolean
 processing/embedding flags, supported updated-field names, verification state,
-and mismatched/unavailable field names. Free-form message/warning text and
-similar-memory bodies are intentionally omitted. Consumers requiring those
-provider strings must migrate to the explicit verification/write outcome.
+mismatched/unavailable field names, tag-delta counts, and the correction plan.
+Free-form message/warning text and similar-memory bodies are intentionally
+omitted. Consumers requiring those provider strings must migrate to the
+explicit verification/write outcome.
+
+## Correction ownership boundary
+
+The client states what it cannot do rather than working around it.
+
+`correction.correctable_by_update` lists mismatched fields the update contract
+supports. `correction.owner_action_required` lists mismatched fields the
+inspected server accepts only on store (`category`, `project`, `scope`), so no
+client call can change them on an existing record. `correction.automatic_repair`
+is always `never`.
+
+An ownership refusal is classified from the transport error **and** from an
+error-flagged tool result, because the server's project-scope guard refuses
+edits to another creator's memory inside the tool result itself. Classification
+reads the text; it never returns or prints it. The result is
+`write_outcome: rejected` with `correction.blocked_by: project_scope_ownership`
+and the named actor. No replacement memory is written, no retry is issued, and
+no field values are echoed.
+
+`scripts/agent-checks/koda correction` renders a stored verification result
+offline. It parses only known keys, rejects an unsafe or provider-shaped
+identifier instead of echoing it, and holds no transport or credentials.
+
+## Retrieval attribution boundary
+
+Compound multi-topic retrieval is weaker than narrow retrieval on the current
+server. The retrieval-quality runner therefore probes narrower individual
+topics with byte-identical filters after a compound miss and labels the result
+`retrieved`, `upstream_compound_query_gap`, `not_retrievable`, or
+`client_filter_relaxation`.
+
+Three boundaries hold: filters are never relaxed, a diagnosed miss never
+becomes a pass, and `not_retrievable` is never reported as proof that the
+memory does not exist. `--self-test` proves all four attributions offline with
+no Koda call.
+
+This gap also bounds the store preflight. One compound content search can miss
+an existing record, so the preflight remains best-effort rather than an
+idempotency guarantee.
+
+The setup verifier now reads its own confirmation memory back by exact ID and
+reports `verified`, `mismatched: <fields>`, or `unverified`. A reachable Koda
+is still a pass; the narrower claim is only about stored metadata.
