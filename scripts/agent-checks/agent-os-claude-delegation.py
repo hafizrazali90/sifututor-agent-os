@@ -57,6 +57,18 @@ SETUP_MARKERS = (
     "mcp server requires",
     "press enter to continue",
 )
+DIAGNOSTIC_MARKERS = {
+    "nested_session": ("cannot be launched inside another claude", "nested claude"),
+    "usage_limit": ("usage limit", "rate limit", "resets at"),
+    "authentication": ("authentication required", "not logged in", "please log in"),
+    "permission": ("permission denied", "permission mode", "not permitted"),
+    "hook_failure": ("hook error", "hook failed", "blocked by hook"),
+    "invalid_arguments": ("invalid argument", "unknown option", "invalid choice"),
+    "input_too_long": ("prompt is too long", "request too large", "input length", "too many tokens"),
+    "invalid_request": ("invalid request", "invalid_request_error", "bad request"),
+}
+CLAUDE_MODEL_VALUE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+SAFE_DIAGNOSTIC_VALUE = re.compile(r"[A-Za-z0-9_.:-]{1,80}")
 CLAUDE_BILLING_OVERRIDE_ENV = {
     "ANTHROPIC_API_KEY",
     "ANTHROPIC_AUTH_TOKEN",
@@ -349,6 +361,43 @@ def command_check(args: Any) -> dict[str, Any]:
     return {"state": "ready", "mode": "non-interactive stream-json"}
 
 
+def model_selection_check(args: Any) -> dict[str, Any]:
+    """Require the job file to name the Claude model explicitly.
+
+    A job that inherited the workspace `opusplan` selection reached Anthropic
+    and came back HTTP 400 before a single token was billed, while an
+    otherwise identical `--model opus` job ran normally. The runner therefore
+    refuses to launch a job whose model is implicit, and it never picks a
+    model itself: the job contract has to say which alias it wants.
+    """
+    blocked = {
+        "state": "blocked",
+        "explicit_model_selected": False,
+        "reason": (
+            "claude_args does not select a Claude model explicitly; an inherited workspace "
+            "model selection can fail at the API before any usage is recorded"
+        ),
+        "required_action": (
+            "add an explicit --model <alias> pair, or --model=<alias>, to claude_args and copy "
+            "the currently proven alias from docs/agent-playbooks/templates/claude-delegation-job.json"
+        ),
+    }
+    if not isinstance(args, list) or not all(isinstance(item, str) for item in args):
+        return blocked
+    selected: str | None = None
+    for index, item in enumerate(args):
+        if item == "--model":
+            selected = args[index + 1] if index + 1 < len(args) else None
+        elif item.startswith("--model="):
+            selected = item.split("=", 1)[1]
+        else:
+            continue
+        break
+    if selected is None or not CLAUDE_MODEL_VALUE.fullmatch(selected):
+        return blocked
+    return {"state": "ready", "explicit_model_selected": True, "model": selected}
+
+
 def boundary_check(job: dict[str, Any]) -> dict[str, Any]:
     stop_point = str(job.get("approved_stop_point", "")).lower()
     blocked_terms = ("merge", "deploy", "production", "live checked", "monitor")
@@ -603,6 +652,7 @@ def preflight(job: dict[str, Any]) -> dict[str, Any]:
         "lane": lane,
         "boundary": boundary_check(job),
         "command": command,
+        "model_selection": model_selection_check(job["claude_args"]),
         "files": files,
     }
     blocking_states = {"failed", "blocked", "busy"}
@@ -629,9 +679,87 @@ def numeric_usage(payload: Any, totals: dict[str, float]) -> None:
             numeric_usage(item, totals)
 
 
-def event_metadata(line: str, stream: str, usage: dict[str, float]) -> tuple[str, str | None]:
+def _diagnostic_category(value: Any) -> str | None:
+    """Classify known terminal failures without persisting raw worker text."""
+    if isinstance(value, str):
+        lowered = value.lower()
+        for category, markers in DIAGNOSTIC_MARKERS.items():
+            if any(marker in lowered for marker in markers):
+                return category
+    elif isinstance(value, dict):
+        for child in value.values():
+            category = _diagnostic_category(child)
+            if category:
+                return category
+    elif isinstance(value, list):
+        for child in value:
+            category = _diagnostic_category(child)
+            if category:
+                return category
+    return None
+
+
+def _safe_diagnostic_enum(value: Any) -> str | int | bool | None:
+    """Accept only bounded scalars, so no free-form worker text can be stored."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and SAFE_DIAGNOSTIC_VALUE.fullmatch(value):
+        return value
+    return None
+
+
+def _is_error_signal(payload: dict[str, Any]) -> bool:
+    """Classify only error-shaped events.
+
+    Ordinary assistant prose routinely contains phrases like `permission
+    denied`, and a successful 19-turn run was previously mislabelled from its
+    own text. Category detection therefore runs on failure payloads only.
+    """
+    if payload.get("is_error") is True:
+        return True
+    if payload.get("api_error_status") is not None:
+        return True
+    for key in ("type", "subtype", "terminal_reason", "stop_reason"):
+        value = payload.get(key)
+        if isinstance(value, str) and "error" in value.lower():
+            return True
+    return False
+
+
+def new_terminal_diagnostic() -> dict[str, Any]:
+    """Fixed, metadata-only shape for the worker's terminal outcome."""
+    return {
+        "result_seen": False,
+        "result_subtype": None,
+        "result_is_error": None,
+        "result_turns": None,
+        "api_error_status": None,
+        "terminal_reason": None,
+        "stop_reason": None,
+        "fast_mode_state": None,
+        "fast_mode_disabled_reason": None,
+        "permission_denial_count": None,
+        "category": None,
+        "stderr_lines": 0,
+        "raw_worker_output_stored": False,
+    }
+
+
+def event_metadata(
+    line: str,
+    stream: str,
+    usage: dict[str, float],
+    diagnostic: dict[str, Any] | None = None,
+) -> tuple[str, str | None]:
     if stream == "stderr":
         lower = line.lower()
+        if diagnostic is not None:
+            diagnostic["stderr_lines"] = int(diagnostic.get("stderr_lines", 0)) + 1
+            category = _diagnostic_category(lower)
+            if category:
+                diagnostic["category"] = category
         if any(marker in lower for marker in SETUP_MARKERS):
             return "setup_prompt", None
         return "stderr", None
@@ -644,6 +772,29 @@ def event_metadata(line: str, stream: str, usage: dict[str, float]) -> tuple[str
         return "non_json", None
     event_type = str(payload.get("type", "json")) if isinstance(payload, dict) else "json"
     subtype = str(payload.get("subtype")) if isinstance(payload, dict) and payload.get("subtype") else None
+    if diagnostic is not None and isinstance(payload, dict):
+        if _is_error_signal(payload):
+            category = _diagnostic_category(payload)
+            if category:
+                diagnostic["category"] = category
+        if event_type == "result":
+            diagnostic["result_seen"] = True
+            diagnostic["result_subtype"] = _safe_diagnostic_enum(subtype)
+            is_error = payload.get("is_error")
+            diagnostic["result_is_error"] = is_error if isinstance(is_error, bool) else None
+            turns = payload.get("num_turns")
+            diagnostic["result_turns"] = turns if isinstance(turns, int) and not isinstance(turns, bool) else None
+            for field in (
+                "api_error_status",
+                "terminal_reason",
+                "stop_reason",
+                "fast_mode_state",
+                "fast_mode_disabled_reason",
+            ):
+                diagnostic[field] = _safe_diagnostic_enum(payload.get(field))
+            denials = payload.get("permission_denials")
+            if isinstance(denials, list):
+                diagnostic["permission_denial_count"] = len(denials)
     if event_type == "result":
         usage.clear()
         numeric_usage(payload, usage)
@@ -736,25 +887,69 @@ def handback_contract(path: Path, job: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def diagnostic_text(diagnostic: dict[str, Any], key: str) -> str:
+    """Render one safe diagnostic value; absent stays explicitly unavailable."""
+    value = diagnostic.get(key)
+    if value is None:
+        return "unavailable"
+    if isinstance(value, bool):
+        return str(value).lower()
+    return str(value)
+
+
 def render_evidence_markdown(evidence: dict[str, Any]) -> str:
     usage = evidence["usage"]
+    diagnostic = evidence.get("terminal_diagnostic") or {}
+    exit_code = evidence["worker_exit_code"]
+    worker_failed = exit_code != 0 or diagnostic.get("result_is_error") is True
     lines = [
         f"# Claude Delegation Evidence — {evidence['job_id']}",
         "",
-        f"- Final state: `{evidence['final_state']}`",
-        f"- Worker exit code: `{evidence['worker_exit_code']}`",
-        f"- Worktree: `{evidence['worktree']['path']}`",
-        f"- Branch: `{evidence['worktree']['end'].get('branch')}`",
-        f"- Approved stop point: `{evidence['approved_stop_point']}`",
-        f"- Stall detected: `{str(evidence['liveness']['stall_detected']).lower()}`",
-        f"- Maximum quiet time: `{evidence['liveness']['max_quiet_seconds']:.2f}s`",
-        f"- Handback present: `{str(evidence['handback']['exists']).lower()}`",
-        f"- Usage: `{usage['state']}`",
-        "",
-        "Raw Claude stream content is intentionally not stored in this evidence.",
-        "Independent Codex review and all original approval gates still apply.",
-        "",
     ]
+    if worker_failed:
+        lines.extend(
+            [
+                f"**Worker failed.** Exit code `{exit_code}`, "
+                f"`result_is_error={diagnostic_text(diagnostic, 'result_is_error')}`, "
+                f"`api_error_status={diagnostic_text(diagnostic, 'api_error_status')}`, "
+                f"terminal reason `{diagnostic_text(diagnostic, 'terminal_reason')}`.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            f"- Final state: `{evidence['final_state']}`",
+            f"- Worker exit code: `{exit_code}`",
+            f"- Model selected: `{evidence.get('model_selected') or 'unavailable'}`",
+            f"- Worktree: `{evidence['worktree']['path']}`",
+            f"- Branch: `{evidence['worktree']['end'].get('branch')}`",
+            f"- Approved stop point: `{evidence['approved_stop_point']}`",
+            f"- Stall detected: `{str(evidence['liveness']['stall_detected']).lower()}`",
+            f"- Maximum quiet time: `{evidence['liveness']['max_quiet_seconds']:.2f}s`",
+            f"- Handback present: `{str(evidence['handback']['exists']).lower()}`",
+            f"- Usage: `{usage['state']}`",
+            "",
+            "## Terminal Diagnostic",
+            "",
+            f"- Result event seen: `{diagnostic_text(diagnostic, 'result_seen')}`",
+            f"- Result reported error: `{diagnostic_text(diagnostic, 'result_is_error')}`",
+            f"- API error status: `{diagnostic_text(diagnostic, 'api_error_status')}`",
+            f"- Terminal reason: `{diagnostic_text(diagnostic, 'terminal_reason')}`",
+            f"- Stop reason: `{diagnostic_text(diagnostic, 'stop_reason')}`",
+            f"- Result subtype: `{diagnostic_text(diagnostic, 'result_subtype')}`",
+            f"- Turns: `{diagnostic_text(diagnostic, 'result_turns')}`",
+            f"- Permission denials: `{diagnostic_text(diagnostic, 'permission_denial_count')}`",
+            f"- Known failure category: `{diagnostic_text(diagnostic, 'category')}`",
+            f"- Stderr lines: `{diagnostic_text(diagnostic, 'stderr_lines')}`",
+            f"- Fast mode: `{diagnostic_text(diagnostic, 'fast_mode_state')}` "
+            f"(`{diagnostic_text(diagnostic, 'fast_mode_disabled_reason')}`)",
+            "",
+            "These are bounded diagnostic values only. Raw Claude stream content, result text,",
+            "prompts, stderr, and identities are intentionally not stored in this evidence.",
+            "Independent Codex review and all original approval gates still apply.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -777,6 +972,7 @@ def run_job(job: dict[str, Any]) -> int:
     transitions: list[dict[str, Any]] = []
     event_counts: Counter[str] = Counter()
     usage: dict[str, float] = {}
+    terminal_diagnostic: dict[str, Any] = new_terminal_diagnostic()
     state = "starting"
     worker_pid: int | None = None
     last_worker_event_at = started_at
@@ -858,7 +1054,7 @@ def run_job(job: dict[str, Any]) -> int:
                 now = time.monotonic()
                 last_output_monotonic = now
                 last_worker_event_at = utc_now()
-                kind, subtype = event_metadata(line, key.data, usage)
+                kind, subtype = event_metadata(line, key.data, usage, terminal_diagnostic)
                 event_counts[kind] += 1
                 if subtype:
                     event_counts[f"{kind}:{subtype}"] += 1
@@ -934,6 +1130,8 @@ def run_job(job: dict[str, Any]) -> int:
             "brief": brief_digest(brief),
             "handback": handback_info,
             "worker_outcome": "finished" if returncode == 0 else "failed",
+            "model_selected": preflight_result["checks"].get("model_selection", {}).get("model"),
+            "terminal_diagnostic": terminal_diagnostic,
             "return_contract": return_contract,
             "state_transitions": transitions,
             "liveness": {
