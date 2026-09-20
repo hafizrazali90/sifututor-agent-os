@@ -65,6 +65,61 @@ Two active code tasks that may edit the same repo should not share one dirty
 workspace.
 ```
 
+## Launch The Session Inside The Worktree
+
+Creating the worktree is only half the move. For any session that will run
+commands in it, start the session inside that worktree:
+
+```bash
+cd <worktree> && claude
+```
+
+Why this matters:
+
+- Claude binds `CLAUDE_PROJECT_DIR` and the loaded hook configuration at launch.
+- A session launched in the umbrella keeps the umbrella project directory even
+  after the conversation moves into a sub-project worktree, so project hooks
+  configured as `cd "$CLAUDE_PROJECT_DIR" && python3 .claude/hooks/<hook>.py`
+  look in the umbrella for a sub-project-only script.
+- A missing `PreToolUse` script exits 2, which Claude reads as a hard block, so
+  every Bash call in the session is cancelled.
+- Hook configuration is effectively fixed for the running session. Editing
+  settings after the session has started does not repair that session; only a
+  new session picks the change up.
+
+The umbrella now ships dispatcher wrappers for `quality-gate.py` and
+`workflow-gate.py` so an umbrella-launched session survives instead of losing
+every Bash call. Treat that as defense in depth, not as permission to skip this
+rule: the wrappers cover those two gates, not every project hook. See
+[agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md).
+
+Staying in the umbrella is still fine for discussion, reading, and light docs
+work that does not depend on a sub-project's own gates.
+
+### Local Hook Settings Add, They Do Not Replace
+
+Reported during issue 96: a `.claude/settings.local.json` hook entry merges with
+the tracked hook array rather than replacing it. The local entry adds another
+hook; it does not disable or override the tracked command.
+
+Practical consequence:
+
+```text
+A broken tracked hook cannot be worked around with a local override.
+Fix the tracked hook, or launch the session where the tracked hook resolves.
+```
+
+Evidence status, stated plainly:
+
+- The merge behavior above comes from the issue-96 session report. It is not
+  independently re-tested here and it is not a documented vendor guarantee.
+- No `.claude/settings.local.json` in this workspace configures hooks today;
+  the local files carry `permissions` and MCP toggles only. So the repo cannot
+  currently confirm or contradict the reported behavior.
+
+Re-verify before relying on this. Do not design a workaround that assumes a
+local file can disable a tracked hook.
+
 ## Recommended Workspace Choice
 
 | Situation | Workspace recommendation |

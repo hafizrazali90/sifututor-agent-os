@@ -158,6 +158,107 @@ Use this mental model:
 | Push, deploy, merge, PR | `$review` first, then explicit approval |
 | Brainstorm, PRD, UX spec, build prompts, major redesign | `$product-design` |
 
+## Claude Project Hook Resolution
+
+The Codex hook layer above is one dispatcher. Claude has a second, smaller one
+with a different job: finding the right *project* hook when a session was not
+launched inside that project.
+
+### The problem it solves
+
+Sub-project settings run their gates like this:
+
+```text
+cd "$CLAUDE_PROJECT_DIR" && python3 .claude/hooks/quality-gate.py
+```
+
+A session launched from the umbrella workspace keeps the umbrella
+`CLAUDE_PROJECT_DIR` even after the work moves into a sub-project worktree. The
+command then looks for a sub-project-only script inside the umbrella. `python3`
+exits 2 for a missing file, and a `PreToolUse` exit 2 cancels every Bash call,
+so the session looks broken for reasons that have nothing to do with the gate.
+
+### Owner
+
+One shared implementation, two thin wrappers:
+
+```text
+scripts/agent-checks/claude_hook_dispatch.py   <- all behavior
+.claude/hooks/quality-gate.py                  <- wrapper
+.claude/hooks/workflow-gate.py                 <- wrapper
+```
+
+The wrappers only name their hook and hand over. Change behavior in the shared
+module, never in a wrapper.
+
+### What the dispatcher does
+
+1. Reads the hook payload from stdin once.
+2. Takes `cwd` from the payload. Only an absolute path to an existing directory
+   is accepted; a relative or malformed value is refused rather than resolved
+   against the process directory.
+3. Walks upward from that directory for the nearest real
+   `.claude/hooks/<hook name>`. The walk stops at the owning repository or
+   worktree root, at the filesystem root, or after a fixed depth, so one project
+   can never borrow another project's gate.
+4. Skips any candidate that is a dispatcher wrapper itself, including this file,
+   so the dispatcher cannot call itself. An environment re-entry guard backs
+   this up.
+5. Runs the real hook with the project/worktree as cwd and forwards the exact
+   stdin bytes.
+
+### The two outcomes must stay separate
+
+This is the part that is easy to get wrong:
+
+| Situation | Behavior |
+| --- | --- |
+| No applicable project hook exists | Metadata-only warning on stderr, exit 0. |
+| The real hook ran | Its stdout, stderr, and exit code pass through unchanged. |
+| The real hook timed out or could not start | Error exit, never a pass. |
+
+Never collapse these into one branch. A pattern like:
+
+```text
+[ -f gate.py ] && python3 gate.py || exit 0
+```
+
+turns a genuine gate rejection into a success, which is worse than the bug it
+appears to fix. Missing infrastructure and a real rejection are different
+answers and must stay different code paths.
+
+Warnings are metadata-only on purpose: no command content, no payload body, no
+filesystem paths.
+
+### Scope
+
+The dispatcher owns `quality-gate.py` and `workflow-gate.py`, the two
+sub-project gates that run on `PreToolUse`. Other project hooks
+(`session-start.py`, `memory-flush.py`, project-local shell hooks) still resolve
+only for a session launched inside that project. Those gaps degrade a single
+event rather than cancelling tool calls, so the readiness check reports them
+without failing.
+
+### Readiness check
+
+```bash
+python3 scripts/agent-checks/claude_hook_dispatch.py
+python3 scripts/agent-checks/claude_hook_dispatch.py --root <workspace> --json
+```
+
+`agent-os-adapter-readiness.py` owns this as `CL-052` (dispatcher fixtures) and
+`CL-053`/`CL-054` (configured hook paths that cannot resolve for the current
+launch scenario). `CL-053` fails; `CL-054` reports the non-blocking residue.
+`agent-os-health.sh` runs the readiness script, so the fixtures execute once in
+the normal sweep rather than twice.
+
+### Defense in depth, not a substitute
+
+The wrappers make an umbrella-launched session survive. They do not make it
+equivalent to a session launched inside the worktree. For heavy command work,
+launch the session inside the intended worktree; see
+[parallel-work-and-worktrees.md](parallel-work-and-worktrees.md).
+
 ## Short Replies
 
 Short replies depend on visible conversation context.
@@ -261,6 +362,12 @@ scripts/agent-checks/agent-os-eval-runner.py
 scripts/agent-checks/agent-os-response-shape-runner.py
 scripts/agent-checks/agent-os-adapter-readiness.py
 scripts/agent-checks/workflow-doctor.sh
+```
+
+After a change to the Claude project hook dispatcher, run its fixtures first:
+
+```bash
+python3 -m unittest discover -s scripts/agent-checks -p 'test_claude_hook_dispatch.py'
 ```
 
 `workflow-doctor.sh` owns the full completion sweep and runs
