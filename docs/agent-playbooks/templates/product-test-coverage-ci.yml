@@ -1,0 +1,102 @@
+# Product repository CI template — shared test-coverage enforcement
+#
+# THIS FILE IS A TEMPLATE. It lives under docs/ on purpose so GitHub never runs
+# it from the Agent OS repository. Installing it is a separate, reviewed change
+# inside the product repository.
+#
+# Why it exists (issue 2, CP-11): the shared guard proves coverage honesty on
+# the machine that makes the commit. That is enough for a local gate and it is
+# not enough for a release. `sifu-tutor` has no `.github/workflows` directory at
+# all, so nothing re-checks the claim on a clean checkout before merge. This
+# template closes that gap without inventing product CI inside the Agent OS.
+#
+# ── Install steps (product repository, one reviewed PR) ───────────────────────
+#
+#   1. Copy this file to `.github/workflows/test-coverage.yml` in the product
+#      repository. Do not copy it into the Agent OS repository.
+#   2. Create a repository secret `AGENT_OS_READ_TOKEN`: a fine-grained PAT with
+#      Contents: Read on `hafizrazali90/sifututor-agent-os` only. The Agent OS
+#      repository is private, so the default GITHUB_TOKEN cannot read it.
+#   3. Confirm the project has a `TESTING.md` at its root. Without one the job
+#      reports UNAVAILABLE and fails the release gate by design — that is the
+#      honest answer, not a pass.
+#   4. Merge, then run once on a no-op PR to see the baseline before making the
+#      check required.
+#
+# ── The decision Hafiz owns ──────────────────────────────────────────────────
+#
+#   `release-gate` fails a pull request whose touched manifest rows are not
+#   covered, not formally excused, or not explicitly not-user-facing. Make it a
+#   required status check only after the baseline run is read. Until then it
+#   runs and reports without blocking merges.
+#
+#   A named exception is Hafiz's call, recorded in TESTING.md as:
+#     Exception, reason: destructive workflow, approved by Hafiz on YYYY-MM-DD
+#   Allowed reasons are fixed by the shared playbook. The builder cannot invent
+#   a new one; an unlisted reason fails the gate.
+
+name: Test coverage
+
+on:
+  pull_request:
+    branches: [main, sifu-staging, sifu-backport, staging, integration]
+
+permissions:
+  contents: read
+
+jobs:
+  release-gate:
+    name: TESTING.md release gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the product repository
+        uses: actions/checkout@v4
+        with:
+          # The gate compares the pull request against its base, so it needs
+          # more than a shallow clone.
+          fetch-depth: 0
+
+      - name: Check out the shared Agent OS
+        uses: actions/checkout@v4
+        with:
+          repository: hafizrazali90/sifututor-agent-os
+          token: ${{ secrets.AGENT_OS_READ_TOKEN }}
+          path: .agent-os-shared
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Report every manifest row
+        # Non-blocking inventory. It shows the whole coverage picture on a clean
+        # checkout, which is the picture a dirty local working tree cannot give.
+        continue-on-error: true
+        run: |
+          python3 .agent-os-shared/scripts/agent-checks/coverage_enforcement.py \
+            --project . --mode manifest
+
+      - name: Enforce coverage honesty for the changed rows
+        # Blocking. A row this pull request touches may not claim a test that is
+        # absent, empty, comments only, or weaker than the evidence it declares.
+        run: |
+          python3 .agent-os-shared/scripts/agent-checks/coverage_enforcement.py \
+            --project . --mode change --base "origin/${{ github.base_ref }}"
+
+      - name: Require release proof for the changed rows
+        # Blocking once this check is made required. Every touched row must be
+        # covered, carry a named approved exception, or be an explicit
+        # not-user-facing decision.
+        run: |
+          python3 .agent-os-shared/scripts/agent-checks/coverage_enforcement.py \
+            --project . --mode release --base "origin/${{ github.base_ref }}" \
+            --json | tee coverage-release-report.json
+
+      - name: Keep the report as a build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-release-report
+          path: coverage-release-report.json
+          if-no-files-found: ignore

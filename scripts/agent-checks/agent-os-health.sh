@@ -125,6 +125,11 @@ check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-p
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
 check_file "Agent OS today snapshot" "$ROOT/scripts/agent-checks/agent-os-today-snapshot.py"
 check_file "Agent OS today fixtures" "$ROOT/scripts/agent-checks/test_agent_os_today_snapshot.py"
+check_file "coverage enforcement" "$ROOT/scripts/agent-checks/coverage_enforcement.py"
+check_file "coverage enforcement fixtures" "$ROOT/scripts/agent-checks/test_coverage_enforcement.py"
+check_file "coverage manifest check" "$ROOT/scripts/agent-checks/test-coverage-manifest-check.py"
+check_file "test coverage playbook" "$ROOT/docs/agent-playbooks/test-coverage.md"
+check_file "product coverage CI template" "$ROOT/docs/agent-playbooks/templates/product-test-coverage-ci.yml"
 check_file "project registry check" "$ROOT/scripts/agent-checks/agent-os-project-registry-check.py"
 check_file "project registry fixtures" "$ROOT/scripts/agent-checks/test_agent_os_project_registry.py"
 check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os-production-logs-probe.py"
@@ -391,6 +396,15 @@ else
   sed -n '1,8p' $TMP_DIR/project-registry-tests.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/project-registry-tests.out $TMP_DIR/project-registry-tests.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_coverage_enforcement.py' >$TMP_DIR/coverage-enforcement.out 2>$TMP_DIR/coverage-enforcement.err; then
+  pass "test coverage enforcement" "manifest, change, release, bypass and containment fixtures passed"
+else
+  fail "test coverage enforcement" "coverage enforcement regression tests failed"
+  sed -n '1,12p' $TMP_DIR/coverage-enforcement.out 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/coverage-enforcement.err 2>/dev/null || true
+fi
+rm -f "$TMP_DIR/coverage-enforcement.out" "$TMP_DIR/coverage-enforcement.err"
 
 if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_task_context.py' >$TMP_DIR/task-context.out 2>$TMP_DIR/task-context.err; then
   pass "Agent OS task context" "session isolation, approval transfer and controlled continuation passed"

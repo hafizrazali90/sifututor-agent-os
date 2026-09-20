@@ -14,6 +14,12 @@ accumulate across sessions.
 
 Stack-agnostic — works for Laravel, React Native, Next.js, React SPA projects.
 
+NOT the source of truth. This is a Claude-only convenience nudge at push time.
+The model-agnostic rules live in scripts/agent-checks/coverage_enforcement.py
+and run for every agent through scripts/agent-checks/pre-commit-guard.sh. When
+this hook and the shared engine disagree, the shared engine is right; see
+docs/agent-playbooks/test-coverage.md. Do not add new coverage rules here.
+
 TESTING.md manifest table format expected (any columns in this order):
   | Feature / User Story | Source Files | Test File(s) | Type | Status |
   |---|---|---|---|---|
