@@ -39,6 +39,19 @@ reported symptom.
 | `feature` | Happy path, important edge cases, and route smoke |
 | `refactor` | Existing behavior tests plus one targeted check around touched code |
 
+## Security Check Boundary
+
+Normal QA includes task-scoped security evidence when the changed surface
+needs it: authorization boundaries, input validation, secret exposure,
+dependency or configuration risk, and safe negative cases. Tailor the checks to
+the actual feature; do not claim a professional penetration test from a generic
+scanner, checklist, or ordinary regression suite.
+
+Use OWASP WSTG as a reference for an explicitly scoped web security assessment
+and NIST SSDF for secure-development practice. A broader penetration test,
+production attack simulation, intrusive scan, or security engagement needs its
+own scope, authorization, target, safety limits, and evidence plan.
+
 ## Project Notes
 
 - For projects with `TESTING.md`, QA must state the affected feature row,
