@@ -87,10 +87,11 @@ Why this matters:
   settings after the session has started does not repair that session; only a
   new session picks the change up.
 
-The umbrella now ships dispatcher wrappers for `quality-gate.py` and
-`workflow-gate.py` so an umbrella-launched session survives instead of losing
-every Bash call. Treat that as defense in depth, not as permission to skip this
-rule: the wrappers cover those two gates, not every project hook. See
+The umbrella now ships project-aware dispatcher wrappers for the Python, shell,
+and PowerShell hook names used by active projects, so an umbrella-launched
+session resolves the real hook from its payload working directory. Treat that
+as defense in depth, not as permission to skip this rule: a future project can
+introduce a new hook name before the umbrella baseline learns it. See
 [agent-os-hook-dispatcher.md](agent-os-hook-dispatcher.md).
 
 Staying in the umbrella is still fine for discussion, reading, and light docs
