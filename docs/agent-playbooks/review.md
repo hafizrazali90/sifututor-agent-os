@@ -109,7 +109,7 @@ asks whether work is safe to approve.
 | Related impact | Did the fix include the right local related check, same-pattern sweep, or critical impact audit? | The same root-cause pattern or adjacent regression risk is obvious but uninspected, or related findings were silently fixed outside scope. |
 | State confusion | Is the work only changed locally, committed, pushed, PR-open, merged, deployed, live checked, or accepted? | The report implies a higher state than Git/PR/deploy/QA evidence proves. |
 | Critical-lane boundary | Did auth, payment, invoice, commission, migration, deploy, production data, or mobile API contract behavior change? | Read-only diagnosis, approval, reviewer, or safe evidence is missing. |
-| Release communication | Do staff/users need changelog, help text, What's New, or operational notice? | A relevant staff-facing change has no release communication and no reason it is unnecessary. |
+| Staff documentation | Does the change record one decision per [release-documentation.md](release-documentation.md): relevant with the documentation in this bundle, not relevant with a reason, or urgent deferral with a named owner and a real follow-up issue? | A staff-facing change has no recorded decision, a relevant decision ships no documentation, or a deferral names no owner and no GitHub issue. |
 | Recipient handoff | Did review materially improve another developer's PR, or do distinct staff/user and developer audiences need the result? | The close-out omits the relevant audience, sends disconnected messages to one developer, fails to request independent developer verification, or invents an unconfirmed report source. |
 | Generated files | Were generated files edited manually instead of changing the source? | A generated artifact was hand-edited without project rules saying it is human-maintained. |
 | Visible UI quality | If UI changed, does it look coherent and match the project pattern? | The changed UI has obvious layout, copy, state, accessibility, or consistency issues that are in scope or unreported. |
@@ -201,11 +201,20 @@ production state changes still require explicit current-session approval.
    [related-impact-audit.md](related-impact-audit.md) to decide whether the work
    needed only a local related check, a same-pattern sweep, or a critical
    impact audit.
-9. For staff-facing feature, bugfix, hotfix, or small-change work, treat
-   missing release communication as a review finding when relevant. Check for a
-   `CHANGELOG.md` entry, affected module help updates, and a What's New release
-   entry or seed script. If any item is intentionally not needed, the PR or
-   final answer must say why.
+9. For staff-facing feature, bugfix, hotfix, or small-change work, treat a
+   missing staff documentation decision as a review finding.
+   [release-documentation.md](release-documentation.md) owns the rule and the
+   project-aware artifact list; run its blocking check for the release under
+   review instead of re-deriving the rule here:
+
+   ```bash
+   python3 ../scripts/agent-checks/release_documentation.py --project . --mode blocking --base main
+   ```
+
+   The checker proves the decision was recorded and the named documentation
+   shipped in this same bundle. Whether the guide is well written, aimed at the
+   right audience, and whether the deferral's follow-up issue is real work is
+   still the reviewer's judgement.
 10. When review materially changes another developer's PR, plan one integrated
     developer close-out using the Recipient-Specific PR And Release Close-Out
     section in [agent-os-communication.md](agent-os-communication.md). It must
@@ -276,8 +285,9 @@ Permanent E2E:
 Changed workflow E2E map:
 - <workflow>: <permanent E2E file | missing finding | explicit exception>
 
-Release communication:
-- <CHANGELOG/help/What's New current | missing finding | not relevant with reason>
+Staff documentation:
+- <relevant, and the documentation files that shipped | not relevant, and why |
+  urgently deferred, with the owner and the follow-up issue | not staff-facing>
 
 Related impact:
 - <current | missing finding | not applicable, with reason>
