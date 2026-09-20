@@ -14,6 +14,10 @@ import sys
 import tomllib
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import claude_hook_dispatch  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAYBOOK_DIR = ROOT / "docs" / "agent-playbooks"
@@ -66,6 +70,9 @@ REQUIRED_CLAUDE_HOOKS = [
     ".claude/hooks/conventional-commits.py",
     ".claude/hooks/test-coverage-gate.py",
     ".claude/hooks/friction-logger.py",
+    # Umbrella dispatcher wrappers for sub-project-only gates (issue 96).
+    ".claude/hooks/quality-gate.py",
+    ".claude/hooks/workflow-gate.py",
 ]
 
 REQUIRED_CLAUDE_PROJECTS = [
@@ -329,6 +336,67 @@ def check_claude_common_runtime() -> list[CheckResult]:
             passed=all(marker in bridge_output for marker in bridge_markers),
             detail="Claude prompt bridge emits shared communication guidance without Koda",
             warnings=[] if bridge.returncode == 0 else (bridge.stderr or bridge.stdout).splitlines()[-3:],
+        )
+    )
+    results.extend(check_claude_hook_resolution())
+    return results
+
+
+def check_claude_hook_resolution() -> list[CheckResult]:
+    """Catch configured hook paths that cannot resolve for a launch scenario.
+
+    Issue 96: a sub-project hook command that resolves relative to
+    `CLAUDE_PROJECT_DIR` silently breaks for an umbrella-launched session unless
+    the umbrella also answers that hook name. A missing PreToolUse script exits
+    2, which Claude reads as a hard block on every Bash call.
+    """
+    results: list[CheckResult] = []
+
+    dispatch_self_test = run_command(
+        [sys.executable, "-m", "unittest", "discover", "-s", "scripts/agent-checks", "-p", "test_claude_hook_dispatch.py"]
+    )
+    results.append(
+        CheckResult(
+            id="CL-052",
+            adapter="claude",
+            passed=dispatch_self_test.returncode == 0,
+            detail="Claude hook dispatcher fixtures pass (worktree resolution, rejection preserved, missing hook warns)",
+            warnings=[]
+            if dispatch_self_test.returncode == 0
+            else (dispatch_self_test.stderr or dispatch_self_test.stdout).splitlines()[-4:],
+        )
+    )
+
+    findings = claude_hook_dispatch.audit_workspace_hook_configuration(ROOT)
+    blocking = [finding for finding in findings if finding.blocks_readiness]
+    advisory = [
+        finding for finding in findings if not finding.ok and not finding.blocks_readiness
+    ]
+    results.append(
+        CheckResult(
+            id="CL-053",
+            adapter="claude",
+            passed=not blocking,
+            # No product projects in this checkout means nothing to prove here.
+            required=bool(findings),
+            detail=(
+                "every configured PreToolUse gate resolves for project and umbrella "
+                f"launches ({len(findings)} hook paths checked)"
+            ),
+            warnings=[finding.detail for finding in blocking[:8]],
+        )
+    )
+    results.append(
+        CheckResult(
+            id="CL-054",
+            adapter="claude",
+            passed=not advisory,
+            # Non-PreToolUse gaps degrade one event; they never cancel a tool call.
+            required=False,
+            detail=(
+                f"no non-blocking umbrella-launch hook gaps ({len(advisory)} reported)"
+            ),
+            warnings=[finding.detail for finding in advisory[:8]],
         )
     )
     return results
