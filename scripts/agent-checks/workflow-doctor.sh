@@ -73,6 +73,9 @@ echo
 check_file "root AGENTS" "$ROOT/AGENTS.md"
 check_file "codex config" "$ROOT/.codex/config.toml"
 check_file "parity status" "$ROOT/docs/agent-playbooks/parity-status.md"
+check_file "test coverage playbook" "$ROOT/docs/agent-playbooks/test-coverage.md"
+check_file "coverage enforcement" "$ROOT/scripts/agent-checks/coverage_enforcement.py"
+check_file "coverage enforcement fixtures" "$ROOT/scripts/agent-checks/test_coverage_enforcement.py"
 
 echo
 echo "Agent OS health"

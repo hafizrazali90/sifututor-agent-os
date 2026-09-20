@@ -118,24 +118,121 @@ Examples:
   evidence showing the request can be deactivated and no longer appears as
   active.
 
+## Enforcement
+
+One script enforces every rule above, for every agent:
+
+```text
+scripts/agent-checks/coverage_enforcement.py
+```
+
+Claude, Codex, Kilo, and any future tool run the same file and get the same
+answer. There is no Claude-only and Codex-only version of "is this covered?".
+
+It has three modes. Pick the one that matches what you are about to do.
+
+| Mode | Scope | Use it when |
+| --- | --- | --- |
+| `manifest` | Every row in `TESTING.md` | Auditing a project, or reporting the whole coverage picture. |
+| `change` | Only the rows this change touches | Before commit. This is what the shared guard runs. |
+| `release` | Only the rows this release touches | Before push, PR, merge, or deploy. |
+
+```bash
+# Whole manifest, from inside the project
+python3 ../scripts/agent-checks/coverage_enforcement.py --project . --mode manifest
+
+# What this commit is answerable for
+python3 ../scripts/agent-checks/coverage_enforcement.py --project . --mode change --staged
+
+# What this release is answerable for
+python3 ../scripts/agent-checks/coverage_enforcement.py --project . --mode release --base main
+```
+
+From the umbrella root, pass the project path instead:
+
+```bash
+python3 scripts/agent-checks/coverage_enforcement.py --project sifu-tutor --mode manifest
+```
+
+`scripts/agent-checks/test-coverage-manifest-check.py` is still the audit
+entrypoint named by `AGENTS.md`. Its command line and summary output have not
+changed; it now calls the same engine instead of carrying a second copy of the
+rules.
+
+### Change mode never blocks on somebody else's debt
+
+`--mode change` evaluates a row only when the change edits a test the row
+declares, edits a source file the row claims, or edits the row itself.
+A project that already carries a long tail of `❌ Missing` rows stays committable.
+Use `--mode manifest` to see that tail; use `--mode release` to stop it shipping.
+
+### What the engine proves, and what it does not
+
+It proves a row is honest. A row that claims coverage cannot be satisfied by:
+
+- an empty, dash, or placeholder test cell
+- a path that does not exist
+- a file that is empty, comments only, a config, or a bare directory
+- evidence weaker than the row's own declared Test Type, so a unit test cannot
+  be presented as a browser journey
+- a path outside the project, an absolute path, a `..` escape, or an
+  environment file
+
+It does not prove a test is meaningful. Nothing automated can. The agent and the
+reviewer still read intent, and the "What Counts As A Real Test" section above is
+still the bar.
+
+### Framework-agnostic by design
+
+Nothing in the engine is keyed to a language or a test runner. A declared
+`.dart`, `.py`, `.rb`, `.go`, `.kt`, `.feature`, or Maestro `.yaml` path is
+validated exactly as strictly as a `.spec.ts`. A project does not have to adopt
+anyone else's framework to be enforceable; it only has to name real files.
+
+### Evidence that lives in the paired product
+
+A SIMS API whose only human surface is a Ripple screen proves its journey in
+Ripple's E2E suite. Say so in the row:
+
+```text
+`tests/Feature/API/RippleSignalsApiTest.php`; paired Ripple `tests/e2e/crm/workspace.spec.ts`
+```
+
+The engine records that as named external evidence and counts it in the report.
+It does not demand a duplicate local E2E, and it does not go quiet: the local
+half of the same cell must still exist.
+
+### Named exceptions
+
+A user-facing workflow may ship without permanent E2E only as a named exception.
+Write it in the row, in full:
+
+```text
+Exception, reason: destructive workflow, approved by Hafiz on 2026-09-20
+```
+
+Both halves are required. The allowed reasons are fixed:
+`missing credential`, `no safe representative data`, `destructive workflow`,
+`tooling unavailable`, `external system unreliable`, `not user-facing`.
+An unlisted reason fails the gate. A builder cannot approve their own exception.
+
+### When there is no manifest
+
+A project without `TESTING.md`, or with a `TESTING.md` that has no parseable
+table, reports `UNAVAILABLE`. That is reported, never silently rendered as a
+pass. `--mode change` still exits 0, so a project that has not adopted a manifest
+is not blocked from committing. `--mode release` exits non-zero: there is nothing
+to prove the release with.
+
+A table needs a `Feature` column and a `Status` (or `State`) column to be read.
+
 ## Verification And QA
 
-Run the project checks from `verify.md` and `qa.md`, then run the manifest check
-when available:
-
-```bash
-python3 ../scripts/agent-checks/test-coverage-manifest-check.py --project .
-```
-
-From the umbrella root, pass the project path:
-
-```bash
-python3 scripts/agent-checks/test-coverage-manifest-check.py --project sifu-tutor
-```
-
-This script validates that test files named in `TESTING.md` exist. It does not
-prove the tests are meaningful; the agent and reviewer still need to inspect
-test intent.
+Run the project checks from `verify.md` and `qa.md`, then run the enforcement in
+`change` mode. The shared guard
+(`scripts/agent-checks/pre-commit-guard.sh`) already does this for you before
+every commit, for Claude and Codex alike, so a separate per-tool hook is not the
+source of truth.
 
 ## Commit And Review Bar
 
@@ -152,6 +249,23 @@ Before commit or PR review, answer these questions:
    test to add?
 
 If the answer to any question is unclear, do not call the work complete.
+
+## Release And CI
+
+The shared guard proves coverage honesty on the machine that makes the commit.
+That is enough for a local gate and it is not enough for a release: a dirty
+working tree, a stale branch, or an unresolved merge can make a local run say
+things a clean checkout would not.
+
+For a repository with GitHub CI, install
+`docs/agent-playbooks/templates/product-test-coverage-ci.yml` into the product
+repository as a separate reviewed change. It re-runs `change` and `release` mode
+on a clean checkout against the pull request base.
+
+Known gap: `sifu-tutor` has no `.github/workflows` directory, so today nothing
+re-checks its coverage claims before merge. Until that template is installed
+there, the honest statement for a `sifu-tutor` release is that coverage was
+proved locally and not re-proved on a clean checkout.
 
 ## Universal AI Tooling
 
