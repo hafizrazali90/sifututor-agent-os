@@ -76,6 +76,8 @@
     "scripts/agent-checks/agent-os-transcript-retrospective.py",
     "scripts/agent-checks/agent-os-workflow-example-runner.py",
     "scripts/agent-checks/agent-os-state-fixture-runner.py",
+    "scripts/agent-checks/agent_os_active_task_freshness.py",
+    "scripts/agent-checks/test_agent_os_active_task_freshness.py",
     "scripts/agent-checks/session-map-check.py",
     "scripts/agent-checks/session-map-html.py",
     "scripts/agent-checks/agent-os-koda-fixture-runner.py",

@@ -187,7 +187,7 @@ else
 fi
 rm -f "$TMP_DIR/communication-samples.out" "$TMP_DIR/communication-samples.err"
 
-if PYTHONPATH="$ROOT/scripts/agent-checks" python3 -m unittest test_completion_receipt test_delegation_packet test_agent_os_adapter_contract test_secret_guard_reconciliation >$TMP_DIR/delegation-contracts.out 2>$TMP_DIR/delegation-contracts.err; then
+if PYTHONPATH="$ROOT/scripts/agent-checks" python3 -m unittest test_completion_receipt test_delegation_packet test_agent_os_adapter_contract test_secret_guard_reconciliation test_agent_os_active_task_freshness >$TMP_DIR/delegation-contracts.out 2>$TMP_DIR/delegation-contracts.err; then
   pass "delegation contracts" "completion, packet, capability and secret-format regressions passed"
 else
   fail "delegation contracts" "focused contract tests failed; inspect local sanitized test output"
@@ -467,6 +467,17 @@ if [[ -f "$ROOT/.claude/tasks/active.json" ]]; then
 else
   pass "active task" "none"
 fi
+
+# Issue 113: valid JSON never proved the pointer still describes current work.
+if python3 "$ROOT/scripts/agent-checks/agent_os_active_task_freshness.py" --self-test \
+  >$TMP_DIR/agent-os-task-freshness.out 2>$TMP_DIR/agent-os-task-freshness.err; then
+  pass "active task freshness" "$(grep 'fixtures:' $TMP_DIR/agent-os-task-freshness.out | tail -1)"
+else
+  fail "active task freshness" "fixture drift"
+  grep '^FAIL ' $TMP_DIR/agent-os-task-freshness.out | sed -n '1,6p' || true
+  sed -n '1,4p' $TMP_DIR/agent-os-task-freshness.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-task-freshness.out $TMP_DIR/agent-os-task-freshness.err
 
 echo
 echo "Koda"
