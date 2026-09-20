@@ -89,8 +89,9 @@ REQUIRED_CLAUDE_PROJECTS = [
     "lls-frontend",
     "lls-mobile",
     "creative-hub",
-    "team-inbox",
     "finch-inbox",
+    "cx-call-capture-android",
+    "sims-owner-analytics",
 ]
 
 
