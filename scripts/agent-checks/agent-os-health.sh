@@ -123,6 +123,8 @@ check_file "Agent OS capability probe" "$ROOT/scripts/agent-checks/agent-os-capa
 check_file "Agent OS Google Drive probe" "$ROOT/scripts/agent-checks/agent-os-google-drive-probe.py"
 check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-probe.py"
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
+check_file "SharePoint read-only lane" "$ROOT/scripts/agent-access/sharepoint-readonly.py"
+check_file "SharePoint read-only fixtures" "$ROOT/scripts/agent-checks/test_sharepoint_readonly.py"
 check_file "Agent OS today snapshot" "$ROOT/scripts/agent-checks/agent-os-today-snapshot.py"
 check_file "Agent OS today fixtures" "$ROOT/scripts/agent-checks/test_agent_os_today_snapshot.py"
 check_file "coverage enforcement" "$ROOT/scripts/agent-checks/coverage_enforcement.py"
@@ -300,6 +302,15 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-capability-probe.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-capability-probe.out $TMP_DIR/agent-os-capability-probe.err
+
+if python3 -m unittest "$ROOT/scripts/agent-checks/test_sharepoint_readonly.py" >$TMP_DIR/sharepoint-readonly.out 2>$TMP_DIR/sharepoint-readonly.err; then
+  pass "SharePoint read-only fixtures" "auth, allow-list, pagination, download and error boundaries passed"
+else
+  fail "SharePoint read-only fixtures" "read-only boundary fixtures failed"
+  sed -n '1,12p' $TMP_DIR/sharepoint-readonly.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/sharepoint-readonly.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/sharepoint-readonly.out $TMP_DIR/sharepoint-readonly.err
 
 if python3 -m py_compile "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py" >$TMP_DIR/agent-os-live-evidence-report.out 2>$TMP_DIR/agent-os-live-evidence-report.err; then
   pass "Agent OS live evidence report" "py_compile ok"

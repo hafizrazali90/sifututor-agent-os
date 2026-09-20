@@ -86,6 +86,7 @@ def check_local_wrappers() -> dict[str, str]:
         "check-cloudflare-dns.sh",
         "check-cpanel-autossl.sh",
         "check-microsoft-planner.sh",
+        "sharepoint-readonly.py",
         "check-monitoring.sh",
         "check-ripple-prod.sh",
         "check-sims-db-readonly.sh",
@@ -135,6 +136,12 @@ def build_report() -> list[dict[str, str]]:
             "unknown",
             "requires Microsoft 365 connector or m365 read-only wrapper probe",
             "run scripts/agent-checks/agent-os-planner-probe.py before claiming Planner read access",
+        ),
+        record(
+            "sharepoint",
+            "unknown",
+            "requires the repository-owned SharePoint read-only lane probe",
+            "run scripts/agent-access/sharepoint-readonly.py probe before claiming SharePoint access",
         ),
         record(
             "production_logs",

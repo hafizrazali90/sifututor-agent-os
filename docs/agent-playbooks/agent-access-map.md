@@ -3,9 +3,9 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 22 lanes — 21 scoped files under
-`~/.config/sifututor/agent-access/` plus the Microsoft 365 read-only env lane at
-`~/.config/sifututor/m365-readonly.env`.
+Current registry count: 23 lanes — 21 scoped files under
+`~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
+the delegated SharePoint read-only lane.
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
@@ -381,6 +381,53 @@ do not restart the app or bypass the control to force an immediate run.
 
 ---
 
+### 23. `sharepoint-readonly` — SharePoint Files (Delegated Read-Only)
+
+| Field | Value |
+|-------|-------|
+| **Config** | `~/.config/sifututor/sharepoint-readonly.json` (mode 600) |
+| **Token cache** | `~/.config/sifututor/runtime/sharepoint-token.json` (mode 600) |
+| **Access method** | `scripts/agent-access/sharepoint-readonly.py` from any ordinary shell or agent |
+| **Purpose** | List approved folders, inspect safe metadata, and download explicitly requested files into an approved local root |
+| **Tier** | auto-read after Hafiz completes the one-time delegated Microsoft sign-in |
+| **Hafiz approval** | Required for first login/consent and expanding site, drive, path, host, or download boundaries; not required for later reads inside the approved boundary |
+| **Safe verification** | `scripts/agent-access/sharepoint-readonly.py probe` |
+| **Allowed operations** | `probe`, `login`, `list`, `metadata`, `download` |
+| **Forbidden** | No upload, create, edit, move, rename, share, permission change, or delete; never print tokens; never access outside the configured drive/path/download boundary |
+
+The public-client registration should request the least delegated scope that
+works for the approved library. Prefer `Files.Read`; use broader read scope
+only when Microsoft requires it and Hafiz accepts that scope. Microsoft
+`Selected` scopes need a separate resource assignment and must not be guessed
+or granted by an agent.
+
+The mode-600 configuration contains identifiers and boundaries, not a client
+secret:
+
+```json
+{
+  "tenant_id": "<tenant id>",
+  "client_id": "<public client application id>",
+  "drive_id": "<approved document-library drive id>",
+  "allowed_path_prefixes": ["Shared Documents/Approved Folder"],
+  "allowed_download_hosts": ["*.sharepoint.com"],
+  "download_root": "/absolute/local/approved/download/root",
+  "max_download_bytes": 26214400,
+  "scopes": ["Files.Read", "offline_access"]
+}
+```
+
+Device sign-in and consent are owner actions. Agents must not initiate `login`
+unless Hafiz explicitly asks in the current session. The probe never initiates
+sign-in and prints status only.
+
+Microsoft references: [device code flow](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code),
+[Graph paging](https://learn.microsoft.com/en-us/graph/paging),
+[list folder contents](https://learn.microsoft.com/en-us/graph/api/driveitem-list-children),
+and [selected SharePoint permissions](https://learn.microsoft.com/en-us/graph/permissions-selected-overview).
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -397,6 +444,7 @@ do not restart the app or bypass the control to force an immediate run.
 | `backup-readonly` | `backup-readonly.conf` | auto-read | Never |
 | `wasabi-ripple-storage-scoped` (reads) | `wasabi-ripple-storage-scoped.conf` | auto-read | Never |
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
+| `sharepoint-readonly` | `sharepoint-readonly.json` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
