@@ -72,9 +72,9 @@ scripts/agent-checks/workflow-doctor.sh
 ```
 
 Checks every active project, Codex skills, hook scripts, active task JSON, and
-Claude parent `additionalDirectories`. Projects listed in `ADAPTER_PENDING`
-are active but have not finished their Claude/Codex adapter rollout, so a
-missing adapter file there is reported as a warning instead of a failure.
+Claude parent `additionalDirectories`. Every active project must have the full
+shared adapter baseline; a missing `AGENTS.md`, `CLAUDE.md`, active-task
+pointer, or hook directory is a failure.
 
 ## Agent OS Evals
 

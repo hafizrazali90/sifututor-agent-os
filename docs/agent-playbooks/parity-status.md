@@ -1,6 +1,6 @@
 # Claude/Codex Parity Status
 
-Last updated: 2026-07-08
+Last updated: 2026-09-20
 
 ## Completed Baseline
 
@@ -17,8 +17,8 @@ All active workspace projects now have the shared Claude/Codex baseline:
 | `lls-mobile` | yes | yes | yes | Shared playbooks only; Flutter-specific skills not created yet |
 | `creative-hub` | yes | yes | yes | Shared playbooks only |
 | `finch-inbox` | yes | yes | existing + tasks | Keeps Finch workflow, adds shared active task pointer |
-| `cx-call-capture-android` | no (`AI-RULES.md` instead) | not yet | not yet | Active project; Claude/Codex adapter rollout still pending |
-| `sims-owner-analytics` | yes | not yet | not yet | Active project; Claude/Codex adapter rollout still pending |
+| `cx-call-capture-android` | yes (`AI-RULES.md` remains product authority) | yes | yes | Shared baseline installed; device, signing, and distribution evidence remain separate product gates |
+| `sims-owner-analytics` | yes | yes | yes | Shared baseline installed; production, database, grant, container, and systemd boundaries remain unchanged |
 
 `team-inbox` is retired and replaced by `finch-inbox`. Its archived checkout
 `team-inbox.archived-2026-08-26/` is read-only history, not an active project.
@@ -50,7 +50,7 @@ not part of the pushed umbrella GitHub repo.
 
 ## Verified
 
-- Shared guard passed in all ten projects.
+- Shared guard and adapter checks pass across all active projects.
 - Hook Python files compiled successfully.
 - Codex repo-local skills are visible in `codex debug prompt-input`.
 - Codex lifecycle and Bash hook scripts passed direct sample-payload tests.
@@ -62,11 +62,6 @@ not part of the pushed umbrella GitHub repo.
 
 - Create project-specific workflow skills for `lls-mobile` and `creative-hub`
   only after their development cadence justifies it.
-- Finish the Claude/Codex adapter rollout for `cx-call-capture-android` and
-  `sims-owner-analytics`. `cx-call-capture-android` still uses `AI-RULES.md`
-  instead of `AGENTS.md`; both are missing `CLAUDE.md`,
-  `.claude/tasks/active.json`, and `.claude/hooks/`. Until that is done the
-  workflow doctor warns instead of failing for those two.
 - Trust/review Codex project hooks through `/hooks` when Codex prompts for it.
   Continue using `scripts/agent-checks/pre-commit-guard.sh` as the portable
   manual guard.
