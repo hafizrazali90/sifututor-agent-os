@@ -291,12 +291,31 @@ Applies to `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, and
 `sifututor_parent`.
 
 1. Read `.claude/tasks/active.json`.
-2. If `activeTask` is set, read the referenced `taskFile`.
-3. Compare the active task to GitHub, Mission Ledger, or current chat context
+2. If `activeTask` is empty, there is no task to resume. An idle pointer is a
+   valid, deliberate state at any age. Start fresh under `AGENTS.md`.
+3. If `activeTask` is set, read the referenced `taskFile` and check that the
+   claim is still current before trusting it. Valid JSON is not freshness.
+   Run:
+
+   ```bash
+   python3 scripts/agent-checks/agent_os_active_task_freshness.py
+   ```
+
+   The pointer is only resumable when that check reports `active` for the
+   project. `stale_completed`, `stale_drifted`, `dangling`, and `invalid` mean
+   the pointer no longer describes reality.
+4. Compare the active task to GitHub, Mission Ledger, or current chat context
    when relevant.
-4. Resume the active task unless the user explicitly starts a new task.
-5. Report the current route and next unblocked step before editing.
-6. At the end of each completed step, state the recommended next unblocked
+5. Resume the active task unless the user explicitly starts a new task, and
+   only when step 3 proved it current.
+6. If the pointer is stale, say so plainly, name the evidence, and ask before
+   resetting it. Reset the pointer to idle only when the evidence is certain;
+   if the state is reported as `unprovable`, report it and stop. Never invent a
+   replacement task, and never treat a pointer inside `.worktrees/` or
+   `Sifututor-worktrees/` as authority: only the canonical project checkout at
+   the workspace root owns task state.
+7. Report the current route and next unblocked step before editing.
+8. At the end of each completed step, state the recommended next unblocked
    action so Hafiz does not have to ask what should happen next.
 
 ## Multiple-Fix Sessions

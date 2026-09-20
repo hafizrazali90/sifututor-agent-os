@@ -47,6 +47,10 @@ CHECKS = [
     Check("router evals", (sys.executable, str(SCRIPT_DIR / "agent-os-eval-runner.py"))),
     Check("response shape", (sys.executable, str(SCRIPT_DIR / "agent-os-response-shape-runner.py"))),
     Check("state fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-state-fixture-runner.py"))),
+    Check(
+        "active task freshness",
+        (sys.executable, str(SCRIPT_DIR / "agent_os_active_task_freshness.py"), "--self-test"),
+    ),
     Check("Koda fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-koda-fixture-runner.py"))),
     Check("capability fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-capability-fixture-runner.py"))),
     Check("conversation fixtures", (sys.executable, str(SCRIPT_DIR / "agent-os-conversation-fixture-runner.py"))),

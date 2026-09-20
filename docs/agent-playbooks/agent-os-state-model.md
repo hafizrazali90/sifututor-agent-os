@@ -46,7 +46,7 @@ Use this practical ownership split:
 | Mission Ledger | Bigger goals, parked decisions, and future work that is not execution-ready yet. |
 | Planner | Staff-reported symptoms and operational context. |
 | GitHub issue | Engineering work that is ready for a developer or agent to execute. |
-| Active task file | The current agent/dev work pointer inside a project. |
+| Active task file | The current agent/dev work pointer inside a project, only while `agent_os_active_task_freshness.py` still reports it `active`. |
 | Git commit | Exact files saved locally. |
 | PR | Reviewable change before merge. |
 | Deploy record / production SHA | What code reached staging or production. |
@@ -76,6 +76,46 @@ What should be updated, if anything?
 
 If the answer belongs in another source, update or link that source instead of
 duplicating the same truth everywhere.
+
+## Active Task Pointer Freshness
+
+Issue 113. An active task file is the weakest kind of durable state: it is
+written once, and nothing makes it wrong later. Valid JSON proves the file
+parses, never that the claim inside it is still true.
+
+Plain meaning:
+
+```text
+A pointer is authority only while current evidence still supports its claim.
+```
+
+Rules:
+
+- An empty pointer (`activeTask: null`) claims nothing. It cannot be stale at
+  any age, and it must never be reported as a defect.
+- A claimed pointer is current only when its task file still has an unfinished
+  step, and the project repository has not moved far past the claim's last real
+  change. A claim is two artifacts: `active.json` names the task and the task
+  file carries the steps, so the more recent of the two decides. Freshness is
+  measured against repository activity, not the wall clock, so a paused project
+  cannot drift and the answer is reproducible.
+- A merged branch is evidence, not a verdict. Post-merge steps are normal and a
+  trunk branch is always its own ancestor, so merge state is reported and never
+  fails a pointer by itself.
+- Only the canonical project checkout owns task state. A pointer inside a
+  linked worktree under `.worktrees/` or `Sifututor-worktrees/` is a record of
+  a past lane, never current authority, and never a failure.
+- When the evidence to judge a claim is missing, the state is `unprovable`.
+  Report it. Do not reset it, and do not invent a replacement task.
+
+Check it with:
+
+```bash
+python3 scripts/agent-checks/agent_os_active_task_freshness.py
+```
+
+Owning page: [active-tasks.md](active-tasks.md). Session-start behavior:
+[task-router.md](task-router.md).
 
 ## Ownership Questions
 

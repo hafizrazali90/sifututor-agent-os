@@ -118,6 +118,25 @@ if [[ "${#existing_projects[@]}" -eq 0 ]]; then
 fi
 
 echo
+echo "Active task freshness"
+freshness_out="$(mktemp)"
+"$ROOT/scripts/agent-checks/agent_os_active_task_freshness.py" >"$freshness_out" 2>&1
+freshness_status=$?
+freshness_summary="$(grep '^ACTIVE TASK FRESHNESS:' "$freshness_out" | tail -1)"
+if [[ "$freshness_status" -eq 0 ]]; then
+  if [[ "$freshness_summary" == *SKIP* ]]; then
+    warn "active task freshness" "${freshness_summary#ACTIVE TASK FRESHNESS: }"
+  else
+    pass "active task freshness" "${freshness_summary#ACTIVE TASK FRESHNESS: }"
+  fi
+  grep '^WARN ' "$freshness_out" | sed -n '1,6p' || true
+else
+  fail "active task freshness" "${freshness_summary:-checker error}"
+  grep -E '^FAIL |^       -> ' "$freshness_out" | sed -n '1,12p' || true
+fi
+rm -f "$freshness_out"
+
+echo
 echo "Codex skills"
 for skill in "${SKILLS[@]}"; do
   check_file "skill $skill" "$ROOT/.agents/skills/$skill/SKILL.md"

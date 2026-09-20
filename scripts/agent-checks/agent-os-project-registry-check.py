@@ -76,6 +76,7 @@ PYTHON_REGISTRIES = {
     "scripts/agent-checks/agent-os-today-snapshot.py": ("PROJECTS",),
     "scripts/agent-checks/agent-os-adapter-readiness.py": ("REQUIRED_CLAUDE_PROJECTS",),
     "scripts/agent-checks/worktree-lifecycle.py": ("PROJECTS",),
+    "scripts/agent-checks/agent_os_active_task_freshness.py": ("PROJECTS",),
 }
 
 # Bash registries: file -> array names.
