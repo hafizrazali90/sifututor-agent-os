@@ -356,6 +356,35 @@ class ResolutionUnitTests(unittest.TestCase):
 
         self.assertNotEqual(result, 0)
 
+    def test_shell_hook_runs_with_arguments_and_exact_stdin(self) -> None:
+        project = self.base / "project"
+        nested = project / "src"
+        nested.mkdir(parents=True)
+        (project / ".git").mkdir()
+        gate = project / ".claude" / "hooks" / "run-shared-hook.sh"
+        gate.parent.mkdir(parents=True)
+        record = self.base / "shell-record"
+        gate.write_text(
+            '#!/usr/bin/env bash\n'
+            'printf "%s" "$1" > "$FIXTURE_RECORD.arg"\n'
+            'cat > "$FIXTURE_RECORD"\n'
+            'exit 2\n'
+        )
+        payload = payload_bytes(str(nested), command='echo "shell fixture"') + b"\n"
+        env = dict(os.environ)
+        env["FIXTURE_RECORD"] = str(record)
+
+        result = claude_hook_dispatch.dispatch(
+            "run-shared-hook.sh",
+            stdin_bytes=payload,
+            env=env,
+            hook_args=["validate-branch-name.py"],
+        )
+
+        self.assertEqual(result, 2)
+        self.assertEqual(Path(f"{record}.arg").read_text(), "validate-branch-name.py")
+        self.assertEqual(record.read_bytes(), payload)
+
 
 class ConfigurationAuditTests(unittest.TestCase):
     """Readiness validation for hook commands that cannot resolve at launch."""
@@ -483,6 +512,29 @@ class ConfigurationAuditTests(unittest.TestCase):
 
         self.assertEqual(len(findings), 1)
         self.assertTrue(findings[0].blocks_readiness)
+
+    def test_unknown_pretooluse_name_also_blocks_readiness(self) -> None:
+        (self.project / ".claude" / "hooks" / "new-safety-gate.sh").write_text("exit 0\n")
+        self._settings("PreToolUse", "new-safety-gate.sh")
+
+        findings = claude_hook_dispatch.audit_project_hook_configuration(
+            self.umbrella, self.project
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertTrue(findings[0].blocks_readiness)
+
+    def test_powershell_configuration_is_resolved_by_umbrella_wrapper(self) -> None:
+        (self.project / ".claude" / "hooks" / "validate-branch.ps1").write_text("exit 0\n")
+        self._settings("PreToolUse", "validate-branch.ps1")
+        (self.umbrella / ".claude" / "hooks" / "validate-branch.ps1").write_text("exit 0\n")
+
+        findings = claude_hook_dispatch.audit_project_hook_configuration(
+            self.umbrella, self.project
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertTrue(findings[0].ok)
 
     def test_session_start_gap_is_reported_but_not_blocking(self) -> None:
         (self.project / ".claude" / "hooks" / "session-start.py").write_text("print('x')\n")
