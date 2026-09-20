@@ -44,6 +44,29 @@ This workflow should remove ambiguity, not create ceremony.
 - Before implementation, explain the intended build in plain English so Hafiz
   understands the code meaning without manually reviewing the diff.
 
+## Identity And Design Automation Boundary
+
+Treat brand identity, naming, visual direction, and design-system choices as
+product decisions inside this workflow. Use installed image generation or
+asset-discovery tools for bounded asset work after the direction and rights are
+clear; do not let an asset tool silently decide the product identity.
+
+For iterative visual work:
+
+1. inventory the affected screens, components, states, audiences, and existing
+   design rules before generating alternatives;
+2. run deterministic checks before subjective review;
+3. inspect rendered output and the real user journey;
+4. use one focused review pass, then another only when the first pass finds a
+   real defect or the output materially changes;
+5. record false positives and durable lessons instead of repeating a fixed
+   number of review rounds;
+6. keep business, brand, spending, licensing, and release decisions inside
+   their normal approval boundaries.
+
+A good pilot proves the tested artifact. It does not prove that one model, one
+reviewer, or one loop can autonomously design every future product.
+
 ## Pre-Implementation Explanation Gate
 
 Before every implementation, the agent must explain what it plans to build in
