@@ -128,5 +128,22 @@ class PreflightCLI(unittest.TestCase):
                 probe.assert_not_called()
 
 
+class ClaudeProjectReadinessRegistry(unittest.TestCase):
+    def test_registry_tracks_current_projects_not_retired_team_inbox(self):
+        spec = importlib.util.spec_from_file_location(
+            "adapter_readiness_project_registry",
+            Path(__file__).with_name("agent-os-adapter-readiness.py"),
+        )
+        module = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {spec.name: module}):
+            spec.loader.exec_module(module)
+
+        projects = set(module.REQUIRED_CLAUDE_PROJECTS)
+        self.assertNotIn("team-inbox", projects)
+        self.assertIn("finch-inbox", projects)
+        self.assertIn("cx-call-capture-android", projects)
+        self.assertIn("sims-owner-analytics", projects)
+
+
 if __name__ == "__main__":
     unittest.main()
