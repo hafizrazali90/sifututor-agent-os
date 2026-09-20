@@ -61,6 +61,12 @@ class ProjectRegistryCheck(unittest.TestCase):
     def test_real_workspace_registries_agree(self):
         self.assertEqual(self.problems(ROOT), [])
 
+    def test_workflow_doctor_has_no_adapter_pending_escape_hatch(self):
+        doctor = (ROOT / "scripts/agent-checks/workflow-doctor.sh").read_text()
+        self.assertNotIn("ADAPTER_PENDING", doctor)
+        self.assertNotIn("adapter rollout pending", doctor)
+        self.assertIn('fail "$project" "$ag, $cl, $ac, $hk"', doctor)
+
     def test_copied_tree_is_a_faithful_baseline(self):
         self.assertEqual(self.problems(self.tmp), [])
 

@@ -17,13 +17,6 @@ PROJECTS=(
   cx-call-capture-android
   sims-owner-analytics
 )
-# issue 103: active projects whose Claude/Codex adapter rollout is not finished
-# yet. They stay in PROJECTS so the live registry is complete, but a missing
-# adapter file is reported as a warning instead of a failure.
-ADAPTER_PENDING=(
-  cx-call-capture-android
-  sims-owner-analytics
-)
 SKILLS=(
   task-router
   verify
@@ -104,14 +97,8 @@ for project in "${PROJECTS[@]}"; do
   [[ -f "$dir/CLAUDE.md" ]] && cl="CLAUDE" || cl="missing CLAUDE"
   [[ -f "$dir/.claude/tasks/active.json" ]] && ac="active" || ac="missing active"
   [[ -d "$dir/.claude/hooks" ]] && hk="hooks" || hk="missing hooks"
-  pending=0
-  for candidate in "${ADAPTER_PENDING[@]}"; do
-    [[ "$candidate" == "$project" ]] && pending=1
-  done
   if [[ "$ag $cl $ac $hk" == "AGENTS CLAUDE active hooks" ]]; then
     pass "$project" "$ag, $cl, $ac, $hk"
-  elif [[ "$pending" -eq 1 ]]; then
-    warn "$project" "adapter rollout pending: $ag, $cl, $ac, $hk"
   else
     fail "$project" "$ag, $cl, $ac, $hk"
   fi
