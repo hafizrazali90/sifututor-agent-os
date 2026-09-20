@@ -45,8 +45,15 @@ Active projects:
 | `lls-frontend` | Learnest React frontend |
 | `lls-mobile` | Learnest mobile app |
 | `creative-hub` | Creative Hub |
-| `team-inbox` | WhatsApp/team inbox |
 | `finch-inbox` | Finch omnichannel inbox |
+| `cx-call-capture-android` | CX call capture Android app |
+| `sims-owner-analytics` | Owner-only SIMS analytics service |
+
+Retired projects:
+
+| Project | Status |
+| --- | --- |
+| `team-inbox` | Retired; replaced by `finch-inbox`. The archived checkout `team-inbox.archived-2026-08-26/` is read-only history. Never treat it as an active project and never use `team-inbox` as a new Koda project tag. |
 
 `live/` contains production snapshots. Never modify anything under `live/`.
 Use it only as read-only reference.
