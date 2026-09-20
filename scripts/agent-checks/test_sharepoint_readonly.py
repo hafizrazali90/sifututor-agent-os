@@ -38,6 +38,26 @@ class SharePointReadonlyTests(unittest.TestCase):
         url = module.graph_path(self.config(), "Shared Documents/Operations", children=True)
         self.assertIn("/drives/drive/root:/Shared%20Documents/Operations:/children", url)
 
+    def test_conf_folder_alias_is_scoped(self):
+        config = self.config()
+        config["allowed_item_aliases"] = {"cx": "folder-id"}
+        url = module.graph_path(config, "@cx/report.docx")
+        self.assertIn("/drives/drive/items/folder-id:/report.docx:", url)
+
+    def test_unknown_folder_alias_is_rejected(self):
+        config = self.config()
+        config["allowed_item_aliases"] = {"cx": "folder-id"}
+        with self.assertRaises(module.LaneError):
+            module.graph_path(config, "@finance/report.xlsx")
+
+    def test_existing_conf_key_shape_loads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sharepoint-readonly.conf"
+            path.write_text("SHAREPOINT_TENANT_ID=t\nSHAREPOINT_CLIENT_ID=c\nSHAREPOINT_DRIVE_ID=d\nSHAREPOINT_FOLDER_CX_ID=f\nSHAREPOINT_TOKEN_STORE=/tmp/token\n")
+            path.chmod(0o600)
+            config = module.validate_config(module.read_config(path))
+            self.assertEqual(config["allowed_item_aliases"], {"cx": "f"})
+
     def test_pagination_rejects_foreign_host(self):
         original = module.request_json
         module.request_json = lambda *_args, **_kwargs: {"value": [], "@odata.nextLink": "https://evil.example/v1.0/x"}

@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path, PurePosixPath
 
 GRAPH = "https://graph.microsoft.com/v1.0"
-DEFAULT_CONFIG = Path.home() / ".config/sifututor/sharepoint-readonly.json"
+DEFAULT_CONFIG = Path.home() / ".config/sifututor/agent-access/sharepoint-readonly.conf"
 DEFAULT_CACHE = Path.home() / ".config/sifututor/runtime/sharepoint-token.json"
 SAFE_FIELDS = "id,name,size,lastModifiedDateTime,webUrl,file,folder,parentReference"
 
@@ -42,6 +42,36 @@ def read_private_json(path: Path, *, required: bool = True) -> dict:
     return value
 
 
+def read_config(path: Path) -> dict:
+    if path.suffix == ".json":
+        return read_private_json(path)
+    if not path.exists():
+        raise LaneError(f"configuration missing: {path}")
+    mode = stat.S_IMODE(path.stat().st_mode)
+    if mode & 0o077:
+        raise LaneError(f"private file permissions too broad: {path} (expected 600)")
+    values: dict[str, str] = {}
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    aliases = {
+        key.removeprefix("SHAREPOINT_FOLDER_").removesuffix("_ID").lower(): value
+        for key, value in values.items()
+        if key.startswith("SHAREPOINT_FOLDER_") and key.endswith("_ID") and value
+    }
+    return {
+        "tenant_id": values.get("SHAREPOINT_TENANT_ID"),
+        "client_id": values.get("SHAREPOINT_CLIENT_ID"),
+        "drive_id": values.get("SHAREPOINT_DRIVE_ID"),
+        "allowed_item_aliases": aliases,
+        "token_store": values.get("SHAREPOINT_TOKEN_STORE"),
+        "download_root": str(Path.home() / ".cache/sifututor/sharepoint-downloads"),
+    }
+
+
 def write_private_json(path: Path, value: dict) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(path.parent, 0o700)
@@ -54,14 +84,18 @@ def write_private_json(path: Path, value: dict) -> None:
 
 
 def validate_config(config: dict) -> dict:
-    required = ("tenant_id", "client_id", "drive_id", "allowed_path_prefixes", "download_root")
+    required = ("tenant_id", "client_id", "drive_id", "download_root")
     missing = [key for key in required if not config.get(key)]
     if missing:
         raise LaneError("configuration missing required keys: " + ", ".join(missing))
-    prefixes = config["allowed_path_prefixes"]
-    if not isinstance(prefixes, list) or not prefixes:
-        raise LaneError("allowed_path_prefixes must be a non-empty list")
+    prefixes = config.get("allowed_path_prefixes") or []
+    aliases = config.get("allowed_item_aliases") or {}
+    if not prefixes and not aliases:
+        raise LaneError("configuration needs at least one allowed path prefix or folder alias")
+    if not isinstance(prefixes, list) or not isinstance(aliases, dict):
+        raise LaneError("invalid path-prefix or folder-alias allow-list")
     config["allowed_path_prefixes"] = [normalize_relative_path(value) for value in prefixes]
+    config["allowed_item_aliases"] = {str(key).lower(): str(value) for key, value in aliases.items() if value}
     hosts = config.get("allowed_download_hosts", ["*.sharepoint.com", "*.sharepoint-df.com"])
     if not isinstance(hosts, list) or not hosts:
         raise LaneError("allowed_download_hosts must be a non-empty list")
@@ -94,6 +128,19 @@ def host_allowed(host: str, patterns: list[str]) -> bool:
 
 
 def graph_path(config: dict, path: str, *, children: bool = False) -> str:
+    if path.startswith("@"):
+        alias_part, _, relative = path[1:].partition("/")
+        item_id = config["allowed_item_aliases"].get(alias_part.lower())
+        if not item_id:
+            raise LaneError("requested folder alias is outside the configured allow-list")
+        drive = urllib.parse.quote(str(config["drive_id"]), safe="")
+        item = urllib.parse.quote(item_id, safe="")
+        if relative:
+            quoted = urllib.parse.quote(normalize_relative_path(relative), safe="/")
+            base = f"{GRAPH}/drives/{drive}/items/{item}:/{quoted}:"
+        else:
+            base = f"{GRAPH}/drives/{drive}/items/{item}"
+        return base + ("/children" if children else "")
     normalized = normalize_relative_path(path)
     if not path_allowed(normalized, config["allowed_path_prefixes"]):
         raise LaneError("requested path is outside the configured read-only allow-list")
@@ -272,7 +319,7 @@ def download(item: dict, config: dict, destination: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
+    parser.add_argument("--cache", type=Path)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("probe")
     sub.add_parser("login")
@@ -284,13 +331,14 @@ def main() -> int:
     command.add_argument("--to", required=True)
     args = parser.parse_args()
     try:
-        config = validate_config(read_private_json(args.config))
+        config = validate_config(read_config(args.config))
+        cache_path = args.cache or (Path(config["token_store"]).expanduser() if config.get("token_store") else DEFAULT_CACHE)
         if args.command == "probe":
-            cache = read_private_json(args.cache, required=False)
+            cache = read_private_json(cache_path, required=False)
             state = "available" if valid_access_token(cache) else "not_authenticated"
             print(json.dumps({"name": "sharepoint_readonly", "state": state, "config": "valid", "write_operations": "not_implemented"}))
             return 0 if state == "available" else 2
-        token = acquire_token(config, args.cache, interactive=args.command == "login")
+        token = acquire_token(config, cache_path, interactive=args.command == "login")
         if args.command == "login":
             print(json.dumps({"name": "sharepoint_readonly", "state": "available", "token": "stored_privately"}))
             return 0
