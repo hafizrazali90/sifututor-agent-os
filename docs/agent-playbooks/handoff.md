@@ -254,7 +254,9 @@ The preflight proves:
 - the state directory and handback are fresh.
 
 Identity fields, organization identifiers, raw auth output, prompts, and Claude
-response text are not written into preflight or evidence files.
+response text are not written into preflight or evidence files. A successful
+terminal result may become the separate handback only through the bounded
+recovery rule below.
 
 #### Paid provider evaluation or canary work
 
@@ -278,8 +280,25 @@ scripts/agent-checks/agent-os-claude-delegation.py run \
 ```
 
 The watchdog writes `state.json`, `preflight.json`, `evidence.json`, and
-`evidence.md` under the job's ignored state directory. Claude must write its
+`evidence.md` under the job's ignored state directory. Claude should write its
 separate sanitized `handback.md` to the exact contract path.
+
+If Claude exits successfully but omits that file, the watchdog may recover only
+the terminal `result` text as the handback. Recovery is fail-closed: the text
+must come from a non-error terminal result, be at most 1 MiB, remain non-empty
+after control-character removal, contain no credential pattern recognized by the
+shared secret scanner, and satisfy the same configured proof contract as a
+normal handback. Otherwise the job remains `incomplete`.
+
+An exit code of 0 is not by itself proof of a non-error result. `error_max_turns`
+and an `api_error_status` both arrive without `is_error`, so the watchdog uses
+its centralized error classification and treats a non-boolean `is_error` as
+error-shaped. The last result event is authoritative: an error-shaped or textless
+result discards any earlier candidate rather than leaving it recoverable. A
+filesystem error while writing the handback also fails closed, and `evidence.json`
+and `evidence.md` are still written, so a failed recovery never costs the job its
+evidence. Recovery never stores the raw event stream, never grants semantic
+acceptance, and never removes the independent Codex review requirement.
 
 ### Non-Token Status And Worker States
 
@@ -300,7 +319,7 @@ scripts/agent-checks/agent-os-claude-delegation.py status \
 | `unmonitored` | Claude is still alive, but the local watchdog process has stopped. | Tell Hafiz immediately, preserve the lane lock, and reconcile the worker before any relaunch. |
 | `stale` | State says active but the recorded worker process is gone. | Reconcile Git and handback evidence before deciding whether to relaunch. |
 | `returned` | Claude exited successfully and the configured handback items are structurally present. This is not semantic acceptance. | Begin independent Codex review; do not call the product work accepted yet. |
-| `incomplete` or `failed` | The handback is missing or the worker exited unsuccessfully. | Preserve evidence, diagnose, and report the exact next action. |
+| `incomplete` or `failed` | No safe contract-valid handback could be obtained, or the worker exited unsuccessfully. | Preserve evidence, diagnose, and report the exact next action. |
 
 The watchdog never kills, restarts, resumes, approves, commits, pushes, merges,
 deploys, or mutates production. A stall is an alert, not permission to act.
@@ -323,7 +342,9 @@ error-shaped events only, so a successful worker whose own prose mentions a
 denial or a limit is not mislabelled. `evidence.md` leads with the exit code,
 `result_is_error`, and `api_error_status` when the worker failed, so a launch
 failure is legible without reading raw output. Result text, assistant content,
-prompts, stderr text, paths, identities, and the raw stream are never stored.
+prompts, stderr text, paths, identities, and the raw stream are never stored in
+evidence. The terminal result can be persisted only as the separate recovered
+handback after the bounded safety and contract checks described above.
 
 A zero-token failure is a launch problem, not delegated work. Read
 `terminal_diagnostic`, fix the named cause, and start a fresh job; do not
