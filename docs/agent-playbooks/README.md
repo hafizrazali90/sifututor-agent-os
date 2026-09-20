@@ -296,8 +296,12 @@ after the config changes. That is expected for local hook safety.
 | --- | --- | --- |
 | State-file workflow | `ripple-suite`, `sifu-tutor`, `sifututor_tutor`, `sifututor_parent`, `lls` | `.claude/tasks/active.json` points to the active task file |
 | Paired frontend | `lls-frontend` | Has state workflow and dedicated frontend skills; verify with `lls` when API contracts or RTK Query slices change |
-| Shared-playbook workflow | `lls-mobile`, `creative-hub`, `team-inbox` | Has task state and hooks, but no project-specific skills yet |
+| Shared-playbook workflow | `lls-mobile`, `creative-hub` | Has task state and hooks, but no project-specific skills yet |
 | Existing custom workflow plus task pointer | `finch-inbox` | Keeps Finch workflow, adds `.claude/tasks/active.json` for parity |
+| Adapter rollout pending | `cx-call-capture-android`, `sims-owner-analytics` | Active projects with their own agent instructions (`AI-RULES.md` and `AGENTS.md`); shared task state and hooks not installed yet |
+
+`team-inbox` is retired and replaced by `finch-inbox`. Do not add it back to
+this table or use it as a Koda project tag.
 
 ## Universal Order
 

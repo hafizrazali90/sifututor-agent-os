@@ -84,7 +84,12 @@ PROJECT_NAMES = [
     "ripple-suite", "ripple", "dashboard",
     "sifu-tutor", "sifu",
     "lls-frontend", "lls-mobile", "lls",
-    "creative-hub", "team-inbox",
+    "creative-hub",
+    # issue 103: team-inbox is retired; finch-inbox replaced it. Keep this
+    # list identical in meaning to codex-lifecycle-hook.py PROJECT_ALIASES.
+    "finch-inbox", "finch",
+    "cx-call-capture-android", "cx-call-capture",
+    "sims-owner-analytics",
 ]
 
 # Normalized project tags (what's actually stored in Koda)
@@ -101,7 +106,10 @@ PROJECT_TAG_MAP = {
     "lls-mobile": "lls-mobile",
     "lls": "lls",
     "creative-hub": "creative-hub",
-    "team-inbox": "team-inbox",
+    "finch-inbox": "finch-inbox", "finch": "finch-inbox",
+    "cx-call-capture-android": "cx-call-capture-android",
+    "cx-call-capture": "cx-call-capture-android",
+    "sims-owner-analytics": "sims-owner-analytics",
 }
 
 

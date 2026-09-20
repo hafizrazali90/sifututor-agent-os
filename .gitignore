@@ -81,6 +81,7 @@ live/
 
 # Product repos stay independent nested Git repositories.
 creative-hub/
+cx-call-capture-android/
 finch-inbox/
 kelas/
 lls/
@@ -90,4 +91,8 @@ ripple-suite/
 sifu-tutor/
 sifututor_parent/
 sifututor_tutor/
-team-inbox/
+sims-owner-analytics/
+
+# Retired: team-inbox was replaced by finch-inbox. Only the archived checkout
+# remains on disk.
+team-inbox.archived-2026-08-26/

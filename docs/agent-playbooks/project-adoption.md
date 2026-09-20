@@ -174,8 +174,9 @@ treating it as final.
 | `lls-frontend` | Learnest React frontend | Browser journey QA, frontend build/tests, API contract evidence. |
 | `lls-mobile` | Learnest mobile app | Mobile journey QA, API contract evidence, release/build path. |
 | `creative-hub` | Creative Hub | Project-specific commands, user journeys, deployment path. |
-| `team-inbox` | WhatsApp/team inbox | Messaging workflows, privacy/data access, integration evidence. |
 | `finch-inbox` | Omnichannel inbox | Messaging workflows, privacy/data access, integration evidence. |
+| `cx-call-capture-android` | CX call capture Android app | Android build/test path, call-log and recording permissions, device/pilot evidence, release signing. |
+| `sims-owner-analytics` | Owner-only SIMS analytics service | Read-only replica boundary, grant/secret safety, KVM8 deploy path, bundle-gated change workflow. |
 
 ## Adoption Workflow
 

@@ -185,7 +185,7 @@ git status --short --branch
 For all product projects from the umbrella root:
 
 ```bash
-for d in sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub team-inbox finch-inbox; do
+for d in kelas sifu-tutor ripple-suite sifututor_tutor sifututor_parent lls lls-frontend lls-mobile creative-hub finch-inbox cx-call-capture-android sims-owner-analytics; do
   echo "## $d"
   (cd "$d" && ../scripts/agent-checks/pre-commit-guard.sh)
 done
@@ -206,9 +206,9 @@ source: user-stated | auto-captured | correction
 Every memory needs at least one project tag:
 
 ```text
-sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
-lls | lls-frontend | lls-mobile | creative-hub | team-inbox | finch-inbox |
-sifututor | codex-parity
+kelas | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
+lls | lls-frontend | lls-mobile | creative-hub | finch-inbox |
+cx-call-capture-android | sims-owner-analytics | sifututor | codex-parity
 ```
 
 Never store secrets, raw tokens, credentials, payload bodies, customer private

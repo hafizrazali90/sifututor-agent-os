@@ -125,6 +125,8 @@ check_file "Agent OS GitHub probe" "$ROOT/scripts/agent-checks/agent-os-github-p
 check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner-probe.py"
 check_file "Agent OS today snapshot" "$ROOT/scripts/agent-checks/agent-os-today-snapshot.py"
 check_file "Agent OS today fixtures" "$ROOT/scripts/agent-checks/test_agent_os_today_snapshot.py"
+check_file "project registry check" "$ROOT/scripts/agent-checks/agent-os-project-registry-check.py"
+check_file "project registry fixtures" "$ROOT/scripts/agent-checks/test_agent_os_project_registry.py"
 check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os-production-logs-probe.py"
 check_file "Agent OS live evidence report" "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
@@ -370,6 +372,25 @@ else
   sed -n '1,8p' $TMP_DIR/worktree-lifecycle.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/worktree-lifecycle.out $TMP_DIR/worktree-lifecycle.err
+
+if "$ROOT/scripts/agent-checks/agent-os-project-registry-check.py" --root "$ROOT" >$TMP_DIR/project-registry.out 2>$TMP_DIR/project-registry.err; then
+  project_registry_summary="$(tail -1 $TMP_DIR/project-registry.out 2>/dev/null || true)"
+  pass "project registries" "${project_registry_summary:-live project registries agree}"
+else
+  fail "project registries" "live project registries disagree (issue 103)"
+  sed -n '1,12p' $TMP_DIR/project-registry.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/project-registry.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/project-registry.out $TMP_DIR/project-registry.err
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_project_registry.py' >$TMP_DIR/project-registry-tests.out 2>$TMP_DIR/project-registry-tests.err; then
+  pass "project registry fixtures" "drift, routing-parity and history-preservation fixtures passed"
+else
+  fail "project registry fixtures" "project registry regression tests failed"
+  sed -n '1,12p' $TMP_DIR/project-registry-tests.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/project-registry-tests.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/project-registry-tests.out $TMP_DIR/project-registry-tests.err
 
 if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_task_context.py' >$TMP_DIR/task-context.out 2>$TMP_DIR/task-context.err; then
   pass "Agent OS task context" "session isolation, approval transfer and controlled continuation passed"

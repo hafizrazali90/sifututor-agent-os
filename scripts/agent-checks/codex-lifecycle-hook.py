@@ -60,8 +60,9 @@ PROJECTS = {
     "lls-frontend",
     "lls-mobile",
     "creative-hub",
-    "team-inbox",
     "finch-inbox",
+    "cx-call-capture-android",
+    "sims-owner-analytics",
 }
 PROJECT_ALIASES = {
     "kelas": "kelas",
@@ -82,9 +83,13 @@ PROJECT_ALIASES = {
     "lls-mobile": "lls-mobile",
     "lls": "lls",
     "creative-hub": "creative-hub",
-    "team-inbox": "team-inbox",
+    # issue 103: team-inbox is retired; finch-inbox replaced it. Keep this
+    # map identical in meaning to the Claude koda-context-injector.py map.
     "finch-inbox": "finch-inbox",
     "finch": "finch-inbox",
+    "cx-call-capture-android": "cx-call-capture-android",
+    "cx-call-capture": "cx-call-capture-android",
+    "sims-owner-analytics": "sims-owner-analytics",
 }
 
 

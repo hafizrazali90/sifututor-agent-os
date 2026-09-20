@@ -38,7 +38,8 @@ No active task at last check:
 - `lls-frontend`
 - `lls-mobile`
 - `creative-hub`
-- `team-inbox`
 - `finch-inbox`
+- `cx-call-capture-android`
+- `sims-owner-analytics`
 
 Run `quick-check.md` commands to refresh this list.
