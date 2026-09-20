@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HELPER="$ROOT/scripts/agent-checks/codex-lifecycle-hook.py"
+WRITER="$ROOT/scripts/agent-checks/koda_write.py"
 
 usage() {
   cat <<'EOF'
@@ -12,16 +13,21 @@ Usage:
   scripts/agent-checks/koda search '<json-args>'
   scripts/agent-checks/koda store '<json-args>'
   scripts/agent-checks/koda update '<json-args>'
+  scripts/agent-checks/koda correction '<verification-result-json>'
 
 Examples:
   scripts/agent-checks/koda search '{"query":"communication preference","tags":["sifututor"],"limit":5}'
   scripts/agent-checks/koda store '{"category":"lesson","content":"...","project":"sifututor","source":"auto-captured","tags":["sifututor","agent-os"],"why":"..."}'
   scripts/agent-checks/koda update '{"id":"mem_XXXX","content":"...","source":"correction","tags":["sifututor","agent-os"],"why":"..."}'
+  scripts/agent-checks/koda correction '{"id":"mem_XXXX","verification":{"state":"persisted_but_mismatched","mismatched_fields":["category","tags"]}}'
 
 Notes:
   - Do not pass secrets, raw tokens, .env values, or private payloads.
   - health is read-only by default; use --write-check only for startup/setup verification.
   - store performs an exact-content duplicate preflight and skips an existing memory.
+  - correction is offline and read-only: it explains a store/update verification
+    result, names which mismatched fields update can fix and which need the
+    memory owner, and never retries or repairs anything.
   - Use this CLI as the Codex-first Koda path in this workspace.
 EOF
 }
@@ -66,6 +72,13 @@ case "$command" in
       exit 2
     fi
     python3 "$HELPER" --koda-update-json "$1"
+    ;;
+  correction)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 2
+    fi
+    python3 "$WRITER" --correction-json "$1"
     ;;
   -h|--help|help)
     usage

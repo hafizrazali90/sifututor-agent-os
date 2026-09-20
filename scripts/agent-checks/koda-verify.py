@@ -60,6 +60,38 @@ def parse_tool_content(response: dict):
         return text
 
 
+def confirm_exact_record(
+    headers: dict,
+    session_id: str,
+    memory_id: str,
+    expected: dict,
+) -> str:
+    """Read the exact record back. An accepted write is not proof of stored metadata."""
+
+    recall_payload = {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {"name": "memory_recall", "arguments": {"id": memory_id}},
+        "id": 5,
+    }
+    recall_result, _ = post(recall_payload, headers, session_id)
+    record = parse_tool_content(recall_result)
+    if not isinstance(record, dict) or str(record.get("id")) != memory_id:
+        return "unverified"
+
+    mismatched = []
+    for field, value in expected.items():
+        if field not in record:
+            continue
+        actual = record[field]
+        if field == "tags":
+            if not isinstance(actual, list) or set(actual) != set(value):
+                mismatched.append(field)
+        elif actual != value:
+            mismatched.append(field)
+    return "mismatched: " + ", ".join(sorted(mismatched)) if mismatched else "verified"
+
+
 def ensure_confirmation_memory(
     headers: dict,
     session_id: str,
@@ -121,7 +153,10 @@ def ensure_confirmation_memory(
         }
         update_result, _ = post(update_payload, headers, session_id)
         if isinstance(update_result, dict) and "result" in update_result:
-            return str(existing["id"]), "updated"
+            state = confirm_exact_record(
+                headers, session_id, str(existing["id"]), {"content": content, "tags": tags}
+            )
+            return str(existing["id"]), f"updated ({state})"
         return str(existing["id"]), "already present"
 
     if existing:
@@ -146,7 +181,12 @@ def ensure_confirmation_memory(
     store_result, _ = post(store_payload, headers, session_id)
     payload = parse_tool_content(store_result)
     if isinstance(payload, dict) and payload.get("id"):
-        return str(payload["id"]), "stored"
+        memory_id = str(payload["id"])
+        state = confirm_exact_record(
+            headers, session_id, memory_id,
+            {"content": content, "tags": tags, "category": "fact", "project": "sifututor"},
+        )
+        return memory_id, f"stored ({state})"
     return "unknown", "store failed"
 
 
@@ -268,6 +308,11 @@ def main():
     )
     if action == "store failed":
         warn("Could not store setup confirmation")
+    elif "mismatched" in action or "unverified" in action:
+        # Exit 0 is still correct: Koda is reachable. The claim is just narrower.
+        warn(f"Confirmation {action} — memory {mem_id}")
+        warn("Koda is reachable, but the stored record did not match the request. "
+             "Send this memory ID to Hafiz; do not retry or edit it yourself.")
     else:
         ok(f"Confirmation {action} — memory {mem_id}")
 

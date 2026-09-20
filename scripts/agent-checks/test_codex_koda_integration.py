@@ -190,50 +190,60 @@ class KodaVerifierTests(unittest.TestCase):
         self.assertEqual(message, "KODA_API_KEY is set")
         self.assertNotIn(secret[:8], message)
 
-    def test_existing_confirmation_is_updated_not_duplicated(self):
+    def run_confirmation(self, found, memory_id, *, stored_override=None):
+        """Drive the verifier with a transport that echoes the written record on recall."""
+
+        written: dict = {}
+        calls: list[str] = []
+
+        def fake_post(payload, headers, session_id=""):
+            name = payload["params"]["name"]
+            calls.append(name)
+            arguments = payload["params"]["arguments"]
+            if name == "memory_search":
+                return tool_response(found), "session"
+            if name in {"memory_store", "memory_update"}:
+                written.update(arguments)
+                return tool_response({"id": memory_id, "message": name}), "session"
+            record = {**written, "id": memory_id, **(stored_override or {})}
+            return tool_response(record), "session"
+
+        with patch.object(verifier, "post", side_effect=fake_post):
+            result = verifier.ensure_confirmation_memory(
+                {"Authorization": "Bearer hidden"},
+                "session",
+                contract.ALL_KODA_TOOLS,
+                machine="test-host",
+                system_info="TestOS",
+                timestamp="2026-07-13 08:00 UTC",
+            )
+        return result, calls
+
+    def test_existing_confirmation_is_updated_and_read_back_by_exact_id(self):
         existing = {"id": "mem_existing", "content": "old", "tags": ["koda-setup"]}
-        responses = [
-            (tool_response([existing]), "session"),
-            (tool_response({"id": "mem_existing", "message": "updated"}), "session"),
-        ]
-        with patch.object(verifier, "post", side_effect=responses) as mocked:
-            result = verifier.ensure_confirmation_memory(
-                {"Authorization": "Bearer hidden"},
-                "session",
-                contract.ALL_KODA_TOOLS,
-                machine="test-host",
-                system_info="TestOS",
-                timestamp="2026-07-13 08:00 UTC",
-            )
+        result, calls = self.run_confirmation([existing], "mem_existing")
 
-        self.assertEqual(result, ("mem_existing", "updated"))
-        called_tools = [
-            call.args[0]["params"]["name"]
-            for call in mocked.call_args_list
-        ]
-        self.assertEqual(called_tools, ["memory_search", "memory_update"])
+        self.assertEqual(result, ("mem_existing", "updated (verified)"))
+        self.assertEqual(calls, ["memory_search", "memory_update", "memory_recall"])
 
-    def test_missing_confirmation_is_stored_once(self):
-        responses = [
-            (tool_response([]), "session"),
-            (tool_response({"id": "mem_new", "message": "stored"}), "session"),
-        ]
-        with patch.object(verifier, "post", side_effect=responses) as mocked:
-            result = verifier.ensure_confirmation_memory(
-                {"Authorization": "Bearer hidden"},
-                "session",
-                contract.ALL_KODA_TOOLS,
-                machine="test-host",
-                system_info="TestOS",
-                timestamp="2026-07-13 08:00 UTC",
-            )
+    def test_missing_confirmation_is_stored_once_and_read_back_by_exact_id(self):
+        result, calls = self.run_confirmation([], "mem_new")
 
-        self.assertEqual(result, ("mem_new", "stored"))
-        called_tools = [
-            call.args[0]["params"]["name"]
-            for call in mocked.call_args_list
-        ]
-        self.assertEqual(called_tools, ["memory_search", "memory_store"])
+        self.assertEqual(result, ("mem_new", "stored (verified)"))
+        self.assertEqual(calls, ["memory_search", "memory_store", "memory_recall"])
+
+    def test_rewritten_setup_metadata_is_reported_not_repaired(self):
+        result, calls = self.run_confirmation(
+            [], "mem_new", stored_override={"tags": ["something-else"], "category": "lesson"})
+
+        self.assertEqual(result, ("mem_new", "stored (mismatched: category, tags)"))
+        self.assertEqual(calls, ["memory_search", "memory_store", "memory_recall"])
+
+    def test_unreadable_setup_record_is_not_claimed_as_verified(self):
+        result, calls = self.run_confirmation([], "mem_new", stored_override={"id": "mem_other"})
+
+        self.assertEqual(result, ("mem_new", "stored (unverified)"))
+        self.assertEqual(calls, ["memory_search", "memory_store", "memory_recall"])
 
 
 if __name__ == "__main__":
