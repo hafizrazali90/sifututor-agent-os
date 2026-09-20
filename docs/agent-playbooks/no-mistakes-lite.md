@@ -80,7 +80,7 @@ sessions, or anything leaving local:
 | Is permanent E2E required? | Add/update it or name the valid exception and follow-up. |
 | Did related-impact need a check? | Bugfixes, hotfixes, and user-facing small changes need the right related-impact audit. |
 | Is there a critical lane? | Auth, payment, invoice, commission, migration, deploy, production data, and mobile API contracts need stronger gates. |
-| Is release communication needed? | Staff-facing changes may need changelog, help text, What's New, or ops note. |
+| Is the staff documentation decision recorded? | A staff-facing change records one decision per [release-documentation.md](release-documentation.md): relevant, not relevant with a reason, or urgent deferral with a named owner and a follow-up issue. |
 | Is this a multi-fix session? | Session Release Ledger must show no fix is stranded or overstated. |
 | Is fresh-context review needed? | If this is user-facing, critical, outbound, complex, autonomous, or multi-fix work, review it like the builder's assumptions may be wrong. |
 | What state is actually proven? | Changed locally, committed, pushed, PR open, merged, deployed, live checked, monitored, or accepted. |

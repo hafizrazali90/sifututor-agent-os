@@ -97,6 +97,34 @@ monitored, or accepted, apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain
 meaning: merged, deployed, smoke checked, monitored, and accepted are different
 states, and the agent must not collapse them into "done."
 
+## Staff Documentation Gate
+
+Before a staff-facing release leaves for staging or production, the change must
+carry its staff documentation decision.
+[release-documentation.md](release-documentation.md) owns that rule for the
+whole Agent OS. Do not restate it here, and do not invent a project-specific
+version of it.
+
+Run the blocking check against what this release actually contains:
+
+```bash
+python3 ../scripts/agent-checks/release_documentation.py --project . --mode blocking --base main
+```
+
+Plain meaning:
+
+```text
+If a staff member has to do something differently after this release, the thing
+that tells them so ships with it. If it genuinely cannot, a named person owns a
+real GitHub follow-up issue for it. "We'll write it up later" with nobody's name
+on it is not an outcome this gate accepts.
+```
+
+The check is read-only and scoped to this release. It never asks for
+documentation or tests for features from earlier releases. `UNAVAILABLE` means
+the project's shape could not be resolved; report that honestly instead of
+treating it as a pass.
+
 ## Minimum Release Report
 
 Use this natural-language shape:
@@ -108,6 +136,7 @@ Release state:
 - What proves it: <deploy record, SHA, smoke, logs, monitoring>.
 - What is not proven yet: <gap or none>.
 - User impact: <what changed for staff/parents/tutors/admins/customers>.
+- Staff documentation: <relevant, and the files that shipped | not relevant, and why | urgently deferred, with owner and follow-up issue | not staff-facing>.
 - Recommended next: <monitor longer | rollback | fix | accept/close | deploy production>.
 - Decision needed: <yes/no and exact decision>.
 ```

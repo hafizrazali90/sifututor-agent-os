@@ -466,6 +466,39 @@ From the umbrella root:
 python3 scripts/agent-checks/test-coverage-manifest-check.py --project <project>
 ```
 
+## Staff Documentation In A Release
+
+A staff-facing change ships with the staff documentation it needs, in the same
+release bundle, or it records why it did not.
+
+Every staff-facing SIMS, Ripple, or equivalent change records exactly one
+decision:
+
+- `relevant`: the changelog entry, in-page help, What's New entry, or staff
+  guide ships in this same change.
+- `not relevant`: a concrete reason nothing staff see or do changed.
+- `urgent deferral`: a named person and a real GitHub follow-up issue. `later`,
+  `TODO`, a role, a queue, or the agent itself is not an owner, and the change's
+  own issue is not a follow-up.
+
+`docs/agent-playbooks/release-documentation.md` owns this rule. Commit, review,
+and release playbooks point there instead of restating it.
+
+The decision lives in the project's `RELEASE-DOCS.md` ledger. One shared,
+read-only checker enforces it for every agent:
+
+```bash
+python3 ../scripts/agent-checks/release_documentation.py --project . --mode advisory --staged
+```
+
+Before push, PR, merge, or deploy, use `--mode blocking --base main`.
+
+The check is project-aware, scoped to the active change, and never asks for
+documentation or tests for features from earlier releases. A project with no
+configured or detected staff-documentation shape reports `UNAVAILABLE`; report
+that honestly instead of treating it as a pass. A change that is not
+staff-facing is not gated, even in a repository that keeps a changelog.
+
 ## Koda Memory
 
 Koda is the shared memory layer across Claude and Codex.

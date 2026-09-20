@@ -70,15 +70,21 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
      confirm the exact permanent E2E file that covers it. If any changed
      workflow has no permanent E2E and no explicit accepted exception, stop
      before commit.
-5. Confirm release communication for staff-facing changes before staging:
-   - `CHANGELOG.md` has a plain-English entry for what changed.
-   - Relevant module help content in `src/modules/<module>/lib/help.ts` is
-     updated when staff need new guidance, changed wording, or changed steps.
-   - A What's New / release seed script or equivalent release entry is prepared
-     when staff should be notified in-app.
-   - If any item is not relevant, record why in the final answer or PR body.
-   - Treat a missing relevant release communication item as a commit blocker,
-     even when tests pass.
+5. Confirm the staff documentation decision for staff-facing changes.
+   [release-documentation.md](release-documentation.md) owns this rule; do not
+   restate it here. In short: record exactly one decision for the change -
+   `relevant` with the documentation files in this same bundle, `not relevant`
+   with a concrete reason, or `urgent deferral` with a named owner and a real
+   GitHub follow-up issue. Run the shared check, which the pre-commit guard
+   already runs in advisory mode:
+
+   ```bash
+   python3 ../scripts/agent-checks/release_documentation.py --project . --mode advisory --staged
+   ```
+
+   - Say the decision in one plain line in the final answer or PR body.
+   - Treat a relevant staff-facing change with no documentation in the bundle as
+     a commit blocker, even when tests pass.
    - If the changelog or release-note artifact is generated in that project,
      edit the source-of-truth release note or generator input instead of
      hand-editing generated output.
@@ -87,8 +93,8 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    commit.
 7. Apply the Review And Risk Checkpoint from [review.md](review.md). Plain
    meaning: before saving the commit, confirm the change is scoped, evidenced,
-   honest about state, not hiding critical-lane risk, not missing relevant
-   release communication, and not confusing multi-fix session state.
+   honest about state, not hiding critical-lane risk, not missing its staff
+   documentation decision, and not confusing multi-fix session state.
 8. Apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain meaning: before
    committing, make one final honesty pass over scope, proof, missing evidence,
    state, approval boundary, and recommended next action.

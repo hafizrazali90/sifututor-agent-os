@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "Copy to <project>/.agent-os/release-docs.json and edit for that repository.",
+    "Only add this file when the detected convention is wrong for the project.",
+    "The rule this configures lives in docs/agent-playbooks/release-documentation.md.",
+    "Never put secrets, tokens, or credentials in this file."
+  ],
+  "ledger": "RELEASE-DOCS.md",
+  "staff_facing": [
+    "src/modules/**",
+    "src/app/**",
+    "app/Http/**",
+    "resources/views/**"
+  ],
+  "not_staff_facing": [
+    "**/tests/**",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/fixtures/**",
+    "docs/**",
+    ".github/**",
+    "*.md",
+    "*.lock"
+  ],
+  "artifacts": {
+    "changelog": {
+      "paths": ["CHANGELOG.md"],
+      "required": true,
+      "meaning": "the plain-English entry staff and Hafiz read to see what changed"
+    },
+    "module help": {
+      "paths": ["src/modules/*/lib/help.ts"],
+      "required": false,
+      "meaning": "the in-page guidance staff see inside the changed module"
+    },
+    "staff guide": {
+      "paths": ["docs/staff-guides/**"],
+      "required": false,
+      "meaning": "the guide a staff member opens to learn the changed workflow"
+    },
+    "what's new": {
+      "paths": ["**/whats-new/**", "**/release-notes/**"],
+      "required": false,
+      "meaning": "the in-app release entry that tells staff a change landed"
+    }
+  }
+}

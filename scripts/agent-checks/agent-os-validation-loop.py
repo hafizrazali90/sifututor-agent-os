@@ -64,6 +64,10 @@ CHECKS = [
         "test coverage enforcement",
         (sys.executable, "-m", "unittest", "discover", "-s", str(SCRIPT_DIR), "-p", "test_coverage_enforcement.py"),
     ),
+    Check(
+        "staff documentation release gate",
+        (sys.executable, "-m", "unittest", "discover", "-s", str(SCRIPT_DIR), "-p", "test_release_documentation.py"),
+    ),
     Check("adapter readiness", (sys.executable, str(SCRIPT_DIR / "agent-os-adapter-readiness.py"))),
     Check("workflow examples", (sys.executable, str(SCRIPT_DIR / "agent-os-workflow-example-runner.py"))),
     Check("scenario lab", (sys.executable, str(SCRIPT_DIR / "agent-os-scenario-lab-runner.py"), "--target", "0.90")),

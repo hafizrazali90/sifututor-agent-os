@@ -24,6 +24,7 @@ This index explains who owns the decision.
 | State and continuation | What is drafted, local, committed, pushed, PR-open, merged, deployed, live, parked, or handed off. | `agent-os-state-model.md`, `session-map.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `session-release-ledger.md` |
 | Memory | What belongs in Koda, docs, Session Map, Mission Ledger, or nowhere. | `agent-os-memory.md`, `agent-os-memory-architecture.md`, `context-authority.md` |
 | Evidence and testing | How the agent proves work. | `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, `no-mistakes-lite.md` |
+| Staff documentation in a release | Whether a staff-facing change ships its documentation, defers it with a named owner and follow-up issue, or genuinely does not need it. | `release-documentation.md` |
 | Safety and approvals | What needs approval or must never happen. | `agent-os-approval-gates.md`, `agent-access-map.md`, `agent-os-capability-model.md`, `commit.md` |
 | Workflow improvement and governance | How the Agent OS changes itself safely. | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md` |
 | Multi-agent and adapters | How Claude, Codex, and future LLMs use the same core. | `agent-os-parity-contract.md`, `agent-os-skill-registry.md`, `agent-os-adapter-readiness.md`, `agent-os-hook-dispatcher.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md` |
@@ -48,6 +49,7 @@ This index explains who owns the decision.
 | "Review this" | `review.md` | no-mistakes-lite, evidence/state docs |
 | "Commit this" | `commit.md` | review/no-mistakes-lite, current git diff/status |
 | "Push/open PR/merge/deploy" | `review.md` | push-pr-ci automation or release monitoring, approval gates |
+| "Does this need a staff guide / changelog / What's New?" | `release-documentation.md` | commit, review, release monitoring |
 | "Save or hand off" | `save-session.md` or `handoff.md` | Session Map, Koda, state model |
 
 ## Active Doc Inventory
@@ -66,7 +68,7 @@ If a new idea fits one of these rows, update that owner first.
 | State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md` |
 | Memory | `agent-os-memory.md`, `agent-os-memory-architecture.md` |
 | Safety, capability, and access | `agent-os-approval-gates.md`, `agent-os-capability-model.md`, `agent-access-map.md`, `commit.md` |
-| GitHub, PR, release, deploy, and incidents | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, `incident-workflow.md`, `product-push-map.md` |
+| GitHub, PR, release, deploy, and incidents | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `release-documentation.md`, `monitor-production-logs.md`, `incident-workflow.md`, `product-push-map.md` |
 | Governance, improvement, and evals | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md`, `agent-os-coverage-audit.md`, `workflow-efficiency-audit.md` |
 | Installation, rollout, and project profiles | `agent-os-installation.md`, `agent-os-install-manifest.json`, `agent-os-rollout-readiness.md`, `agent-os-staff-quick-start.md`, `project-adoption.md`, `agent-os-profile-registry-operations.md`, project profiles under `project-profiles/` |
 | Mission and future work | `mission-ledger.md`, `mission-ledger/*`, `plane.md` |

@@ -126,6 +126,7 @@ check_file "Agent OS Planner probe" "$ROOT/scripts/agent-checks/agent-os-planner
 check_file "Agent OS today snapshot" "$ROOT/scripts/agent-checks/agent-os-today-snapshot.py"
 check_file "Agent OS today fixtures" "$ROOT/scripts/agent-checks/test_agent_os_today_snapshot.py"
 check_file "coverage enforcement" "$ROOT/scripts/agent-checks/coverage_enforcement.py"
+check_file "release documentation enforcement" "$ROOT/scripts/agent-checks/release_documentation.py"
 check_file "coverage enforcement fixtures" "$ROOT/scripts/agent-checks/test_coverage_enforcement.py"
 check_file "coverage manifest check" "$ROOT/scripts/agent-checks/test-coverage-manifest-check.py"
 check_file "test coverage playbook" "$ROOT/docs/agent-playbooks/test-coverage.md"
@@ -405,6 +406,15 @@ else
   sed -n '1,12p' $TMP_DIR/coverage-enforcement.err 2>/dev/null || true
 fi
 rm -f "$TMP_DIR/coverage-enforcement.out" "$TMP_DIR/coverage-enforcement.err"
+
+if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_release_documentation.py' >$TMP_DIR/release-documentation.out 2>$TMP_DIR/release-documentation.err; then
+  pass "staff documentation release gate" "relevance, deferral owner/issue, project shape, scope and bypass fixtures passed"
+else
+  fail "staff documentation release gate" "release documentation regression tests failed"
+  sed -n '1,12p' $TMP_DIR/release-documentation.out 2>/dev/null || true
+  sed -n '1,12p' $TMP_DIR/release-documentation.err 2>/dev/null || true
+fi
+rm -f "$TMP_DIR/release-documentation.out" "$TMP_DIR/release-documentation.err"
 
 if python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_agent_os_task_context.py' >$TMP_DIR/task-context.out 2>$TMP_DIR/task-context.err; then
   pass "Agent OS task context" "session isolation, approval transfer and controlled continuation passed"

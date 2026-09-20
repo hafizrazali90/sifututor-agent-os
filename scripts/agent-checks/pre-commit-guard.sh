@@ -15,4 +15,12 @@ python3 "$script_dir/mission-ledger-check.py"
 # manifest reports UNAVAILABLE and passes.
 python3 "$script_dir/coverage_enforcement.py" --project . --mode change --staged
 
+# Issue 112. Staff documentation release enforcement. Advisory here on purpose:
+# a project still learning the habit should not be blocked from committing, but
+# the finding is printed in plain English and the same engine blocks at release
+# (--mode blocking --base main). Scoped to the decisions this change touches, so
+# an older release's decision is never re-opened. A project with no configured
+# or detected staff-documentation shape reports UNAVAILABLE and passes.
+python3 "$script_dir/release_documentation.py" --project . --mode advisory --staged
+
 echo "pre-commit-guard: completed"

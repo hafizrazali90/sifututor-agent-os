@@ -76,6 +76,9 @@ check_file "parity status" "$ROOT/docs/agent-playbooks/parity-status.md"
 check_file "test coverage playbook" "$ROOT/docs/agent-playbooks/test-coverage.md"
 check_file "coverage enforcement" "$ROOT/scripts/agent-checks/coverage_enforcement.py"
 check_file "coverage enforcement fixtures" "$ROOT/scripts/agent-checks/test_coverage_enforcement.py"
+check_file "release documentation playbook" "$ROOT/docs/agent-playbooks/release-documentation.md"
+check_file "release documentation enforcement" "$ROOT/scripts/agent-checks/release_documentation.py"
+check_file "release documentation fixtures" "$ROOT/scripts/agent-checks/test_release_documentation.py"
 
 echo
 echo "Agent OS health"
