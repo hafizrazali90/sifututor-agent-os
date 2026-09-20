@@ -24,6 +24,8 @@ import tempfile
 import time
 from typing import Any
 
+from secret_artifact_scan import find_secret_findings
+
 
 ACTIVE_STATES = {
     "starting",
@@ -752,6 +754,7 @@ def event_metadata(
     stream: str,
     usage: dict[str, float],
     diagnostic: dict[str, Any] | None = None,
+    terminal_result: dict[str, str] | None = None,
 ) -> tuple[str, str | None]:
     if stream == "stderr":
         lower = line.lower()
@@ -795,6 +798,26 @@ def event_metadata(
             denials = payload.get("permission_denials")
             if isinstance(denials, list):
                 diagnostic["permission_denial_count"] = len(denials)
+            if terminal_result is not None:
+                # Only a non-error terminal result is a recovery candidate, and
+                # the last result event is authoritative, so an error-shaped or
+                # textless result discards any earlier candidate. `is_error` is
+                # not the whole signal: `error_max_turns` and an
+                # `api_error_status` both arrive without it, so the centralized
+                # classification decides. `is_error` is specified as a boolean,
+                # so any other value fails closed here rather than unlocking
+                # recovery; diagnostic classification keeps its own tolerance.
+                result_text = payload.get("result")
+                is_error_flag = payload.get("is_error")
+                flag_clear = is_error_flag is None or is_error_flag is False
+                if (
+                    not flag_clear
+                    or _is_error_signal(payload)
+                    or not isinstance(result_text, str)
+                ):
+                    terminal_result.pop("text", None)
+                else:
+                    terminal_result["text"] = result_text
     if event_type == "result":
         usage.clear()
         numeric_usage(payload, usage)
@@ -887,6 +910,69 @@ def handback_contract(path: Path, job: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def recover_handback_from_result(
+    result_text: str | None,
+    handback: Path,
+    job: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist a safe, contract-valid terminal result when Claude omitted the file.
+
+    The raw stream remains ephemeral. Recovery is deliberately fail-closed: it
+    rejects oversized output, control characters, recognized credential values,
+    and any response that does not already satisfy the configured return
+    contract. No model claim is semantically accepted here.
+    """
+    outcome: dict[str, Any] = {
+        "attempted": result_text is not None,
+        "recovered": False,
+        "reason": "result text unavailable",
+        "credential_findings": 0,
+    }
+    if result_text is None:
+        return outcome
+    encoded = result_text.encode("utf-8")
+    if len(encoded) > 1_048_576:
+        outcome["reason"] = "result text exceeds 1 MiB"
+        return outcome
+    sanitized = "".join(
+        character
+        for character in result_text
+        if character in "\n\r\t" or ord(character) >= 32
+    ).strip()
+    if not sanitized:
+        outcome["reason"] = "result text is empty after control-character removal"
+        return outcome
+    findings = find_secret_findings(sanitized)
+    outcome["credential_findings"] = len(findings)
+    if findings:
+        outcome["reason"] = "recognized credential-shaped content detected"
+        return outcome
+
+    temporary = handback.with_suffix(handback.suffix + ".recovery.tmp")
+    try:
+        temporary.write_text(sanitized + "\n")
+        temporary.chmod(0o600)
+        contract = handback_contract(temporary, job)
+        if not contract["structure_valid"]:
+            outcome["reason"] = "terminal result does not satisfy the handback contract"
+            return outcome
+        temporary.replace(handback)
+    except OSError:
+        # Fail closed inside recovery. Letting this reach run_job's handler
+        # would return before evidence.json and evidence.md are written, so a
+        # recovery attempt would cost the evidence this watchdog exists to keep.
+        outcome["reason"] = "recovery could not write the configured handback path"
+        return outcome
+    finally:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+    outcome["recovered"] = True
+    outcome["reason"] = "safe contract-valid terminal result recovered as handback"
+    return outcome
+
+
 def diagnostic_text(diagnostic: dict[str, Any], key: str) -> str:
     """Render one safe diagnostic value; absent stays explicitly unavailable."""
     value = diagnostic.get(key)
@@ -973,6 +1059,7 @@ def run_job(job: dict[str, Any]) -> int:
     event_counts: Counter[str] = Counter()
     usage: dict[str, float] = {}
     terminal_diagnostic: dict[str, Any] = new_terminal_diagnostic()
+    terminal_result: dict[str, str] = {}
     state = "starting"
     worker_pid: int | None = None
     last_worker_event_at = started_at
@@ -1054,7 +1141,13 @@ def run_job(job: dict[str, Any]) -> int:
                 now = time.monotonic()
                 last_output_monotonic = now
                 last_worker_event_at = utc_now()
-                kind, subtype = event_metadata(line, key.data, usage, terminal_diagnostic)
+                kind, subtype = event_metadata(
+                    line,
+                    key.data,
+                    usage,
+                    terminal_diagnostic,
+                    terminal_result,
+                )
                 event_counts[kind] += 1
                 if subtype:
                     event_counts[f"{kind}:{subtype}"] += 1
@@ -1076,6 +1169,19 @@ def run_job(job: dict[str, Any]) -> int:
                 last_persist = time.monotonic()
 
         returncode = process.wait()
+        handback_recovery = {
+            "attempted": False,
+            "recovered": False,
+            "reason": "worker supplied the configured handback",
+            "credential_findings": 0,
+        }
+        if returncode == 0 and not handback.is_file():
+            handback_recovery = recover_handback_from_result(
+                terminal_result.get("text"),
+                handback,
+                job,
+            )
+        terminal_result.clear()
         handback_info = handback_digest(handback)
         return_contract = (
             handback_contract(handback, job)
@@ -1133,6 +1239,7 @@ def run_job(job: dict[str, Any]) -> int:
             "model_selected": preflight_result["checks"].get("model_selection", {}).get("model"),
             "terminal_diagnostic": terminal_diagnostic,
             "return_contract": return_contract,
+            "handback_recovery": handback_recovery,
             "state_transitions": transitions,
             "liveness": {
                 "watchdog_heartbeat_source": "local process clock; no model call",

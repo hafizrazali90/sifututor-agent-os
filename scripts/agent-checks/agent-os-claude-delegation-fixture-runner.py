@@ -133,7 +133,47 @@ if mode in {"silent", "blocking"}:
 
 print(json.dumps({"type": "system", "subtype": "init", "session_id": "fixture-session"}), flush=True)
 print(json.dumps({"type": "assistant", "usage": {"input_tokens": 999}, "message": {"content": [{"type": "text", "text": "SENSITIVE RAW OUTPUT and authentication required as ordinary prose"}]}}), flush=True)
-print(json.dumps({"type": "result", "subtype": "success", "usage": {"input_tokens": 12, "output_tokens": 7}}), flush=True)
+recovery_modes = {
+    "missing_handback_result",
+    "missing_handback_secret_result",
+    "missing_handback_invalid_result",
+    "missing_handback_error_result",
+    "missing_handback_directory_result",
+}
+result_payload = {"type": "result", "subtype": "success", "usage": {"input_tokens": 12, "output_tokens": 7}}
+if mode in recovery_modes:
+    result_text = "# Recovered fixture handback\n\nstructured handback\n\nwatchdog evidence\n" + proof + "\n"
+    if mode == "missing_handback_secret_result":
+        result_text += "\napi_key = " + "sk-ant-" + "abcdefghijklmnopqrstuvwxyz123456" + "\n"
+    elif mode == "missing_handback_invalid_result":
+        result_text = "Finished successfully, but without the configured proof fields."
+    result_payload["result"] = result_text
+print(json.dumps(result_payload), flush=True)
+if mode == "missing_handback_error_result":
+    # Two error-shaped results that a bare `is_error is not True` test misses:
+    # `error_max_turns` carries no `is_error` key at all, and a non-boolean
+    # truthy `is_error` slips past both that test and the centralized
+    # classification. Each must discard the earlier contract-valid candidate
+    # rather than become one, even though the process still exits 0.
+    print(json.dumps({
+        "type": "result",
+        "subtype": "error_max_turns",
+        "num_turns": 19,
+        "usage": {"input_tokens": 12, "output_tokens": 7},
+        "result": result_payload["result"],
+    }), flush=True)
+    print(json.dumps({
+        "type": "result",
+        "subtype": "success",
+        "is_error": 1,
+        "num_turns": 19,
+        "usage": {"input_tokens": 12, "output_tokens": 7},
+        "result": result_payload["result"],
+    }), flush=True)
+if handback and mode == "missing_handback_directory_result":
+    # Leave a directory where the handback file belongs, so every recovery
+    # write fails at the filesystem layer instead of at a content check.
+    Path(handback).mkdir(parents=True, exist_ok=True)
 if handback:
     content = "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n" + proof + "\n"
     if mode == "incomplete_handback":
@@ -145,7 +185,8 @@ if handback:
             "# Fixture handback\n\nstructured handback\n\nwatchdog evidence\n"
             "builder_proof_not_applicable: read-only inventory with no implementation or behavior change\n"
         )
-    Path(handback).write_text(content)
+    if mode not in recovery_modes:
+        Path(handback).write_text(content)
 '''
 
 
@@ -875,12 +916,136 @@ def main() -> int:
         print(("PASS" if not errors else "FAIL") + " DF-023 no false failure category from worker prose")
         failures.extend(f"DF-023: {error}" for error in errors)
 
+        # DF-024: issue #110's exact failure mode. A successful worker may put
+        # the complete return contract in the terminal result but omit the
+        # requested file. The runner may recover only that final result after
+        # the same structural and secret checks used for a normal handback.
+        recovery_job = make_job(tmp, worktree, "DF-024")
+        recovery_spec = json.loads(recovery_job.read_text())
+        recovery_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "missing_handback_result",
+            "FAKE_HANDBACK": recovery_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(recovery_job)], recovery_env)
+        evidence = json.loads((Path(recovery_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode == 0, f"recoverable missing handback exit={result.returncode}: {result.stderr}", errors)
+        check(evidence.get("final_state") == "returned", "safe terminal result was not returned for review", errors)
+        check(evidence.get("handback", {}).get("exists") is True, "recovered handback file was not created", errors)
+        check(evidence.get("handback_recovery", {}).get("recovered") is True, "recovery was not recorded", errors)
+        check(evidence.get("return_contract", {}).get("structure_valid") is True, "recovered handback bypassed contract validation", errors)
+        check(evidence.get("return_contract", {}).get("semantic_acceptance_proven") is False, "recovery falsely granted acceptance", errors)
+        check("Recovered fixture handback" not in json.dumps(evidence), "recovered result text leaked into metadata evidence", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-024 safe missing-handback recovery")
+        failures.extend(f"DF-024: {error}" for error in errors)
+
+        # DF-025: a structurally complete terminal result containing a
+        # credential-shaped value must remain incomplete and must never be
+        # persisted merely because the worker exited successfully.
+        secret_job = make_job(tmp, worktree, "DF-025")
+        secret_spec = json.loads(secret_job.read_text())
+        secret_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "missing_handback_secret_result",
+            "FAKE_HANDBACK": secret_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(secret_job)], secret_env)
+        evidence = json.loads((Path(secret_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode != 0, "credential-bearing terminal result unexpectedly passed", errors)
+        check(evidence.get("final_state") == "incomplete", "credential-bearing result was not left incomplete", errors)
+        check(evidence.get("handback", {}).get("exists") is False, "credential-bearing result was persisted", errors)
+        check(evidence.get("handback_recovery", {}).get("credential_findings", 0) >= 1, "credential rejection was not recorded", errors)
+        fixture_token = "sk-ant-" + "abcdefghijklmnopqrstuvwxyz123456"
+        check(fixture_token not in json.dumps(evidence), "credential leaked into metadata evidence", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-025 credential-bearing result rejection")
+        failures.extend(f"DF-025: {error}" for error in errors)
+
+        # DF-026: ordinary success prose is not a substitute for the configured
+        # return contract. Recovery remains incomplete rather than manufacturing
+        # evidence or silently accepting the worker's claim.
+        invalid_job = make_job(tmp, worktree, "DF-026")
+        invalid_spec = json.loads(invalid_job.read_text())
+        invalid_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "missing_handback_invalid_result",
+            "FAKE_HANDBACK": invalid_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(invalid_job)], invalid_env)
+        evidence = json.loads((Path(invalid_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode != 0, "unstructured terminal prose unexpectedly passed", errors)
+        check(evidence.get("final_state") == "incomplete", "unstructured result was not left incomplete", errors)
+        check(evidence.get("handback", {}).get("exists") is False, "unstructured result was persisted", errors)
+        check(evidence.get("handback_recovery", {}).get("recovered") is False, "invalid recovery was reported successful", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-026 invalid result remains incomplete")
+        failures.extend(f"DF-026: {error}" for error in errors)
+
+        # DF-027: an error-shaped terminal result can still exit 0 and carry a
+        # complete-looking contract. Capture must use the module's centralized
+        # error classification rather than a bare `is_error is not True` test,
+        # and the latest result is authoritative, so an error-shaped result also
+        # discards the earlier safe candidate instead of leaving it recoverable.
+        error_result_job = make_job(tmp, worktree, "DF-027")
+        error_result_spec = json.loads(error_result_job.read_text())
+        error_result_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "missing_handback_error_result",
+            "FAKE_HANDBACK": error_result_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(error_result_job)], error_result_env)
+        evidence = json.loads((Path(error_result_spec["state_dir"]) / "evidence.json").read_text())
+        errors = []
+        check(result.returncode != 0, "error-shaped exit-0 result unexpectedly passed", errors)
+        check(evidence.get("final_state") == "incomplete", "error-shaped result was not left incomplete", errors)
+        check(evidence.get("handback", {}).get("exists") is False, "error-shaped result was persisted as a handback", errors)
+        check(evidence.get("handback_recovery", {}).get("recovered") is False, "error-result recovery was reported successful", errors)
+        check(evidence.get("handback_recovery", {}).get("attempted") is False, "stale pre-error candidate survived the error-shaped result", errors)
+        check(
+            evidence.get("liveness", {}).get("event_counts", {}).get("result:error_max_turns") == 1,
+            "the error-shaped result event never reached the watchdog",
+            errors,
+        )
+        check(evidence.get("terminal_diagnostic", {}).get("result_seen") is True, "terminal result was not observed", errors)
+        check(not Path(error_result_spec["handback_file"]).exists(), "error-shaped result left a handback artifact", errors)
+        check("Recovered fixture handback" not in json.dumps(evidence), "error-result text leaked into metadata evidence", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-027 error-shaped exit-0 result rejection")
+        failures.extend(f"DF-027: {error}" for error in errors)
+
+        # DF-028: a filesystem failure inside recovery must fail closed without
+        # costing the evidence this watchdog exists to preserve. A worker that
+        # leaves a directory at the handback path makes every recovery write
+        # fail, and evidence.json plus evidence.md must still be written.
+        unwritable_job = make_job(tmp, worktree, "DF-028")
+        unwritable_spec = json.loads(unwritable_job.read_text())
+        unwritable_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "missing_handback_directory_result",
+            "FAKE_HANDBACK": unwritable_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(unwritable_job)], unwritable_env)
+        unwritable_state = Path(unwritable_spec["state_dir"])
+        errors = []
+        check(result.returncode != 0, "unwritable recovery path unexpectedly passed", errors)
+        check((unwritable_state / "evidence.json").is_file(), "recovery filesystem failure destroyed evidence.json", errors)
+        check((unwritable_state / "evidence.md").is_file(), "recovery filesystem failure destroyed evidence.md", errors)
+        if (unwritable_state / "evidence.json").is_file():
+            evidence = json.loads((unwritable_state / "evidence.json").read_text())
+            check(evidence.get("final_state") == "incomplete", "unwritable recovery path was not left incomplete", errors)
+            check(evidence.get("handback", {}).get("exists") is False, "directory handback path was reported as a file", errors)
+            check(evidence.get("handback_recovery", {}).get("attempted") is True, "recovery was not attempted before the filesystem failure", errors)
+            check(evidence.get("handback_recovery", {}).get("recovered") is False, "unwritable recovery was reported successful", errors)
+            check("Recovered fixture handback" not in json.dumps(evidence), "recovered result text leaked into metadata evidence", errors)
+        check(
+            not Path(unwritable_spec["handback_file"] + ".recovery.tmp").exists(),
+            "recovery temporary file was left behind after the filesystem failure",
+            errors,
+        )
+        print(("PASS" if not errors else "FAIL") + " DF-028 recovery filesystem failure preserves evidence")
+        failures.extend(f"DF-028: {error}" for error in errors)
+
     if failures:
         for failure in failures:
             print(f"  - {failure}")
         print(f"agent-os-claude-delegation-fixtures: FAIL ({len(failures)} issue(s))")
         return 1
-    print("agent-os-claude-delegation-fixtures: 25/25 passed")
+    print("agent-os-claude-delegation-fixtures: 30/30 passed")
     return 0
 
 
