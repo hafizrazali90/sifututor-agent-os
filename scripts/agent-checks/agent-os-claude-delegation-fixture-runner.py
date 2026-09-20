@@ -102,6 +102,25 @@ proof = "\n".join(f"{name}: fixture evidence" for name in (
     "disabled_unavailable", "failure_retry", "negative_control", "journey",
     "regression", "builder_evidence_not_acceptance",
 ))
+if mode == "api_error_400":
+    print(json.dumps({"type": "system", "subtype": "init", "session_id": "fixture-session"}), flush=True)
+    print(json.dumps({
+        "type": "result",
+        "subtype": "success",
+        "is_error": True,
+        "api_error_status": 400,
+        "terminal_reason": "api_error",
+        "stop_reason": "stop_sequence",
+        "num_turns": 1,
+        "permission_denials": [],
+        "fast_mode_state": "off",
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
+        "session_id": "fixture-session",
+        "total_cost_usd": 0,
+        "usage": {"input_tokens": 0, "output_tokens": 0},
+        "result": "API Error: 400 invalid request SENSITIVE RAW OUTPUT sk-ant-fixture-secret-value",
+    }), flush=True)
+    raise SystemExit(1)
 if mode == "setup":
     print("Authentication required before continuing", file=sys.stderr, flush=True)
     time.sleep(0.08)
@@ -143,7 +162,13 @@ def run(command: list[str], env: dict[str, str], timeout: float = 10) -> subproc
     )
 
 
-def make_job(base: Path, worktree: Path, job_id: str, lane: str = "fixture-lane") -> Path:
+def make_job(
+    base: Path,
+    worktree: Path,
+    job_id: str,
+    lane: str = "fixture-lane",
+    model_args: list[str] | None = None,
+) -> Path:
     runtime_root = worktree / ".agent-os" / "delegations"
     runtime_root.mkdir(parents=True, exist_ok=True)
     state_dir = runtime_root / f"{job_id}-state"
@@ -181,6 +206,7 @@ def make_job(base: Path, worktree: Path, job_id: str, lane: str = "fixture-lane"
             "--include-partial-messages",
             "--permission-mode",
             "dontAsk",
+            *(["--model", "opus"] if model_args is None else model_args),
         ],
     }
     path = base / f"{job_id}.json"
@@ -255,6 +281,22 @@ def main() -> int:
         job_template.get("builder_completion_proof")
         == {"mode": "required", "not_applicable_reason": ""},
         "canonical job template does not default to the required Builder Completion Proof mode",
+        df010_errors,
+    )
+    # issue-100: the canonical template must select the currently proven model
+    # alias explicitly, and the playbook must say why an implicit workspace
+    # model selection is refused.
+    template_args = job_template.get("claude_args", [])
+    check(
+        isinstance(template_args, list)
+        and "--model" in template_args
+        and template_args[template_args.index("--model") + 1 : template_args.index("--model") + 2] == ["opus"],
+        "canonical job template does not select the proven explicit model alias",
+        df010_errors,
+    )
+    check(
+        "--model" in handoff_text and "explicit" in handoff_text.lower(),
+        "handoff.md does not document the explicit Claude model requirement",
         df010_errors,
     )
     for field in PROOF_FIELDS:
@@ -726,12 +768,119 @@ def main() -> int:
         print(("PASS" if not df_015_errors else "FAIL") + " DF-015 alternate billing override refusal")
         failures.extend(f"DF-015: {error}" for error in df_015_errors)
 
+        # DF-020: a job that names no model inherits whatever the workspace
+        # selected. That is the reported #100 launch failure, so preflight must
+        # refuse it before launch and explain the fix as metadata only.
+        no_model_job = make_job(tmp, worktree, "DF-020", model_args=[])
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(no_model_job), "--json"], max_only_env)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        errors = []
+        check(result.returncode != 0, "job without an explicit model unexpectedly passed preflight", errors)
+        check(payload.get("ready") is False, "job without an explicit model did not fail closed", errors)
+        model_check = payload.get("checks", {}).get("model_selection", {})
+        check(model_check.get("state") == "blocked", "missing explicit model was not blocked", errors)
+        check(model_check.get("explicit_model_selected") is False, "missing model selection was not reported", errors)
+        check(bool(model_check.get("required_action")), "missing model block gave no remediation", errors)
+        check("model" not in model_check, "a model was silently chosen inside the runner", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-020 implicit model selection refused")
+        failures.extend(f"DF-020: {error}" for error in errors)
+
+        # DF-021: both CLI spellings of an explicit selection are accepted, and
+        # a `--model` with no usable value is still refused.
+        errors = []
+        for label, model_args in (
+            ("pair", ["--model", "opus"]),
+            ("joined", ["--model=opus"]),
+        ):
+            accepted_job = make_job(tmp, worktree, f"DF-021-{label}", model_args=model_args)
+            result = run([sys.executable, str(RUNNER), "preflight", "--job", str(accepted_job), "--json"], max_only_env)
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+            model_check = payload.get("checks", {}).get("model_selection", {})
+            check(result.returncode == 0, f"{label} --model form exit={result.returncode}: {result.stderr}", errors)
+            check(payload.get("ready") is True, f"{label} --model form did not report ready", errors)
+            check(model_check.get("state") == "ready", f"{label} --model form was not accepted", errors)
+            check(model_check.get("model") == "opus", f"{label} --model form lost the selected alias", errors)
+        dangling_job = make_job(tmp, worktree, "DF-021-dangling", model_args=["--model"])
+        result = run([sys.executable, str(RUNNER), "preflight", "--job", str(dangling_job), "--json"], max_only_env)
+        payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        check(result.returncode != 0, "a --model flag with no value unexpectedly passed preflight", errors)
+        check(
+            payload.get("checks", {}).get("model_selection", {}).get("state") == "blocked",
+            "a --model flag with no value was not blocked",
+            errors,
+        )
+        print(("PASS" if not errors else "FAIL") + " DF-021 explicit model selection accepted")
+        failures.extend(f"DF-021: {error}" for error in errors)
+
+        # DF-022: reproduces the reported #100 terminal failure. A zero-token
+        # HTTP 400 result must leave enough safe metadata to diagnose the
+        # launch, and none of its raw result text or secret-looking values.
+        error_job = make_job(tmp, worktree, "DF-022")
+        error_spec = json.loads(error_job.read_text())
+        error_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "api_error_400",
+            "FAKE_HANDBACK": error_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(error_job)], error_env)
+        state_dir = Path(error_spec["state_dir"])
+        evidence = json.loads((state_dir / "evidence.json").read_text())
+        markdown = (state_dir / "evidence.md").read_text()
+        diagnostic = evidence.get("terminal_diagnostic", {})
+        errors = []
+        check(result.returncode != 0, "a failed API launch unexpectedly reported success", errors)
+        check(evidence.get("final_state") == "failed", "zero-token API failure was not reported as failed", errors)
+        check(evidence.get("worker_exit_code") != 0, "nonzero worker exit was not preserved", errors)
+        check(diagnostic.get("result_seen") is True, "terminal result event was not recorded", errors)
+        check(diagnostic.get("result_is_error") is True, "result error flag was not recorded", errors)
+        check(diagnostic.get("api_error_status") == 400, "HTTP status was not recorded", errors)
+        check(diagnostic.get("terminal_reason") == "api_error", "terminal reason was not recorded", errors)
+        check(diagnostic.get("stop_reason") == "stop_sequence", "stop reason was not recorded", errors)
+        check(diagnostic.get("result_turns") == 1, "turn count was not recorded", errors)
+        check(diagnostic.get("permission_denial_count") == 0, "permission-denial count was not recorded", errors)
+        check(diagnostic.get("stderr_lines") == 0, "stderr line count was not recorded", errors)
+        check(diagnostic.get("category") == "invalid_request", "known failure category was not classified", errors)
+        check(diagnostic.get("raw_worker_output_stored") is False, "diagnostic did not restate the raw-output contract", errors)
+        check(evidence.get("model_selected") == "opus", "the selected model was not recorded for diagnosis", errors)
+        check(
+            evidence.get("usage", {}).get("counters", {}).get("output_tokens") == 0,
+            "zero-token failure did not preserve honest usage counters",
+            errors,
+        )
+        serialized = json.dumps(evidence)
+        for secret in ("SENSITIVE RAW OUTPUT", "sk-ant-fixture-secret-value", "invalid request SENSITIVE"):
+            check(secret not in serialized, f"raw result text {secret!r} leaked into evidence.json", errors)
+            check(secret not in markdown, f"raw result text {secret!r} leaked into evidence.md", errors)
+        check("api_error_status=400" in markdown, "evidence markdown does not surface the HTTP status", errors)
+        check("result_is_error=true" in markdown, "evidence markdown does not surface the result error flag", errors)
+        check("Worker failed" in markdown, "evidence markdown does not make a failed worker obvious", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-022 safe zero-token API failure diagnostic")
+        failures.extend(f"DF-022: {error}" for error in errors)
+
+        # DF-023: a successful worker whose own prose contains failure-sounding
+        # phrases must not be labelled with a failure category.
+        prose_job = make_job(tmp, worktree, "DF-023")
+        prose_spec = json.loads(prose_job.read_text())
+        prose_env = max_only_env | {
+            "FAKE_CLAUDE_MODE": "happy",
+            "FAKE_HANDBACK": prose_spec["handback_file"],
+        }
+        result = run([sys.executable, str(RUNNER), "run", "--job", str(prose_job)], prose_env)
+        evidence = json.loads((Path(prose_spec["state_dir"]) / "evidence.json").read_text())
+        diagnostic = evidence.get("terminal_diagnostic", {})
+        errors = []
+        check(result.returncode == 0, f"prose fixture exit={result.returncode}: {result.stderr}", errors)
+        check(diagnostic.get("category") is None, "ordinary assistant prose produced a false failure category", errors)
+        check(diagnostic.get("result_is_error") is None, "a result without is_error was reported as errored", errors)
+        check(diagnostic.get("result_seen") is True, "successful terminal result was not recorded", errors)
+        print(("PASS" if not errors else "FAIL") + " DF-023 no false failure category from worker prose")
+        failures.extend(f"DF-023: {error}" for error in errors)
+
     if failures:
         for failure in failures:
             print(f"  - {failure}")
         print(f"agent-os-claude-delegation-fixtures: FAIL ({len(failures)} issue(s))")
         return 1
-    print("agent-os-claude-delegation-fixtures: 21/21 passed")
+    print("agent-os-claude-delegation-fixtures: 25/25 passed")
     return 0
 
 
