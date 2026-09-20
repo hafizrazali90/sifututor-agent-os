@@ -385,7 +385,7 @@ do not restart the app or bypass the control to force an immediate run.
 
 | Field | Value |
 |-------|-------|
-| **Config** | `~/.config/sifututor/sharepoint-readonly.json` (mode 600) |
+| **Config** | `~/.config/sifututor/agent-access/sharepoint-readonly.conf` (mode 600); JSON is also supported for new installations |
 | **Token cache** | `~/.config/sifututor/runtime/sharepoint-token.json` (mode 600) |
 | **Access method** | `scripts/agent-access/sharepoint-readonly.py` from any ordinary shell or agent |
 | **Purpose** | List approved folders, inspect safe metadata, and download explicitly requested files into an approved local root |
@@ -401,8 +401,12 @@ only when Microsoft requires it and Hafiz accepts that scope. Microsoft
 `Selected` scopes need a separate resource assignment and must not be guessed
 or granted by an agent.
 
-The mode-600 configuration contains identifiers and boundaries, not a client
-secret:
+The existing mode-600 conf uses `SHAREPOINT_TENANT_ID`,
+`SHAREPOINT_CLIENT_ID`, `SHAREPOINT_DRIVE_ID`, one or more
+`SHAREPOINT_FOLDER_<ALIAS>_ID` boundaries, and `SHAREPOINT_TOKEN_STORE`.
+Agents address those roots as `@alias`, for example `@cx/report.docx`.
+JSON configuration is also supported for new installations and contains
+identifiers and boundaries, not a client secret:
 
 ```json
 {
@@ -444,7 +448,7 @@ and [selected SharePoint permissions](https://learn.microsoft.com/en-us/graph/pe
 | `backup-readonly` | `backup-readonly.conf` | auto-read | Never |
 | `wasabi-ripple-storage-scoped` (reads) | `wasabi-ripple-storage-scoped.conf` | auto-read | Never |
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
-| `sharepoint-readonly` | `sharepoint-readonly.json` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
+| `sharepoint-readonly` | `agent-access/sharepoint-readonly.conf` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
