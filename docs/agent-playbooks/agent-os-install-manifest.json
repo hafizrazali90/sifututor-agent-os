@@ -129,10 +129,14 @@
     "scripts/agent-checks/test_coverage_enforcement.py",
     "scripts/agent-checks/test-coverage-manifest-check.py",
     "docs/agent-playbooks/release-documentation.md",
+    "docs/agent-playbooks/weekly-delivery-report.md",
     "docs/agent-playbooks/templates/release-docs-ledger.md",
     "docs/agent-playbooks/templates/release-docs.example.json",
     "scripts/agent-checks/release_documentation.py",
     "scripts/agent-checks/test_release_documentation.py",
+    "scripts/agent-checks/weekly-delivery-data.py",
+    "scripts/agent-checks/test_weekly_delivery_data.py",
+    "scripts/agent-checks/test_weekly_delivery_routing.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/worktree-inventory.sh",
     "scripts/agent-checks/worktree-lifecycle.py",
@@ -153,7 +157,8 @@
     ".agents/skills/diagnose/SKILL.md",
     ".agents/skills/quick-check/SKILL.md",
     ".agents/skills/product-design/SKILL.md",
-    ".agents/skills/workflow-improvement/SKILL.md"
+    ".agents/skills/workflow-improvement/SKILL.md",
+    ".agents/skills/weekly-delivery/SKILL.md"
   ],
   "shared_hook_files": [
     ".claude/hooks/koda-context-injector.py",

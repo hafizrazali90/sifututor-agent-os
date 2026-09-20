@@ -33,6 +33,7 @@ This index explains who owns the decision.
 | Project adoption and rollout | How repos and developer staff adopt the Agent OS. | `project-adoption.md`, `agent-os-rollout-readiness.md`, `agent-os-installation.md`, `agent-os-staff-quick-start.md`, project profiles |
 | Bigger goals and future work | What is useful but not execution-ready. | `mission-ledger.md`, `mission-ledger/*`, `workflow-efficiency-audit.md` |
 | Research and history | Why decisions were made or what happened in old sessions. | `agent-os-research.md`, `agent-os-review-roadmap.md`, session-save docs, parity/status reports |
+| Weekly delivery reporting | What shipped, what is blocked, and whether source coverage is trustworthy. | `weekly-delivery-report.md` |
 
 ## Route Quick Map
 

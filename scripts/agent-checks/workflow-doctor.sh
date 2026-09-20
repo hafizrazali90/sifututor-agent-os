@@ -31,6 +31,7 @@ SKILLS=(
   review
   quick-check
   workflow-improvement
+  weekly-delivery
 )
 
 failures=0
@@ -79,6 +80,10 @@ check_file "coverage enforcement fixtures" "$ROOT/scripts/agent-checks/test_cove
 check_file "release documentation playbook" "$ROOT/docs/agent-playbooks/release-documentation.md"
 check_file "release documentation enforcement" "$ROOT/scripts/agent-checks/release_documentation.py"
 check_file "release documentation fixtures" "$ROOT/scripts/agent-checks/test_release_documentation.py"
+check_file "weekly delivery playbook" "$ROOT/docs/agent-playbooks/weekly-delivery-report.md"
+check_file "weekly delivery collector" "$ROOT/scripts/agent-checks/weekly-delivery-data.py"
+check_file "weekly delivery fixtures" "$ROOT/scripts/agent-checks/test_weekly_delivery_data.py"
+check_file "weekly delivery routing" "$ROOT/scripts/agent-checks/test_weekly_delivery_routing.py"
 
 echo
 echo "Agent OS health"
