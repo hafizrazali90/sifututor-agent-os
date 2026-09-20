@@ -272,6 +272,23 @@ Support` group, finds the `Task Management Board` plan, and reads task
 metadata without printing task titles, descriptions, assignees, card content,
 tokens, or secrets.
 
+For model-agnostic SharePoint file reads, use:
+
+```bash
+scripts/agent-access/sharepoint-readonly.py probe
+scripts/agent-access/sharepoint-readonly.py list "Shared Documents/Approved Folder"
+scripts/agent-access/sharepoint-readonly.py metadata "Shared Documents/Approved Folder/file.docx"
+scripts/agent-access/sharepoint-readonly.py download "Shared Documents/Approved Folder/file.docx" --to "file.docx"
+```
+
+This shared CLI is the durable lane for Claude, Codex, Kilo, and future agents.
+It accepts only the configured drive/path boundary, validates Graph pagination,
+sends bearer tokens only to Microsoft Graph, accepts downloads only from
+configured SharePoint hosts, and writes only below the configured download
+root. It implements no SharePoint write operation. First delegated
+login/consent and any boundary expansion require Hafiz's explicit approval;
+ordinary reads inside an established boundary are auto-read.
+
 For Google Drive connector readiness, use:
 
 ```bash

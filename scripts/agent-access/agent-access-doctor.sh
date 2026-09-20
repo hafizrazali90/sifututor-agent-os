@@ -75,6 +75,23 @@ else
   WARN=$((WARN+1))
 fi
 
+# SharePoint delegated read-only lane. Missing setup is a warning because the
+# first owner login/consent is intentionally separate from installation.
+SHAREPOINT_CONFIG="${HOME}/.config/sifututor/sharepoint-readonly.json"
+if [[ -f "$SHAREPOINT_CONFIG" ]]; then
+  MODE=$(stat -f '%Lp' "$SHAREPOINT_CONFIG" 2>/dev/null || stat -c '%a' "$SHAREPOINT_CONFIG" 2>/dev/null || echo unknown)
+  if [[ "$MODE" == "600" ]]; then
+    green "conf: sharepoint-readonly.json (mode 600)"
+    PASS=$((PASS+1))
+  else
+    red "conf: sharepoint-readonly.json has unsafe mode $MODE (expected 600)"
+    FAIL=$((FAIL+1))
+  fi
+else
+  warn "conf optional: sharepoint-readonly.json (first consent not completed)"
+  WARN=$((WARN+1))
+fi
+
 # Lokka binary
 if [[ -x "${HOME}/.codex/bin/m365-lokka-from-agent-access.sh" ]]; then
   green "binary: m365-lokka-from-agent-access.sh"

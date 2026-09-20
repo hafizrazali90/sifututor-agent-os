@@ -236,6 +236,9 @@ Add or maintain checks that prove:
 - commit/push/deploy gates are identical across adapters,
 - save-session produces the same durable state shape,
 - staff/Planner intake does not bypass GitHub/task workflow,
+- SharePoint reads use the repository-owned `sharepoint-readonly.py` lane for
+  every model; a vendor connector may improve interaction but must not weaken
+  its drive/path/download boundaries or add write authority,
 - Plane remains exception-only unless Hafiz explicitly asks.
 
 ## Behavioral Parity Fixtures
