@@ -83,6 +83,35 @@ If the session used multiple worktrees, branches, agents, or parallel tasks, use
 The save report should name each worktree, branch, dirty state, local-only
 commit, PR, cleanup condition, and next action.
 
+### Finish The Current Worktree
+
+When the current task runs in a dedicated leased worktree, session close-out
+must also resolve that worktree instead of leaving routine cleanup behind:
+
+1. Read the exact repository, worktree path, session ID, full HEAD, and target
+   base from current Git and lease state.
+2. Run `worktree-lifecycle.py close` without `--apply` first.
+3. If the ending state is `Close` and the preview says `would-reclaim`, rerun
+   the same command with `--apply`. Do not ask Hafiz again when worktree cleanup
+   is already inside the approved end-to-end boundary.
+4. If work remains, the ending state is `Park` or `Hand Off`, or the preview
+   says `would-park`, preserve the checkout and mark its lease `parked` with the
+   real reason. Never force removal or delete its branch.
+5. Report the exact removed path and measured size, or the parked path, reason,
+   and return action.
+
+This applies only to a registered dedicated worktree owned by the current
+session. A canonical checkout is never a cleanup target. If no matching lease
+exists, report `not applicable`; do not invent ownership or use the lower-level
+`reclaim` command as a shortcut.
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py close \
+  --repo <repository> --worktree <exact-path> \
+  --session <exact-session-id> --expected-head <full-sha> \
+  --base-ref <verified-base>
+```
+
 If the session used an autonomous work packet, use
 [autonomous-work-packets.md](autonomous-work-packets.md) before saving. The save
 report should name the finish point, current loop/slice, completed loops,
@@ -411,6 +440,8 @@ Before Codex gives the final answer for meaningful work:
 7. Run the shared guard when code or workflow files changed.
 8. Choose the honest ending state: Continue, Save Only, Park, Hand Off, or
    Close. Do not use Close if real work or decisions remain.
-9. Report what changed, why, tests/guards run, files or commits touched, and
+9. Resolve any current dedicated leased worktree: preview and safely close it
+   for `Close`, or park and report it for unfinished/handoff states.
+10. Report what changed, why, tests/guards run, files or commits touched, and
    what remains.
-10. If Koda is unavailable, say so and use the fallback path.
+11. If Koda is unavailable, say so and use the fallback path.
