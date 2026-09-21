@@ -118,6 +118,13 @@ merge/deploy restrictions. Release-capable adapters and unattended supervision
 remain separate work requiring exact approval and live adapter proof. Unknown
 usage stays `unavailable`; faster parallel execution is not measured net savings.
 
+If Hafiz already approved an outbound action but the active adapter cannot
+perform it because of a built-in product restriction, do not ask him to approve
+the same action again. Preserve the exact approved scope and hand the action
+plus its reviewed evidence to Codex or another adapter that has the capability.
+This transfers execution, not wider authority: the receiving adapter must not
+add files, alter the reviewed candidate, or expand merge/deploy scope.
+
 `check` returns 0 for valid structure, not authority. `preflight` returns 0 for
 matching Git identity and declared observations, not an authenticated provider
 launch. `assess-handback` returns 0 for valid receipt shape and binding, never

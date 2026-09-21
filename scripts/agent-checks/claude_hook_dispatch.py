@@ -287,6 +287,12 @@ def dispatch(
             str(resolution.hook_path),
             *hook_args,
         ]
+    elif suffix in {".js", ".cjs", ".mjs"}:
+        node = shutil.which("node")
+        if node is None:
+            warn(f"{hook_name} requires Node.js but no interpreter is available; reporting an error")
+            return 1
+        command = [node, str(resolution.hook_path), *hook_args]
     else:
         warn(f"{hook_name} has an unsupported interpreter; reporting an error")
         return 1
