@@ -26,7 +26,7 @@ that span more than one project.
 
 - **Project:** cross-project
 - **Status:** triaged
-- **Type:** mission
+- **Type:** task
 - **Parent:** AO-LEDGER-001
 - **End goal:** `$task-router` and `$save-session` both check the Mission
   Ledger at the right time.
