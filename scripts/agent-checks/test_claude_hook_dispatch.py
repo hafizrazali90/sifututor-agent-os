@@ -193,6 +193,19 @@ class DispatchFixture(unittest.TestCase):
         self.assertEqual(self.recorded()["stdin"].encode(), payload)
         self.assertEqual(self.recorded()["args"], ["worker-safety"])
 
+    def test_node_wrapper_preserves_a_real_finch_rejection(self) -> None:
+        write_node_gate(
+            self.worktree / ".claude" / "hooks" / "claude-hook.cjs",
+            code=2,
+        )
+
+        result = self.run_wrapper(
+            "claude-hook.cjs",
+            payload_bytes(str(self.worktree)),
+        )
+
+        self.assertEqual(result.returncode, 2)
+
     # --- a real rejection must survive --------------------------------------
 
     def test_real_gate_rejection_keeps_exit_code_and_output(self) -> None:
