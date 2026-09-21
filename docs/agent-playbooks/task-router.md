@@ -166,6 +166,13 @@ active at the same time. Plain meaning: if two active code tasks may edit the
 same repo, isolate them in separate worktrees or clearly record why the current
 workspace is safe.
 
+After deciding that isolation is required, Task Router should use the canonical
+`scripts/agent-checks/worktree-lifecycle.py create` command from that playbook.
+Do not fall back to a hand-built sequence of `git worktree add`, dependency
+installation, and separate lease registration. Do not create a worktree merely
+because the prompt is non-trivial; the isolation conditions in the worktree
+playbook must actually apply.
+
 Use [autonomous-work-packets.md](autonomous-work-packets.md) when Hafiz asks the
 agent to autopilot, keep going, proceed until done, clean up a whole batch, or
 work for a longer stretch without micro-approval. Plain meaning: approval gates

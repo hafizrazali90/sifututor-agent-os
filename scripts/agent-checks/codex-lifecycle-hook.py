@@ -1132,6 +1132,21 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for live session tracking.",
         )
 
+    if (
+        "already" in normalized
+        and "approve" in normalized
+        and any(phrase in normalized for phrase in ("proceed until", "continue until", "until production", "until prod"))
+    ):
+        return (
+            "$workflow-improvement",
+            [
+                "Treat this as approval-continuity friction, not a new approval request.",
+                "An approved end-to-end boundary that includes commit covers exact in-scope files after inspection, guards, and reporting.",
+                "Do not pause for another file-list approval unless material new scope, risk, destructive work, critical-lane expansion, or a boundary conflict appears.",
+            ],
+            "Prompt reports repeated approval after an end-to-end boundary.",
+        )
+
     if discussion_prompt(normalized):
         return (
             "",
@@ -1462,6 +1477,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "$task-router",
             [
                 "Use $task-router only to identify the project, requested scope, and next useful action; keep routine work moving.",
+                "If Task Router determines isolation is required, use `scripts/agent-checks/worktree-lifecycle.py create`; do not manually chain worktree creation, leasing, and dependency setup.",
             ],
             "Prompt appears to be non-trivial work.",
         )

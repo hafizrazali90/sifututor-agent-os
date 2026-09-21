@@ -382,6 +382,30 @@ CASES = [
         ],
         "why": "Provider credential pages must be blocked before visual tooling can expose the value.",
     },
+    {
+        "id": "AO-205",
+        "prompt": "Another session is editing this repo. Start a separate implementation task.",
+        "skill": "$task-router",
+        "reason_contains": "non-trivial",
+        "actions_contain": [
+            "Task Router determines isolation is required",
+            "worktree-lifecycle.py create",
+            "do not manually chain",
+        ],
+        "why": "Isolated implementation tasks should use the single governed creation command.",
+    },
+    {
+        "id": "AO-206",
+        "prompt": "I already approved proceed until production is live. Why are you asking me to approve the exact files again?",
+        "skill": "$workflow-improvement",
+        "reason_contains": "repeated approval",
+        "actions_contain": [
+            "approval-continuity friction",
+            "covers exact in-scope files",
+            "Do not pause for another file-list approval",
+        ],
+        "why": "End-to-end approval should not degrade into repeated exact-file approval prompts.",
+    },
 ]
 
 

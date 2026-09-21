@@ -175,8 +175,9 @@ For long-running docs or workflow packets:
 
 - one coherent batch can become one commit
 - repeated commits need the packet to say that up front
-- every commit still needs exact file-list approval unless the approved packet
-  already included an exact commit bundle
+- every commit needs exact file-list inspection and reporting, but an approved
+  end-to-end packet that includes commit does not need another approval pause
+  when the resulting files remain within its agreed scope
 
 For product code:
 

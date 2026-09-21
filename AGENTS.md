@@ -202,6 +202,11 @@ print credentials to the terminal or to files.
   not exact, ask once. Push, PR, merge, deploy, production, destructive, and
   critical-lane actions remain stricter unless they were explicitly included in
   the already-approved path.
+- When an already-approved end-to-end boundary includes commit, the agent must
+  inspect, guard, and report the exact file list but must not pause for another
+  file-list approval when every file remains inside the agreed scope. Pause
+  only when the list reveals material new scope, risk, destructive work,
+  critical-lane expansion, or a boundary conflict.
 - Interpret natural end-to-end phrases by intent, not exact wording. Phrases
   like "proceed until done", "continue until done", "finish this end to end",
   "do everything needed", "handle this fully", or "complete it properly" mean:
@@ -250,6 +255,12 @@ For parallel or long-running work, use
 playbook. Register an owner/session lease when a dedicated worktree is created,
 refresh its heartbeat during long work, and release or park it when handing
 back. Lease records contain non-secret metadata only.
+
+When Task Router determines that isolation is required, create the checkout
+through `worktree-lifecycle.py create` instead of manually chaining Git,
+leasing, and dependency installation. This is conditional: discussion, small
+safe work in a clean checkout, and tasks that do not need isolation must not
+create unnecessary worktrees.
 
 Cleanup is proposal-first. A worktree may be reclaimed only after the helper
 revalidates the exact HEAD, clean tracked/untracked state, ignored-file safety,
