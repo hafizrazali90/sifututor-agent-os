@@ -31,7 +31,7 @@ def init_repo(root: Path) -> Path:
     run("git", "init", "-b", "main", cwd=repo)
     run("git", "config", "user.name", "Fixture", cwd=repo)
     run("git", "config", "user.email", "fixture@example.invalid", cwd=repo)
-    (repo / ".gitignore").write_text("node_modules/\nvendor/\n.private-note\n")
+    (repo / ".gitignore").write_text("node_modules/\nvendor/\n__pycache__/\n.private-note\n")
     (repo / "tracked.txt").write_text("base\n")
     run("git", "add", ".gitignore", "tracked.txt", cwd=repo)
     run("git", "commit", "-m", "base", cwd=repo)
@@ -169,6 +169,15 @@ class ClassificationTests(unittest.TestCase):
         result = self.inspect()
         self.assertEqual(result["classification"], "reclaim_candidate")
         self.assertTrue(any("reproducible" in reason for reason in result["reasons"]))
+
+    def test_nested_python_cache_is_recognized_as_generated(self):
+        generated = self.worktree / ".claude" / "hooks" / "__pycache__"
+        generated.mkdir(parents=True)
+        (generated / "hook.cpython-313.pyc").write_bytes(b"generated")
+
+        result = self.inspect()
+
+        self.assertEqual(result["classification"], "reclaim_candidate")
 
     def test_active_task_pointer_blocks(self):
         task_dir = self.worktree / ".claude" / "tasks"
