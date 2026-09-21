@@ -182,7 +182,11 @@ BEHAVIOR_FIXTURES = [
     {
         "id": "BP-006",
         "scenario": "save or hand off session",
-        "snippets": ["current state", "evidence", "next action", "Koda"],
+        "snippets": [
+            "current state", "evidence", "next action", "Koda",
+            "worktree-lifecycle.py close", "park unfinished/uncertain work",
+            "Never force removal or delete its branch",
+        ],
     },
     {
         "id": "BP-007",
@@ -385,6 +389,33 @@ def check_behavior_fixtures(texts: dict[str, str]) -> list[str]:
     return errors
 
 
+def check_session_worktree_closeout() -> list[str]:
+    errors = []
+    required = {
+        "docs/agent-playbooks/save-session.md": [
+            "worktree-lifecycle.py close", "would-reclaim", "--apply",
+            "canonical checkout is never a cleanup target",
+        ],
+        "docs/agent-playbooks/handoff.md": [
+            "worktree-lifecycle.py close", "lease-status --status parked",
+            "Never force removal", "resume action",
+        ],
+        ".agents/skills/save-session/SKILL.md": [
+            "preview then safely close finished work", "park unfinished work",
+        ],
+        ".agents/skills/handoff/SKILL.md": [
+            "safely close a finished dedicated leased worktree",
+            "park and report unfinished work",
+        ],
+    }
+    for relative, snippets in required.items():
+        text = read(ROOT / relative)
+        for snippet in snippets:
+            if normalize(snippet) not in normalize(text):
+                errors.append(f"session worktree close-out missing from {relative}: {snippet}")
+    return errors
+
+
 def check_installed_claude_adapters(adapter_root: Path) -> list[str]:
     """Confirm each promised Claude adapter exists under the supplied root.
 
@@ -521,6 +552,7 @@ def run(verbose: bool = False, claude_adapter_root: Path | None = None) -> int:
     failures.extend(check_plane_policy(texts))
     failures.extend(check_supporting_docs(texts))
     failures.extend(check_behavior_fixtures(texts))
+    failures.extend(check_session_worktree_closeout())
     failures.extend(check_kilo_adapter(texts))
 
     adapter_note = "installed Claude adapter presence: not checked (no adapter root supplied)"

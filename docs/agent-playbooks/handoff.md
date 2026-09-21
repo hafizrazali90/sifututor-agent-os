@@ -25,6 +25,17 @@ is proven, what is not proven, and exactly where to continue.
 7. Name the highest proven state: changed locally, committed locally, pushed,
    PR open, merged, deployed, live checked, accepted, or closed.
 8. Include the return path: the single next action the receiver should take.
+9. If the task uses a dedicated leased worktree, resolve its lifecycle before
+   handoff: safely close it only when the task is truly finished; otherwise
+   park it with the real reason and include the exact path and resume action.
+
+Use `worktree-lifecycle.py close` from
+[parallel-work-and-worktrees.md](parallel-work-and-worktrees.md). Preview first.
+Apply it only for a finished worktree when the result is `would-reclaim` and
+cleanup is inside the approved boundary. For continuing work, use
+`lease-status --status parked` instead. Never force removal, delete a branch,
+infer ownership, or use the administrator-level `reclaim` command to bypass a
+missing current-session lease.
 
 ## Continuation Pack
 
@@ -38,6 +49,8 @@ For non-trivial handoff, include:
 - open decisions for Hafiz or a human owner
 - approval boundaries: push, PR, merge, deploy, production, critical-lane,
   destructive, secret, or broad access
+- dedicated worktree outcome: reclaimed with measured size, parked with reason
+  and resume action, or not applicable because no current-session lease exists
 - do-not-redo context: what the next agent can reuse, and what it should verify
   from current sources before acting
 

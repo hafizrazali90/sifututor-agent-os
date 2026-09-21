@@ -26,7 +26,9 @@ save flow inside this skill.
 3. Choose Quick Save, Normal Save, or Critical Save.
 4. Run the required status and guard checks for that level.
 5. Search Koda before storing durable lessons, then store or update the memory.
-6. Report the active task state, guards, commits/pushes, key learnings,
+6. Resolve the current dedicated leased worktree through the shared close-out
+   rule: preview then safely close finished work, or park unfinished work.
+7. Report the active task state, guards, commits/pushes, key learnings,
    remaining work, and blockers using the playbook's final report shape.
 
 ## Important Constraints
