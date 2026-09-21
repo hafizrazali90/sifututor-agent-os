@@ -370,6 +370,78 @@ class DependencyTests(unittest.TestCase):
         with self.assertRaises(worktree_lifecycle.LifecycleError):
             worktree_lifecycle.seed_dependencies(self.source, self.target, apply=True)
 
+    def test_install_command_uses_frozen_lockfile(self):
+        cases = {
+            "package-lock.json": ["npm", "ci"],
+            "pnpm-lock.yaml": ["pnpm", "install", "--frozen-lockfile"],
+            "yarn.lock": ["yarn", "install", "--frozen-lockfile"],
+            "bun.lock": ["bun", "install", "--frozen-lockfile"],
+            "composer.lock": ["composer", "install", "--no-interaction", "--no-scripts"],
+        }
+        for lockfile, expected in cases.items():
+            with self.subTest(lockfile=lockfile):
+                target = self.root / lockfile.replace(".", "-")
+                target.mkdir()
+                (target / lockfile).write_text("lock")
+                self.assertEqual(worktree_lifecycle.dependency_install_command(target), expected)
+
+    def test_automatic_setup_supports_node_and_composer_together(self):
+        target = self.root / "mixed-lockfiles"
+        target.mkdir()
+        (target / "package-lock.json").write_text("node")
+        (target / "composer.lock").write_text("php")
+
+        self.assertEqual(
+            worktree_lifecycle.dependency_install_commands(target),
+            [
+                ("node_modules", ["npm", "ci"]),
+                ("vendor", ["composer", "install", "--no-interaction", "--no-scripts"]),
+            ],
+        )
+
+    def test_create_worktree_leases_and_reuses_matching_dependencies(self):
+        (self.repo / "package-lock.json").write_text('{"lockfileVersion":3}\n')
+        run("git", "add", "package-lock.json", cwd=self.repo)
+        run("git", "commit", "-m", "add lockfile", cwd=self.repo)
+        run("git", "update-ref", "refs/remotes/origin/main", "HEAD", cwd=self.repo)
+        target = self.root / "created"
+        result = worktree_lifecycle.create_worktree(
+            self.repo, target, branch="created", base_ref="origin/main",
+            store=worktree_lifecycle.LeaseStore(self.root / "create-state"),
+            owner="Codex", session="create-session", purpose="fixture",
+            issue="#146", cleanup_condition="merged", install_if_needed=True,
+        )
+        self.assertEqual(result["dependency_action"], "seeded")
+        self.assertTrue((target / "node_modules" / "fixture.js").is_file())
+        self.assertEqual(result["lease"]["status"], "active")
+
+    def test_create_worktree_reports_no_lockfile_without_installing(self):
+        for path in (self.repo, self.source, self.target):
+            (path / "package-lock.json").unlink(missing_ok=True)
+        target = self.root / "no-lock-created"
+        result = worktree_lifecycle.create_worktree(
+            self.repo, target, branch="no-lock-created", base_ref="origin/main",
+            store=worktree_lifecycle.LeaseStore(self.root / "no-lock-state"),
+            owner="Codex", session="create-session", purpose="fixture",
+            issue="#146", cleanup_condition="merged", install_if_needed=True,
+        )
+        self.assertEqual(result["dependency_action"], "not-applicable")
+
+    def test_create_worktree_removes_checkout_when_lease_registration_fails(self):
+        target = self.root / "lease-failure"
+        store = mock.Mock()
+        store.create.side_effect = worktree_lifecycle.LifecycleError("lease failed")
+
+        with self.assertRaises(worktree_lifecycle.LifecycleError):
+            worktree_lifecycle.create_worktree(
+                self.repo, target, branch="lease-failure", base_ref="origin/main",
+                store=store, owner="Codex", session="create-session",
+                purpose="fixture", issue="#146", cleanup_condition="merged",
+                install_if_needed=False,
+            )
+
+        self.assertFalse(target.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
