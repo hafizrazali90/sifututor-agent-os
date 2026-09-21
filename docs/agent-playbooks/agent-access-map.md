@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 23 lanes — 21 scoped files under
+Current registry count: 24 lanes — 22 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane.
 
@@ -432,6 +432,32 @@ and [selected SharePoint permissions](https://learn.microsoft.com/en-us/graph/pe
 
 ---
 
+### 24. `ripple-destination-readonly` — Ripple V16 Destination Read
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `ripple-destination-readonly.conf` |
+| **Purpose** | Read the small set of Ripple destination fields needed to confirm whether a V16 migration package still applies |
+| **Tier** | auto-read |
+| **Access method** | A local SSH tunnel to the production PostgreSQL service |
+| **Allowed data** | `SELECT` on four purpose-built `v16_read_*` views only |
+| **Hafiz approval** | Not required for reads through the existing lane; creation and initial scope were approved on 20 September 2026 |
+| **Safe verification** | `scripts/agent-access/check-ripple-destination-readonly.sh` |
+| **Run a scoped reader** | `scripts/agent-access/ripple-destination-readonly-run.sh -- <command>` provides `V16_DESTINATION_READ_URL` only to that child command |
+| **Forbidden** | No base-table access, personal/free-text columns, writes, DDL, grants, role switching, view widening, or printing the connection URL |
+
+The approved views are `v16_read_crm_requests`, `v16_read_tutor_conduct`,
+`v16_read_onboarding_prospects`, and `v16_read_effect_receipts`. The verifier
+checks their exact columns and proves that representative reads outside those
+views, writes, and privilege escalation are refused. It prints only fixed
+status labels and row counts.
+
+This lane is separate from SharePoint. Do not add a V16-specific workbook
+reader here; use the existing model-agnostic `sharepoint-readonly` lane for
+approved SharePoint files.
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -449,6 +475,7 @@ and [selected SharePoint permissions](https://learn.microsoft.com/en-us/graph/pe
 | `wasabi-ripple-storage-scoped` (reads) | `wasabi-ripple-storage-scoped.conf` | auto-read | Never |
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
 | `sharepoint-readonly` | `agent-access/sharepoint-readonly.conf` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
+| `ripple-destination-readonly` | `ripple-destination-readonly.conf` | auto-read | Never for existing scoped reads |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
@@ -474,6 +501,8 @@ never print secret values.
 | `check-st-admin-cert.sh` | SSL cert for `st.admin.sifututor.my` (expiry, issuer, SANs) |
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
+| `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
+| `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |
