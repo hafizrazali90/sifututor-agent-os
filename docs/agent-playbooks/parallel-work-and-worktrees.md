@@ -319,6 +319,25 @@ At handback, mark it `parked` when work remains or `released` when the cleanup
 condition is satisfied. A parked lease does not expire automatically. An
 expired active heartbeat is a review signal, not deletion authority.
 
+For normal task completion, use the single close-out command instead of
+manually releasing the lease and then reclaiming the checkout:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py close \
+  --repo <repository> --worktree <exact-path> \
+  --session <exact-session-id> --expected-head <full-sha> \
+  --base-ref origin/main --apply
+```
+
+Run it without `--apply` for a read-only preview. The command verifies that the
+session owns the lease, the HEAD is exactly the expected task commit, the work
+is clean and merged, ignored files are reproducible, no worktree-specific task
+is active, and no process is using the checkout. If all checks pass, it releases
+the lease and reclaims the checkout without deleting its branch. If any check
+fails or state changes during the final check, it keeps the checkout and parks
+the lease with the exact reason. Report the removed path and measured size, or
+the parking reason and next action, in the task summary.
+
 ### Cross-repository proposal
 
 Run this from the umbrella workspace:
@@ -336,7 +355,9 @@ The classifications mean:
 | `reclaim_candidate` | Clean, unlocked, inactive and fully contained by the configured base. Process ownership is still rechecked at apply time. | Exact-path removal may be considered. |
 | `prunable_registration` | The checkout path is already missing; only stale Git administration metadata remains. | `prune-missing --apply` may remove the registration; branches/commits remain. |
 
-Age never creates permission. Before applying reclamation, the helper requires
+Age never creates permission. `close` is the normal owner-session path;
+`reclaim` remains the lower-level administrator action for an already released
+worktree. Before applying reclamation, the helper requires
 the exact expected HEAD and re-runs status, ignored-file, task, lease, ancestry,
 lock and process-cwd checks. It uses ordinary `git worktree remove`, never
 `--force`, and never deletes branches:
