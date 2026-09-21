@@ -157,7 +157,11 @@ def discover_paths(args: argparse.Namespace) -> list[Path]:
     paths = [DEFAULT_TEMPLATE]
     session_dir = ROOT / ".agent-os" / "session-maps"
     if session_dir.exists():
-        paths.extend(sorted(session_dir.glob("*.md")))
+        paths.extend(
+            path
+            for path in sorted(session_dir.glob("*.md"))
+            if SESSION_FILENAME_PATTERN.match(path.name)
+        )
     return paths
 
 
