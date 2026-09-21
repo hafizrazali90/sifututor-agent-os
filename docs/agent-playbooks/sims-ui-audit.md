@@ -54,7 +54,8 @@ content-style rules when copy changes.
 3. Build or run the local app when needed.
 4. Capture or inspect the changed surface at representative desktop and mobile
    widths when feasible. Include modals, dropdowns, drawers, empty/loading/error
-   states, disabled states, pagination, filters, and action menus when changed.
+   states, disabled states, pagination, filters, action menus, and the ordinary
+   common case when changed.
 5. Judge the screenshots, not only the code. Check alignment, density, copy
    casing, whitespace, button/control sizing, table fit, contrast, theme
    consistency, old-style leakage, and whether each action is understandable.
@@ -86,10 +87,16 @@ Use this as the minimum checklist:
   helper copy, and body hierarchy are clear.
 - **Copy:** labels, statuses, buttons, placeholders, helper text, and errors
   follow the content style guide. Display backend values in user-facing casing.
+- **Truth and meaning:** displayed totals match their visible parts; numbers and
+  comparative claims have an upstream source; copy does not promise a channel
+  the system does not use; meaningful colours and icons keep one clear meaning;
+  and every visible interaction has a destination or effect.
 - **Responsive behavior:** desktop and mobile layouts avoid overlap, clipped
   text, hidden actions, and accidental horizontal overflow.
 - **Evidence:** screenshots or browser evidence include the changed interactive
-  states, not only the default page.
+  states, not only the default page. Review a fixed current capture, identify
+  the scenario/state it represents, and recapture after material changes rather
+  than mixing findings from an older artifact with the current design.
 
 ## Output Shape
 

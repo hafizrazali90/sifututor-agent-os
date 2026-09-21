@@ -54,14 +54,19 @@ clear; do not let an asset tool silently decide the product identity.
 For iterative visual work:
 
 1. inventory the affected screens, components, states, audiences, and existing
-   design rules before generating alternatives;
-2. run deterministic checks before subjective review;
-3. inspect rendered output and the real user journey;
-4. use one focused review pass, then another only when the first pass finds a
+   design rules before generating alternatives, including the ordinary/common
+   case rather than only exceptions;
+2. name what every visible interaction does or where it leads;
+3. source every displayed number, comparative claim, and promised notification
+   channel from production evidence, an approved specification, a backend
+   contract, or current code—not from another mockup;
+4. run deterministic checks before subjective review;
+5. inspect rendered output and the real user journey;
+6. use one focused review pass, then another only when the first pass finds a
    real defect or the output materially changes;
-5. record false positives and durable lessons instead of repeating a fixed
+7. record false positives and durable lessons instead of repeating a fixed
    number of review rounds;
-6. keep business, brand, spending, licensing, and release decisions inside
+8. keep business, brand, spending, licensing, and release decisions inside
    their normal approval boundaries.
 
 A good pilot proves the tested artifact. It does not prove that one model, one
