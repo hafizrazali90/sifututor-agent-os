@@ -231,6 +231,13 @@ Cleanup is safe only when:
 - Hafiz or the task boundary does not need the worktree retained
 - the final state is recorded in Session Map, save-session, PR, or handoff
 
+A tracked `.claude/tasks/active.json` that is byte-for-byte identical to the
+configured base branch is inherited repository state, not proof that this
+specific worktree owns the named task. The lifecycle helper reports that
+pointer but continues evaluating the worktree's lease, dirty state, ancestry,
+locks, ignored files, and live process ownership. A worktree-specific or
+malformed task pointer still blocks cleanup.
+
 If unsure, park it instead of deleting it:
 
 ```text
@@ -383,5 +390,8 @@ version check and focused build/tests. Composer projects must run
 `composer dump-autoload --no-interaction --no-scripts` in the target before
 tests so absolute autoload paths are regenerated.
 
-This is a fast seed, not proof the environment is ready. Project-native checks
-remain mandatory.
+Treat this primarily as a disk- and download-saving seed, not a guaranteed
+speed improvement. A warm package-manager cache can make a clean install as
+fast as or faster than cloning a large dependency tree. Project-native checks
+remain mandatory, and generated build caches such as `.next` should not be
+copied as dependencies.

@@ -288,10 +288,11 @@ def ignored_path_is_generated(path: str) -> bool:
     return first in GENERATED_IGNORED_ROOTS
 
 
-def active_task(worktree: Path) -> tuple[str, str]:
+def active_task(worktree: Path, base_ref: str) -> tuple[str, str]:
     path = worktree / ".claude" / "tasks" / "active.json"
     try:
-        value = json.loads(path.read_text())
+        raw = path.read_text()
+        value = json.loads(raw)
     except FileNotFoundError:
         return "missing", ""
     except (json.JSONDecodeError, OSError):
@@ -299,7 +300,11 @@ def active_task(worktree: Path) -> tuple[str, str]:
     if not isinstance(value, dict):
         return "invalid", ""
     task = value.get("activeTask") if isinstance(value, dict) else None
-    return "active", str(task).strip() if task else ""
+    task = str(task).strip() if task else ""
+    base = git(worktree, "show", f"{base_ref}:.claude/tasks/active.json", check=False)
+    if base.returncode == 0 and base.stdout == raw:
+        return "inherited", task
+    return "active", task
 
 
 def process_uses_path(path: Path) -> bool | None:
@@ -353,11 +358,14 @@ def inspect_worktree(repo: Path, record: dict[str, Any], store: LeaseStore,
     if record.get("locked"):
         result["reasons"].append("Git worktree is locked")
         return result
-    task_state, task = active_task(path)
+    task_state, task = active_task(path, base_ref)
     if task_state == "invalid":
         result["reasons"].append("active task state is invalid; absence cannot be proven")
         return result
-    if task:
+    if task_state == "inherited" and task:
+        result["inherited_task_pointer"] = task
+        result["reasons"].append("base branch task pointer is unchanged and not worktree-specific")
+    elif task:
         result["reasons"].append("active task pointer exists")
         result["active_task"] = task
         return result
