@@ -26,6 +26,7 @@ CLAUDE_SETTINGS = ROOT / ".claude" / "settings.json"
 CODEX_CONFIG = ROOT / ".codex" / "config.toml"
 KILO_AGENT = ROOT / ".kilo" / "agents" / "sifututor-agent-os.md"
 GLOBAL_CLAUDE_INSTRUCTIONS = Path.home() / ".claude" / "CLAUDE.md"
+GLOBAL_CLAUDE_SETTINGS = Path.home() / ".claude" / "settings.json"
 ACTIVE_ADAPTER_INSTRUCTIONS = (
     GLOBAL_CLAUDE_INSTRUCTIONS,
     ROOT / "CLAUDE.md",
@@ -541,6 +542,23 @@ def check_claude_adapter(*, strict_project_hooks: bool) -> list[CheckResult]:
                 detail=f"Claude additionalDirectories includes {project}",
             )
         )
+
+    global_additional_dirs: set[str] = set()
+    if GLOBAL_CLAUDE_SETTINGS.is_file():
+        try:
+            global_settings = json.loads(GLOBAL_CLAUDE_SETTINGS.read_text())
+            global_additional_dirs = set(global_settings.get("additionalDirectories") or [])
+        except json.JSONDecodeError:
+            pass
+    results.append(
+        CheckResult(
+            id="CL-016",
+            adapter="claude",
+            passed="~/.local/state/sifututor-agent-os/worktrees"
+            in additional_dirs | global_additional_dirs,
+            detail="Claude project or user settings include the shared worktree lease store",
+        )
+    )
 
     hooks = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
     for offset, hook_name in enumerate(["UserPromptSubmit", "PreToolUse", "PostToolUse"], start=20):

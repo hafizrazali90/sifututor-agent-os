@@ -100,6 +100,12 @@ must also resolve that worktree instead of leaving routine cleanup behind:
 5. Report the exact removed path and measured size, or the parked path, reason,
    and return action.
 
+A session running from inside its own worktree will normally make the preview
+say `would-park` because the live agent process is using that path. This is not
+a cleanup failure. Park or release the lease, report the path honestly, and
+make removal by the parent/supervisor or the next canonical-workspace cleanup
+the return action after the process exits.
+
 This applies only to a registered dedicated worktree owned by the current
 session. A canonical checkout is never a cleanup target. If no matching lease
 exists, report `not applicable`; do not invent ownership or use the lower-level

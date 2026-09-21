@@ -206,6 +206,8 @@ except json.JSONDecodeError:
     print("INVALID")
     raise SystemExit(0)
 hooks = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
+lease_dir = "~/.local/state/sifututor-agent-os/worktrees"
+has_lease_dir = lease_dir in settings.get("additionalDirectories", [])
 needed = {"UserPromptSubmit", "PreToolUse", "PostToolUse"}
 guard = "secret_output_guard.py"
 has_guard = any(
@@ -216,7 +218,7 @@ has_guard = any(
     for hook in group.get("hooks", [])
     if isinstance(hook, dict)
 )
-print("OK" if needed.issubset(hooks) and has_guard else "MISSING")
+print("OK" if needed.issubset(hooks) and has_guard and has_lease_dir else "MISSING")
 PY
 )"
 
@@ -239,6 +241,10 @@ root = sys.argv[2]
 settings = json.loads(path.read_text())
 settings.setdefault("$schema", "https://json.schemastore.org/claude-code-settings.json")
 settings.setdefault("model", "opusplan")
+additional_dirs = settings.setdefault("additionalDirectories", [])
+lease_dir = "~/.local/state/sifututor-agent-os/worktrees"
+if lease_dir not in additional_dirs:
+    additional_dirs.append(lease_dir)
 hooks = settings.setdefault("hooks", {})
 hooks.setdefault(
     "UserPromptSubmit",
@@ -386,6 +392,9 @@ done < <(json_list "project_baseline.recommended_existing_files")
 settings_json='{
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "model": "opusplan",
+  "additionalDirectories": [
+    "~/.local/state/sifututor-agent-os/worktrees"
+  ],
   "hooks": {
     "UserPromptSubmit": [
       {

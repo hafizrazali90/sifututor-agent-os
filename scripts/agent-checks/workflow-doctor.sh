@@ -228,6 +228,16 @@ if not settings_path.is_file():
     raise SystemExit(2)
 settings = json.loads(settings_path.read_text())
 missing = [p for p in projects if p not in settings.get("additionalDirectories", [])]
+lease_dir = "~/.local/state/sifututor-agent-os/worktrees"
+global_dirs = []
+global_settings_path = Path.home() / ".claude/settings.json"
+if global_settings_path.is_file():
+    try:
+        global_dirs = json.loads(global_settings_path.read_text()).get("additionalDirectories", [])
+    except json.JSONDecodeError:
+        pass
+if lease_dir not in settings.get("additionalDirectories", []) and lease_dir not in global_dirs:
+    missing.append(lease_dir)
 if missing:
     print("MISSING " + ", ".join(missing))
     raise SystemExit(1)
