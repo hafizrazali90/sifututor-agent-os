@@ -293,6 +293,16 @@ def ignored_path_is_generated(path: str) -> bool:
     )
 
 
+def empty_agent_os_runtime(worktree: Path, ignored_path: str) -> bool:
+    """Allow only an empty ignored .agent-os directory at close-out."""
+    if ignored_path.rstrip("/") != ".agent-os":
+        return False
+    root = worktree / ".agent-os"
+    if not root.is_dir() or root.is_symlink():
+        return False
+    return not any(item.is_file() or item.is_symlink() for item in root.rglob("*"))
+
+
 def active_task(worktree: Path, base_ref: str) -> tuple[str, str]:
     path = worktree / ".claude" / "tasks" / "active.json"
     try:
@@ -380,7 +390,11 @@ def inspect_worktree(repo: Path, record: dict[str, Any], store: LeaseStore,
         result["reasons"].append("tracked or untracked changes exist")
         return result
     ignored = ignored_paths(path)
-    blocked_ignored = [item for item in ignored if not ignored_path_is_generated(item)]
+    blocked_ignored = [
+        item for item in ignored
+        if not ignored_path_is_generated(item)
+        and not empty_agent_os_runtime(path, item)
+    ]
     if blocked_ignored:
         result["reasons"].append("non-generated ignored files exist")
         result["ignored_blocker_count"] = len(blocked_ignored)

@@ -1,6 +1,9 @@
 [features]
 hooks = true
 
+[sandbox_workspace_write]
+writable_roots = ["~/.local/state/sifututor-agent-os/worktrees"]
+
 [[hooks.PreToolUse]]
 matcher = ".*"
 

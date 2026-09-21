@@ -37,6 +37,11 @@ cleanup is inside the approved boundary. For continuing work, use
 infer ownership, or use the administrator-level `reclaim` command to bypass a
 missing current-session lease.
 
+A session launched inside its own worktree normally keeps that directory in
+use until the agent process exits. In that case, do not claim it was removed:
+park or release its lease, record the exact path, and make safe cleanup by the
+parent/supervisor or next canonical-workspace audit the return action.
+
 ## Continuation Pack
 
 For non-trivial handoff, include:

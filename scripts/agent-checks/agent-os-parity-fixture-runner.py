@@ -394,11 +394,11 @@ def check_session_worktree_closeout() -> list[str]:
     required = {
         "docs/agent-playbooks/save-session.md": [
             "worktree-lifecycle.py close", "would-reclaim", "--apply",
-            "canonical checkout is never a cleanup target",
+            "canonical checkout is never a cleanup target", "process exits",
         ],
         "docs/agent-playbooks/handoff.md": [
             "worktree-lifecycle.py close", "lease-status --status parked",
-            "Never force removal", "resume action",
+            "Never force removal", "resume action", "parent/supervisor",
         ],
         ".agents/skills/save-session/SKILL.md": [
             "preview then safely close finished work", "park unfinished work",
@@ -406,6 +406,14 @@ def check_session_worktree_closeout() -> list[str]:
         ".agents/skills/handoff/SKILL.md": [
             "safely close a finished dedicated leased worktree",
             "park and report unfinished work",
+        ],
+        ".codex/config.toml": [
+            "sandbox_workspace_write",
+            "~/.local/state/sifututor-agent-os/worktrees",
+        ],
+        "scripts/agent-checks/agent-os-install.sh": [
+            "additionalDirectories",
+            "~/.local/state/sifututor-agent-os/worktrees",
         ],
     }
     for relative, snippets in required.items():

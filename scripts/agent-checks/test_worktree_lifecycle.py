@@ -31,7 +31,9 @@ def init_repo(root: Path) -> Path:
     run("git", "init", "-b", "main", cwd=repo)
     run("git", "config", "user.name", "Fixture", cwd=repo)
     run("git", "config", "user.email", "fixture@example.invalid", cwd=repo)
-    (repo / ".gitignore").write_text("node_modules/\nvendor/\n__pycache__/\n.private-note\n")
+    (repo / ".gitignore").write_text(
+        "node_modules/\nvendor/\n__pycache__/\n.agent-os/\n.private-note\n"
+    )
     (repo / "tracked.txt").write_text("base\n")
     run("git", "add", ".gitignore", "tracked.txt", cwd=repo)
     run("git", "commit", "-m", "base", cwd=repo)
@@ -178,6 +180,23 @@ class ClassificationTests(unittest.TestCase):
         result = self.inspect()
 
         self.assertEqual(result["classification"], "reclaim_candidate")
+
+    def test_empty_agent_os_runtime_directories_do_not_block(self):
+        (self.worktree / ".agent-os" / "delegations").mkdir(parents=True)
+
+        result = self.inspect()
+
+        self.assertEqual(result["classification"], "reclaim_candidate")
+
+    def test_agent_os_runtime_file_is_preserved(self):
+        runtime = self.worktree / ".agent-os" / "delegations"
+        runtime.mkdir(parents=True)
+        (runtime / "handback.md").write_text("unique evidence")
+
+        result = self.inspect()
+
+        self.assertEqual(result["classification"], "preserve")
+        self.assertTrue(any("non-generated ignored files" in reason for reason in result["reasons"]))
 
     def test_active_task_pointer_blocks(self):
         task_dir = self.worktree / ".claude" / "tasks"
