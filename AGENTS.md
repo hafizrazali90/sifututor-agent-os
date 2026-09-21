@@ -127,7 +127,7 @@ Use it only as read-only reference.
 Before declaring that a credential, tool, or infrastructure check is unavailable,
 consult `docs/agent-playbooks/agent-access-map.md`. It documents all approved
 access lanes with tier, allowed operations, Hafiz approval requirement, and a safe
-verification command for each. The current registry has 23 lanes: 21 scoped
+verification command for each. The current registry has 24 lanes: 22 scoped
 agent-access conf files, the Microsoft 365 Planner read-only env lane, and the
 delegated SharePoint read-only lane.
 
@@ -138,6 +138,8 @@ Wrapper scripts for common checks live in `scripts/agent-access/`:
 | `agent-access-doctor.sh` | All lanes — conf file presence + connectivity (run for full health) |
 | `check-st-admin-cert.sh` | SSL cert expiry and API route for st.admin.sifututor.my |
 | `check-ripple-prod.sh` | PM2 status on KVM8, Ripple HTTPS, SIMS API reachability |
+| `check-ripple-destination-readonly.sh` | Ripple's narrow V16 destination views and write refusal |
+| `ripple-destination-readonly-run.sh` | Run one command with the narrow V16 destination URL |
 | `check-sims-db-readonly.sh` | SIMS production DB connection and aggregate spot-checks |
 | `check-cloudflare-dns.sh` | A records for key domains via read-only Cloudflare API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run log and combined cert expiry on production |

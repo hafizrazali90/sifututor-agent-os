@@ -54,6 +54,7 @@ EXPECTED=(
   payment-readonly.conf
   payment-write.conf
   production-smoke.conf
+  ripple-destination-readonly.conf
   ripple-staging-smoke.conf
   server-admin.conf
   server-ssh.conf
