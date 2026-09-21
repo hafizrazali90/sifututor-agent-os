@@ -301,9 +301,25 @@ that span more than one project.
 - **Source:** Diagnosed and resolved (resumed the timer, deployed better
   failure diagnostics) during the 2026-09-20/21 session. This entry is only
   for the two things that session did not close.
-- **Next action:** Confirm the failure alert was actually received, and
-  decide whether to accept reliability probation now, or leave it on.
-- **Promote to:** GitHub issue in sims-owner-analytics once a decision is
-  made on whether to formally close probation now or keep it.
-- **Links:** GitHub issues 69 (closed), 70 (merged), 72 (closed), 73
-  (merged), 71 (open, separate leak-filter drift follow-up).
+- **Update 2026-09-21:** The resumed timer failed again on its first real
+  attempt, a genuinely different and real cause this time, a production
+  column type no longer matches what the extraction registry expects for
+  one specific table. Data is unaffected. Could not identify which table
+  from the logs, so a follow-up fix now logs table and dataset on any
+  fatal per-table failure, deployed live. Timer is re-enabled again; the
+  next scheduled cycle will either succeed or, for the first time, name
+  the exact table that needs its schema reconciled.
+- **Next action:** Check whether the next scheduled cycle (2026-09-22 around
+  02:14 MYT) succeeded or failed. If it failed, the log will now name the
+  exact table and dataset involved, use that to reconcile the schema
+  difference between production and the extraction registry. Separately,
+  confirm the failure alert from the original 2026-09-02 incident was
+  actually received, and decide whether to accept reliability probation
+  now, or leave it on.
+- **Promote to:** GitHub issue in sims-owner-analytics once the drifted
+  table is identified, or once a decision is made on formally closing
+  probation.
+- **Links:** GitHub issues 69, 70, 72, 73 (closed/merged, original
+  incident), 74, 75, 76, 78, 80 (closed/merged, table-logging fix and its
+  deploy script corrections), 71, 77, 79 (closed, drift and correction
+  follow-ups filed along the way).
