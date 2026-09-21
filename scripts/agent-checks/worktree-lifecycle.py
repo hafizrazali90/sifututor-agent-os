@@ -340,7 +340,8 @@ def head_is_merged(worktree: Path, base_ref: str) -> bool | None:
 def inspect_worktree(repo: Path, record: dict[str, Any], store: LeaseStore,
                      *, base_ref: str = "origin/main",
                      now: dt.datetime | None = None,
-                     check_process: bool = False) -> dict[str, Any]:
+                     check_process: bool = False,
+                     ignore_lease_session: str = "") -> dict[str, Any]:
     now = now or utc_now()
     repo = repo.resolve()
     path = Path(record["path"])
@@ -391,10 +392,16 @@ def inspect_worktree(repo: Path, record: dict[str, Any], store: LeaseStore,
     if lease is not None and not valid_lease(lease, path):
         result["reasons"].append("lease record is invalid")
         return result
-    if lease_is_live(lease, now):
+    owns_ignored_lease = bool(
+        ignore_lease_session
+        and lease
+        and lease.get("session") == ignore_lease_session
+        and lease.get("status") in {"active", "parked"}
+    )
+    if lease_is_live(lease, now) and not owns_ignored_lease:
         result["reasons"].append(f"{lease['status']} lease owned by {lease['owner']}")
         return result
-    if lease and lease.get("status") == "active":
+    if lease and lease.get("status") == "active" and not owns_ignored_lease:
         result["reasons"].append("active lease heartbeat expired; explicit release or reassignment is required")
         result["stale_lease"] = True
         return result
@@ -493,6 +500,69 @@ def reclaim(repo: Path, worktree: Path, expected_head: str, store: LeaseStore,
             outcome["removed"] = not worktree.exists()
         finally:
             handle.close()
+    return outcome
+
+
+def close_worktree(repo: Path, worktree: Path, expected_head: str,
+                   store: LeaseStore, session: str, *, base_ref: str,
+                   apply: bool) -> dict[str, Any]:
+    """Finish one owned worktree: reclaim it when safe, otherwise park it."""
+    repo, worktree = repo.resolve(), worktree.resolve()
+    lease = store.get(worktree)
+    if not valid_lease(lease, worktree):
+        raise LifecycleError("No valid lease exists for this worktree")
+    if lease["session"] != session:
+        raise LifecycleError("Only the owning session may close this worktree")
+
+    match = next((item for item in parse_worktrees(repo)
+                  if Path(item["path"]).resolve() == worktree), None)
+    if match is None:
+        raise LifecycleError("Target is not a registered worktree of this repository")
+    actual_head = git(worktree, "rev-parse", "HEAD").stdout.strip()
+    checked = inspect_worktree(
+        repo, match, store, base_ref=base_ref, check_process=True,
+        ignore_lease_session=session,
+    )
+    reasons = list(checked["reasons"])
+    if not expected_head or actual_head != expected_head:
+        reasons = ["HEAD does not match the expected task commit"]
+    safe = actual_head == expected_head and checked["classification"] == "reclaim_candidate"
+    outcome = {
+        "action": "close-worktree", "applied": apply,
+        "repository": str(repo), "worktree": str(worktree),
+        "head": actual_head, "expected_head": expected_head,
+        "outcome": "would-reclaim" if safe else "would-park",
+        "reasons": reasons,
+    }
+    if not apply:
+        return outcome
+    if not safe:
+        store.set_status(worktree, session, "parked", "; ".join(reasons))
+        outcome["outcome"] = "parked"
+        return outcome
+
+    store.set_status(worktree, session, "released", "task close-out checks passed")
+    try:
+        reclaimed = reclaim(
+            repo, worktree, expected_head, store,
+            base_ref=base_ref, apply=True,
+        )
+    except LifecycleError:
+        if worktree.is_dir():
+            store.set_status(
+                worktree, session, "parked",
+                "state changed during final reclamation; inspect before retry",
+            )
+        outcome.update(
+            outcome="parked", removed=False,
+            reasons=["state changed during final reclamation; inspect before retry"],
+        )
+        return outcome
+    outcome.update(
+        outcome="reclaimed", removed=reclaimed.get("removed", False),
+        size_kib_before=reclaimed["size_kib_before"],
+        recovery=reclaimed["recovery"], reasons=reclaimed["reasons"],
+    )
     return outcome
 
 
@@ -783,6 +853,14 @@ def build_parser() -> argparse.ArgumentParser:
     remove.add_argument("--base-ref", default="origin/main")
     remove.add_argument("--apply", action="store_true")
 
+    close = sub.add_parser("close")
+    close.add_argument("--repo", type=Path, required=True)
+    close.add_argument("--worktree", type=Path, required=True)
+    close.add_argument("--session", required=True)
+    close.add_argument("--expected-head", required=True)
+    close.add_argument("--base-ref", default="origin/main")
+    close.add_argument("--apply", action="store_true")
+
     prune = sub.add_parser("prune-missing")
     prune.add_argument("--repo", type=Path, required=True)
     prune.add_argument("--apply", action="store_true")
@@ -838,6 +916,11 @@ def main() -> int:
         elif args.command == "reclaim":
             emit(reclaim(args.repo, args.worktree, args.expected_head, store,
                          base_ref=args.base_ref, apply=args.apply))
+        elif args.command == "close":
+            emit(close_worktree(
+                args.repo, args.worktree, args.expected_head, store, args.session,
+                base_ref=args.base_ref, apply=args.apply,
+            ))
         elif args.command == "prune-missing":
             emit(prune_missing_registrations(args.repo, apply=args.apply))
         elif args.command == "dependency-donors":

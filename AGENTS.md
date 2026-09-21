@@ -262,7 +262,10 @@ leasing, and dependency installation. This is conditional: discussion, small
 safe work in a clean checkout, and tasks that do not need isolation must not
 create unnecessary worktrees.
 
-Cleanup is proposal-first. A worktree may be reclaimed only after the helper
+At task close-out, use `worktree-lifecycle.py close` with the exact session and
+expected HEAD. It reclaims a verified finished worktree and otherwise parks it
+with the reasons, so agents do not leave routine cleanup for Hafiz. Cleanup is
+proposal-first. A worktree may be reclaimed only after the helper
 revalidates the exact HEAD, clean tracked/untracked state, ignored-file safety,
 active-task state, lease state, base-branch containment, Git lock and live
 process ownership. Never force removal, delete the branch, or treat age,

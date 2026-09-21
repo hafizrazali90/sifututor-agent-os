@@ -333,6 +333,85 @@ class ClassificationTests(unittest.TestCase):
         self.assertTrue(applied["applied"])
         self.assertTrue(applied["removed"])
 
+    def test_close_dry_run_then_apply_reclaims_and_keeps_branch(self):
+        self.store.create(
+            repo=self.repo, worktree=self.worktree, owner="Codex",
+            session="closing-session", purpose="fixture", issue="#150",
+            cleanup_condition="merged and clean",
+        )
+        head = run("git", "rev-parse", "HEAD", cwd=self.worktree)
+        with mock.patch.object(worktree_lifecycle, "process_uses_path", return_value=False):
+            planned = worktree_lifecycle.close_worktree(
+                self.repo, self.worktree, head, self.store, "closing-session",
+                base_ref="origin/main", apply=False,
+            )
+            self.assertEqual(planned["outcome"], "would-reclaim")
+            self.assertEqual(self.store.get(self.worktree)["status"], "active")
+            applied = worktree_lifecycle.close_worktree(
+                self.repo, self.worktree, head, self.store, "closing-session",
+                base_ref="origin/main", apply=True,
+            )
+        self.assertEqual(applied["outcome"], "reclaimed")
+        self.assertFalse(self.worktree.exists())
+        self.assertEqual(
+            run("git", "show-ref", "--verify", "refs/heads/candidate", cwd=self.repo).split()[0],
+            head,
+        )
+
+    def test_close_parks_dirty_worktree(self):
+        self.store.create(
+            repo=self.repo, worktree=self.worktree, owner="Codex",
+            session="closing-session", purpose="fixture", issue="#150",
+            cleanup_condition="merged and clean",
+        )
+        (self.worktree / "unique.txt").write_text("keep me")
+        head = run("git", "rev-parse", "HEAD", cwd=self.worktree)
+        with mock.patch.object(worktree_lifecycle, "process_uses_path", return_value=False):
+            result = worktree_lifecycle.close_worktree(
+                self.repo, self.worktree, head, self.store, "closing-session",
+                base_ref="origin/main", apply=True,
+            )
+        self.assertEqual(result["outcome"], "parked")
+        self.assertTrue(self.worktree.exists())
+        self.assertEqual(self.store.get(self.worktree)["status"], "parked")
+        self.assertTrue(any("changes exist" in reason for reason in result["reasons"]))
+
+    def test_close_parks_when_expected_head_drifted(self):
+        self.store.create(
+            repo=self.repo, worktree=self.worktree, owner="Codex",
+            session="closing-session", purpose="fixture", issue="#150",
+            cleanup_condition="merged and clean",
+        )
+        with mock.patch.object(worktree_lifecycle, "process_uses_path", return_value=False):
+            result = worktree_lifecycle.close_worktree(
+                self.repo, self.worktree, "wrong-head", self.store, "closing-session",
+                base_ref="origin/main", apply=True,
+            )
+        self.assertEqual(result["outcome"], "parked")
+        self.assertTrue(self.worktree.exists())
+        self.assertEqual(self.store.get(self.worktree)["status"], "parked")
+        self.assertTrue(any("expected task commit" in reason for reason in result["reasons"]))
+
+    def test_close_parks_if_final_reclamation_state_changes(self):
+        self.store.create(
+            repo=self.repo, worktree=self.worktree, owner="Codex",
+            session="closing-session", purpose="fixture", issue="#150",
+            cleanup_condition="merged and clean",
+        )
+        head = run("git", "rev-parse", "HEAD", cwd=self.worktree)
+        with mock.patch.object(worktree_lifecycle, "process_uses_path", return_value=False), \
+                mock.patch.object(
+                    worktree_lifecycle, "reclaim",
+                    side_effect=worktree_lifecycle.LifecycleError("changed"),
+                ):
+            result = worktree_lifecycle.close_worktree(
+                self.repo, self.worktree, head, self.store, "closing-session",
+                base_ref="origin/main", apply=True,
+            )
+        self.assertEqual(result["outcome"], "parked")
+        self.assertEqual(self.store.get(self.worktree)["status"], "parked")
+        self.assertTrue(self.worktree.exists())
+
 
 class DependencyTests(unittest.TestCase):
     def setUp(self):
