@@ -15,7 +15,7 @@ perms=$(stat -f '%Lp' "$CONF" 2>/dev/null || stat -c '%a' "$CONF")
 [ "$perms" = "600" ] && ok conf_mode 0600 || bad conf_mode "$perms"
 
 # shellcheck disable=SC1090
-set -a; . "$CONF"; set +a
+. "$CONF"
 
 SSH_HOST="$RIPPLE_DESTINATION_READONLY_SSH_HOST"
 LPORT="$RIPPLE_DESTINATION_READONLY_LOCAL_PORT"

@@ -12,7 +12,7 @@ shift
 [ "$#" -gt 0 ] || { echo "no_command" >&2; exit 2; }
 
 # shellcheck disable=SC1090
-set -a; . "$CONF"; set +a
+. "$CONF"
 
 LPORT="$RIPPLE_DESTINATION_READONLY_LOCAL_PORT"
 TUNNEL_PID=""
