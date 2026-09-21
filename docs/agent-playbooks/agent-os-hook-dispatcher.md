@@ -175,12 +175,13 @@ so the session looks broken for reasons that have nothing to do with the gate.
 
 ### Owner
 
-One shared implementation, two thin wrappers:
+One shared implementation, thin compatibility wrappers:
 
 ```text
 scripts/agent-checks/claude_hook_dispatch.py   <- all behavior
 .claude/hooks/quality-gate.py                  <- wrapper
 .claude/hooks/workflow-gate.py                 <- wrapper
+.claude/hooks/claude-hook.cjs                  <- Node wrapper used by Finch
 ```
 
 The wrappers only name their hook and hand over. Change behavior in the shared
@@ -229,8 +230,9 @@ filesystem paths.
 
 The dispatcher covers every project hook name currently referenced by an
 active Sifututor project when that name is otherwise missing from the umbrella.
-Thin Python, shell, and PowerShell wrappers all delegate to the same bounded
-Python owner. Shell wrapper arguments are forwarded, which preserves Kelas's
+Thin Python, Node, shell, and PowerShell wrappers all delegate to the same bounded
+Python owner. Wrapper arguments are forwarded, which preserves Finch's
+multi-mode `claude-hook.cjs <mode>` contract and Kelas's
 `run-shared-hook.sh <shared-hook>` contract. PowerShell wrappers are installed
 and configuration-tested on macOS; actual PowerShell execution is tested only
 on a host with `powershell.exe`, `pwsh`, or `powershell` available.

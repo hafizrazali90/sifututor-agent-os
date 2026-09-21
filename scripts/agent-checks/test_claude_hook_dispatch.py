@@ -38,6 +38,7 @@ import claude_hook_dispatch  # noqa: E402
 WRAPPERS = {
     "quality-gate.py": ROOT / ".claude" / "hooks" / "quality-gate.py",
     "workflow-gate.py": ROOT / ".claude" / "hooks" / "workflow-gate.py",
+    "claude-hook.cjs": ROOT / ".claude" / "hooks" / "claude-hook.cjs",
 }
 
 RECORDING_GATE = """#!/usr/bin/env python3
@@ -58,6 +59,17 @@ def write_gate(path: Path, *, code: int = 0, stdout: str = "", stderr: str = "")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(RECORDING_GATE.format(code=code, stdout=stdout, stderr=stderr))
     path.chmod(0o755)
+
+
+def write_node_gate(path: Path, *, code: int = 0) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "const fs = require('node:fs');\n"
+        "const record = process.env.FIXTURE_RECORD;\n"
+        "const payload = fs.readFileSync(0, 'utf8');\n"
+        "fs.writeFileSync(record, JSON.stringify({cwd: process.cwd(), stdin: payload, args: process.argv.slice(2)}));\n"
+        f"process.exit({code});\n"
+    )
 
 
 def payload_bytes(cwd, *, command: str = "git status --short") -> bytes:
@@ -117,8 +129,9 @@ class DispatchFixture(unittest.TestCase):
         if env_extra:
             env.update(env_extra)
         # Mirrors the tracked command: cd "$CLAUDE_PROJECT_DIR" && python3 .claude/hooks/<name>
+        interpreter = "node" if hook_name.endswith((".js", ".cjs", ".mjs")) else sys.executable
         return subprocess.run(
-            [sys.executable, str(Path(".claude") / "hooks" / hook_name)],
+            [interpreter, str(Path(".claude") / "hooks" / hook_name)],
             cwd=self.umbrella,
             input=payload,
             stdout=subprocess.PIPE,
@@ -159,6 +172,26 @@ class DispatchFixture(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertEqual(Path(self.recorded()["cwd"]).resolve(), self.worktree)
+
+    def test_node_wrapper_dispatches_finch_style_hook_and_arguments(self) -> None:
+        write_node_gate(self.worktree / ".claude" / "hooks" / "claude-hook.cjs")
+        payload = payload_bytes(str(self.nested))
+
+        result = subprocess.run(
+            ["node", ".claude/hooks/claude-hook.cjs", "worker-safety"],
+            cwd=self.umbrella,
+            input=payload,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, "FIXTURE_RECORD": str(self.record)},
+            timeout=60,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(Path(self.recorded()["cwd"]).resolve(), self.worktree)
+        self.assertEqual(self.recorded()["stdin"].encode(), payload)
+        self.assertEqual(self.recorded()["args"], ["worker-safety"])
 
     # --- a real rejection must survive --------------------------------------
 

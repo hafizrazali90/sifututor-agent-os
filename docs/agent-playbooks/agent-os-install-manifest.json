@@ -168,6 +168,7 @@
     ".claude/hooks/friction-logger.py",
     ".claude/hooks/quality-gate.py",
     ".claude/hooks/workflow-gate.py",
+    ".claude/hooks/claude-hook.cjs",
     ".claude/hooks/session-start.py",
     ".claude/hooks/memory-flush.py",
     ".claude/hooks/freshness-reminder.py",
