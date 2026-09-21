@@ -598,6 +598,138 @@ def seed_dependencies(source: Path, target: Path, *, apply: bool) -> dict[str, A
     return result
 
 
+def dependency_install_commands(worktree: Path) -> list[tuple[str, list[str]]]:
+    node_commands = (
+        ("pnpm-lock.yaml", ["pnpm", "install", "--frozen-lockfile"]),
+        ("package-lock.json", ["npm", "ci"]),
+        ("yarn.lock", ["yarn", "install", "--frozen-lockfile"]),
+        ("bun.lock", ["bun", "install", "--frozen-lockfile"]),
+    )
+    found_node = [command for name, command in node_commands if (worktree / name).is_file()]
+    if len(found_node) > 1:
+        raise LifecycleError("Multiple Node lockfile types found; choose setup manually")
+    found: list[tuple[str, list[str]]] = []
+    if found_node:
+        found.append(("node_modules", found_node[0]))
+    if (worktree / "composer.lock").is_file():
+        found.append(("vendor", ["composer", "install", "--no-interaction", "--no-scripts"]))
+    return found
+
+
+def dependency_install_command(worktree: Path) -> list[str]:
+    commands = dependency_install_commands(worktree)
+    if len(commands) > 1:
+        raise LifecycleError("Multiple dependency ecosystems found; use the automatic create workflow")
+    return commands[0][1] if commands else []
+
+
+def clone_dependency_directory(source: Path, target: Path, name: str) -> None:
+    src, dst = source / name, target / name
+    command = ["cp", "-cR", str(src), str(dst)] if platform.system() == "Darwin" else [
+        "cp", "-a", "--reflink=auto", str(src), str(dst)
+    ]
+    if run(*command, check=False, timeout=600).returncode != 0:
+        raise LifecycleError("Copy-on-write dependency seed failed")
+
+
+def verify_dependencies(worktree: Path) -> str:
+    requirements = dependency_install_commands(worktree)
+    if not requirements:
+        return "not-applicable"
+    for name, _command in requirements:
+        if not (worktree / name).is_dir():
+            raise LifecycleError("Dependency setup completed without creating its dependency directory")
+    checks = []
+    if (worktree / "package-lock.json").is_file():
+        checked = run("npm", "ls", "--depth=0", cwd=worktree, check=False, timeout=600)
+        if checked.returncode != 0:
+            raise LifecycleError("npm dependency health check failed")
+        checks.append("npm-ls-passed")
+    if (worktree / "composer.lock").is_file():
+        checked = run(
+            "composer", "dump-autoload", "--no-interaction", "--no-scripts",
+            cwd=worktree, check=False, timeout=600,
+        )
+        if checked.returncode != 0:
+            raise LifecycleError("Composer autoload regeneration failed")
+        checks.append("composer-autoload-passed")
+    return ", ".join(checks) if checks else "dependency-directories-present; run project-native checks"
+
+
+def create_worktree(repo: Path, target: Path, *, branch: str, base_ref: str,
+                    store: LeaseStore, owner: str, session: str, purpose: str,
+                    issue: str, cleanup_condition: str, install_if_needed: bool,
+                    ttl_hours: int = DEFAULT_TTL_HOURS) -> dict[str, Any]:
+    repo, target = repo.resolve(), target.resolve()
+    if not repo.is_dir():
+        raise LifecycleError("Repository does not exist")
+    if target.exists():
+        raise LifecycleError("Target worktree path already exists")
+    if git(repo, "check-ref-format", "--branch", branch, check=False).returncode != 0:
+        raise LifecycleError("Branch name is invalid")
+    if git(repo, "show-ref", "--verify", f"refs/heads/{branch}", check=False).returncode == 0:
+        raise LifecycleError("Branch already exists")
+    if git(repo, "rev-parse", "--verify", f"{base_ref}^{{commit}}", check=False).returncode != 0:
+        raise LifecycleError("Base reference does not resolve to a commit")
+
+    git(repo, "worktree", "add", "-b", branch, str(target), base_ref)
+    try:
+        lease = store.create(
+            repo=repo, worktree=target, owner=owner, session=session,
+            purpose=purpose, issue=issue, cleanup_condition=cleanup_condition,
+            ttl_hours=ttl_hours,
+        )
+    except Exception:
+        removed = git(repo, "worktree", "remove", str(target), check=False)
+        if removed.returncode != 0:
+            raise LifecycleError(
+                "Lease registration failed and the clean worktree could not be removed; inspect it manually"
+            )
+        raise
+    result: dict[str, Any] = {
+        "action": "create-worktree", "repository": str(repo),
+        "worktree": str(target), "branch": branch, "base_ref": base_ref,
+        "lease": lease, "dependency_action": "not-applicable",
+        "dependency_source": "", "dependency_check": "not-applicable",
+    }
+    try:
+        requirements = dependency_install_commands(target)
+        if not requirements:
+            return result
+        target_locks = lock_identity(target)
+        donors = [Path(record["path"]) for record in parse_worktrees(repo)
+                  if Path(record["path"]).is_dir()
+                  and Path(record["path"]).resolve() != target
+                  and lock_identity(Path(record["path"])) == target_locks]
+        actions = []
+        sources = []
+        pending = []
+        for name, command in requirements:
+            donor = next((path for path in donors if (path / name).is_dir()), None)
+            if donor is not None:
+                clone_dependency_directory(donor, target, name)
+                actions.append(f"{name}:seeded")
+                sources.append(str(donor))
+            elif install_if_needed:
+                if run(*command, cwd=target, check=False, timeout=1200).returncode != 0:
+                    raise LifecycleError("Dependency installation failed")
+                actions.append(f"{name}:installed")
+            else:
+                pending.append(command)
+        if pending:
+            result["dependency_action"] = "install-required"
+            result["next_commands"] = pending
+            return result
+        result["dependency_action"] = "seeded" if all(item.endswith(":seeded") for item in actions) else "prepared"
+        result["dependency_actions"] = actions
+        result["dependency_source"] = sorted(set(sources))
+        result["dependency_check"] = verify_dependencies(target)
+        return result
+    except Exception:
+        store.set_status(target, session, "parked", "automatic setup failed; inspect before reuse")
+        raise
+
+
 def emit(value: Any) -> None:
     print(json.dumps(value, indent=2, sort_keys=True))
 
@@ -606,6 +738,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-dir", type=Path, default=default_state_dir())
     sub = parser.add_subparsers(dest="command", required=True)
+
+    create = sub.add_parser("create")
+    create.add_argument("--repo", type=Path, required=True)
+    create.add_argument("--worktree", type=Path, required=True)
+    create.add_argument("--branch", required=True)
+    create.add_argument("--base-ref", default="origin/main")
+    create.add_argument("--owner", required=True)
+    create.add_argument("--session", required=True)
+    create.add_argument("--purpose", required=True)
+    create.add_argument("--issue", default="")
+    create.add_argument("--cleanup-condition", required=True)
+    create.add_argument("--ttl-hours", type=int, default=DEFAULT_TTL_HOURS)
+    create.add_argument("--install-if-needed", action="store_true")
 
     lease = sub.add_parser("lease")
     lease.add_argument("--repo", type=Path, required=True)
@@ -657,7 +802,15 @@ def main() -> int:
     args = build_parser().parse_args()
     store = LeaseStore(args.state_dir)
     try:
-        if args.command == "lease":
+        if args.command == "create":
+            emit(create_worktree(
+                args.repo, args.worktree, branch=args.branch, base_ref=args.base_ref,
+                store=store, owner=args.owner, session=args.session,
+                purpose=args.purpose, issue=args.issue,
+                cleanup_condition=args.cleanup_condition,
+                install_if_needed=args.install_if_needed, ttl_hours=args.ttl_hours,
+            ))
+        elif args.command == "lease":
             emit(store.create(
                 repo=args.repo, worktree=args.worktree, owner=args.owner,
                 session=args.session, purpose=args.purpose, issue=args.issue,

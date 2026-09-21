@@ -368,6 +368,27 @@ proved.
 
 ### Dependency reuse
 
+For a new task, prefer the single creation command instead of manually chaining
+`git worktree add`, lease registration, donor discovery, and dependency setup:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py create \
+  --repo <repository> --worktree <new-worktree> \
+  --branch <type/description> --base-ref origin/main \
+  --owner <agent-or-human> --session <exact-session-id> \
+  --purpose <short-purpose> --issue <issue-url-or-number> \
+  --cleanup-condition <plain-condition> --install-if-needed
+```
+
+The command refuses an existing path, existing branch, invalid branch, or
+missing base commit. It creates the worktree, immediately registers its lease,
+then reuses the first registered donor with identical lockfiles. If no donor
+exists, `--install-if-needed` uses the detected package manager's frozen-lockfile
+installation. Without that flag it reports the exact install command instead
+of running it. A failed setup parks the lease for inspection; it never force
+deletes a partial checkout. The result records whether dependencies were
+seeded, installed, not applicable, or still required.
+
 Do not symlink mutable dependency directories between worktrees. First find a
 donor with byte-identical lockfiles:
 
