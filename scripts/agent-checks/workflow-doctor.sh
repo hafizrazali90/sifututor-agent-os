@@ -108,10 +108,12 @@ for project in "${PROJECTS[@]}"; do
   [[ -f "$dir/CLAUDE.md" ]] && cl="CLAUDE" || cl="missing CLAUDE"
   [[ -f "$dir/.claude/tasks/active.json" ]] && ac="active" || ac="missing active"
   [[ -d "$dir/.claude/hooks" ]] && hk="hooks" || hk="missing hooks"
-  if [[ "$ag $cl $ac $hk" == "AGENTS CLAUDE active hooks" ]]; then
-    pass "$project" "$ag, $cl, $ac, $hk"
-  else
+  if [[ "$ag $cl $hk" != "AGENTS CLAUDE hooks" ]]; then
     fail "$project" "$ag, $cl, $ac, $hk"
+  elif [[ "$ac" == "missing active" ]]; then
+    warn "$project" "$ag, $cl, $ac, $hk; task-state baseline is optional until this project adopts it"
+  else
+    pass "$project" "$ag, $cl, $ac, $hk"
   fi
   if [[ -f "$dir/.claude/tasks/active.json" ]]; then
     python3 -m json.tool "$dir/.claude/tasks/active.json" >/dev/null 2>&1 \
@@ -178,7 +180,9 @@ if [[ "${#existing_projects[@]}" -eq 0 ]]; then
   warn "project guards" "no product projects in this checkout; skipped"
 else
   for project in "${existing_projects[@]}"; do
-    if (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
+    if [[ -n "$(git -C "$ROOT/$project" status --porcelain=v1 2>/dev/null)" ]]; then
+      warn "$project guard" "dirty checkout belongs to its active product session; guard result not promoted to Agent OS failure"
+    elif (cd "$ROOT/$project" && "$ROOT/scripts/agent-checks/pre-commit-guard.sh" >/dev/null 2>&1); then
       pass "$project guard" "passed"
     else
       fail "$project guard" "failed"

@@ -140,6 +140,25 @@ class WorkspaceScanTests(unittest.TestCase):
         self.assertEqual(report.severity, freshness.SEVERITY_FAIL)
         self.assertTrue(report.provable)
 
+    def test_completed_pointer_in_dirty_checkout_warns_owner_without_rewriting(self):
+        self.projects = ("proj-dirty",)
+        project = init_project(self.root, "proj-dirty")
+        write_json(
+            project / ".claude/tasks/shipped.json",
+            {"id": "shipped", "steps": steps(("build", "done"), ("verify", "done"))},
+        )
+        write_json(
+            project / ".claude/tasks/active.json",
+            {"activeTask": "shipped", "taskFile": ".claude/tasks/shipped.json", "route": "feature"},
+        )
+        commit_all(project, "claim", "2026-09-01T09:00:00+08:00")
+        (project / "in-progress.txt").write_text("owned by another session\n")
+
+        report = self.by_project(self.scan())["proj-dirty"]
+        self.assertEqual(report.state, freshness.STATE_STALE_COMPLETED)
+        self.assertEqual(report.severity, freshness.SEVERITY_WARN)
+        self.assertIn("checkout owner", report.recommended_action.lower())
+
     def test_unfinished_task_untouched_while_repo_moved_on_is_drifted(self):
         self.projects = ("proj-drift",)
         project = init_project(self.root, "proj-drift")
@@ -544,6 +563,11 @@ class RegistryTests(unittest.TestCase):
         block = doctor.split("PROJECTS=(", 1)[1].split(")", 1)[0]
         doctor_projects = tuple(line.strip() for line in block.splitlines() if line.strip())
         self.assertEqual(set(freshness.PROJECTS), set(doctor_projects))
+
+    def test_doctor_does_not_promote_dirty_product_guards_to_agent_os_failures(self):
+        doctor = (HERE / "workflow-doctor.sh").read_text()
+        self.assertIn('git -C "$ROOT/$project" status --porcelain=v1', doctor)
+        self.assertIn("dirty checkout belongs to its active product session", doctor)
 
 
 if __name__ == "__main__":

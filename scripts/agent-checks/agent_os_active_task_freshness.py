@@ -139,6 +139,7 @@ class PointerEvidence:
     task_file_changed_at: dt.datetime | None = None
     task_file_change_source: str = ""
     repo_changed_at: dt.datetime | None = None
+    checkout_dirty: bool = False
 
 
 @dataclass
@@ -353,6 +354,16 @@ def classify(
         lines.append(
             f"every one of the {len(evidence.task_steps)} recorded steps is done or skipped"
         )
+        if evidence.checkout_dirty:
+            lines.append(
+                "the canonical checkout has uncommitted work, so another session may own its task pointer"
+            )
+            return build(
+                STATE_STALE_COMPLETED,
+                SEVERITY_WARN,
+                "The checkout owner should reset the pointer when its current work is safely settled.",
+                drift=_drift_days(evidence),
+            )
         return build(
             STATE_STALE_COMPLETED,
             SEVERITY_FAIL,
@@ -380,6 +391,16 @@ def classify(
     )
 
     if drift > max_drift_days:
+        if evidence.checkout_dirty:
+            lines.append(
+                "the canonical checkout has uncommitted work, so another session may own its task pointer"
+            )
+            return build(
+                STATE_STALE_DRIFTED,
+                SEVERITY_WARN,
+                "The checkout owner should reconcile the pointer with its current work.",
+                drift=drift,
+            )
         return build(
             STATE_STALE_DRIFTED,
             SEVERITY_FAIL,
@@ -483,6 +504,11 @@ def _repo_changed_at(checkout: Path) -> dt.datetime | None:
     return _parse_iso(result.stdout)
 
 
+def _checkout_dirty(checkout: Path) -> bool:
+    result = _git(checkout, "status", "--porcelain=v1")
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
 def _current_branch(checkout: Path) -> str | None:
     result = _git(checkout, "rev-parse", "--abbrev-ref", "HEAD")
     if result.returncode != 0:
@@ -558,6 +584,7 @@ def gather_evidence(
     changed_at, change_source = _path_changed_at(checkout, POINTER_RELPATH)
     repo_changed_at = _repo_changed_at(checkout)
     current_branch = _current_branch(checkout)
+    dirty = _checkout_dirty(checkout)
 
     if not active_task:
         return PointerEvidence(
@@ -569,6 +596,7 @@ def gather_evidence(
             pointer_changed_at=changed_at,
             pointer_change_source=change_source,
             repo_changed_at=repo_changed_at,
+            checkout_dirty=dirty,
         )
 
     candidate = (checkout / task_file) if task_file else (pointer.parent / f"{active_task}.json")
@@ -616,6 +644,7 @@ def gather_evidence(
         task_file_changed_at=task_changed_at,
         task_file_change_source=task_change_source,
         repo_changed_at=repo_changed_at,
+        checkout_dirty=dirty,
     )
 
 
@@ -1025,20 +1054,6 @@ def run_fixtures(max_drift_days: int = DEFAULT_MAX_DRIFT_DAYS) -> list[dict]:
 # --------------------------------------------------------------------------
 
 
-STATE_LABELS = {
-    STATE_ACTIVE: "PASS",
-    STATE_IDLE: "PASS",
-    STATE_STALE_COMPLETED: "FAIL",
-    STATE_STALE_DRIFTED: "FAIL",
-    STATE_DANGLING: "FAIL",
-    STATE_INVALID: "FAIL",
-    STATE_UNPROVABLE: "WARN",
-    STATE_ABSENT: "WARN",
-    STATE_NO_CHECKOUT: "INFO",
-    STATE_NON_CANONICAL: "INFO",
-}
-
-
 def _print_text(dispositions: list[PointerDisposition], summary: dict, root: Path) -> None:
     """One block per judged pointer.
 
@@ -1055,7 +1070,12 @@ def _print_text(dispositions: list[PointerDisposition], summary: dict, root: Pat
         if item.state == STATE_NO_CHECKOUT:
             absent_checkouts.append(item.project)
             continue
-        label = STATE_LABELS.get(item.state, "INFO")
+        label = {
+            SEVERITY_OK: "PASS",
+            SEVERITY_INFO: "INFO",
+            SEVERITY_WARN: "WARN",
+            SEVERITY_FAIL: "FAIL",
+        }.get(item.severity, "INFO")
         print(f"{label:4} {item.project:26} {item.state}")
         for line in item.evidence:
             print(f"       - {line}")
