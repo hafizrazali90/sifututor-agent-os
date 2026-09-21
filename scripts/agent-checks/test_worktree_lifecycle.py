@@ -178,6 +178,21 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(result["classification"], "preserve")
         self.assertEqual(result["active_task"], "task-1")
 
+    def test_active_task_pointer_inherited_unchanged_from_base_does_not_block(self):
+        task_dir = self.repo / ".claude" / "tasks"
+        task_dir.mkdir(parents=True)
+        pointer = json.dumps({"activeTask": "old-base-task"})
+        (task_dir / "active.json").write_text(pointer)
+        run("git", "add", ".claude/tasks/active.json", cwd=self.repo)
+        run("git", "commit", "-m", "track base task pointer", cwd=self.repo)
+        run("git", "update-ref", "refs/remotes/origin/main", "HEAD", cwd=self.repo)
+        run("git", "merge", "--ff-only", "main", cwd=self.worktree)
+
+        result = self.inspect()
+
+        self.assertEqual(result["classification"], "reclaim_candidate")
+        self.assertEqual(result["inherited_task_pointer"], "old-base-task")
+
     def test_invalid_task_state_blocks(self):
         task_dir = self.worktree / ".claude" / "tasks"
         task_dir.mkdir(parents=True)
