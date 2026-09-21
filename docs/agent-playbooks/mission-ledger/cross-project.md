@@ -26,7 +26,7 @@ that span more than one project.
 
 - **Project:** cross-project
 - **Status:** triaged
-- **Type:** task
+- **Type:** mission
 - **Parent:** AO-LEDGER-001
 - **End goal:** `$task-router` and `$save-session` both check the Mission
   Ledger at the right time.
@@ -216,3 +216,94 @@ that span more than one project.
 - **Links:** [omnigent repo](https://github.com/omnigent-ai/omnigent),
   Koda mem_227cab004cef (research), mem_750a3a6858f6 (tooling vision),
   mem_a91d4eed0f1d (advisory lesson)
+
+### JEV-EVAL-001 — Evaluate TypeSafe's Jev as a typed-decision layer across Finch/Ripple/SIMS
+
+- **Project:** cross-project
+- **Status:** paused
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Decide whether to pilot Jev (TypeSafe AI's non-LLM "System One
+  Model" — typed Choice/Score/Noul answers, 70-500ms, near-zero cost, claims
+  calibrated confidence) as a cheap fast-decision layer, and if so, in which
+  product first.
+- **Why it matters:** Three concrete, code-grounded opportunities exist:
+  finch-inbox Helpdesk-number message triage (fast routing call + background
+  sentiment/urgency job), ripple-suite's two already-hand-rolled "zero-LLM"
+  Luna classifiers (intent-classifier.ts, luna-router.ts) plus the manual
+  tutor-WhatsApp-reply "positive_response" step, and sifu-tutor's
+  never-built 7-factor ProfileStrengthService. None of these are urgent;
+  none should be built until Jev's calibration claims are checked against
+  real Sifututor data, since Jev launched 2026-09-15 (5 days old at research
+  time) and is gated behind an early-access waitlist.
+- **Source:** Hafiz request, 2026-09-20 (Jev research + Finch/Ripple/SIMS deep
+  analysis session)
+- **Current state:** Research complete. Four reference artifacts published
+  (Jev end-to-end explainer, Jev x Finch, Jev x Ripple, Jev x SIMS), each with
+  a ranked list of integration points and an explicit recommended starting
+  point per product. See Koda fact memory (tags: finch-inbox, ripple-suite,
+  sifu-tutor, jev, typesafe-ai) for the full grounded findings.
+- **Next action:** When Hafiz decides to move: (1) get off the TypeSafe
+  waitlist, (2) start with finch-inbox's background sentiment/urgency job
+  (lowest risk, mirrors the existing document-ai job pattern, cannot break
+  current routing) OR ripple-suite's shadow-test against
+  intent-classifier.ts (reuses Ripple's existing shadow-mode safety pattern).
+  Do not start with sifu-tutor's TutorMatchingService or any tutor-matching
+  scoring signal in ripple-suite — both are explicitly flagged don't-build /
+  not-yet in the research.
+- **Promote to:** GitHub issue in whichever project Hafiz picks to pilot
+  first, once he decides to proceed.
+- **Links:** Koda fact memory (jev/typesafe-ai research, stored 2026-09-20).
+
+### JEV-EVAL-001.A1 — Finch has no database access lane in the agent access map
+
+- **Project:** cross-project
+- **Status:** triaged
+- **Type:** adjacent
+- **Parent:** JEV-EVAL-001
+- **End goal:** Add a `finch-database-readonly` lane to
+  `docs/agent-playbooks/agent-access-map.md` so Claude/Codex can verify
+  Finch's real tenant/routing/schema state directly instead of asking Hafiz
+  or guessing from migration files.
+- **Why it matters:** Discovered mid-session when a question about how
+  Finch's four WhatsApp numbers route to teams couldn't be verified against
+  real data — the access map has read-only DB lanes for SIMS and LLS but
+  none for Finch, and the local Docker MSSQL container present on this
+  machine is stale/unrelated test data, not real tenant config. Every other
+  DB-shaped question about Finch will hit the same wall until this exists.
+- **Source:** Discovered during JEV-EVAL-001 research, 2026-09-20.
+- **Next action:** Hafiz decides whether to add this lane (owner, credential
+  scope, read-only tier) the same way SIMS/LLS already have one.
+- **Promote to:** GitHub issue or direct edit to agent-access-map.md whenever
+  Hafiz wants to close this gap.
+- **Links:** none yet.
+
+### SIMSOA-PROBATION-001 — sims-owner-analytics probation and alerting follow-up
+
+- **Project:** sims-owner-analytics
+- **Status:** captured
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Formally close the reliability probation on the nightly
+  refresh timer so a single future failure alerts and lets the next
+  scheduled cycle retry on its own, instead of disabling the timer and
+  waiting for a human to notice, as happened for eighteen days after the
+  2026-09-02 failure. Separately, confirm the operator actually receives
+  the monitoring alert this system sends on failure.
+- **Why it matters:** The nightly refresh failed once on 2026-09-02 and sat
+  disabled for eighteen days with stale owner-facing analytics data before
+  anyone checked. The exact original crash cause is unrecoverable now (log
+  retention had already rotated past it), but two systemic gaps let it go
+  unnoticed this long: the probation mode's own over-cautious auto-disable
+  behavior, a deliberate but supposed-to-be-temporary safety net still
+  active over a month after this system first deployed, and no confirmed
+  human-reachable alert path.
+- **Source:** Diagnosed and resolved (resumed the timer, deployed better
+  failure diagnostics) during the 2026-09-20/21 session. This entry is only
+  for the two things that session did not close.
+- **Next action:** Confirm the failure alert was actually received, and
+  decide whether to accept reliability probation now, or leave it on.
+- **Promote to:** GitHub issue in sims-owner-analytics once a decision is
+  made on whether to formally close probation now or keep it.
+- **Links:** GitHub issues 69 (closed), 70 (merged), 72 (closed), 73
+  (merged), 71 (open, separate leak-filter drift follow-up).
