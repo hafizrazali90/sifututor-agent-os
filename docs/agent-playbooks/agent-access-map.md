@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 22 lanes — 21 scoped files under
+Current registry count: 23 lanes — 22 scoped files under
 `~/.config/sifututor/agent-access/` plus the Microsoft 365 read-only env lane at
 `~/.config/sifututor/m365-readonly.env`.
 
@@ -347,7 +347,40 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Tier** | auto-read |
 | **Hafiz approval** | Not required for reading intake cards |
 | **Safe verification** | `scripts/agent-access/check-microsoft-planner.sh` |
-| **Forbidden** | Do not change Planner card state, assignment, or priority; do not post to Teams channels; read-only intake only |
+| **Forbidden** | Do not change Planner card state, assignment, or priority; do not post to Teams channels. V16 workbook reads are separately scoped in the V16 entry below; no general Microsoft 365 browsing authority. |
+
+#### V16 workbook reads — task-scoped existing connections
+
+Approved purpose: issue `Sifututor/ripple-suite#1089`, source coverage and proposed complaint classification. Tier: **auto-read within this task**. Workbook operations: GET only, named files/ranges only, in-memory processing. No writes, rename, move, sharing changes, contact messages, raw personal-data artifacts, or identification-number retrieval. Proposed category/confidence/rationale outputs must avoid reproducing names or complaint narratives.
+
+**SharePoint working local lane:** existing `m365-readonly` authentication, restricted by `scripts/agent-access/v16_workbook_readonly.py`. Verify from workspace root:
+
+```sh
+python3 scripts/agent-access/v16_workbook_readonly.py
+```
+
+This authenticates through the existing token endpoint, then GETs populated cells from both files and prints only pass/fail metadata. Authentication token POST is not a workbook write. The module's `V16Reader.read_range(workbook, sheet, address)` returns values to the caller in memory; never print, persist, or include those values in error output. Process bounded batches and write only sanitised decision evidence. Hardcoded file/tab/column allowlists reject unknown ranges and Problematic Tutor identification-number column J. Unknown helper tabs/columns need header-only review before extending the allowlist; full-workbook downloads are not allowed because they would retrieve excluded identity numbers.
+
+- Drive: `b!r7Ad-vlAkEix6mzV6dukPaxSpu6ShtVGndn39YoQaHy86LgBdl9lRL_0V_GkYHUX`
+- `directory`: `01W2DSHTFBOCGKGBRNM5BKSZZ2UCGW3S3E`
+- `leads`: `01W2DSHTHFDA22QTCIKZFKUKTQPGHQLFAV`
+- Equivalent connected Lokka method: Graph GET `/drives/{drive}/items/{item}/workbook/worksheets('Problematic Tutor')/range(address='E2:F2')`, query `$select=values`. Separate discontiguous ranges into separate requests. Do not dump MCP response contents into terminal/logs.
+
+**Provider permission limitation:** the existing M365 credential is not proven provider-enforced read-only or site-scoped. The wrapper restricts operations; it does not narrow the credential's underlying grants. No app grants were added or changed. Microsoft documents Excel range API application permissions as unsupported even though the existing connection succeeded in live checks. Do not promise that a new Sites.Selected application will support the same Excel endpoint. A narrow replacement needs separate capability proof without requesting broad write scopes. [Range permission documentation](https://learn.microsoft.com/graph/api/range-get?view=graph-rest-beta), [selected permissions](https://learn.microsoft.com/en-us/graph/permissions-selected-overview).
+
+**Google working connector lane:** named Master Tutor Request spreadsheet only, `1CN7PyGSA-55Ft0neB1c23m3JhSHelEm2C72ro0ksnjQ`. Use installed Google Drive/Sheets connector, metadata and bounded range GETs; no credential export. Safe reachability call:
+
+```json
+{"spreadsheet_id":"1CN7PyGSA-55Ft0neB1c23m3JhSHelEm2C72ro0ksnjQ","sheet_name":"'Master Requests'","range":"T2:T2"}
+```
+
+Tool: `mcp__codex_apps__google_drive_get_spreadsheet_range`. Consume its structured values in memory and report only successful nonempty read, not cell contents. This passed in Codex on19 September2026. Metadata also passed. Connector availability in a Claude session must be checked separately; no standalone Google CLI credential or Claude connector was provisioned by this task. A missing Claude tool is not evidence the workbook is inaccessible globally.
+
+A new Google service account with only `spreadsheets.readonly` and Viewer access to this file is a potential narrow alternative, but granting Viewer changes sharing and is outside the present no-sharing-change boundary. `drive.file` is file-oriented but not inherently read-only. Do not reuse the unrelated Tag Manager identity or grant domain-wide delegation. [Google scope documentation](https://developers.google.com/workspace/sheets/api/scopes).
+
+**Legacy `sharepoint-readonly.conf` inventory:** `~/.config/sifututor/agent-access/sharepoint-readonly.conf` is a separate existing legacy customer-CRM lane reported as scoped to CX/ELITE folders. It is not the V16 lane; its grants and token-store contract were not verified in this change. Tier: **unverified for V16; do not use or expand**. Presence or naming is not proof of access. Safe non-secret presence check: `test -f "$HOME/.config/sifututor/agent-access/sharepoint-readonly.conf"`. Do not copy its token store, change its folder scope, or infer Tutor Experience access from it.
+
+**Fallback:** if the current session lacks the Google connector, Hafiz can provide an export of the approved tabs with excluded identification columns removed, to a restricted external local directory. Never export the entire Tutor Directory including identification numbers. Process locally in memory; no raw source content in repository files, logs, Koda or handbacks. This is a snapshot fallback, not ongoing live access.
 
 ---
 
@@ -381,6 +414,56 @@ do not restart the app or bypass the control to force an immediate run.
 
 ---
 
+### 23. `ripple-destination-readonly` — Ripple Production Destination Read (V16)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `ripple-destination-readonly.conf` |
+| **Database** | `ripple_suite_prod` on KVM8 PostgreSQL 16 |
+| **Username** | `ripple_destination_readonly` |
+| **Reachability** | The server listens on localhost only. The wrapper opens an SSH tunnel to `staging` (KVM8) on local port 55432; there is no direct network path. |
+| **Purpose** | The V16 migration's destination read (#1089): bind each package to the Ripple state it was planned against, so `assertPackageStillApplies` can refuse a package whose destination has since moved |
+| **Tier** | auto-read |
+| **What the role can reach** | `SELECT` on exactly four views and nothing else: `v16_read_crm_requests` (id, sims_request_id, current_sub_stage, sims_deleted_at, updated_at), `v16_read_tutor_conduct` (id, tutor_id, incident_date, related_request_uid, deleted_at, updated_at), `v16_read_onboarding_prospects` (id, phone, stage, version, updated_at), `v16_read_effect_receipts` (effect_key) |
+| **What it cannot reach** | Every base table, including the three the views read. No `full_name`, `email`, `note`, `notes`, `parent_name`, `student_names`, `closed_reason`, `next_action` or any other free-text or personal column exists in any view it can select from. |
+| **Role attributes** | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`, connection limit 4, no role membership, owns no object |
+| **Session defaults** | `default_transaction_read_only = on`, `statement_timeout = 30s`, `idle_in_transaction_session_timeout = 60s`, `search_path = public` |
+| **Hafiz approval** | Granted 20 September 2026 for creation and for this read. Not required for further reads through the same four views. |
+| **Safe verification** | `scripts/agent-access/check-ripple-destination-readonly.sh` — 41 checks, counts and fixed tokens only, no business row and no provider error text |
+| **Running a command on the lane** | `scripts/agent-access/ripple-destination-readonly-run.sh -- <command>` — opens the tunnel and exports `V16_DESTINATION_READ_URL` into the child environment; the credential is never a command-line argument |
+| **Applied DDL** | `ripple-suite/src/lib/migrations/manual/v16-destination-read-lane.sql` (hand-applied, deliberately outside the numbered migration set) |
+| **Forbidden** | No `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `GRANT` or any DDL — all are refused on privileges, with or without the read-only GUC; do not widen a view, add a grant, or reuse this credential for anything but the V16 destination read; do not print the connection string |
+
+Expected variable names:
+
+```bash
+RIPPLE_DESTINATION_READONLY_SSH_HOST=...
+RIPPLE_DESTINATION_READONLY_REMOTE_HOST=...
+RIPPLE_DESTINATION_READONLY_REMOTE_PORT=...
+RIPPLE_DESTINATION_READONLY_LOCAL_PORT=...
+RIPPLE_DESTINATION_READONLY_DATABASE=...
+RIPPLE_DESTINATION_READONLY_USERNAME=...
+RIPPLE_DESTINATION_READONLY_PASSWORD=...
+```
+
+**Why a password rather than the SSH local-socket path.** The KVM8 `pg_hba.conf` authenticates
+local-socket connections with `peer`, so reaching the database as `ripple_destination_readonly`
+over the socket would require an operating-system account of that name. Creating one is a
+host change outside the approved scope, and `sudo -u postgres psql` is a superuser lane, which
+is far broader than this read needs. A SCRAM password over a tunnel is the narrowest option
+that actually authenticates as the constrained role. The cleartext is generated on the
+operator machine and sent to PostgreSQL only as a pre-computed SCRAM-SHA-256 verifier, so it
+never crosses the wire, never appears in a process listing, and never reaches a server log.
+
+**Known state of `v16_read_effect_receipts`.** `v16_business_effect_receipts` does not exist in
+`ripple_suite_prod` — migration 177 has never been applied there — so the view is a shaped,
+empty one. That is the true answer today: no V16 effect has ever been receipted. It becomes
+wrong the moment the table lands, so two independent controls fail closed on that exact state:
+`check-ripple-destination-readonly.sh` fails, and `assertReceiptsViewCurrent` refuses the
+capture in `scripts/v16-capture-destination-snapshot.ts`.
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -389,6 +472,7 @@ do not restart the app or bypass the control to force an immediate run.
 | `staging-smoke` | `staging-smoke.conf` | auto-read | Never |
 | `creative-hub-production-smoke` | `creative-hub-production-smoke.conf` | auto-read | Never |
 | `database-readonly` | `database-readonly.conf` | auto-read | Never |
+| `ripple-destination-readonly` | `ripple-destination-readonly.conf` | auto-read | Never (creation was approved 20 Sep 2026) |
 | `lls-database-readonly` | `lls-database-readonly.conf` | auto-read | Never |
 | `cloudflare-readonly` | `cloudflare-readonly.conf` | auto-read | Never |
 | `monitoring-readonly` | `monitoring-readonly.conf` | auto-read | Never |
@@ -423,6 +507,8 @@ never print secret values.
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
+| `check-ripple-destination-readonly.sh` | Ripple production destination lane: identity, read-only mode, the four views and their exact columns, base-table refusal, DML/DDL/escalation refusal |
+| `ripple-destination-readonly-run.sh` | Runs one command with `V16_DESTINATION_READ_URL` attached over an SSH tunnel; not a check |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |
 | `check-monitoring.sh` | Sentry unresolved issues count; BetterStack monitor status |
