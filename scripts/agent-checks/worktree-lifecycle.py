@@ -284,8 +284,13 @@ def ignored_paths(worktree: Path) -> list[str]:
 
 def ignored_path_is_generated(path: str) -> bool:
     normalized = path.rstrip("/")
-    first = normalized.split("/", 1)[0]
-    return first in GENERATED_IGNORED_ROOTS
+    parts = Path(normalized).parts
+    first = parts[0] if parts else ""
+    return (
+        first in GENERATED_IGNORED_ROOTS
+        or "__pycache__" in parts
+        or normalized.endswith((".pyc", ".pyo"))
+    )
 
 
 def active_task(worktree: Path, base_ref: str) -> tuple[str, str]:
