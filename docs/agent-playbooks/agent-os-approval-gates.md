@@ -232,8 +232,11 @@ asked for commit and push, `approve` means commit and push.
 
 If the agent asked for an autopilot boundary such as "until merged, stop before
 deploy", `approve` covers all normal steps required to reach that boundary:
-review, checks, commit if exact file list was named, push, PR, and merge when
-allowed. It does not cover deploy because deploy was explicitly excluded.
+review, checks, exact file-list inspection and reporting, commit when the files
+remain inside the agreed scope, push, PR, and merge when allowed. It does not
+cover deploy because deploy was explicitly excluded. Do not pause for a second
+file-list approval unless review discovers material new scope, risk,
+destructive work, critical-lane expansion, or a boundary conflict.
 
 If the boundary is "until PR ready", `approve` covers branch push, PR creation,
 PR body/checklist, CI monitoring, and in-scope CI fixes. It does not cover merge

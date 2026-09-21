@@ -4,10 +4,14 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 
 ## Hard Rules
 
-- Never commit without user approval of the file list. Approval can be a short
-  reply such as `proceed`, `continue`, `yes`, or `ok` only when the previous
-  agent message clearly proposed an exact commit-only bundle with file list,
-  guard/check plan, and stop-before-push boundary.
+- Never commit outside the user's approved scope. For a commit-only request,
+  obtain approval of the exact file list; a short reply such as `proceed`,
+  `continue`, `yes`, or `ok` counts only when the previous message named the
+  exact bundle, checks, and stop-before-push boundary. When an already-approved
+  end-to-end boundary includes commit, inspect, guard, and report the exact file
+  list without pausing for another approval, provided every file remains inside
+  the agreed scope. Stop when the list reveals material new scope, risk,
+  destructive work, critical-lane expansion, or a boundary conflict.
 - Never push, merge, deploy, or open a PR unless the user explicitly asks in
   the current session.
 - Never use `--no-verify`.
@@ -99,7 +103,9 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
    committing, make one final honesty pass over scope, proof, missing evidence,
    state, approval boundary, and recommended next action.
 9. Review `git status --short`, `git diff`, and `git diff --staged`.
-10. Ask the user to approve the exact staged file list unless already approved.
+10. Ask the user to approve the exact staged file list unless it is already
+    covered by an approved end-to-end boundary. Always report the exact list;
+    do not turn reporting into another approval stop.
 
 ## Message Format
 
