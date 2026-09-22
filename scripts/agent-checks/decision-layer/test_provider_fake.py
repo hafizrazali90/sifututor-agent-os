@@ -86,12 +86,27 @@ class FakeProviderUnavailableScenarioTest(unittest.TestCase):
 
 
 class FakeProviderHangScenarioTest(unittest.TestCase):
-    def test_blocks_for_at_least_the_configured_hang_duration(self) -> None:
-        fake = provider_fake.FakeProvider(scenario="hang", hang_seconds=0.05)
+    def test_reports_a_simulated_abort_instead_of_sleeping(self) -> None:
+        fake = provider_fake.FakeProvider(scenario="hang", hang_seconds=5.0)
         started = time.monotonic()
-        fake.dispatch(request())
-        elapsed = time.monotonic() - started
-        self.assertGreaterEqual(elapsed, 0.05)
+        with self.assertRaises(provider_base.ProviderTimeout):
+            fake.dispatch(request(), timeout_s=0.01)
+        self.assertLess(time.monotonic() - started, 0.5)
+
+
+class FakeProviderBlockScenarioTest(unittest.TestCase):
+    def test_block_holds_the_call_until_released(self) -> None:
+        import threading
+
+        fake = provider_fake.FakeProvider(scenario="block")
+        results: list[object] = []
+        worker = threading.Thread(target=lambda: results.append(fake.dispatch(request())))
+        worker.start()
+        self.assertTrue(fake.started.wait(timeout=1.0))
+        self.assertEqual(results, [])
+        fake.release.set()
+        worker.join(timeout=1.0)
+        self.assertIsInstance(results[0], provider_base.ProviderAnswer)
 
 
 class FakeProviderUnknownScenarioTest(unittest.TestCase):

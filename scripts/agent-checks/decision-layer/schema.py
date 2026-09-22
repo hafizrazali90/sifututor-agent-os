@@ -25,6 +25,8 @@ _RESPONSE_FIELDS = (
     "authoritative",
     "latency_ms",
     "cost",
+    "usage_input_tokens",
+    "usage_output_tokens",
     "outcome",
     "reason",
 )
