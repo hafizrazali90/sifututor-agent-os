@@ -23,6 +23,7 @@ def load_script(name: str, filename: str):
         source = source.split(entrypoint, 1)[0]
     spec = importlib.util.spec_from_loader(name, loader=None)
     module = importlib.util.module_from_spec(spec)
+    module.__file__ = str(path)
     exec(compile(source, str(path), "exec"), module.__dict__)
     return module
 

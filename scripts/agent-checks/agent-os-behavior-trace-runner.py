@@ -66,6 +66,7 @@ def load_classifier():
     if entrypoint not in source:
         raise RuntimeError(f"cannot find hook entrypoint in {HOOK}")
     module = types.ModuleType("codex_lifecycle_hook_for_behavior_trace")
+    module.__file__ = str(HOOK)
     exec(source.split(entrypoint, 1)[0], module.__dict__)
     return module.classify_prompt
 

@@ -24,6 +24,7 @@ PLAYBOOK_DIR = ROOT / "docs" / "agent-playbooks"
 SKILL_DIR = ROOT / ".agents" / "skills"
 CLAUDE_SETTINGS = ROOT / ".claude" / "settings.json"
 CODEX_CONFIG = ROOT / ".codex" / "config.toml"
+CODEX_PRE_TOOL_DISPATCH = ROOT / "scripts" / "agent-checks" / "codex-pre-tool-dispatch.py"
 KILO_AGENT = ROOT / ".kilo" / "agents" / "sifututor-agent-os.md"
 GLOBAL_CLAUDE_INSTRUCTIONS = Path.home() / ".claude" / "CLAUDE.md"
 GLOBAL_CLAUDE_SETTINGS = Path.home() / ".claude" / "settings.json"
@@ -193,7 +194,7 @@ def check_codex_adapter() -> list[CheckResult]:
         ("CX-006", "PreToolUse"),
         ("CX-007", "Stop"),
         ("CX-008", "codex-lifecycle-hook.py"),
-        ("CX-032", "secret_output_guard.py"),
+        ("CX-032", "codex-pre-tool-dispatch.py"),
     ]:
         results.append(
             CheckResult(
@@ -206,16 +207,21 @@ def check_codex_adapter() -> list[CheckResult]:
 
     try:
         codex_hooks = tomllib.loads(config).get("hooks", {})
-        visual_guard_wildcard = any(
+        dispatcher_registered = any(
             isinstance(group, dict)
             and group.get("matcher") == ".*"
             and any(
                 isinstance(hook, dict)
-                and "secret_output_guard.py" in str(hook.get("command") or "")
+                and "codex-pre-tool-dispatch.py" in str(hook.get("command") or "")
                 for hook in group.get("hooks", [])
             )
             for group in codex_hooks.get("PreToolUse", [])
         )
+        dispatcher_contains_secret_guard = (
+            CODEX_PRE_TOOL_DISPATCH.is_file()
+            and "secret_output_guard.py" in CODEX_PRE_TOOL_DISPATCH.read_text()
+        )
+        visual_guard_wildcard = dispatcher_registered and dispatcher_contains_secret_guard
     except tomllib.TOMLDecodeError:
         visual_guard_wildcard = False
     results.append(
