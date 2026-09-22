@@ -574,6 +574,12 @@ class AdapterAndContinuationTests(unittest.TestCase):
         root = HERE.parents[1]
         codex = tomllib.loads((root / ".codex/config.toml").read_text())
         self._assert_provider_guard_registration(codex)
+        pre_tool = codex["hooks"]["PreToolUse"]
+        self.assertEqual(len(pre_tool), 1)
+        self.assertIn(
+            "codex-pre-tool-dispatch.py",
+            pre_tool[0]["hooks"][0]["command"],
+        )
 
     def test_local_claude_config_registers_shared_guard_when_installed(self):
         import json
@@ -587,7 +593,10 @@ class AdapterAndContinuationTests(unittest.TestCase):
         hooks = config["hooks"]
         self.assertTrue(any(
             hook.get("matcher") == ".*" and any(
-                "agent-os-approval-guard.py" in item.get("command", "")
+                (
+                    "agent-os-approval-guard.py" in item.get("command", "")
+                    or "codex-pre-tool-dispatch.py" in item.get("command", "")
+                )
                 for item in hook.get("hooks", [])
             ) for hook in hooks["PreToolUse"]
         ))

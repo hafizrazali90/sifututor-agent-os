@@ -143,16 +143,32 @@ per project, of the same shape as `BRANCH_FIXTURES`, run by this harness
 against the project's live copy, green in that project's CI. Until then those
 files stay project-owned and out of this directory's scope.
 
-## What remains for #161 after this PR
+## Codex single-process dispatcher
 
-- One PreToolUse dispatcher: the umbrella still registers five separate
-  PreToolUse processes (approval guard, secret guard, branch name, commit
-  message, test-coverage gate) and each sub-project registers its own set.
-- Metadata-only failure logging across that dispatcher.
+`scripts/agent-checks/codex-pre-tool-dispatch.py` now runs the approval,
+secret-output, and command guards inside one Python process. `.codex/config.toml`
+registers that one dispatcher instead of starting three Python processes for
+each tool request. Denials keep the original guard's generic reason;
+unexpected dispatcher failures deny with one metadata-only message and never
+echo the submitted command.
+
+Measured on 25 identical safe-command requests on 2026-09-22:
+
+| Path | Median | Mean | Maximum |
+|---|---:|---:|---:|
+| Three registered Python processes | 81.83 ms | 82.02 ms | 90.97 ms |
+| One in-process dispatcher | 39.48 ms | 39.98 ms | 47.23 ms |
+
+This is a Codex cutover only. Claude's project-owned gates remain unchanged.
+
+## What remains for #161
+
 - Route-scoped optional MCP loading with capability preflight.
-- Before/after latency and false-block comparison. `measure.py` is the
-  baseline tool; today's baseline is 22 to 29 ms mean per live hook
-  invocation (subprocess-inclusive) and 0.0 false-block rate on every suite.
+  Do not fabricate dynamic MCP loading if the active adapter cannot change
+  connected servers during a session; document and measure the supported
+  adapter mechanism first.
+- Claude-side consolidation remains separate because its project-owned gates
+  do not yet have equivalent fixture coverage.
 
 ## Known limitations
 
