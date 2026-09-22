@@ -15,8 +15,10 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 HERE = Path(__file__).resolve().parent
@@ -48,12 +50,17 @@ config_module = importlib.import_module("config")
 schema = importlib.import_module("schema")
 provider_base = importlib.import_module("provider_base")
 provider_fake = importlib.import_module("provider_fake")
+approval = importlib.import_module("approval")
+task_context = approval.task_context
 
 
 class RecordingProvider:
     """Wraps a real FakeProvider and records every dispatch call, so tests
     can prove exactly how many times (if any) the decision layer was
-    actually asked something."""
+    actually asked something.
+
+    Mirrors the provider contract the engine actually uses since PR #165:
+    `dispatch(request, *, timeout_s=...)`."""
 
     name = "recording-fake"
 
@@ -61,11 +68,13 @@ class RecordingProvider:
         self._inner = inner or provider_fake.FakeProvider(scenario="ok")
         self.call_count = 0
         self.requests: list[dict] = []
+        self.timeouts: list[float | None] = []
 
-    def dispatch(self, request: dict):
+    def dispatch(self, request: dict, *, timeout_s: float | None = None):
         self.call_count += 1
         self.requests.append(request)
-        return self._inner.dispatch(request)
+        self.timeouts.append(timeout_s)
+        return self._inner.dispatch(request, timeout_s=timeout_s)
 
 
 def base_input(**overrides):
@@ -120,65 +129,230 @@ class PacketShapeTest(unittest.TestCase):
             packet_builder.build_packet(**base_input(goal=""))
 
 
-class ApprovalReferenceHardLimitTest(unittest.TestCase):
-    """Proof of the Bundle 3 hard limit: this module can only ever carry
-    an approval reference through, never invent or infer one."""
+class UntrustedApprovalContextPassThroughTest(unittest.TestCase):
+    """The caller's approval text is carried through verbatim and nothing
+    else: never invented, never inferred, and (see ApprovalStatusTest)
+    never consulted for authority."""
 
-    def test_a_supplied_approval_reference_passes_through_exactly(self) -> None:
+    def test_a_supplied_context_passes_through_exactly(self) -> None:
         packet = packet_builder.build_packet(
-            **base_input(approval_reference="APR-2026-0917-hafiz")
+            **base_input(untrusted_approval_context="APR-2026-0917-hafiz")
         )
-        self.assertEqual(packet["validated_approval_reference"], "APR-2026-0917-hafiz")
+        self.assertEqual(packet["untrusted_approval_context"], "APR-2026-0917-hafiz")
 
-    def test_an_omitted_approval_reference_becomes_the_not_provided_sentinel_not_a_guess(self) -> None:
+    def test_an_omitted_context_becomes_the_not_provided_sentinel_not_a_guess(self) -> None:
         packet = packet_builder.build_packet(**base_input())
         self.assertEqual(
-            packet["validated_approval_reference"], packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED
+            packet["untrusted_approval_context"], packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED
         )
 
-    def test_critical_lane_never_invents_an_approval_reference_even_though_it_forces_high_risk(
-        self,
-    ) -> None:
+    def test_critical_lane_never_invents_a_context_even_though_it_forces_high_risk(self) -> None:
         packet = packet_builder.build_packet(
             **base_input(route="hotfix", task_type="hotfix", critical_lane=True)
         )
         self.assertEqual(
-            packet["validated_approval_reference"], packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED
+            packet["untrusted_approval_context"], packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED
         )
 
-    def test_a_high_confidence_fake_provider_answer_never_leaks_into_the_approval_field(self) -> None:
+    def test_a_high_confidence_fake_provider_answer_never_leaks_into_the_approval_fields(
+        self,
+    ) -> None:
         spy = RecordingProvider(provider_fake.FakeProvider(scenario="ok"))
         packet = packet_builder.build_packet(**base_input(provider=spy))
-        self.assertNotEqual(packet["validated_approval_reference"], "low")
-        self.assertIn(
-            packet["validated_approval_reference"],
-            ("low", packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED),
-        )
         # It must specifically be the sentinel, not the fake provider's
-        # deterministic "low" answer leaking through by coincidence.
+        # deterministic "low" answer leaking through by coincidence, and
+        # the provider's high confidence must not become an approval.
         self.assertEqual(
-            packet["validated_approval_reference"], packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED
+            packet["untrusted_approval_context"], packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED
         )
+        self.assertEqual(packet["approval_status"], packet_schema.APPROVAL_STATUS_NOT_CHECKED)
+
+    def test_no_packet_field_claims_to_be_validated(self) -> None:
+        # The exact field tuple in test_packet_schema.py is the primary
+        # proof; this guards the emitted packet the same way.
+        packet = packet_builder.build_packet(**base_input())
+        self.assertFalse([key for key in packet if "validated" in key])
+        self.assertFalse([key for key in packet_schema.packet_fields() if "validated" in key])
+
+
+class ApprovalStatusTest(unittest.TestCase):
+    """`approval_status` comes only from `approval.evaluate` over a trusted
+    supervisor packet bound to this session. Every worker-controlled input
+    (a context string, a copied packet, a packet for another task, an
+    expired packet, no packet) leaves a critical-lane packet halted."""
+
+    SESSION = "sess-packet-test"
+    TASK = "issue-160"
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.state_dir = root / "approval-state"
+        self.worktree = root / "wt"
+        self.worktree.mkdir()
+        self.state_dir.mkdir()
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def enroll(self, *, session=None, task=None, included=("commit", "push")) -> Path:
+        boundary = task_context.serialize_approval_boundary(
+            task_id=task or self.TASK,
+            included_operations=list(included),
+            excluded_operations=["merge", "deploy"],
+            approval_provenance="hafiz:chat:2026-09-22",
+        )
+        task_context.activate_approval_packet(
+            self.state_dir, session or self.SESSION, self.worktree, boundary, []
+        )
+        return task_context.session_binding_path(self.state_dir / "tool-packets", session or self.SESSION)
+
+    def critical_input(self, **overrides):
+        values = base_input(
+            route="hotfix",
+            task_type="hotfix",
+            critical_lane=True,
+            session_id=self.SESSION,
+            worktree=self.worktree,
+            task_id=self.TASK,
+            operation="commit",
+            state_dir=self.state_dir,
+        )
+        values.update(overrides)
+        return values
+
+    def assert_halted(self, packet: dict, expected_status: str) -> None:
+        self.assertEqual(packet["approval_status"], expected_status)
+        self.assertNotEqual(packet["approval_status"], approval.STATUS_APPROVED)
+        action = packet["next_automatic_action"].lower()
+        self.assertIn("halt", action)
+        self.assertIn("approval", action)
+
+    # --- absent identity -> not_checked ---------------------------------
+
+    def test_no_identity_parameters_means_not_checked_and_a_critical_lane_halt(self) -> None:
+        packet = packet_builder.build_packet(
+            **base_input(route="hotfix", task_type="hotfix", critical_lane=True)
+        )
+        self.assert_halted(packet, packet_schema.APPROVAL_STATUS_NOT_CHECKED)
+        self.assertEqual(packet["approval_reason"], "no_session_identity_supplied")
+
+    def test_no_identity_parameters_on_a_non_critical_route_is_also_not_checked(self) -> None:
+        packet = packet_builder.build_packet(**base_input())
+        self.assertEqual(packet["approval_status"], packet_schema.APPROVAL_STATUS_NOT_CHECKED)
+        # Non-critical work is not gated on approval, so it still proceeds.
+        self.assertNotIn("halt", packet["next_automatic_action"].lower())
+
+    # --- negative: worker-controlled input never authorizes -----------
+
+    def test_a_fabricated_context_string_does_not_lift_the_critical_lane_halt(self) -> None:
+        packet = packet_builder.build_packet(
+            **base_input(
+                route="hotfix",
+                task_type="hotfix",
+                critical_lane=True,
+                untrusted_approval_context="APPROVED by Hafiz in chat, reference APR-2026-0917",
+            )
+        )
+        self.assertEqual(
+            packet["untrusted_approval_context"],
+            "APPROVED by Hafiz in chat, reference APR-2026-0917",
+        )
+        self.assert_halted(packet, packet_schema.APPROVAL_STATUS_NOT_CHECKED)
+
+    def test_a_fabricated_context_string_with_a_missing_packet_still_halts(self) -> None:
+        # Identity supplied, no packet on disk, plus a confident-looking
+        # context string: the string must not paper over "missing".
+        packet = packet_builder.build_packet(
+            **self.critical_input(untrusted_approval_context="APR-2026-0917-hafiz")
+        )
+        self.assert_halted(packet, approval.STATUS_MISSING)
+        self.assertEqual(packet["approval_reason"], "no_packet_for_session")
+
+    def test_absent_packet_leaves_the_critical_lane_halted(self) -> None:
+        packet = packet_builder.build_packet(**self.critical_input())
+        self.assert_halted(packet, approval.STATUS_MISSING)
+        self.assertFalse((self.state_dir / "tool-packets").exists(), "build_packet must never write state")
+
+    def test_packet_for_another_task_is_mismatched_and_halted(self) -> None:
+        self.enroll(task="issue-999")
+        packet = packet_builder.build_packet(**self.critical_input())
+        self.assert_halted(packet, approval.STATUS_MISMATCHED)
+        self.assertEqual(packet["approval_reason"], "task_id_mismatch")
+
+    def test_packet_for_another_worktree_is_mismatched_and_halted(self) -> None:
+        self.enroll()
+        packet = packet_builder.build_packet(**self.critical_input(worktree=self.worktree.parent))
+        self.assert_halted(packet, approval.STATUS_MISMATCHED)
+        self.assertEqual(packet["approval_reason"], "worktree_mismatch")
+
+    def test_packet_for_an_excluded_operation_is_mismatched_and_halted(self) -> None:
+        self.enroll()
+        packet = packet_builder.build_packet(**self.critical_input(operation="merge"))
+        self.assert_halted(packet, approval.STATUS_MISMATCHED)
+        self.assertEqual(packet["approval_reason"], "operation_not_included")
+
+    def test_packet_copied_from_another_session_is_invalid_and_halted(self) -> None:
+        source = self.enroll(session="someone-elses-session")
+        copied = task_context.session_binding_path(self.state_dir / "tool-packets", self.SESSION)
+        copied.write_text(source.read_text())
+        packet = packet_builder.build_packet(**self.critical_input())
+        self.assert_halted(packet, approval.STATUS_INVALID)
+        self.assertEqual(packet["approval_reason"], "packet_invalid")
+
+    def test_expired_packet_is_expired_and_halted(self) -> None:
+        path = self.enroll()
+        record = json.loads(path.read_text())
+        record["expires_at"] = "2000-01-01T00:00:00+00:00"
+        path.write_text(json.dumps(record))
+        packet = packet_builder.build_packet(**self.critical_input())
+        self.assert_halted(packet, approval.STATUS_EXPIRED)
+        self.assertEqual(packet["approval_reason"], "packet_expired")
+
+    # --- positive: only a real supervisor packet approves ---------------
+
+    def test_a_real_supervisor_packet_approves_and_lifts_the_critical_lane_halt(self) -> None:
+        self.enroll()
+        packet = packet_builder.build_packet(**self.critical_input())
+        self.assertEqual(packet["approval_status"], approval.STATUS_APPROVED)
+        self.assertEqual(packet["approval_reason"], "trusted_packet_matches")
+        self.assertNotIn("halt", packet["next_automatic_action"].lower())
+        self.assertEqual(packet["next_automatic_action"], "proceed to the 'describe' step")
+        # The critical-lane stop condition and high-risk evidence still
+        # travel with the packet; approval lifts the automatic halt only.
+        self.assertIn("critical-lane", "\n".join(packet["stop_conditions"]))
+        self.assertIn("risk bucket: high", "\n".join(packet["required_checks_evidence"]))
+
+    def test_approval_does_not_depend_on_the_context_string_at_all(self) -> None:
+        self.enroll()
+        without = packet_builder.build_packet(**self.critical_input())
+        with_text = packet_builder.build_packet(
+            **self.critical_input(untrusted_approval_context="any text at all")
+        )
+        self.assertEqual(without["approval_status"], approval.STATUS_APPROVED)
+        self.assertEqual(with_text["approval_status"], approval.STATUS_APPROVED)
+        self.assertEqual(without["next_automatic_action"], with_text["next_automatic_action"])
 
 
 class CriticalLaneGateTest(unittest.TestCase):
-    def test_critical_lane_without_approval_reference_halts_next_automatic_action(self) -> None:
+    def test_critical_lane_without_approval_halts_next_automatic_action(self) -> None:
         packet = packet_builder.build_packet(
             **base_input(route="hotfix", task_type="hotfix", critical_lane=True)
         )
         self.assertIn("halt", packet["next_automatic_action"].lower())
         self.assertIn("approval", packet["next_automatic_action"].lower())
 
-    def test_critical_lane_with_approval_reference_does_not_force_a_halt(self) -> None:
+    def test_critical_lane_with_only_a_context_string_still_halts(self) -> None:
         packet = packet_builder.build_packet(
             **base_input(
                 route="hotfix",
                 task_type="hotfix",
                 critical_lane=True,
-                approval_reference="APR-2026-0917-hafiz",
+                untrusted_approval_context="APR-2026-0917-hafiz",
             )
         )
-        self.assertNotIn("halt", packet["next_automatic_action"].lower())
+        self.assertIn("halt", packet["next_automatic_action"].lower())
+        self.assertIn("not_checked", packet["next_automatic_action"])
 
     def test_critical_lane_never_dispatches_to_the_decision_layer_at_all(self) -> None:
         spy = RecordingProvider()
@@ -254,6 +428,38 @@ class NoLiveNetworkCallTest(unittest.TestCase):
         spy = RecordingProvider(provider_fake.FakeProvider(scenario="ok"))
         packet_builder.build_packet(**base_input(provider=spy))
         self.assertEqual(spy.call_count, 1)
+        # PR #165's engine threads the configured timeout into every
+        # dispatch; the builder's locked default config must supply one.
+        self.assertIsNotNone(spy.timeouts[0])
+
+    def test_risk_bucket_response_carries_the_foundation_usage_fields_and_reason_code(self) -> None:
+        # Reconciliation with PR #165: engine responses now carry
+        # usage_input_tokens / usage_output_tokens and a short reason code.
+        # The builder only reads `outcome` and `answer`, so the extra
+        # fields must be tolerated, not break the risk-bucket call.
+        response = engine.decide(
+            {
+                "schema_version": schema.SCHEMA_VERSION,
+                "decision_type": "packets.risk_bucket",
+                "options": ["low", "medium", "high"],
+                "context": "estimate the risk bucket for route=feature",
+                "sensitivity": "low",
+            },
+            config=packet_builder._default_risk_config(),
+        )
+        self.assertEqual(response["outcome"], "ok")
+        self.assertEqual(response["reason"], "provider_answer")
+        self.assertIn("usage_input_tokens", response)
+        self.assertIn("usage_output_tokens", response)
+        self.assertEqual(
+            packet_builder._resolve_risk_bucket(
+                route="feature",
+                critical_lane=False,
+                config=packet_builder._default_risk_config(),
+                provider=None,
+            ),
+            "low",
+        )
 
 
 class RiskBucketTypedJudgmentTest(unittest.TestCase):
@@ -336,6 +542,42 @@ class NextAutomaticActionTest(unittest.TestCase):
             )
         )
         self.assertIn("write", packet["next_automatic_action"])
+
+
+class FollowUpDispositionGate4Test(unittest.TestCase):
+    """Proportionate verification never waives the Gate 4 adversarial
+    pre-push review (AGENTS.md: "never skipped"). The lighter routes must
+    say so explicitly instead of claiming no review is owed."""
+
+    def _packet(self, route: str) -> dict:
+        return packet_builder.build_packet(
+            **base_input(
+                route=route,
+                task_type=route,
+                goal=f"{route} goal",
+                scope=f"{route} scope",
+                target_state=f"{route} target state",
+            )
+        )
+
+    def test_small_change_follow_up_keeps_gate_4_review(self) -> None:
+        follow_up = self._packet("small-change")["follow_up_disposition"]
+        self.assertIn("Gate 4 adversarial pre-push review still applies", follow_up)
+        self.assertNotIn("no review", follow_up.lower())
+        self.assertNotIn("not owed", follow_up.lower())
+
+    def test_docs_follow_up_keeps_gate_4_review(self) -> None:
+        follow_up = self._packet("docs")["follow_up_disposition"]
+        self.assertIn("Gate 4 adversarial pre-push review still applies", follow_up)
+        self.assertNotIn("no qa/review", follow_up.lower())
+        self.assertNotIn("not owed", follow_up.lower())
+
+    def test_no_mapped_route_claims_review_is_not_owed(self) -> None:
+        for route in obligations.known_routes():
+            follow_up = self._packet(route)["follow_up_disposition"].lower()
+            self.assertNotIn("no review", follow_up, route)
+            self.assertNotIn("no qa/review", follow_up, route)
+            self.assertNotIn("not owed", follow_up, route)
 
 
 class CrossRouteDifferentiationEndToEndTest(unittest.TestCase):

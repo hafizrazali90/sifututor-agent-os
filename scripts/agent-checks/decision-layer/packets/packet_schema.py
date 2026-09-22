@@ -12,26 +12,45 @@ way Bundle 1's decision-layer response schema does:
     project                         -- str, pass-through from the caller
     scope_and_exclusions            -- dict: route, task_type, scope, exclusions
     target_state                    -- str, pass-through from the caller
-    validated_approval_reference    -- str, pass-through ONLY -- see below
+    untrusted_approval_context      -- str, pass-through ONLY, grants nothing
+    approval_status                 -- str, computed ONLY by approval.evaluate
+    approval_reason                 -- str, the short reason code behind it
     required_context                -- list[str], triggered by route/task-type
     required_checks_evidence        -- list[str], triggered by route/task-type
     stop_conditions                 -- list[str], triggered by route/task-type
-    next_automatic_action           -- str, computed from obligations + approval state
+    next_automatic_action           -- str, computed from obligations + approval_status
     follow_up_disposition           -- str, computed from route
 
-`validated_approval_reference` hard limit (bundle-3-build-spec.md "Hard
-limits"): this module never invents or infers an approval reference. It can
-only ever be the exact string the caller supplied as `approval_reference`,
-or the `APPROVAL_REFERENCE_NOT_PROVIDED` sentinel when the caller supplied
-none. No decision-layer call, obligation lookup, or risk estimate is ever
-allowed to populate this field.
+`untrusted_approval_context` is caller-supplied free text carried through
+for traceability (a chat quote, a ticket id, a note). It is never validated
+and it grants NO authority: nothing in this package reads it to decide
+whether a critical-lane packet may proceed. It is always exactly the string
+the caller supplied, or the `APPROVAL_CONTEXT_NOT_PROVIDED` sentinel when
+the caller supplied none.
+
+`approval_status` / `approval_reason` are the only approval signal a packet
+carries. They are computed solely by `approval.evaluate(...)` (the one
+approval authority in the decision layer) from the session identity,
+worktree, task id and operation the caller passes to `build_packet`. When
+those are absent the status is `APPROVAL_STATUS_NOT_CHECKED` and a
+critical-lane packet stays halted. No obligation lookup, decision-layer
+call, risk estimate, or caller string can ever set the status to
+`approved`.
 """
 
 from __future__ import annotations
 
-PACKET_SCHEMA_VERSION = 1
+# Bumped from 1 -> 2 when the earlier single "validated" approval field was
+# replaced by `untrusted_approval_context` + `approval_status` +
+# `approval_reason` (PR #173 correction).
+PACKET_SCHEMA_VERSION = 2
 
-APPROVAL_REFERENCE_NOT_PROVIDED = "not_provided"
+APPROVAL_CONTEXT_NOT_PROVIDED = "not_provided"
+
+# The one status this module owns. Every other status value a packet can
+# carry ("approved", "missing", "invalid", "mismatched", "expired") comes
+# verbatim from `approval.evaluate`.
+APPROVAL_STATUS_NOT_CHECKED = "not_checked"
 
 _PACKET_FIELDS = (
     "schema_version",
@@ -39,7 +58,9 @@ _PACKET_FIELDS = (
     "project",
     "scope_and_exclusions",
     "target_state",
-    "validated_approval_reference",
+    "untrusted_approval_context",
+    "approval_status",
+    "approval_reason",
     "required_context",
     "required_checks_evidence",
     "stop_conditions",

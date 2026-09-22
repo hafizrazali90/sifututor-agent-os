@@ -3,10 +3,15 @@
 (Bundle 3, issue #160).
 
 The packet's field set is fixed by the handoff spec
-(`.agent-os/handoffs/bundle-3-build-spec.md`): exactly ten named fields plus
-a `schema_version` marker so the packet itself is versioned, the same way
+(`.agent-os/handoffs/bundle-3-build-spec.md`) plus the PR #173 correction
+spec (`bundle-3-correction-spec.md`): exactly twelve named fields plus a
+`schema_version` marker so the packet itself is versioned, the same way
 Bundle 1's decision-layer response carries `schema_version` alongside its
-own fields.
+own fields. The correction replaced the earlier misleadingly named
+"validated" approval field with `untrusted_approval_context` (pass-through
+only) and added `approval_status` / `approval_reason`, which only
+`approval.evaluate` may populate. The exact EXPECTED_FIELDS tuple below is
+what proves the old field is gone.
 """
 
 from __future__ import annotations
@@ -36,7 +41,9 @@ EXPECTED_FIELDS = (
     "project",
     "scope_and_exclusions",
     "target_state",
-    "validated_approval_reference",
+    "untrusted_approval_context",
+    "approval_status",
+    "approval_reason",
     "required_context",
     "required_checks_evidence",
     "stop_conditions",
@@ -54,8 +61,15 @@ class PacketFieldsTest(unittest.TestCase):
         self.assertGreaterEqual(packet_schema.PACKET_SCHEMA_VERSION, 1)
 
     def test_not_provided_sentinel_is_a_nonempty_string(self) -> None:
-        self.assertIsInstance(packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED, str)
-        self.assertTrue(packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED.strip())
+        self.assertIsInstance(packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED, str)
+        self.assertTrue(packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED.strip())
+
+    def test_not_checked_status_is_distinct_from_every_approval_module_status(self) -> None:
+        # "not_checked" is the only status this package owns; it must never
+        # collide with a value approval.evaluate can return, and above all
+        # never equal "approved".
+        self.assertEqual(packet_schema.APPROVAL_STATUS_NOT_CHECKED, "not_checked")
+        self.assertNotEqual(packet_schema.APPROVAL_STATUS_NOT_CHECKED, "approved")
 
 
 def valid_input(**overrides):

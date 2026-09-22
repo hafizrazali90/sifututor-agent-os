@@ -19,13 +19,22 @@ Input shape (all keyword-only; see README.md for the documented contract):
     scope: str                      -- what is in scope
     target_state: str               -- what "done" looks like
     exclusions: list[str] | None    -- what is explicitly out of scope
-    approval_reference: str | None  -- see the hard limit below
+    untrusted_approval_context: str | None
+                                    -- free text carried through unchanged;
+                                        grants NO authority (see below)
     user_facing: bool = False       -- triggers small-change's conditional
                                         E2E/related-impact obligations
     staff_facing: bool = False      -- triggers the staff-documentation
                                         context item
     critical_lane: bool = False     -- triggers the Universal Safety Rule
                                         halt (payments/auth/migrations/etc.)
+    session_id: str | None          -- the four identity parameters that
+    worktree: str | Path | None        `approval.evaluate` binds a trusted
+    task_id: str | None                approval packet to; all omitted means
+    operation: str | None              approval_status == "not_checked"
+    state_dir: Path | None          -- approval-state directory override
+                                        (test injection point; defaults to
+                                        approval.default_state_dir())
     config: dict | None = None      -- decision-layer config override; if
                                         omitted, uses a config that is
                                         locked to the fake provider and
@@ -36,15 +45,26 @@ Input shape (all keyword-only; see README.md for the documented contract):
                                         threaded straight into
                                         `engine.decide(..., provider=...)`
 
-Hard limit (bundle-3-build-spec.md): `validated_approval_reference` can
-only ever be the exact string the caller supplied, or the
-`packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED` sentinel when none was
-supplied. No obligation lookup, decision-layer call, or risk estimate in
-this module is ever allowed to write to that field.
+Approval hard limits:
+
+- `untrusted_approval_context` is pass-through only. It is always exactly
+  the caller's string, or `packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED`
+  when none was supplied. Nothing in this module reads it to decide
+  anything; a non-empty value never makes a critical-lane packet
+  executable.
+- `approval_status` / `approval_reason` are computed ONLY by
+  `approval.evaluate(...)`, the single approval authority in the decision
+  layer, from the session identity, worktree, task id and operation the
+  caller passes in. With none of those present the status is
+  `not_checked`. No obligation lookup, decision-layer call, or risk
+  estimate can write to those fields.
+- A critical-lane packet's `next_automatic_action` halts unless
+  `approval_status == "approved"`.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -62,6 +82,7 @@ for _dir in (_DECISION_LAYER_DIR, _HERE):
     if _dir_str not in sys.path:
         sys.path.insert(0, _dir_str)
 
+import approval  # noqa: E402  (decision-layer/approval.py, the only approval authority)
 import config as config_module  # noqa: E402  (decision-layer/config.py)
 import engine  # noqa: E402  (decision-layer/engine.py)
 import schema  # noqa: E402  (decision-layer/schema.py)
@@ -88,6 +109,10 @@ _RISK_OPTIONS_BY_ROUTE: dict[str, tuple[str, str, str]] = {
     "hotfix": ("high", "medium", "low"),
 }
 
+# Proportionate verification is route-specific; the Gate 4 adversarial
+# pre-push review (AGENTS.md "Gate 4: adversarial pre-push review, never
+# skipped") is not. Every disposition below that lightens the in-route
+# checklist still names Gate 4 as owed before push.
 _FOLLOW_UP_BY_ROUTE: dict[str, str] = {
     "feature": (
         "after commit, confirm the staff documentation decision landed in the same "
@@ -103,16 +128,18 @@ _FOLLOW_UP_BY_ROUTE: dict[str, str] = {
         "check before calling it live"
     ),
     "small-change": (
-        "after commit, no defect_analysis or review step is owed; close the linked "
-        "GitHub issue if one exists"
+        "after commit, verification is proportionate (targeted QA of the changed "
+        "surface, no defect_analysis), but Gate 4 adversarial pre-push review still "
+        "applies before push; then close the linked GitHub issue if one exists"
     ),
     "refactor": (
         "after commit, confirm no behavior actually changed (qa evidence) before "
         "closing the linked issue"
     ),
     "docs": (
-        "after commit, no QA/review step is owed for a docs-only route; close the "
-        "linked issue if one exists"
+        "after commit, verification is proportionate (docs validation / render-link "
+        "check, no regression test), but Gate 4 adversarial pre-push review still "
+        "applies before push; then close the linked issue if one exists"
     ),
 }
 
@@ -154,11 +181,40 @@ def _resolve_risk_bucket(*, route: str, critical_lane: bool, config: dict, provi
     return "medium"
 
 
+def _resolve_approval(
+    *,
+    session_id: str | None,
+    worktree: str | os.PathLike | None,
+    task_id: str | None,
+    operation: str | None,
+    state_dir: Path | None,
+) -> tuple[str, str]:
+    """Return (approval_status, approval_reason).
+
+    The ONLY source of an approval status is `approval.evaluate`, which
+    reads the trusted supervisor packet bound to this session. When the
+    caller passed none of the four identity parameters there is nothing to
+    bind against, so the status is `not_checked` (never "approved"). Any
+    partial identity is handed to `approval.evaluate` as-is so it can
+    report the exact gap (missing / mismatched / ...)."""
+    if session_id is None and worktree is None and task_id is None and operation is None:
+        return packet_schema.APPROVAL_STATUS_NOT_CHECKED, "no_session_identity_supplied"
+    status = approval.evaluate(
+        session_id=session_id,
+        worktree=worktree,
+        task_id=task_id,
+        operation=operation,
+        state_dir=state_dir,
+    )
+    return status.status, status.reason
+
+
 def _next_automatic_action(
     *,
     resolved: "obligations.ObligationSet",
     unmapped: bool,
-    approval_reference_value: str,
+    approval_status: str,
+    approval_reason: str,
     critical_lane: bool,
 ) -> str:
     if unmapped:
@@ -167,10 +223,15 @@ def _next_automatic_action(
             "commit.md directly before continuing (no triggered-obligation mapping "
             "for this route/task-type)"
         )
-    if critical_lane and approval_reference_value == packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED:
+    # The only thing that can lift a critical-lane halt is a trusted
+    # approval packet that approval.evaluate bound to this exact session,
+    # worktree, task and operation. `untrusted_approval_context` is
+    # deliberately not consulted here.
+    if critical_lane and approval_status != approval.STATUS_APPROVED:
         return (
-            "halt: no validated approval reference for this critical-lane action; "
-            "request human approval before any implementation step"
+            f"halt: approval_status is '{approval_status}' ({approval_reason}) for this "
+            "critical-lane action; only a trusted approval packet bound to this session "
+            "can lift this -- request human approval before any implementation step"
         )
     first_step = resolved.core_path[0] if resolved.core_path else "the route's deep playbook"
     return f"proceed to the '{first_step}' step"
@@ -213,10 +274,12 @@ def _blocked_packet(
             "exclusions": exclusions_out,
         },
         "target_state": redact("target_state", target_state),
-        # Conservative by design: a blocked/halted packet never carries a
-        # real approval reference through, even if the reference itself
-        # was clean -- the packet as a whole is not safe to act on yet.
-        "validated_approval_reference": packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED,
+        # Conservative by design: a blocked packet never carries the
+        # caller's approval context through, and approval is not evaluated
+        # at all -- the packet as a whole is not safe to act on yet.
+        "untrusted_approval_context": packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED,
+        "approval_status": packet_schema.APPROVAL_STATUS_NOT_CHECKED,
+        "approval_reason": "packet_blocked_before_approval_check",
         "required_context": [
             "blocked: possible secret/PII-shaped content detected in packet input "
             f"(fields: {', '.join(sorted(flagged_fields))}); redact and resubmit"
@@ -245,17 +308,28 @@ def build_packet(
     scope: str,
     target_state: str,
     exclusions: list[str] | None = None,
-    approval_reference: str | None = None,
+    untrusted_approval_context: str | None = None,
     user_facing: bool = False,
     staff_facing: bool = False,
     critical_lane: bool = False,
+    session_id: str | None = None,
+    worktree: str | os.PathLike | None = None,
+    task_id: str | None = None,
+    operation: str | None = None,
+    state_dir: Path | None = None,
     config: dict | None = None,
     provider: object | None = None,
 ) -> dict:
     """Assemble one versioned compact execution packet. Raises
     `packet_schema.PacketValidationError` for missing/malformed required
     input. Returns a blocked packet (never raises) when secret/PII-shaped
-    content is detected in the task context."""
+    content is detected in the task context.
+
+    `untrusted_approval_context` is carried through verbatim and grants no
+    authority. `approval_status` / `approval_reason` come only from
+    `approval.evaluate(...)` over `session_id`, `worktree`, `task_id`,
+    `operation` (and `state_dir`); omit all four and the status is
+    `not_checked`, which keeps a critical-lane packet halted."""
     errors = packet_schema.validate_input(
         route=route,
         task_type=task_type,
@@ -276,8 +350,8 @@ def build_packet(
         "target_state": target_state,
     }
     scan_targets.update({f"exclusions[{i}]": item for i, item in enumerate(exclusions)})
-    if approval_reference:
-        scan_targets["approval_reference"] = approval_reference
+    if untrusted_approval_context:
+        scan_targets["untrusted_approval_context"] = untrusted_approval_context
 
     flagged_fields = _scan_findings(scan_targets)
     if flagged_fields:
@@ -320,14 +394,25 @@ def build_packet(
                 "or Hafiz sign-off before commit"
             )
 
-    approval_reference_value = (
-        approval_reference if approval_reference else packet_schema.APPROVAL_REFERENCE_NOT_PROVIDED
+    approval_context_value = (
+        untrusted_approval_context
+        if untrusted_approval_context
+        else packet_schema.APPROVAL_CONTEXT_NOT_PROVIDED
+    )
+
+    approval_status, approval_reason = _resolve_approval(
+        session_id=session_id,
+        worktree=worktree,
+        task_id=task_id,
+        operation=operation,
+        state_dir=state_dir,
     )
 
     next_action = _next_automatic_action(
         resolved=resolved,
         unmapped=unmapped,
-        approval_reference_value=approval_reference_value,
+        approval_status=approval_status,
+        approval_reason=approval_reason,
         critical_lane=critical_lane,
     )
 
@@ -342,7 +427,9 @@ def build_packet(
             "exclusions": exclusions,
         },
         "target_state": target_state,
-        "validated_approval_reference": approval_reference_value,
+        "untrusted_approval_context": approval_context_value,
+        "approval_status": approval_status,
+        "approval_reason": approval_reason,
         "required_context": list(resolved.required_context),
         "required_checks_evidence": required_checks_evidence,
         "stop_conditions": list(resolved.stop_conditions),

@@ -6,10 +6,11 @@ task context. It replaces attaching the full verify/QA/review/commit
 checklist to every task with a **triggered** subset: only the obligations
 this specific route/task-type actually needs.
 
-This is a standalone packet-generation module with fixtures. It does not
-change how any existing skill, hook, or playbook runs today; wiring a
-packet into a live workflow is a later, separate decision (see the scope
-boundary in `.agent-os/handoffs/bundle-3-build-spec.md`).
+This is a standalone packet-generation module with fixtures. It is
+advisory and not wired live: it does not change how any existing skill,
+hook, or playbook runs today. Wiring a packet into a live workflow is a
+later, separate decision (see the scope boundary in
+`.agent-os/handoffs/bundle-3-build-spec.md`).
 
 The deep playbooks remain the authoritative on-demand reference:
 `docs/agent-playbooks/task-router.md`, `verify.md`, `qa.md`, `commit.md`,
@@ -22,9 +23,9 @@ files rather than silently omitting something (`obligations.fallback_obligations
 
 | Module | Responsibility |
 | --- | --- |
-| `packet_schema.py` | Versioned packet field set (`packet_fields()`), the `APPROVAL_REFERENCE_NOT_PROVIDED` sentinel, and `validate_input` / `PacketValidationError` for the builder's raw input |
+| `packet_schema.py` | Versioned packet field set (`packet_fields()`), the `APPROVAL_CONTEXT_NOT_PROVIDED` and `APPROVAL_STATUS_NOT_CHECKED` sentinels, and `validate_input` / `PacketValidationError` for the builder's raw input |
 | `obligations.py` | The route -> triggered-obligation mapping (`resolve_obligations`), plus the safe `fallback_obligations` for an unmapped route/task-type |
-| `packet_builder.py` | `build_packet(...)`: assembles the final packet, reuses Bundle 1's `secret_filter` to block on secret/PII-shaped input, and reuses Bundle 1's `engine.decide` (fake provider only) to estimate the risk bucket |
+| `packet_builder.py` | `build_packet(...)`: assembles the final packet, reuses Bundle 1's `secret_filter` to block on secret/PII-shaped input, reuses Bundle 1's `engine.decide` (fake provider only) to estimate the risk bucket, and asks `approval.evaluate` (the only approval authority) for the approval status |
 
 Each module has a matching `test_*.py` file (offline `unittest`, same
 convention as `scripts/agent-checks/decision-layer`'s own tests: modules
@@ -51,13 +52,21 @@ build_packet(
     scope: str,                       # what is in scope
     target_state: str,                # what "done" looks like
     exclusions: list[str] | None = None,       # what is explicitly out of scope
-    approval_reference: str | None = None,     # see hard limit below
+    untrusted_approval_context: str | None = None,
+                                       # free text carried through verbatim;
+                                       # grants NO authority (see below)
     user_facing: bool = False,        # triggers small-change's conditional
                                        # E2E / related-impact obligations
     staff_facing: bool = False,       # triggers the staff-documentation
                                        # context item
     critical_lane: bool = False,      # triggers the Universal Safety Rule
                                        # halt (payments/auth/migrations/etc.)
+    session_id: str | None = None,    # the four identity parameters that
+    worktree: str | Path | None = None,   # approval.evaluate binds a trusted
+    task_id: str | None = None,       # approval packet to; omit all four
+    operation: str | None = None,     # and approval_status is "not_checked"
+    state_dir: Path | None = None,    # approval-state dir override (tests);
+                                       # defaults to approval.default_state_dir()
     config: dict | None = None,       # decision-layer config override
     provider: object | None = None,   # decision-layer provider override
                                        # (test injection point)
@@ -67,7 +76,8 @@ build_packet(
 ## Output shape
 
 Exactly the fields in `packet_schema.packet_fields()`, always including
-`schema_version`:
+`schema_version` (currently `2`; bumped when the earlier single
+"validated" approval field was replaced by the three approval fields below):
 
 ```text
 schema_version
@@ -75,7 +85,9 @@ goal
 project
 scope_and_exclusions          -- {route, task_type, scope, exclusions}
 target_state
-validated_approval_reference
+untrusted_approval_context    -- pass-through only, grants nothing
+approval_status               -- only approval.evaluate sets this
+approval_reason               -- the short reason code behind it
 required_context
 required_checks_evidence
 stop_conditions
@@ -83,13 +95,55 @@ next_automatic_action
 follow_up_disposition
 ```
 
-## Hard limit: `validated_approval_reference`
+## Hard limit: `untrusted_approval_context` grants no authority
 
-This module can never populate this field on its own authority. It is
-always exactly the `approval_reference` string the caller supplied, or the
-`APPROVAL_REFERENCE_NOT_PROVIDED` sentinel when none was supplied -- never
+This field is caller-supplied free text (a chat quote, a ticket id, a
+note) carried through for traceability only. It is always exactly the
+`untrusted_approval_context` string the caller supplied, or the
+`APPROVAL_CONTEXT_NOT_PROVIDED` sentinel when none was supplied -- never
 invented, never inferred from risk bucket, route, or a decision-layer
-answer. See `test_packet_builder.ApprovalReferenceHardLimitTest`.
+answer, and **never consulted** when deciding whether a critical-lane
+packet may proceed. A non-empty value leaves a critical-lane packet
+exactly as halted as an empty one
+(`test_packet_builder.UntrustedApprovalContextPassThroughTest`,
+`ApprovalStatusTest.test_a_fabricated_context_string_does_not_lift_the_critical_lane_halt`).
+
+## Approval status: only `approval.evaluate` can say "approved"
+
+`approval_status` / `approval_reason` are computed solely by
+`scripts/agent-checks/decision-layer/approval.py`'s `evaluate(...)`, the
+one approval authority in the decision layer. It reads the trusted
+supervisor packet that `agent-os-task-context.py` bound to a session
+(under `.agent-os/approval-state/tool-packets/<session>.json`) and checks
+it against the `session_id`, `worktree`, `task_id` and `operation` passed
+to `build_packet`, honouring `expires_at` if the packet carries one.
+
+| Situation | `approval_status` | `approval_reason` (example) |
+| --- | --- | --- |
+| none of the four identity parameters given | `not_checked` | `no_session_identity_supplied` |
+| identity given, no packet on disk | `missing` | `no_packet_for_session` |
+| packet exists but is malformed / copied from another session | `invalid` | `packet_invalid` |
+| packet is for another worktree / task / operation | `mismatched` | `worktree_mismatch`, `task_id_mismatch`, `operation_not_included` |
+| packet's `expires_at` has passed | `expired` | `packet_expired` |
+| real supervisor packet matches every binding | `approved` | `trusted_packet_matches` |
+
+`next_automatic_action` for a `critical_lane=True` packet halts unless
+`approval_status == "approved"`. Nothing a worker can write itself -- a
+context string, a copied packet, a packet for another task -- changes
+that (`test_packet_builder.ApprovalStatusTest`). Approval lifts only the
+automatic halt; the critical-lane stop condition and the high-risk
+evidence item still travel with the packet. `build_packet` never writes
+approval state.
+
+## Follow-up dispositions and Gate 4
+
+Proportionate verification is route-specific: a small change owes a
+targeted QA check rather than `defect_analysis`, and a docs-only route
+owes a docs validation / render-link check rather than a regression test.
+That never waives the Gate 4 adversarial pre-push review (AGENTS.md:
+"Gate 4: adversarial pre-push review, never skipped"). The small-change
+and docs `follow_up_disposition` strings say so explicitly
+(`test_packet_builder.FollowUpDispositionGate4Test`).
 
 ## Typed judgment via Bundle 1's decision layer
 
@@ -118,8 +172,10 @@ this module or its test suite reach a live endpoint
 
 ## Secret/PII blocking
 
-Before assembling a packet, every free-text input field is scanned with
-Bundle 1's `secret_filter.scan` (reused, not rebuilt). Any finding blocks
-the packet: the flagged field(s) are redacted in the returned packet,
-`next_automatic_action` halts, and the decision layer is never dispatched
-to (`test_packet_builder.SecretBlockedTest`).
+Before assembling a packet, every free-text input field (including
+`untrusted_approval_context`) is scanned with Bundle 1's
+`secret_filter.scan` (reused, not rebuilt). Any finding blocks the packet:
+the flagged field(s) are redacted in the returned packet,
+`next_automatic_action` halts, approval is not evaluated
+(`approval_status` is `not_checked`), and the decision layer is never
+dispatched to (`test_packet_builder.SecretBlockedTest`).

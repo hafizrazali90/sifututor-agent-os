@@ -55,8 +55,10 @@ _CRITICAL_LANE_STOP = (
     "(AGENTS.md Universal Safety Rule)"
 )
 _CRITICAL_LANE_CONTEXT = (
-    "a validated human approval reference for this critical-lane action "
-    "(payments/commission/auth/migration/mobile-API-contract)"
+    "a trusted approval packet bound to this session, worktree, task and "
+    "operation (decision-layer approval.evaluate -> approved) for this "
+    "critical-lane action (payments/commission/auth/migration/mobile-API-contract); "
+    "caller-supplied approval text grants nothing"
 )
 
 
