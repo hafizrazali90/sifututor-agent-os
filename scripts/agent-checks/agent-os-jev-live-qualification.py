@@ -246,8 +246,8 @@ def run_bridge_contract() -> list[dict]:
         {
             "case_id": "bridge-shared-output",
             "passed": (
-                "Jev shadow advisory" in advice
-                and "advisory only" in advice
+                "Jev routing assist" in advice
+                and "cannot approve or execute actions" in advice
                 and "synthetic reporting" not in persisted
                 and provider.network_call_count == 1
             ),
