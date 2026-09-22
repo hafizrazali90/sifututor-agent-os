@@ -140,6 +140,32 @@ class PaymentsTouchingChangeTest(unittest.TestCase):
         self.assertEqual(report["overall_attention_priority"], "high")
         self.assertEqual(unavailable_fake.call_count, 0)
 
+    def test_the_decision_layer_itself_is_never_entered_for_a_critical_lane_change(self) -> None:
+        # Stronger than call_count == 0: the request dict is only ever built
+        # immediately before `engine.decide`, so proving `engine.decide` is
+        # never entered proves no provider request is ever constructed for
+        # a payments/auth/migrations change. Covers all three critical
+        # lanes, not only payments.
+        def explode(*args, **kwargs):
+            raise AssertionError("engine.decide must never be entered for a critical-lane change")
+
+        original = triage.engine.decide
+        triage.engine.decide = explode
+        try:
+            critical_payloads = {
+                "payments": fixtures.payments_touching_change(),
+                "auth": {"changed_files": [{"path": "app/Http/Controllers/Auth/LoginController.php", "additions": 3, "deletions": 1, "kind": "code"}]},
+                "migrations": {"changed_files": [{"path": "database/migrations/2026_09_22_add_invoice_index.php", "additions": 20, "deletions": 0, "kind": "code"}]},
+            }
+            for lane, payload in critical_payloads.items():
+                with self.subTest(lane=lane):
+                    report = triage.triage_change(payload, provider=provider_fake.FakeProvider(scenario="ok"))
+                    self.assertEqual(_priority(report, "file_risk"), "high")
+                    self.assertEqual(report["overall_attention_priority"], "high")
+                    self.assertEqual(report["overall_decision_source"], "deterministic")
+        finally:
+            triage.engine.decide = original
+
 
 class UserFacingNoE2eEvidenceTest(unittest.TestCase):
     """Required fixture: a user-facing change with no named E2E/QA evidence

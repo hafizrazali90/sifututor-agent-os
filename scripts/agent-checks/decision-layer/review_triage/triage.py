@@ -28,6 +28,17 @@ context (never comment bodies, file contents, or task free text), the
 routed answer is always forced back to non-authoritative in the final
 report regardless of what the decision layer itself reports, and nothing
 in this module or its tests ever configures a live provider.
+
+Status (honest label, keep current):
+  - Advisory only. Not wired into the review skill, the review playbook,
+    the pre-commit guard, or any CI job. Nothing calls `triage_change`
+    outside this package's own tests.
+  - Every signal is keyword and metadata matching on the payload it is
+    handed. It has no measured precision or recall on real pull requests.
+  - The only provider evidence is `provider_fake.FakeProvider`. Passing
+    tests here are not proof that a real provider behaves the same way.
+  - "Unknown" outcomes (for example a CI failure that is not inferable
+    either way) are reported as unknown, never rounded to a verdict.
 """
 
 from __future__ import annotations

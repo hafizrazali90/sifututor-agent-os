@@ -3,6 +3,10 @@
 See `triage.py` for the entry point and `.agent-os/handoffs/bundle-5-build-spec.md`
 (issue #166) for the task specification this module implements.
 
+Status: advisory only, not wired into any skill, playbook, guard or CI job,
+and exercised only against the offline fake provider. See the "Status"
+paragraph in `triage.py` before treating any output as evidence.
+
 This `__init__.py` exists only so `python3 -m unittest discover` (run from
 the parent `decision-layer/` directory) recurses into this package and
 picks up its tests alongside Bundle 1's. Every module in this package still
