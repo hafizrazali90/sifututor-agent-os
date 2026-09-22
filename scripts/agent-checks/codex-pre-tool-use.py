@@ -98,7 +98,7 @@ if "--no-verify" in compact:
 if re.search(r"(^|[;&|]\s*)git\s+reset\s+--hard\b", compact):
     deny("git reset --hard is destructive. Ask Hafiz explicitly before using it.")
 
-if re.search(r"(^|[;&|]\s*)git\s+checkout\s+--\b", compact):
+if re.search(r"(^|[;&|]\s*)git\s+checkout\s+--(?:\s|$|\b)", compact):
     deny("git checkout -- can discard user changes. Ask Hafiz explicitly first.")
 
 if re.search(r"(^|[;&|]\s*)rm\s+-rf\s+(\S*/)?(live|\.workflow-rollout)(/|\s|$)", compact):
