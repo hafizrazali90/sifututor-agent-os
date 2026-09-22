@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Live, provider-neutral Jev shadow observer for Agent OS prompt routing.
+"""Live, provider-neutral Jev routing assistant for Agent OS prompts.
 
-The observer is advisory. It never changes approval state, runs a tool, or
-persists prompt/response bodies. Provider failure leaves normal routing intact.
+The default assist mode contributes one bounded routing signal to Claude and
+Codex. It never changes approval state, runs a tool, overrides deterministic
+safety, or persists prompt/response bodies. Provider failure leaves normal
+routing intact. A legacy shadow mode remains available for observation-only
+rollbacks.
 """
 
 from __future__ import annotations
@@ -31,8 +34,20 @@ CONF_PATH = Path.home() / ".config" / "sifututor" / "agent-access" / "typesafe-j
 STATE_DIR = Path.home() / ".local" / "state" / "sifututor-agent-os" / "jev-shadow"
 
 
-def _enabled(env: dict[str, str]) -> bool:
-    return env.get("SIFUTUTOR_JEV_SHADOW", "1").strip().lower() not in {"0", "false", "off", "no"}
+def _mode(env: dict[str, str]) -> str:
+    """Resolve off/shadow/assist without breaking the old disable switch."""
+    explicit = env.get("SIFUTUTOR_JEV_MODE", "").strip().lower()
+    if explicit in {"0", "false", "off", "no", "disabled"}:
+        return "off"
+    if explicit == "shadow":
+        return "shadow"
+    if explicit == "assist":
+        return "assist"
+    if explicit:
+        return "shadow"
+    if env.get("SIFUTUTOR_JEV_SHADOW", "1").strip().lower() in {"0", "false", "off", "no"}:
+        return "off"
+    return "assist"
 
 
 def _credential_from_file(path: Path = CONF_PATH) -> str:
@@ -118,7 +133,8 @@ def observe_prompt(
 ) -> str:
     """Return compact advisory hook context, or empty text on a safe fallback."""
     runtime_env = dict(os.environ if env is None else env)
-    if not _enabled(runtime_env) or len((prompt or "").strip()) < MIN_PROMPT_LEN:
+    mode = _mode(runtime_env)
+    if mode == "off" or len((prompt or "").strip()) < MIN_PROMPT_LEN:
         return ""
     try:
         config = shadow_config(runtime_env)
@@ -145,10 +161,17 @@ def observe_prompt(
         ):
             route = result["workflow_route"]["value"]
             confidence = float(result["workflow_route"].get("confidence") or 0.0)
+            if mode == "shadow":
+                return (
+                    f"Jev shadow advisory: workflow route {route} (confidence {confidence:.2f}). "
+                    "This is advisory only; deterministic safety, repository rules, and trusted "
+                    "approval state remain authoritative."
+                )
             return (
-                f"Jev shadow advisory: workflow route {route} (confidence {confidence:.2f}). "
-                "This is advisory only; deterministic safety, repository rules, and trusted "
-                "approval state remain authoritative."
+                f"Jev routing assist: suggested workflow route {route} (confidence {confidence:.2f}). "
+                "Use this as one bounded routing signal when it fits the current task evidence. "
+                "Deterministic safety, repository rules, and trusted approval state remain "
+                "authoritative; this suggestion cannot approve or execute actions."
             )
     except Exception:
         return ""

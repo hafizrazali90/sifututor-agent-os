@@ -45,20 +45,48 @@ class JevShadowTests(unittest.TestCase):
             self.assertEqual(metrics["outcomes"], {"not_configured": 1})
             self.assertEqual(metrics["network_calls"], 0)
 
-    def test_success_returns_advisory_and_stores_metadata_only(self):
+    def test_default_success_returns_bounded_routing_assist_and_stores_metadata_only(self):
         provider = RecordingProvider()
         prompt = "Please implement the workflow helper for ripple-suite"
         with tempfile.TemporaryDirectory() as tmp:
             advice = shadow.observe_prompt(
                 prompt, project="ripple-suite", env={"PATH": "/usr/bin"}, state_dir=Path(tmp), provider=provider
             )
-            self.assertIn("Jev shadow advisory", advice)
-            self.assertIn("advisory only", advice)
+            self.assertIn("Jev routing assist", advice)
+            self.assertIn("cannot approve or execute actions", advice)
             persisted = next(Path(tmp).glob("*.json")).read_text()
             self.assertNotIn(prompt, persisted)
             self.assertNotIn("ripple-suite", persisted)
             self.assertNotIn("implementation", persisted)
             self.assertEqual(provider.calls[0]["sensitivity"], "low")
+
+    def test_explicit_shadow_mode_keeps_observation_only_wording(self):
+        provider = RecordingProvider()
+        with tempfile.TemporaryDirectory() as tmp:
+            advice = shadow.observe_prompt(
+                "Please implement the workflow helper",
+                env={"PATH": "/usr/bin", "SIFUTUTOR_JEV_MODE": "shadow"},
+                state_dir=Path(tmp),
+                provider=provider,
+            )
+            self.assertIn("Jev shadow advisory", advice)
+            self.assertIn("advisory only", advice)
+
+    def test_assist_mode_never_opts_a_decision_type_into_authority(self):
+        config = shadow.shadow_config({"SIFUTUTOR_JEV_MODE": "assist"})
+        self.assertEqual(config["authoritative_decision_types"], [])
+
+    def test_unknown_explicit_mode_fails_safe_to_shadow(self):
+        provider = RecordingProvider()
+        with tempfile.TemporaryDirectory() as tmp:
+            advice = shadow.observe_prompt(
+                "Please implement the workflow helper",
+                env={"PATH": "/usr/bin", "SIFUTUTOR_JEV_MODE": "typo"},
+                state_dir=Path(tmp),
+                provider=provider,
+            )
+            self.assertIn("Jev shadow advisory", advice)
+            self.assertNotIn("Jev routing assist", advice)
 
     def test_critical_lane_never_calls_provider(self):
         provider = RecordingProvider()
@@ -82,6 +110,14 @@ class JevShadowTests(unittest.TestCase):
             self.assertNotIn("TYPESAFE_API_KEY", shadow.provider_environment({}, conf))
 
     def test_explicit_disable_skips_without_writing_metrics(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            advice = shadow.observe_prompt(
+                "Please implement the workflow helper", env={"SIFUTUTOR_JEV_MODE": "off"}, state_dir=Path(tmp)
+            )
+            self.assertEqual(advice, "")
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_legacy_shadow_disable_still_turns_jev_off(self):
         with tempfile.TemporaryDirectory() as tmp:
             advice = shadow.observe_prompt(
                 "Please implement the workflow helper", env={"SIFUTUTOR_JEV_SHADOW": "0"}, state_dir=Path(tmp)

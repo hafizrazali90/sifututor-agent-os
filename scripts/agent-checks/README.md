@@ -149,3 +149,16 @@ short synthetic routing cases through the configured Jev adapter. Sensitive
 and critical-lane fixtures must remain local with zero provider calls. Reports
 contain case IDs and metrics only, never prompt or response bodies, and Jev
 remains advisory throughout.
+
+## Jev Routing Assist
+
+Jev runs in bounded `assist` mode by default for ordinary prompt routing. Its
+suggestion is injected into the Claude and Codex prompt adapters as one signal;
+it cannot grant approval, execute tools, override repository rules, or receive
+critical, secret, private-data, destructive, or production-sensitive prompts.
+Low-confidence answers and provider failures fall back to the existing local
+route.
+
+For an observation-only rollback, set `SIFUTUTOR_JEV_MODE=shadow`. To disable
+all Jev calls, set `SIFUTUTOR_JEV_MODE=off`. The legacy
+`SIFUTUTOR_JEV_SHADOW=0` disable switch remains supported.
