@@ -27,6 +27,22 @@ check_file() {
   fi
 }
 
+check_max_bytes() {
+  local label="$1"
+  local path="$2"
+  local maximum="$3"
+  local actual
+  if [[ ! -f "$path" ]]; then
+    return
+  fi
+  actual="$(wc -c < "$path" | tr -d ' ')"
+  if (( actual <= maximum )); then
+    pass "$label" "$actual/$maximum bytes"
+  else
+    fail "$label" "$actual bytes exceeds $maximum-byte budget"
+  fi
+}
+
 echo "Sifututor Agent OS Health"
 echo "Root: $ROOT"
 echo
@@ -52,6 +68,8 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "Detected"
 check_file "root AGENTS" "$ROOT/AGENTS.md"
+check_max_bytes "root AGENTS budget" "$ROOT/AGENTS.md" 16384
+check_max_bytes "task router budget" "$ROOT/docs/agent-playbooks/task-router.md" 12288
 check_file "Kilo Agent OS adapter" "$ROOT/.kilo/agents/sifututor-agent-os.md"
 check_file "Agent OS overview" "$ROOT/docs/agent-playbooks/agent-os.md"
 check_file "Agent OS infrastructure" "$ROOT/docs/agent-playbooks/agent-os-infrastructure.md"
