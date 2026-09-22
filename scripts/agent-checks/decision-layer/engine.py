@@ -3,31 +3,28 @@
 
 Pipeline, in order, for every call to `decide`:
 
-1. Validate the request against the versioned schema (item 1). A bad
-   request raises before anything else runs.
-2. Deterministic pre-dispatch content filter (item 8). If the request
-   contains anything secret- or PII-shaped, block immediately and never
-   call any provider, including the fake one.
-3. Deterministic pre-policy layer (item 3). If a rule matches this
-   decision type, its answer is used and no provider is ever dispatched
-   to -- this holds even when the decision type is opted into the
-   authoritative allowlist.
-4. Otherwise, dispatch to the configured provider, wrapped in the bounded
-   timeout/retry/cancellation layer (item 7).
-5. Confidence/fallback policy (item 6): any provider error, timeout, bad
-   output shape, or low confidence answer falls back to a safe default
-   instead of passing the provider's raw answer through.
-6. Shadow/advisory stamping (item 10): the response is only ever marked
-   `authoritative` when the outcome is a clean "ok" AND the decision type
-   is in the config's opt-in allowlist. The default allowlist is empty.
-7. The caller can turn the response into a metadata-only observability
-   record with `observability.build_record` (item 9); this module never
-   does that logging itself, so it stays a pure function with no side
-   effects of its own.
+1. Validate the request against the versioned schema. A bad request raises
+   before anything else runs.
+2. Deterministic pre-dispatch content filter. Secret- or PII-shaped content
+   blocks immediately; no provider, not even the fake one, sees it.
+3. Deterministic pre-policy layer. A matching rule answers and no provider
+   is dispatched to, even for an opted-in authoritative decision type.
+4. Otherwise dispatch to the configured provider through the sequential
+   retry layer with the provider's own single-in-flight lock.
+5. Confidence/fallback policy: any provider error, timeout, busy signal,
+   bad output shape or low-confidence answer falls back to a safe default.
+6. Shadow/advisory stamping: `authoritative` is only ever True for a clean
+   "ok" outcome on a decision type in the config's opt-in allowlist, which
+   is empty by default.
+
+Every `reason` is a short code, never an exception message: a provider
+cannot leak a response body or credential fragment into a response or a
+diagnostic record through this module.
 """
 
 from __future__ import annotations
 
+import threading
 import time
 
 import config as config_module
@@ -41,13 +38,20 @@ import secret_filter
 
 FALLBACK_ANSWER = "undetermined"
 
+# One lock per live provider for the whole process, so engine-built
+# providers share the in-flight guard even when `decide` builds a fresh
+# adapter object per call.
+_JEV_IN_FLIGHT = threading.Lock()
+
 
 def _build_provider(config: dict):
     provider_name = config.get("provider", "fake")
     if provider_name == "fake":
         return provider_fake.FakeProvider()
     if provider_name == "jev":
-        return provider_jev.JevProvider(config=config)
+        provider = provider_jev.JevProvider(config=config)
+        provider.in_flight = _JEV_IN_FLIGHT
+        return provider
     raise ValueError(f"unknown provider {provider_name!r}")
 
 
@@ -69,6 +73,8 @@ def _finish(
     cost: float,
     started: float,
     config: dict,
+    usage_input_tokens: int | None = None,
+    usage_output_tokens: int | None = None,
 ) -> dict:
     authoritative = False if fallback_used else _is_authoritative(decision_type, config, outcome)
     return {
@@ -81,6 +87,8 @@ def _finish(
         "authoritative": authoritative,
         "latency_ms": (time.monotonic() - started) * 1000.0,
         "cost": cost,
+        "usage_input_tokens": usage_input_tokens,
+        "usage_output_tokens": usage_output_tokens,
         "outcome": outcome,
         "reason": reason,
     }
@@ -88,13 +96,13 @@ def _finish(
 
 def _validate_provider_answer(raw: object) -> provider_base.ProviderAnswer:
     if not isinstance(raw, provider_base.ProviderAnswer):
-        raise provider_base.ProviderMalformedOutput("provider did not return a ProviderAnswer")
+        raise provider_base.ProviderMalformedOutput(code="not_a_provider_answer")
     if isinstance(raw.confidence, bool) or not isinstance(raw.confidence, (int, float)):
-        raise provider_base.ProviderMalformedOutput("confidence is not a number")
+        raise provider_base.ProviderMalformedOutput(code="confidence_not_numeric")
     if not (0.0 <= raw.confidence <= 1.0):
-        raise provider_base.ProviderMalformedOutput("confidence out of range")
+        raise provider_base.ProviderMalformedOutput(code="confidence_out_of_range")
     if raw.answer is None or (isinstance(raw.answer, str) and not raw.answer.strip()):
-        raise provider_base.ProviderMalformedOutput("answer is empty")
+        raise provider_base.ProviderMalformedOutput(code="answer_empty")
     return raw
 
 
@@ -109,23 +117,27 @@ def decide(request: dict, config: dict | None = None, provider: object | None = 
 
     decision_type = request["decision_type"]
 
-    # Step 2: block before any provider ever sees the content.
-    if secret_filter.scan_request(request):
+    def fallback(*, provider_name: str, outcome: str, reason: str, confidence: float = 0.0, cost: float = 0.0) -> dict:
         return _finish(
             decision_type=decision_type,
             answer=FALLBACK_ANSWER,
-            confidence=0.0,
-            provider_name="deterministic_fallback",
+            confidence=confidence,
+            provider_name=provider_name,
             fallback_used=True,
-            outcome="blocked",
-            reason="secret_or_pii_shaped_content_detected",
-            cost=0.0,
+            outcome=outcome,
+            reason=reason,
+            cost=cost,
             started=started,
             config=config,
         )
 
-    # Step 3: the deterministic pre-policy layer always wins, and never
-    # touches a provider.
+    if secret_filter.scan_request(request):
+        return fallback(
+            provider_name="deterministic_fallback",
+            outcome="blocked",
+            reason="secret_or_pii_shaped_content_detected",
+        )
+
     policy_result = pre_policy.evaluate(request)
     if policy_result is not None:
         return _finish(
@@ -142,94 +154,47 @@ def decide(request: dict, config: dict | None = None, provider: object | None = 
         )
 
     active_provider = provider if provider is not None else _build_provider(config)
+    provider_name = getattr(active_provider, "name", "unknown")
 
-    # Step 4 + 5: dispatch with bounded timeout/retry, then apply the
-    # confidence/fallback policy.
     try:
         raw = retry.call_with_retry(
-            lambda: active_provider.dispatch(request),
+            lambda timeout_s: active_provider.dispatch(request, timeout_s=timeout_s),
             timeout_s=config["timeout_s"],
             max_retries=config["max_retries"],
+            in_flight=getattr(active_provider, "in_flight", None),
         )
     except provider_base.ProviderNotConfigured as exc:
-        return _finish(
-            decision_type=decision_type,
-            answer=FALLBACK_ANSWER,
-            confidence=0.0,
-            provider_name=getattr(active_provider, "name", "unknown"),
-            fallback_used=True,
-            outcome="not_configured",
-            reason=str(exc),
-            cost=0.0,
-            started=started,
-            config=config,
-        )
-    except provider_base.ProviderUnavailable as exc:
-        return _finish(
-            decision_type=decision_type,
-            answer=FALLBACK_ANSWER,
-            confidence=0.0,
-            provider_name=getattr(active_provider, "name", "unknown"),
-            fallback_used=True,
-            outcome="fallback",
-            reason=f"provider_unavailable: {exc}",
-            cost=0.0,
-            started=started,
-            config=config,
-        )
-    except TimeoutError as exc:
-        return _finish(
-            decision_type=decision_type,
-            answer=FALLBACK_ANSWER,
-            confidence=0.0,
-            provider_name=getattr(active_provider, "name", "unknown"),
-            fallback_used=True,
-            outcome="fallback",
-            reason=f"provider_timeout: {exc}",
-            cost=0.0,
-            started=started,
-            config=config,
-        )
+        return fallback(provider_name=provider_name, outcome="not_configured", reason=exc.code)
+    except provider_base.ProviderError as exc:
+        # Timeout, unavailable, busy, unsupported, malformed: all fall back
+        # and none of their messages are surfaced, only the code.
+        return fallback(provider_name=provider_name, outcome="fallback", reason=exc.code)
 
     try:
         answer = _validate_provider_answer(raw)
     except provider_base.ProviderMalformedOutput as exc:
-        return _finish(
-            decision_type=decision_type,
-            answer=FALLBACK_ANSWER,
-            confidence=0.0,
-            provider_name=getattr(active_provider, "name", "unknown"),
-            fallback_used=True,
-            outcome="fallback",
-            reason=f"malformed_provider_output: {exc}",
-            cost=0.0,
-            started=started,
-            config=config,
-        )
+        return fallback(provider_name=provider_name, outcome="fallback", reason=exc.code)
 
     if answer.confidence < config["confidence_threshold"]:
-        return _finish(
-            decision_type=decision_type,
-            answer=FALLBACK_ANSWER,
-            confidence=answer.confidence,
-            provider_name=getattr(active_provider, "name", "unknown"),
-            fallback_used=True,
+        return fallback(
+            provider_name=provider_name,
             outcome="fallback",
             reason="confidence_below_threshold",
+            confidence=answer.confidence,
             cost=answer.cost,
-            started=started,
-            config=config,
         )
 
     return _finish(
         decision_type=decision_type,
         answer=answer.answer,
         confidence=answer.confidence,
-        provider_name=getattr(active_provider, "name", "unknown"),
+        provider_name=provider_name,
         fallback_used=False,
         outcome="ok",
         reason="provider_answer",
         cost=answer.cost,
         started=started,
         config=config,
+        usage_input_tokens=answer.usage_input_tokens,
+        usage_output_tokens=answer.usage_output_tokens,
     )
