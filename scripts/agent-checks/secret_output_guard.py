@@ -59,11 +59,21 @@ _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
         "Broad process argument output is blocked; request only PID, user, and executable fields.",
     ),
     (
-        re.compile(r"\b(?:history|fc\s+-l)\b|(?:^|[/\s])\.(?:bash|zsh)_history\b", re.I),
+        re.compile(
+            r"(?:^|[;&|\n\r]\s*|['\"]\s*)(?:history|fc\s+-l)(?:\s|['\";&|]|$)|"
+            r"(?:^|[/\s])\.(?:bash|zsh)_history\b",
+            re.I,
+        ),
         "Shell history output is blocked because commands may contain credentials.",
     ),
     (
-        re.compile(r"\b(?:os\.environ|process\.env|\\$_ENV|\\$_SERVER)\b", re.I),
+        re.compile(
+            r"(?:console\.log|print|json\.dumps|var_dump|print_r)\s*\([^)]*"
+            r"(?:os\.environ|process\.env|\$_ENV|\$_SERVER)|"
+            r"\b(?:node|python3?)\b[^\n;&|]*\s-[p]\s+[^\n;&|]*"
+            r"(?:os\.environ|process\.env)",
+            re.I,
+        ),
         "Programming-language environment dumps are blocked.",
     ),
     (

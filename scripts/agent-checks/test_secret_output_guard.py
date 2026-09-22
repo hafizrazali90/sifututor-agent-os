@@ -58,8 +58,11 @@ class SecretOutputGuardTest(unittest.TestCase):
             "ps -ef",
             "pgrep -af node",
             "history",
+            "ssh production 'history'",
             "node -e 'console.log(process.env)'",
+            "node -p 'process.env'",
             "python3 -c 'import os; print(os.environ)'",
+            "php -r 'var_dump($_ENV);'",
             "launchctl print system/com.example.app",
         ):
             with self.subTest(command=command):
@@ -109,6 +112,38 @@ class SecretOutputGuardTest(unittest.TestCase):
         ):
             with self.subTest(command=command):
                 self.assert_allowed(command)
+
+    def test_allows_benign_prose_and_github_body_text(self) -> None:
+        for command in (
+            "rg -n 'Shell history output' scripts/agent-checks",
+            "gh issue create --body 'Read from process.env with a safe default; do not print it.'",
+            (
+                "gh pr create --body \"$(cat <<'EOF'\n"
+                "This change reads from os.environ with a safe default.\n"
+                "It does not print configuration or shell history.\n"
+                "EOF\n)\""
+            ),
+            (
+                "gh pr create --body \"$(cat <<'EOF'\n"
+                "```js\nconst mode = process.env.NODE_ENV || 'test';\n```\n"
+                "EOF\n)\""
+            ),
+        ):
+            with self.subTest(command=command):
+                self.assert_allowed(command)
+
+                decision = self.guard.evaluate_tool_request(
+                    "functions.exec",
+                    {
+                        "input": (
+                            "await tools.exec_command({cmd: "
+                            f"{json.dumps(command)}"
+                            "});"
+                        )
+                    },
+                    {},
+                )
+                self.assertTrue(decision.allowed, decision.reason)
 
     def test_recognizes_provider_secret_reveal_prompts(self) -> None:
         self.assertTrue(
