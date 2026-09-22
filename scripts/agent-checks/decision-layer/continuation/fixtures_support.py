@@ -27,8 +27,10 @@ class ScriptedProvider(provider_fake.FakeProvider):
 
     Subclasses bundle 1's fake provider rather than replacing it, so this
     fixture stays bound to the same shared contract (`ProviderAnswer`,
-    zero network calls in every scenario) that bundle 1's own tests rely
-    on -- it only overrides *which* answer comes back.
+    `dispatch(request, *, timeout_s=None)`, zero network calls in every
+    scenario) that bundle 1's own tests rely on -- it only overrides
+    *which* answer comes back. It also records the last request it was
+    handed so a test can prove what a provider is (and is not) shown.
     """
 
     name = "fake"
@@ -36,9 +38,12 @@ class ScriptedProvider(provider_fake.FakeProvider):
     def __init__(self, answer: str) -> None:
         super().__init__(scenario="ok")
         self._answer = answer
+        self.last_request: dict | None = None
 
-    def dispatch(self, request: dict) -> object:
+    def dispatch(self, request: dict, *, timeout_s: float | None = None) -> object:
         self.call_count += 1
+        self.last_timeout_s = timeout_s
+        self.last_request = request
         return provider_base.ProviderAnswer(answer=self._answer, confidence=0.9, cost=0.0001)
 
 
