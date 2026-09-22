@@ -19,6 +19,11 @@ from secret_output_guard import (
     prompt_requests_secret_reveal,
     sync_secret_visual_boundary,
 )
+try:
+    from agent_os_jev_shadow import observe_prompt as observe_jev_shadow
+except (ImportError, OSError):
+    def observe_jev_shadow(*_args, **_kwargs):
+        return ""
 
 
 _THIS_FILE = globals().get("__file__")
@@ -1564,8 +1569,14 @@ def main() -> int:
     if event == "UserPromptSubmit":
         prompt = str(payload.get("prompt") or "")
         sync_secret_visual_boundary(payload, prompt)
+        jev_context = observe_jev_shadow(
+            prompt,
+            project=project if project in PROJECTS else None,
+        )
         skill, actions, reason = classify_prompt(prompt)
         if not skill:
+            if jev_context:
+                emit_context("UserPromptSubmit", jev_context)
             return 0
         normalized = re.sub(r"\s+", " ", prompt.lower()).strip()
         if skill == "$task-router":
@@ -1593,6 +1604,7 @@ def main() -> int:
                     active_summary,
                     action_text,
                     memory_section,
+                    jev_context,
                 ]
             ),
         )
