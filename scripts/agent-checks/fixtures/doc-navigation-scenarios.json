@@ -405,6 +405,158 @@
           ]
         }
       ]
+    },
+    {
+      "id": "NAV-14",
+      "title": "Claude works inside kelas",
+      "optional_entry": true,
+      "entry": [
+        "kelas/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "note": "Extends the NAV-03 pattern to the other active product repos (issue #199). Advisory for the same reason as NAV-03/NAV-04: a product repo is a separate Git repository, so its checkout can be mid-migration on a feature branch while the umbrella stays healthy.",
+      "advisory": true
+    },
+    {
+      "id": "NAV-15",
+      "title": "Claude works inside sifututor_tutor",
+      "optional_entry": true,
+      "entry": [
+        "sifututor_tutor/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-16",
+      "title": "Claude works inside sifututor_parent",
+      "optional_entry": true,
+      "entry": [
+        "sifututor_parent/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-17",
+      "title": "Claude works inside lls",
+      "optional_entry": true,
+      "entry": [
+        "lls/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-18",
+      "title": "Claude works inside lls-frontend",
+      "optional_entry": true,
+      "entry": [
+        "lls-frontend/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-19",
+      "title": "Claude works inside lls-mobile",
+      "optional_entry": true,
+      "entry": [
+        "lls-mobile/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-20",
+      "title": "Claude works inside creative-hub",
+      "optional_entry": true,
+      "entry": [
+        "creative-hub/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-21",
+      "title": "Claude works inside finch-inbox",
+      "optional_entry": true,
+      "entry": [
+        "finch-inbox/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-22",
+      "title": "Claude works inside cx-call-capture-android",
+      "optional_entry": true,
+      "entry": [
+        "cx-call-capture-android/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "advisory": true
+    },
+    {
+      "id": "NAV-23",
+      "title": "Claude works inside sims-owner-analytics",
+      "optional_entry": true,
+      "entry": [
+        "sims-owner-analytics/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "note": "NAV-14 through NAV-23 cover the ten product repos NAV-03/NAV-04 do not. Promote each to blocking (drop \"advisory\") only once that repo's issue #199 adapter-migration PR has merged and this scenario passes against the merged checkout; do not flip all ten at once if some merge later than others. As of 2026-09-23, NAV-15 (sifututor_tutor #197), NAV-16 (sifututor_parent #91), NAV-20 (creative-hub #292), NAV-21 (finch-inbox #3214), and NAV-23 (sims-owner-analytics #101) still fail against the unmerged main checkout; the rest already pass.",
+      "advisory": true
     }
   ]
 }
