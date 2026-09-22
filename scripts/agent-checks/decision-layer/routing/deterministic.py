@@ -5,16 +5,15 @@ Built the same way as Bundle 1's `pre_policy.py` (pure lookup / pattern
 matching, always overrides, zero risk, zero latency, never touches a
 provider) but scoped to concerns Bundle 1's generic module does not know
 about: which project a request names, and whether the request's subject
-matter forces a critical risk level. This module is a new, separate file
+matter lands in a critical lane. This module is a new, separate file
 rather than an edit to Bundle 1's already-merged `pre_policy.py`, so
 Bundle 2 stays an independently reviewable addition.
 
-`shadow_router.py` runs every rule in this module before it ever calls
-Bundle 1's `engine.decide()` -- matching the build spec's requirement that
-"deterministic facts and safety rules must always override the
-classifier's answer". Bundle 1's own `pre_policy.py` and `secret_filter.py`
-still run inside every `engine.decide()` call `shadow_router.py` makes, so
-both layers are always active.
+`shadow_router.py` runs every rule in this module before it constructs a
+provider request. A critical-lane hit is a hard stop: the router answers
+deterministically and never calls Bundle 1's `engine.decide()` at all.
+"High sensitivity" is not permission to transmit; critical lanes are never
+delegated to any provider, fake or real.
 """
 
 from __future__ import annotations
@@ -24,17 +23,84 @@ import re
 
 import catalog
 
-# AGENTS.md Universal Safety Rule: "If a task touches payments, commission,
-# auth, migrations, or mobile API contracts, halt for human review before
-# commit." This is the deterministic critical-risk trigger list -- kept as
-# a citation of that exact rule, not a separately invented risk taxonomy.
-_CRITICAL_RISK_KEYWORDS: tuple[tuple[str, str], ...] = (
-    ("payment", r"\bpayments?\b|\binvoices?\b|\brefunds?\b|\bpayout\b|\bbilling\b"),
-    ("commission", r"\bcommissions?\b"),
-    ("auth", r"\bauth\b|\bauthentication\b|\blogin\b|\bsession expir\w*\b|\bpassword reset\b"),
-    ("migration", r"\bmigrations?\b|\bschema change\b|\balter table\b"),
-    ("mobile API contract", r"\bmobile api\b|\bapi contract\b|\bbreaking api change\b"),
+# The eight critical lanes. Each entry is (lane code, pattern). The first
+# lane whose pattern matches wins, in this order, so a request touching
+# two lanes reports the earlier one. Reason codes are short and stable
+# (`critical_lane:<lane>`) so they can be asserted on and logged without
+# ever carrying request text.
+#
+# These lanes cite AGENTS.md's Universal Safety Rule ("payments,
+# commission, auth, migrations, or mobile API contracts ... halt for human
+# review") plus the review finding on PR #172: destructive actions, secrets
+# or credentials, private production data, and explicit approval decisions
+# must also never be delegated to a provider.
+#
+# Deliberate scoping notes:
+# - "session" is only an auth signal in an auth context ("login session",
+#   "session expiry", "session token"). A bare "session" would make every
+#   save-session request critical.
+# - "role" is only an auth signal as "user roles", "role-based", "roles and
+#   permissions"; a bare "role" reads as ordinary English.
+# - "deploy to production" is the approval phrase; "deploy to staging" is
+#   an ordinary deployment route with its own (high) default risk.
+CRITICAL_LANES: tuple[tuple[str, str], ...] = (
+    (
+        "payments",
+        r"\bpayments?\b|\bcommissions?\b|\binvoices?\b|\binvoicing\b|\brefunds?\b|"
+        r"\brefunded\b|\bpayouts?\b|\bbilling\b",
+    ),
+    (
+        "auth",
+        r"\bauth\b|\bauthentication\b|\bauthori[sz]ation\b|\blogin\b|\blog[- ]in\b|"
+        r"\blogout\b|\bsign[- ]in\b|\bpasswords?\b|"
+        r"\b(?:login|auth\w*|user|tutor|parent|staff|admin) sessions?\b|"
+        r"\bsessions? (?:expir\w*|tokens?|cookies?|timeouts?|hijack\w*|management|handling)\b|"
+        r"\b(?:user|admin|staff|tutor|parent|owner) roles?\b|\brole[- ]based\b|"
+        r"\broles?\s+(?:and|&|or)\s+permissions?\b|\bpermissions?\b|\btokens?\b",
+    ),
+    (
+        "production_migration",
+        r"\bmigrations?\b|\bmigrate\b|\bschema changes?\b|\bchange the schema\b|"
+        r"\balter table\b|\badd column\b|\bdrop column\b|\brename column\b|"
+        r"\b(?:db|database|production) schema\b",
+    ),
+    (
+        "destructive_action",
+        r"\bdeletes?\b|\bdeleting\b|\bdeleted\b|\bdrop\b|\btruncate\b|\brm -rf\b|\brm -fr\b|"
+        r"\bforce[- ]push\w*\b|\bpush --force\b|\b--force-with-lease\b|\breset --hard\b|"
+        r"\bpurge\b|\bwipe\b",
+    ),
+    (
+        "mobile_api_contract",
+        r"\bmobile api\b|\bapi contract\b|\bapp contract\b|\bbreaking api change\b|"
+        r"\bendpoints?\b|\bresponse shape\b|\bapi version(?:ing)?\b|\bapi v\d+\b",
+    ),
+    (
+        "secrets_credentials",
+        r"\bapi[ _-]?keys?\b|\bsecrets?\b|\bcredentials?\b|\.env\b|\benv file\b|"
+        r"\bprivate keys?\b",
+    ),
+    (
+        "private_production_data",
+        r"\b(?:customer|parent|tutor|student|user) (?:records?|data)\b|\bic numbers?\b|"
+        r"\bic\b|\bnric\b|\bphone\b|\bpii\b|\b(?:prod|production|db|database) dumps?\b|"
+        r"\bproduction data\b|\bpersonal data\b",
+    ),
+    (
+        "approval_decision",
+        r"\bapprove\b|\bapproval\b|\bapproved\b|\bauthori[sz]e\b|\bsign[- ]off\b|"
+        r"\bgrant permission\b|\bmerge\b|\bmerged\b|\bmerging\b|"
+        r"\bdeploy(?:ing|ment|s)?\s+(?:\w+\s+){0,2}to\s+prod(?:uction)?\b",
+    ),
 )
+
+CRITICAL_LANE_CODES: tuple[str, ...] = tuple(lane for lane, _ in CRITICAL_LANES)
+
+
+def critical_lane_reason(lane: str) -> str:
+    """The short reason code for one lane, shared by keyword detection and
+    the secret-filter path in `shadow_router.py`."""
+    return f"critical_lane:{lane}"
 
 
 @dataclass(frozen=True)
@@ -47,6 +113,7 @@ class ProjectDecision:
 class RiskOverride:
     risk_level: str
     reason: str
+    lane: str
 
 
 # Phrases matching the CLAUDE.md/AGENTS.md declared-intent convention:
@@ -101,8 +168,9 @@ def resolve_project(text: str, declared_project: str | None) -> ProjectDecision:
 
 
 def detect_critical_risk(text: str) -> RiskOverride | None:
-    """Force a critical risk level when the text touches payments,
-    commission, auth, migrations, or mobile API contracts.
+    """Force a critical risk level when the text lands in any of the eight
+    critical lanes. Returns the first lane that matches, in CRITICAL_LANES
+    order, with a short `critical_lane:<lane>` reason code.
 
     This intentionally runs on the *raw* text, including any quoted or
     pasted spans -- a safety rule must stay conservative even when the
@@ -110,16 +178,9 @@ def detect_critical_risk(text: str) -> RiskOverride | None:
     through `strip_quoted_and_pasted_spans` first.
     """
     haystack = text or ""
-    for label, pattern in _CRITICAL_RISK_KEYWORDS:
+    for lane, pattern in CRITICAL_LANES:
         if re.search(pattern, haystack, re.IGNORECASE):
-            return RiskOverride(
-                risk_level="critical",
-                reason=(
-                    f"agents_md_universal_safety_rule: request touches {label} "
-                    "(payments, commission, auth, migrations, or mobile API "
-                    "contracts always halt for human review before commit)"
-                ),
-            )
+            return RiskOverride(risk_level="critical", reason=critical_lane_reason(lane), lane=lane)
     return None
 
 

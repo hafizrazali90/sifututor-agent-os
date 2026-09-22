@@ -146,6 +146,16 @@ def _score_text(text: str) -> dict[str, int]:
     return scores
 
 
+def matched_route_tags(text: str) -> list[str]:
+    """The workflow routes whose keyword signals fired for `text`, in
+    catalog order. These short tags (never the matched words themselves,
+    never the text) are what `shadow_router.py` hands a provider as
+    derived context instead of raw request text."""
+    cleaned = deterministic.strip_quoted_and_pasted_spans(text or "")
+    scores = _score_text(cleaned)
+    return [route for route in catalog.WORKFLOW_ROUTES if scores[route] > 0]
+
+
 def rank_workflow_routes(text: str, *, has_active_task: bool = False) -> list[str]:
     """Return every workflow route, ranked highest-signal first.
 

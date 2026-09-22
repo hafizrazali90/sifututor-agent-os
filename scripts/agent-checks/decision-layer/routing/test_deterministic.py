@@ -99,10 +99,40 @@ class DetectCriticalRiskTest(unittest.TestCase):
         override = deterministic.detect_critical_risk("Can you explain how the tutor rating average is calculated?")
         self.assertIsNone(override)
 
-    def test_override_reason_cites_the_agents_md_safety_rule(self) -> None:
+    def test_override_reason_is_a_short_lane_code(self) -> None:
         override = deterministic.detect_critical_risk("Update the commission payout logic")
         self.assertIsNotNone(override)
-        self.assertIn("payment", override.reason.lower())
+        self.assertEqual(override.lane, "payments")
+        self.assertEqual(override.reason, "critical_lane:payments")
+
+    def test_every_lane_has_a_distinct_reason_code(self) -> None:
+        samples = {
+            "payments": "Please refund this invoice",
+            "auth": "Reset the tutor's password",
+            "production_migration": "Run the schema change on production",
+            "destructive_action": "git reset --hard and wipe the cache",
+            "mobile_api_contract": "Bump the API version the app contract depends on",
+            "secrets_credentials": "Where do we keep the private key for the sandbox?",
+            "private_production_data": "Pull the student records with their IC numbers",
+            "approval_decision": "Sign off on this and authorize the release",
+        }
+        self.assertEqual(tuple(samples), deterministic.CRITICAL_LANE_CODES)
+        reasons = set()
+        for lane, text in samples.items():
+            override = deterministic.detect_critical_risk(text)
+            self.assertIsNotNone(override, lane)
+            self.assertEqual(override.lane, lane)
+            reasons.add(override.reason)
+        self.assertEqual(len(reasons), len(samples))
+
+    def test_save_session_is_not_an_auth_session(self) -> None:
+        # A bare "session" must not make every save-session request critical.
+        self.assertIsNone(deterministic.detect_critical_risk("Let's save session and wrap up for today"))
+        self.assertIsNone(deterministic.detect_critical_risk("I want a deep analysis session on this"))
+
+    def test_deploy_to_staging_is_not_an_approval_decision(self) -> None:
+        self.assertIsNone(deterministic.detect_critical_risk("Deploy this to staging and check the smoke"))
+        self.assertIsNotNone(deterministic.detect_critical_risk("Deploy this to production"))
 
     def test_quoted_payment_mention_inside_a_pasted_report_still_does_not_downgrade(self) -> None:
         # Critical-risk forcing is a safety rule, not a routing classifier

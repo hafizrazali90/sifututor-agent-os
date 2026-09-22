@@ -55,6 +55,7 @@ class RouteResponseShapeTest(unittest.TestCase):
             "relevant_documents",
             "model_recommendation",
             "model_recommendation_reason",
+            "provider_called",
             "pasted_content_detected",
             "open_tabs_considered_for_classification",
             "open_tabs_received",
@@ -83,26 +84,110 @@ class RouteModelRecommendationSkippedTest(unittest.TestCase):
         self.assertIn("no frontier-model vs fallback-model distinction", response["model_recommendation_reason"])
 
 
+# A non-critical implementation request. "Please implement a new endpoint"
+# was used here originally, but "endpoint" is a mobile-API-contract
+# critical lane and critical lanes never reach a provider, so the plumbing
+# proof below needs text that is allowed to.
+NON_CRITICAL_IMPLEMENTATION = "Please build a new report screen for tutor ratings"
+
+LONG_NON_CRITICAL_TEXT = (
+    "Please build a new report screen for tutor ratings so staff can see the "
+    "average per subject at a glance. It should also show the trend over the "
+    "last six months, let staff filter by state and level, and export the "
+    "table as a CSV for the monthly meeting. Keep the layout consistent with "
+    "the existing reports and reuse the shared chart component where possible."
+)
+
+
+class RecordingProvider(provider_fake.FakeProvider):
+    """A FakeProvider that also keeps every request it was handed, so a
+    test can assert on exactly what a provider is allowed to see."""
+
+    def __init__(self, scenario: str = "ok") -> None:
+        super().__init__(scenario=scenario)
+        self.requests: list[dict] = []
+
+    def dispatch(self, request: dict, *, timeout_s: float | None = None) -> object:
+        self.requests.append(request)
+        return super().dispatch(request, timeout_s=timeout_s)
+
+
 class RouteIsGenuinelyClassifiedThroughEngineTest(unittest.TestCase):
-    """Proof: `route()` genuinely calls Bundle 1's `engine.decide()` against
-    a real (fake) provider, rather than deciding the workflow route through
-    some separate, untested path."""
+    """Proof: for non-critical text, `route()` genuinely calls Bundle 1's
+    `engine.decide()` against a real (fake) provider, rather than deciding
+    the workflow route through some separate, untested path."""
 
     def test_the_fake_provider_is_actually_dispatched_to_once(self) -> None:
         fake = provider_fake.FakeProvider(scenario="ok")
-        shadow_router.route("Please implement a new endpoint for tutor ratings", provider=fake, config=test_config())
+        response = shadow_router.route(NON_CRITICAL_IMPLEMENTATION, provider=fake, config=test_config())
         self.assertEqual(fake.call_count, 1)
+        self.assertTrue(response["provider_called"])
+        self.assertEqual(response["workflow_route"]["provider"], "fake")
 
     def test_a_provider_reporting_unavailable_falls_back_but_still_returns_a_valid_route(self) -> None:
         fake = provider_fake.FakeProvider(scenario="unavailable")
         response = shadow_router.route(
-            "Please implement a new endpoint for tutor ratings", provider=fake, config=test_config(max_retries=0)
+            NON_CRITICAL_IMPLEMENTATION, provider=fake, config=test_config(max_retries=0)
         )
         self.assertTrue(response["workflow_route"]["fallback_used"])
         self.assertIn(response["workflow_route"]["value"], catalog.WORKFLOW_ROUTES)
         # Falls back to the classifier's own top-ranked pick, not the
         # decision layer's generic "undetermined" placeholder.
         self.assertEqual(response["workflow_route"]["value"], "implementation")
+
+
+class ProviderOnlySeesDerivedContextTest(unittest.TestCase):
+    """Proof: the provider request never carries raw request text. Its
+    `context` is the first sentence (at most 240 characters) plus matched
+    keyword tags, and `sensitivity` is always "low" because anything that
+    would be higher never reaches a provider at all."""
+
+    def _only_request(self) -> dict:
+        fake = RecordingProvider()
+        shadow_router.route(LONG_NON_CRITICAL_TEXT, provider=fake, config=test_config())
+        self.assertEqual(len(fake.requests), 1)
+        return fake.requests[0]
+
+    def test_context_is_never_the_raw_text_or_a_raw_prefix_of_it(self) -> None:
+        request = self._only_request()
+        context = request["context"]
+        self.assertNotEqual(context, LONG_NON_CRITICAL_TEXT)
+        self.assertNotEqual(context, LONG_NON_CRITICAL_TEXT[:2000])
+        self.assertNotIn("trend over the last six months", context)
+        self.assertNotIn("shared chart component", context)
+
+    def test_context_is_first_sentence_capped_at_240_characters_plus_tags(self) -> None:
+        request = self._only_request()
+        summary_line, tags_line = request["context"].split("\n", 1)
+        self.assertTrue(summary_line.startswith("summary: "))
+        summary = summary_line[len("summary: "):]
+        self.assertLessEqual(len(summary), shadow_router.CONTEXT_SUMMARY_CHARS)
+        self.assertTrue(summary.startswith("Please build a new report screen"))
+        self.assertTrue(summary.endswith("at a glance."))
+        self.assertTrue(tags_line.startswith("tags: "))
+        self.assertIn("implementation", tags_line)
+
+    def test_a_single_overlong_sentence_is_trimmed_to_240_characters(self) -> None:
+        fake = RecordingProvider()
+        overlong = "Please build a report screen that " + "shows more columns and " * 30
+        shadow_router.route(overlong, provider=fake, config=test_config())
+        summary = fake.requests[0]["context"].split("\n", 1)[0][len("summary: "):]
+        self.assertEqual(len(summary), shadow_router.CONTEXT_SUMMARY_CHARS)
+
+    def test_sensitivity_is_always_low_for_anything_that_reaches_a_provider(self) -> None:
+        request = self._only_request()
+        self.assertEqual(request["sensitivity"], "low")
+
+    def test_quoted_pasted_spans_are_not_forwarded_in_the_summary(self) -> None:
+        fake = RecordingProvider()
+        shadow_router.route(
+            'Here is the log a teammate pasted: "worker crashed reading ratings.csv" - why did this fail?',
+            provider=fake,
+            config=test_config(),
+        )
+        context = fake.requests[0]["context"]
+        self.assertNotIn("ratings.csv", context)
+        self.assertIn("pasted_report", context)
 
 
 class RouteIsNeverAuthoritativeTest(unittest.TestCase):
@@ -113,7 +198,15 @@ class RouteIsNeverAuthoritativeTest(unittest.TestCase):
     shadow/advisory mode... current proven behavior remains default")."""
 
     def test_default_config_never_marks_the_response_authoritative(self) -> None:
-        response = shadow_router.route("Please implement a new endpoint for tutor ratings")
+        response = shadow_router.route(NON_CRITICAL_IMPLEMENTATION)
+        self.assertFalse(response["workflow_route"]["authoritative"])
+
+    def test_a_deterministic_critical_lane_answer_is_never_authoritative_either(self) -> None:
+        response = shadow_router.route(
+            "Please implement a new endpoint for tutor ratings",
+            config=test_config(authoritative_decision_types=["routing.workflow_route"]),
+        )
+        self.assertFalse(response["provider_called"])
         self.assertFalse(response["workflow_route"]["authoritative"])
 
     def test_even_an_explicit_opt_in_config_cannot_be_reached_by_this_module_accidentally(self) -> None:
@@ -122,7 +215,7 @@ class RouteIsNeverAuthoritativeTest(unittest.TestCase):
         # is exactly the "later, separate decision" the build spec
         # describes -- this module does not make that decision for them.
         response = shadow_router.route(
-            "Please implement a new endpoint for tutor ratings",
+            NON_CRITICAL_IMPLEMENTATION,
             config=test_config(authoritative_decision_types=["routing.workflow_route"]),
         )
         # Even opted in, a clean fake-provider answer whose route does not

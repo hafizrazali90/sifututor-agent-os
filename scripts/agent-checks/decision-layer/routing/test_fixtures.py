@@ -174,6 +174,10 @@ class Fixture08PaymentAuthCriticalRiskTest(unittest.TestCase):
             config=test_config(),
         )
         self.assertEqual(response["risk_level"]["value"], "critical")
+        # PR #172 review correction: a critical lane is never delegated to
+        # a provider at all, so the scripted provider is never dispatched to.
+        self.assertEqual(fake.call_count, 0)
+        self.assertFalse(response["provider_called"])
 
 
 # --- 9. A handoff hand-off -------------------------------------------------
