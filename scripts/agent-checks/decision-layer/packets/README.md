@@ -125,7 +125,7 @@ to `build_packet`, honouring `expires_at` if the packet carries one.
 | packet exists but is malformed / copied from another session | `invalid` | `packet_invalid` |
 | packet is for another worktree / task / operation | `mismatched` | `worktree_mismatch`, `task_id_mismatch`, `operation_not_included` |
 | packet's `expires_at` has passed | `expired` | `packet_expired` |
-| real supervisor packet matches every binding | `approved` | `trusted_packet_matches` |
+| local supervisor packet matches every binding | `approved` | `local_boundary_packet_matches` (advisory, never action authority) |
 
 `next_automatic_action` for a `critical_lane=True` packet halts unless
 `approval_status == "approved"`. Nothing a worker can write itself -- a

@@ -315,7 +315,7 @@ class ApprovalStatusTest(unittest.TestCase):
         self.enroll()
         packet = packet_builder.build_packet(**self.critical_input())
         self.assertEqual(packet["approval_status"], approval.STATUS_APPROVED)
-        self.assertEqual(packet["approval_reason"], "trusted_packet_matches")
+        self.assertEqual(packet["approval_reason"], "local_boundary_packet_matches")
         self.assertNotIn("halt", packet["next_automatic_action"].lower())
         self.assertEqual(packet["next_automatic_action"], "proceed to the 'describe' step")
         # The critical-lane stop condition and high-risk evidence still
