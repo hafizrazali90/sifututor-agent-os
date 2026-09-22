@@ -32,7 +32,36 @@ entry, produces a priority classification for human cleanup review:
 This module never deletes, prunes, or force-removes anything. Only
 `worktree-lifecycle.py` retains that authority, and only via its own
 unmodified safety checks. This module is read-only: it classifies and (in
-aggregate.py) summarizes; it performs no action of its own.
+aggregate.py) summarizes; it performs no action of its own. It is an
+advisory cleanup-review classifier, not a cleanup tool: it does not solve
+worktree cleanup or automatic close-out, and nothing here is wired to any
+live command.
+
+## Safe-close requirements preserved
+
+Every requirement `worktree-lifecycle.py` applies before it will touch a
+worktree is preserved untouched by this module, because this module never
+enforces any of them and never calls the code that does:
+
+  - exact HEAD: the recorded HEAD must still match at action time
+  - clean tracked and untracked state: no tracked or untracked changes
+  - ignored-file safety: only recognized reproducible ignored directories
+    may exist; any other ignored file blocks
+  - active-task state: a present, inherited, or invalid active task
+    pointer blocks
+  - lease ownership: a live or unreadable lease blocks; an expired active
+    lease needs an explicit release or reassignment
+  - base containment: HEAD must be contained by the configured base ref
+  - lock/process checks: a locked worktree, a running process inside it,
+    or unverifiable process ownership blocks
+  - no deletion based only on age or dormancy: age and inactivity are
+    never sufficient on their own
+
+Only `worktree-lifecycle.py` enforces these, through its own unmodified
+checks. This module calls none of that tool's mutating commands, spawns no
+child process, removes no directory, and has no code path that can reach a
+reclaim, close, park, or prune action. A test asserts this against the
+module source.
 
 ## Determinism and provider use
 
@@ -54,6 +83,17 @@ final classification for that entry stays `uncertain` regardless of what
 the provider answers -- the provider's guess is recorded for context only,
 never used to silently mark something safe.
 
+The request handed to the decision layer for that tie-break carries
+metadata only: the tool's classification label, the branch name, booleans
+(stale lease, active task pointer present, inherited task pointer present),
+an ignored-blocker count, and the process-check label. It never carries a
+lease's `purpose`, its `owner`, the tool's reason prose, recovery commands,
+filesystem paths, or anything else a person typed. `build_request_context`
+is the single place that shapes it, and `REQUEST_CONTEXT_ALLOWED_KEYS` is
+the allowlist a test holds it to. (The inventory entry carries no day
+counts today; if one is ever added, it belongs in that allowlist, not in
+free text.)
+
 ## Obsolete task pointers: why this needs external evidence
 
 `worktree-lifecycle.py`'s own inventory entry only ever records that an
@@ -73,6 +113,7 @@ entry stays `preserve` and says exactly why.
 from __future__ import annotations
 
 import importlib.util
+import json
 from dataclasses import dataclass
 from pathlib import Path
 import sys
@@ -111,6 +152,58 @@ BUCKETS = (
 
 _GENERATED_DEPENDENCY_REASON = "only recognized reproducible ignored directories exist"
 _OBSOLETE_FRESHNESS_STATES = frozenset({"stale_completed", "dangling"})
+
+# The only keys a decision-layer request built by this module may carry in
+# its context. Metadata only: labels, booleans, a count, and the branch
+# name. No lease purpose/owner, no reason prose, no recovery command, no
+# filesystem path, nothing a person typed.
+REQUEST_CONTEXT_ALLOWED_KEYS = frozenset(
+    {
+        "tool_classification",  # label reported by worktree-lifecycle.py
+        "branch",  # branch name
+        "stale_lease",  # bool
+        "has_active_task",  # bool (the pointer's text is never included)
+        "has_inherited_task_pointer",  # bool (the pointer's text is never included)
+        "ignored_blocker_count",  # int
+        "process_check",  # label: clear / in_use / not_checked
+    }
+)
+
+_PROCESS_CHECK_LABELS = frozenset({"clear", "in_use", "not_checked"})
+_REQUEST_OPTIONS = ("flag_for_human_review", "treat_as_merged_branch", "treat_as_preserve")
+
+
+def build_request_context(entry: dict) -> dict:
+    """Reduce an inventory entry to the allowlisted metadata the advisory
+    tie-break request may carry. Every key is in REQUEST_CONTEXT_ALLOWED_KEYS;
+    every value is a label, a bool, an int, or the branch name."""
+    ignored_blocker_count = entry.get("ignored_blocker_count")
+    process_check = entry.get("process_check")
+    metadata = {
+        "tool_classification": str(entry.get("classification", "")),
+        "branch": str(entry.get("branch", "detached")),
+        "stale_lease": entry.get("stale_lease") is True,
+        "has_active_task": bool(entry.get("active_task")),
+        "has_inherited_task_pointer": bool(entry.get("inherited_task_pointer")),
+        "ignored_blocker_count": (
+            ignored_blocker_count
+            if isinstance(ignored_blocker_count, int) and not isinstance(ignored_blocker_count, bool)
+            else 0
+        ),
+        "process_check": (
+            process_check if process_check in _PROCESS_CHECK_LABELS else "not_checked"
+        ),
+    }
+    assert set(metadata) <= REQUEST_CONTEXT_ALLOWED_KEYS
+    return metadata
+
+
+def _render_request_context(metadata: dict) -> str:
+    """The schema requires `context` to be text; serialize the allowlisted
+    metadata deterministically so nothing outside it can slip in."""
+    return "worktree_triage advisory tie-break; metadata=" + json.dumps(
+        metadata, sort_keys=True, separators=(",", ":")
+    )
 
 
 @dataclass(frozen=True)
@@ -246,18 +339,15 @@ def _classify_uncertain(
     worktree = entry["worktree"]
     branch = entry.get("branch", "detached")
     tool_classification = entry.get("classification")
-    reasons = entry.get("reasons") or []
 
+    # Metadata only (see REQUEST_CONTEXT_ALLOWED_KEYS): the tool's reason
+    # prose, any lease owner/purpose text, recovery commands and paths are
+    # deliberately never placed in the request.
     request = {
         "schema_version": schema.SCHEMA_VERSION,
         "decision_type": DECISION_TYPE,
-        "options": ["flag_for_human_review", "treat_as_merged_branch", "treat_as_preserve"],
-        "context": (
-            f"worktree_triage: inventory entry has tool classification "
-            f"{tool_classification!r}, which does not clearly fit stale_lease / "
-            f"obsolete_task_pointer / generated_dependency_blocker / "
-            f"merged_branch. reasons={reasons!r}"
-        ),
+        "options": list(_REQUEST_OPTIONS),
+        "context": _render_request_context(build_request_context(entry)),
         "sensitivity": "low",
     }
     response = engine.decide(request, config=config, provider=provider)
