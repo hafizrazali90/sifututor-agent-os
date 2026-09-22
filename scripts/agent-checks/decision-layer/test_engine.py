@@ -73,6 +73,24 @@ class EngineOkRoundTripTest(unittest.TestCase):
         self.assertIn(response["answer"], request()["options"])
         self.assertEqual(fake.call_count, 1)
 
+    def test_accepts_the_provider_contract_loaded_under_an_independent_module_identity(self) -> None:
+        spec = importlib.util.spec_from_file_location("provider_base_independent_copy", HERE / "provider_base.py")
+        independent = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = independent
+        spec.loader.exec_module(independent)
+
+        class IndependentlyLoadedProvider:
+            name = "independent-copy"
+
+            def dispatch(self, request, *, timeout_s=None):
+                return independent.ProviderAnswer(answer=request["options"][0], confidence=0.95)
+
+        response = engine.decide(request(), config=test_config(), provider=IndependentlyLoadedProvider())
+        self.assertEqual(response["answer"], "low")
+        self.assertEqual(response["outcome"], "ok")
+        self.assertFalse(response["fallback_used"])
+        self.assertEqual(response["provider"], "independent-copy")
+
     def test_latency_ms_is_a_nonnegative_number(self) -> None:
         fake = provider_fake.FakeProvider(scenario="ok")
         response = engine.decide(request(), config=test_config(), provider=fake)

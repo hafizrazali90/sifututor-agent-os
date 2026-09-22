@@ -39,6 +39,23 @@ class ProviderAnswerTest(unittest.TestCase):
         with self.assertRaises(Exception):
             answer.answer = "low"  # type: ignore[misc]
 
+    def test_structural_answer_is_normalized_into_the_current_module_identity(self) -> None:
+        class StructuralAnswer:
+            answer = "high"
+            confidence = 0.9
+            cost = 0.1
+            usage_input_tokens = 12
+            usage_output_tokens = 3
+
+        normalized = provider_base.normalize_provider_answer(StructuralAnswer())
+        self.assertIsInstance(normalized, provider_base.ProviderAnswer)
+        self.assertEqual(normalized.answer, "high")
+        self.assertEqual(normalized.usage_input_tokens, 12)
+
+    def test_non_contract_object_is_rejected(self) -> None:
+        with self.assertRaises(provider_base.ProviderMalformedOutput):
+            provider_base.normalize_provider_answer({"answer": "high", "confidence": 0.9})
+
 
 class ProviderErrorHierarchyTest(unittest.TestCase):
     def test_all_specific_errors_subclass_provider_error(self) -> None:
