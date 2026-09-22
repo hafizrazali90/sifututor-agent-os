@@ -96,3 +96,7 @@ sims-owner-analytics/
 # Retired: team-inbox was replaced by finch-inbox. Only the archived checkout
 # remains on disk.
 team-inbox.archived-2026-08-26/
+
+# Decision-layer Jev sidecar: the pinned @typesafe-ai/sdk dependency is
+# installed locally from the committed package-lock.json, never committed.
+scripts/agent-checks/decision-layer/jev-sidecar/node_modules/

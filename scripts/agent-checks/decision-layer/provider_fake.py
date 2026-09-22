@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """A fully scriptable, offline, deterministic provider (build item 4).
 
-This is the only provider this bundle's own test suite actually dispatches
-to. It makes zero network calls in every scenario, including "unavailable"
-and "hang" -- the hang scenario blocks the calling thread with a plain
-`time.sleep`, so the engine's timeout/retry wrapper is what bounds it, not
-this module.
+This is the only provider the decision layer's own test suite dispatches to.
+It makes zero network calls in every scenario. "hang" does not sleep: it
+reports the same ProviderTimeout a killed live transport would, so tests
+prove the retry/fallback path without real waiting or background threads.
 """
 
 from __future__ import annotations
 
-import time
+import threading
 
 import provider_base
 
@@ -20,24 +19,28 @@ class FakeProvider:
 
     Scenarios:
         ok             -> a well-formed, high-confidence ProviderAnswer.
-        low_confidence -> a well-formed ProviderAnswer below a typical
-                           confidence threshold.
-        malformed      -> something that is not a ProviderAnswer at all,
-                           to prove the engine rejects bad shape.
+        low_confidence -> a well-formed ProviderAnswer below a typical threshold.
+        malformed      -> not a ProviderAnswer at all (engine must reject it).
         unavailable    -> raises ProviderUnavailable immediately.
-        hang           -> sleeps for `hang_seconds` before answering, to
-                           exercise bounded timeout/retry.
+        hang           -> raises ProviderTimeout immediately (simulated abort).
+        block          -> waits on `release` (test-controlled) before answering,
+                          so a test can hold a call in flight deterministically.
     """
 
     name = "fake"
 
-    def __init__(self, scenario: str = "ok", hang_seconds: float = 2.0) -> None:
+    def __init__(self, scenario: str = "ok", hang_seconds: float = 0.0) -> None:
         self.scenario = scenario
-        self.hang_seconds = hang_seconds
+        self.hang_seconds = hang_seconds  # kept for call-site compatibility; never slept
         self.call_count = 0
+        self.in_flight = threading.Lock()
+        self.started = threading.Event()
+        self.release = threading.Event()
+        self.last_timeout_s: float | None = None
 
-    def dispatch(self, request: dict) -> object:
+    def dispatch(self, request: dict, *, timeout_s: float | None = None) -> object:
         self.call_count += 1
+        self.last_timeout_s = timeout_s
         options = request.get("options") or ["ok"]
 
         if self.scenario == "ok":
@@ -47,15 +50,17 @@ class FakeProvider:
             return provider_base.ProviderAnswer(answer=options[0], confidence=0.2, cost=0.0002)
 
         if self.scenario == "malformed":
-            # Deliberately not a ProviderAnswer -- the engine must reject
-            # this shape rather than pass it through.
             return {"answer": options[0], "confidence": "not-a-number"}
 
         if self.scenario == "unavailable":
             raise provider_base.ProviderUnavailable("fake provider reports itself unavailable")
 
         if self.scenario == "hang":
-            time.sleep(self.hang_seconds)
+            raise provider_base.ProviderTimeout("fake transport aborted at the deadline")
+
+        if self.scenario == "block":
+            self.started.set()
+            self.release.wait()
             return provider_base.ProviderAnswer(answer=options[0], confidence=0.92, cost=0.0002)
 
         raise ValueError(f"FakeProvider: unscripted scenario {self.scenario!r}")

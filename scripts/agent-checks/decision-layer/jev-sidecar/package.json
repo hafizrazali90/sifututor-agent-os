@@ -1,0 +1,10 @@
+{
+  "name": "sifututor-decision-layer-jev-sidecar",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Thin stdin/stdout sidecar around the official @typesafe-ai/sdk for the Agent OS decision layer. No policy lives here.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": { "@typesafe-ai/sdk": "0.6.0" },
+  "scripts": { "test": "node --test" }
+}
