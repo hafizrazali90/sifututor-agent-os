@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Trusted approval evidence for decision-layer consumers.
+"""Local approval-boundary evidence for advisory decision-layer consumers.
 
-Authority comes from exactly one place: the approval tool packet that a
-trusted supervisor bound to a session through
+Boundary metadata comes from the approval tool packet that a supervisor binds
+to a session through
 `scripts/agent-checks/agent-os-task-context.py` (stored under
 `.agent-os/approval-state/tool-packets/<session>.json`). This module only
 reads and validates that record. It never writes one, and nothing a caller
 passes in -- a boolean, a task string, an "approval reference" -- can turn a
 missing or mismatched record into an approval.
+
+This is deliberately not an authentication mechanism. The packet lives in a
+workspace-writable directory, so a matching record is useful only as advisory
+continuity evidence inside the existing trusted-adapter convention. It must
+never authorize a tool call or side effect by itself. The existing approval
+guard separately checks exact reviewed tool-call signatures and remains the
+only restriction layer for those calls.
 
 `evaluate` binds the record to the current session identity, the worktree,
 the task id, and the requested operation, and honours an optional
@@ -75,6 +82,11 @@ class ApprovalStatus:
     @property
     def approved(self) -> bool:
         return self.status == STATUS_APPROVED
+
+    @property
+    def authoritative(self) -> bool:
+        """A local packet match is never authority to perform an action."""
+        return False
 
 
 def _parse_expiry(value: object) -> _dt.datetime | None:
@@ -158,4 +170,4 @@ def evaluate(
     }
     if not operation or not task_context.check_operation_allowed(boundary, operation):
         return ApprovalStatus(STATUS_MISMATCHED, "operation_not_included", evidence)
-    return ApprovalStatus(STATUS_APPROVED, "trusted_packet_matches", evidence)
+    return ApprovalStatus(STATUS_APPROVED, "local_boundary_packet_matches", evidence)

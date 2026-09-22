@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Tests for trusted approval evidence (approval.py).
+"""Tests for local, non-authoritative approval-boundary evidence.
 
-The only way to reach "approved" is a real approval packet written through
-agent-os-task-context.py's supervisor API for this exact session and
-worktree. Everything a worker could write itself -- booleans, task text,
-reference strings, a packet for another session -- must not authorize.
+The normal way to reach the matching status is a packet written through
+agent-os-task-context.py's supervisor API for this exact session and worktree.
+Everything supplied inside the decision request -- booleans, task text,
+reference strings, or another session's packet -- must not match. A matching
+local packet is still advisory metadata, not authenticated authority and not
+permission to perform a side effect.
 """
 
 from __future__ import annotations
@@ -62,12 +64,13 @@ class ApprovalEvidenceTestCase(unittest.TestCase):
         return approval.evaluate(**kwargs)
 
 
-class TrustedPacketApprovesOnlyExactBinding(ApprovalEvidenceTestCase):
+class LocalBoundaryPacketMatchesOnlyExactBinding(ApprovalEvidenceTestCase):
     def test_real_supervisor_packet_approves_an_included_operation(self) -> None:
         self.enroll()
         status = self.evaluate()
         self.assertTrue(status.approved)
-        self.assertEqual(status.reason, "trusted_packet_matches")
+        self.assertFalse(status.authoritative)
+        self.assertEqual(status.reason, "local_boundary_packet_matches")
         self.assertEqual(status.evidence.approval_provenance, "hafiz:chat:2026-09-22")
 
     def test_excluded_or_absent_operations_are_mismatched(self) -> None:
