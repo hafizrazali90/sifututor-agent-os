@@ -181,7 +181,7 @@ _ROUTE_OBLIGATIONS: dict[str, ObligationSet] = {
         deep_playbook_refs=(TASK_ROUTER_REF, RELATED_IMPACT_REF, VERIFY_REF, QA_REF, COMMIT_REF),
     ),
     "small-change": _base(
-        core_path=("describe", "fix", "e2e_regression_if_user_facing", "verify", "qa", "commit"),
+        core_path=("describe", "fix", "e2e_regression_if_user_facing", "verify", "qa", "review", "commit"),
         required_context=(
             "exact description of the changed surface (copy, label, config, minor UI)",
             "the project's verify command matrix entry (verify.md Project Command Matrix)",
@@ -189,6 +189,7 @@ _ROUTE_OBLIGATIONS: dict[str, ObligationSet] = {
         required_checks_evidence=(
             "verify: run the project's verify command matrix (tests/typecheck/lint/build)",
             "qa: targeted check for the changed surface (qa.md small-change tier)",
+            "review: proportionate Gate 4 adversarial pre-push review",
             _STAFF_DOC_CHECK,
         ),
         deep_playbook_refs=(TASK_ROUTER_REF, VERIFY_REF, QA_REF, COMMIT_REF),
@@ -208,12 +209,13 @@ _ROUTE_OBLIGATIONS: dict[str, ObligationSet] = {
         deep_playbook_refs=(TASK_ROUTER_REF, VERIFY_REF, QA_REF, COMMIT_REF),
     ),
     "docs": _base(
-        core_path=("write", "verify", "commit"),
+        core_path=("write", "verify", "review", "commit"),
         required_context=(
             "the doc content/target location being written or changed",
         ),
         required_checks_evidence=(
             "verify: docs validation / render-link check where applicable",
+            "review: proportionate Gate 4 adversarial pre-push review",
             _STAFF_DOC_CHECK,
         ),
         deep_playbook_refs=(TASK_ROUTER_REF, VERIFY_REF, COMMIT_REF),

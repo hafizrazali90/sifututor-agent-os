@@ -82,14 +82,14 @@ class FeatureRouteTest(unittest.TestCase):
 
 
 class SmallChangeRouteTest(unittest.TestCase):
-    def test_small_change_default_excludes_e2e_and_related_impact_and_review(self) -> None:
+    def test_small_change_default_excludes_e2e_and_related_impact_but_keeps_review(self) -> None:
         resolved = obligations.resolve_obligations(
             "small-change", "small-change", user_facing=False
         )
         checks = joined(resolved.required_checks_evidence)
         self.assertNotIn("permanent E2E regression decision", checks)
         self.assertNotIn("related_impact_audit", checks)
-        self.assertNotIn("review:", checks)
+        self.assertIn("review:", checks)
         self.assertNotIn("regression_test", checks)
 
     def test_small_change_user_facing_adds_e2e_and_related_impact(self) -> None:
@@ -100,9 +100,9 @@ class SmallChangeRouteTest(unittest.TestCase):
         self.assertIn("permanent E2E regression decision", checks)
         self.assertIn("related_impact_audit", checks)
 
-    def test_small_change_has_no_review_step_in_its_core_path(self) -> None:
+    def test_small_change_keeps_review_step_in_its_core_path(self) -> None:
         resolved = obligations.resolve_obligations("small-change", "small-change")
-        self.assertNotIn("review", resolved.core_path)
+        self.assertIn("review", resolved.core_path)
 
 
 class RefactorRouteTest(unittest.TestCase):
@@ -122,7 +122,7 @@ class DocsRouteTest(unittest.TestCase):
         self.assertNotIn("regression_test", checks)
         self.assertNotIn("related_impact_audit", checks)
         self.assertNotIn("permanent E2E regression decision", checks)
-        self.assertNotIn("review:", checks)
+        self.assertIn("review:", checks)
         self.assertNotIn("qa", checks.lower())
 
     def test_docs_has_the_smallest_required_checks_list_of_all_routes(self) -> None:
