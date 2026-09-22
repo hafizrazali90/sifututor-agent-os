@@ -5,7 +5,8 @@ The classifier's "propose archive" output must never by itself cause a
 deletion or mutation. This is encoded structurally: `ArchiveProposal` is a
 frozen dataclass carrying only a proposal value, with no delete/apply
 capability. A real archive action requires a separate deterministic
-reference/state check, stubbed here and never called by the classifier.
+reference/state check over a caller-supplied index; the classifier never
+calls it and this bundle never builds the index.
 """
 
 from __future__ import annotations
@@ -103,14 +104,39 @@ class ArchiveProposalStructuralSafetyTest(unittest.TestCase):
         self.assertEqual(archive_store, archive_store_before)
 
 
-class ReferenceCheckStubTest(unittest.TestCase):
-    def test_reference_check_is_an_unimplemented_stub_never_called_by_the_classifier(self) -> None:
-        # Documents the contract: a later bundle or explicit human step
-        # must implement real reference/state checking before any code
-        # path is allowed to actually archive an entry. Until then this
-        # stub refuses to silently approve anything.
-        with self.assertRaises(NotImplementedError):
-            archive_classifier.check_references_before_archive({"id": "session_map_042"}, reference_index={})
+class ReferenceCheckTest(unittest.TestCase):
+    """`check_references_before_archive` is deterministic over a
+    caller-supplied index. This bundle does not build that index; it only
+    reads one. Conservative in every uncertain case: only an entry that is
+    present in the index with an empty reference list is cleared."""
+
+    ENTRY = {"id": "session_map_042", "status": "done", "last_touched_at": "2026-07-01"}
+
+    def test_true_only_when_entry_is_present_with_no_references(self) -> None:
+        index = {"session_map_042": [], "session_map_100": ["issue#167"]}
+        self.assertTrue(archive_classifier.check_references_before_archive(self.ENTRY, reference_index=index))
+
+    def test_false_when_the_index_is_missing(self) -> None:
+        self.assertFalse(archive_classifier.check_references_before_archive(self.ENTRY, reference_index=None))
+
+    def test_false_when_the_entry_is_missing_from_the_index(self) -> None:
+        index = {"session_map_100": []}
+        self.assertFalse(archive_classifier.check_references_before_archive(self.ENTRY, reference_index=index))
+
+    def test_false_when_the_entry_still_has_references(self) -> None:
+        index = {"session_map_042": ["open issue #167", "worktree agent-os-167-koda-lifecycle"]}
+        self.assertFalse(archive_classifier.check_references_before_archive(self.ENTRY, reference_index=index))
+
+    def test_false_when_the_entry_has_no_id(self) -> None:
+        self.assertFalse(archive_classifier.check_references_before_archive({"status": "done"}, reference_index={}))
+
+    def test_reference_check_never_mutates_entry_or_index(self) -> None:
+        entry = dict(self.ENTRY)
+        index = {"session_map_042": []}
+        entry_before, index_before = copy.deepcopy(entry), copy.deepcopy(index)
+        archive_classifier.check_references_before_archive(entry, reference_index=index)
+        self.assertEqual(entry, entry_before)
+        self.assertEqual(index, index_before)
 
 
 if __name__ == "__main__":

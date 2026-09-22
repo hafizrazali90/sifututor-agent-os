@@ -39,20 +39,81 @@ classifier = load_module("classifier", HERE)
 FIXTURE_ANTHROPIC_STYLE = "sk-ant-api03-" + "a" * 12 + "b" * 12
 
 
+DURABLE_LESSON_CANDIDATE = {
+    "content": (
+        "InvoiceStatus is a PHP 8.1 backed enum; comparing it with "
+        "!== string is always true, so callers must compare against "
+        "InvoiceStatus::Paid instead of a raw string."
+    ),
+    "subject": "invoice_status_enum_guard",
+    "stated_at": "2026-09-20",
+}
+
+
+class ClassifyUnknownMaterialTest(unittest.TestCase):
+    """No deterministic rule matches. The classifier must NOT guess
+    `durable` with full confidence; it must hand the candidate to a
+    human/reviewer with low confidence."""
+
+    def test_no_rule_and_no_provider_is_needs_review_at_low_confidence(self) -> None:
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE))
+        self.assertEqual(result.classification, "needs_review")
+        self.assertEqual(result.confidence, 0.3)
+        self.assertEqual(result.reason, "no_deterministic_rule_matched_needs_review")
+
+    def test_low_confidence_provider_answer_still_leaves_needs_review(self) -> None:
+        provider = provider_fake.FakeProvider(scenario="low_confidence")
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE), provider=provider)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual(result.classification, "needs_review")
+        self.assertEqual(result.confidence, 0.3)
+        self.assertEqual(result.reason, "no_deterministic_rule_matched_needs_review")
+
+    def test_unavailable_provider_still_leaves_needs_review(self) -> None:
+        provider = provider_fake.FakeProvider(scenario="unavailable")
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE), provider=provider)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual(result.classification, "needs_review")
+        self.assertEqual(result.confidence, 0.3)
+
+    def test_malformed_provider_answer_still_leaves_needs_review(self) -> None:
+        provider = provider_fake.FakeProvider(scenario="malformed")
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE), provider=provider)
+        self.assertEqual(result.classification, "needs_review")
+        self.assertEqual(result.confidence, 0.3)
+
+
 class ClassifyDurableLessonTest(unittest.TestCase):
-    def test_classifies_a_clear_durable_lesson_as_durable(self) -> None:
-        candidate = {
-            "content": (
-                "InvoiceStatus is a PHP 8.1 backed enum; comparing it with "
-                "!== string is always true, so callers must compare against "
-                "InvoiceStatus::Paid instead of a raw string."
-            ),
-            "subject": "invoice_status_enum_guard",
-            "stated_at": "2026-09-20",
-        }
-        result = classifier.classify_memory(candidate)
+    def test_provider_may_corroborate_durable_and_result_carries_its_confidence(self) -> None:
+        # FakeProvider "ok" answers with the first option offered
+        # ("durable") at confidence 0.92. The result is advisory: it
+        # carries the provider's own confidence, never a hard 1.0.
+        provider = provider_fake.FakeProvider(scenario="ok")
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE), provider=provider)
+        self.assertEqual(provider.call_count, 1)
         self.assertEqual(result.classification, "durable")
-        self.assertTrue(result.reason)
+        self.assertEqual(result.confidence, 0.92)
+        self.assertEqual(result.reason, "provider_corroborated_durable")
+
+    def test_provider_may_corroborate_ephemeral_and_result_carries_its_confidence(self) -> None:
+        class _SaysEphemeral:
+            name = "fake"
+
+            def __init__(self) -> None:
+                self.call_count = 0
+
+            def dispatch(self, request, *, timeout_s=None):
+                self.call_count += 1
+                self.assertion_options = list(request["options"])
+                return provider_base.ProviderAnswer(answer="ephemeral", confidence=0.7)
+
+        provider = _SaysEphemeral()
+        result = classifier.classify_memory(dict(DURABLE_LESSON_CANDIDATE), provider=provider)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual(provider.assertion_options, ["durable", "ephemeral"])
+        self.assertEqual(result.classification, "ephemeral")
+        self.assertEqual(result.confidence, 0.7)
+        self.assertEqual(result.reason, "provider_corroborated_ephemeral")
 
 
 class ClassifySensitiveTest(unittest.TestCase):
@@ -112,6 +173,19 @@ class ClassifyDuplicateTest(unittest.TestCase):
         result = classifier.classify_memory(candidate, known_memories=known_memories)
         self.assertEqual(result.classification, "duplicate")
         self.assertEqual(result.matched_memory_id, "mem_001")
+        # Near-duplicate is a similarity judgement, not an exact rule, so
+        # the result carries the similarity it was decided on, never 1.0.
+        expected = classifier._text_similarity(candidate["content"], known_memories[0]["content"])
+        self.assertEqual(result.confidence, expected)
+        self.assertGreaterEqual(result.confidence, classifier.DUPLICATE_SIMILARITY_THRESHOLD)
+        self.assertLess(result.confidence, 1.0)
+
+    def test_exact_duplicate_keeps_full_confidence(self) -> None:
+        known_memories = [{"id": "mem_002", "content": "Nakngaji is always spelled as one word."}]
+        candidate = {"content": "Nakngaji is always spelled as one word."}
+        result = classifier.classify_memory(candidate, known_memories=known_memories)
+        self.assertEqual(result.classification, "duplicate")
+        self.assertEqual(result.confidence, 1.0)
 
 
 class ClassifyStaleTest(unittest.TestCase):
@@ -135,6 +209,13 @@ class ClassifyStaleTest(unittest.TestCase):
         result = classifier.classify_memory(candidate, known_memories=known_memories)
         self.assertEqual(result.classification, "stale")
         self.assertEqual(result.matched_memory_id, "mem_042")
+        # A contradiction is decided on "same subject, content similarity
+        # below the duplicate threshold". The result carries that
+        # similarity score so a reviewer can see how close the two
+        # statements were; it is never reported as a hard 1.0.
+        expected = classifier._text_similarity(candidate["content"], known_memories[0]["content"])
+        self.assertEqual(result.confidence, expected)
+        self.assertLess(result.confidence, classifier.DUPLICATE_SIMILARITY_THRESHOLD)
 
 
 if __name__ == "__main__":

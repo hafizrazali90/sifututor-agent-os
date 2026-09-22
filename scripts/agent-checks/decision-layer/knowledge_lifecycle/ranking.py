@@ -5,6 +5,12 @@ Given a list of candidate memories retrieved for a query, produce a
 relevance-ordered list instead of returning everything. This module only
 ranks; it never stores, deletes, or mutates a candidate.
 
+NOT WIRED. This function is not called from any retrieval path. Koda's
+own `memory_search` ranking, the memory-flush hooks, and every session-map
+flow are unchanged by this bundle. It is a standalone, tested function a
+later bundle may choose to place in front of a retrieval result; until
+then it changes nothing about what any agent actually sees.
+
 Pipeline, in order, for every call to `rank_candidates`:
 
 1. Deterministic sensitive/PII filter (Bundle 1's `secret_filter`, reused
@@ -31,7 +37,7 @@ Pipeline, in order, for every call to `rank_candidates`:
 
 from __future__ import annotations
 
-import importlib.util
+import importlib
 from pathlib import Path
 import re
 import sys
@@ -41,16 +47,15 @@ _DECISION_LAYER_DIR = _HERE.parent
 
 
 def _load_sibling_module(name: str):
-    module_name = f"decision_layer_{name}"
-    if module_name in sys.modules:
-        return sys.modules[module_name]
-    spec = importlib.util.spec_from_file_location(module_name, _DECISION_LAYER_DIR / f"{name}.py")
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load sibling decision-layer module {name!r}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    """Import a sibling decision-layer module by its plain name so the
+    `ProviderAnswer` / `ProviderError` classes are the same objects the
+    providers themselves use (an aliased path-load would make `isinstance`
+    and `except` silently never match)."""
+    if name in sys.modules:
+        return sys.modules[name]
+    if str(_DECISION_LAYER_DIR) not in sys.path:
+        sys.path.insert(0, str(_DECISION_LAYER_DIR))
+    return importlib.import_module(name)
 
 
 secret_filter = _load_sibling_module("secret_filter")

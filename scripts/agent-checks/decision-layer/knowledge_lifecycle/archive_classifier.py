@@ -11,19 +11,21 @@ is a frozen dataclass with exactly three plain fields (`proposal`,
 type a caller could invoke to make an archive actually happen.
 
 A real archive action requires a separate, deterministic reference/state
-check -- e.g. "is this Session Map entry still referenced by an open
-GitHub issue, an active worktree, or a pending PR?" -- before anything is
-actually archived. That check is stubbed here as
-`check_references_before_archive`, which is intentionally unimplemented
-(it raises `NotImplementedError`) so nothing can mistake an unfinished
-stub for a real "safe to archive" signal. `classify_for_archive` never
-calls it. A later bundle, or an explicit human step, must implement real
-reference/state checking there before any code path is allowed to
-actually archive a Session Map entry.
+check -- "is this Session Map entry still referenced by an open GitHub
+issue, an active worktree, or an open PR?" -- before anything is actually
+archived. That check is `check_references_before_archive`, a pure
+function over a caller-supplied `reference_index`. This bundle does NOT
+build that index (nothing here calls `gh`, reads worktrees, or touches
+GitHub); a later bundle or an explicit human step must build it and pass
+it in. `classify_for_archive` never calls the check, and no code path in
+this bundle performs an archive.
+
+NOT WIRED. Nothing in any session-map flow calls this module yet.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import datetime
 
@@ -82,23 +84,32 @@ def classify_for_archive(entry: dict, *, today: str) -> ArchiveProposal:
     )
 
 
-def check_references_before_archive(entry: dict, *, reference_index: object) -> bool:
-    """Deterministic reference/state check -- STUB, not implemented.
+def check_references_before_archive(
+    entry: dict,
+    *,
+    reference_index: Mapping[str, Sequence[object]] | None,
+) -> bool:
+    """Deterministic reference/state check over a caller-supplied index.
 
-    A real implementation must confirm, deterministically, that nothing
-    still depends on this Session Map entry (e.g. no open GitHub issue, no
-    active worktree, no pending PR references it) before any code path is
-    allowed to actually archive it. This bundle only builds the
-    classifier above; the actual archive action, and this check, are
-    explicitly out of scope here (see the Bundle 6 build spec's scope
-    boundary) and are left for a later bundle or an explicit human step.
+    `reference_index` maps a Session Map entry id to the list of items
+    that still reference it (open issues, active worktrees, open PRs).
+    The caller builds and supplies it; this bundle does not build it.
 
-    Raises `NotImplementedError` unconditionally so nothing can silently
-    treat an unimplemented check as "cleared to archive".
+    Returns True only when the entry's id is present in the index with an
+    empty reference list. Every uncertain case is conservative and returns
+    False: a missing index (`None` or not a mapping), an entry with no id,
+    an id absent from the index, or any remaining reference.
+
+    Pure: never mutates `entry` or `reference_index`, never archives.
     """
-    raise NotImplementedError(
-        "the reference/state check before archiving is not implemented in "
-        "this bundle; a later bundle or an explicit human step must "
-        "implement and run it before any Session Map entry is actually "
-        "archived"
-    )
+    if not isinstance(reference_index, Mapping):
+        return False
+    entry_id = entry.get("id")
+    if not entry_id:
+        return False
+    if entry_id not in reference_index:
+        return False
+    references = reference_index[entry_id]
+    if references is None:
+        return False
+    return len(references) == 0

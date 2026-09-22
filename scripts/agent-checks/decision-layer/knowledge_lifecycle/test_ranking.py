@@ -119,6 +119,41 @@ class RankCandidatesTest(unittest.TestCase):
         self.assertEqual(fake_provider.call_count, 1)
         self.assertEqual(ranked[0]["id"], "mem_one")
 
+    def test_provider_choice_is_honoured_when_it_differs_from_the_fallback_order(self) -> None:
+        # The deterministic fallback would put mem_one first (id
+        # ascending). A provider that picks mem_two must actually win,
+        # which proves the provider answer is recognised as a real
+        # ProviderAnswer rather than silently ignored.
+        candidates = [
+            {"id": "mem_one", "content": "deploy pipeline staging sifu backport"},
+            {"id": "mem_two", "content": "deploy pipeline staging sifu staging"},
+        ]
+
+        class _PicksSecond:
+            name = "fake"
+
+            def __init__(self) -> None:
+                self.call_count = 0
+
+            def dispatch(self, request, *, timeout_s=None):
+                self.call_count += 1
+                return provider_base.ProviderAnswer(answer=request["options"][1], confidence=0.9)
+
+        provider = _PicksSecond()
+        ranked = ranking.rank_candidates("staging deploy pipeline", candidates, provider=provider)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual([c["id"] for c in ranked], ["mem_two", "mem_one"])
+
+    def test_provider_error_falls_back_to_deterministic_order(self) -> None:
+        candidates = [
+            {"id": "mem_two", "content": "deploy pipeline staging sifu staging"},
+            {"id": "mem_one", "content": "deploy pipeline staging sifu backport"},
+        ]
+        provider = provider_fake.FakeProvider(scenario="unavailable")
+        ranked = ranking.rank_candidates("staging deploy pipeline", candidates, provider=provider)
+        self.assertEqual(provider.call_count, 1)
+        self.assertEqual([c["id"] for c in ranked], ["mem_one", "mem_two"])
+
 
 if __name__ == "__main__":
     unittest.main()
