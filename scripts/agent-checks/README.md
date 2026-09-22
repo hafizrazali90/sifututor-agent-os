@@ -136,3 +136,16 @@ classifier. Use `--verbose` to see every prompt, expected skill, observed skill,
 required actions, and reason.
 
 `agent-os-health.sh` runs this eval runner as part of the umbrella baseline.
+
+## Jev Live Qualification
+
+```bash
+python3 scripts/agent-checks/agent-os-jev-live-qualification.py
+python3 scripts/agent-checks/agent-os-jev-live-qualification.py --live --output .agent-os/handoffs/jev-live-qualification.json
+```
+
+The default mode is an offline self-test. `--live` sends only the runner's
+short synthetic routing cases through the configured Jev adapter. Sensitive
+and critical-lane fixtures must remain local with zero provider calls. Reports
+contain case IDs and metrics only, never prompt or response bodies, and Jev
+remains advisory throughout.
