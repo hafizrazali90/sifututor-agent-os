@@ -337,9 +337,6 @@ def check_plane_policy(texts: dict[str, str]) -> list[str]:
         errors.append("AGENTS.md must state Plane is exception-only")
 
     if claude_text:
-        if "Plane is exception-only" not in claude_text:
-            errors.append("CLAUDE.md must state Plane is exception-only when present")
-
         for phrase in stale_claude_phrases:
             if phrase in claude_text:
                 errors.append(f"CLAUDE.md contains stale Plane-default wording: {phrase}")

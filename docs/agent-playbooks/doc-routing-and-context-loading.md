@@ -52,8 +52,9 @@ Use this matrix after Task Router identifies the route.
 
 | Work type | Must read first | Then read if triggered |
 | --- | --- | --- |
-| Any meaningful work | `AGENTS.md`, current user instruction, active Session Map when resuming, relevant Koda memories when available. | `CLAUDE.md` for umbrella/project orientation; project `AGENTS.md` when editing inside a project. |
-| Agent OS docs or workflow improvement | `task-router.md`, `agent-os-improvement-loop.md`, this doc, relevant owning playbook. | `agent-os-skill-registry.md`, `agent-os-evals.md`, hook/dispatcher docs, parity docs, Koda, Session Map. |
+| Any meaningful work | `AGENTS.md`, current user instruction, active Session Map when resuming, relevant Koda memories when available. | Project `AGENTS.md` when editing inside a project. `CLAUDE.md` is loaded for Claude automatically and adds only Claude mechanics; it is not a second contract. |
+| Agent OS docs or workflow improvement | `task-router.md`, `agent-os-improvement-loop.md`, this doc, `doc-owner-route-index.md`, relevant owning playbook. | `agent-os-skill-registry.md`, `agent-os-evals.md`, hook/dispatcher docs, parity docs, Koda, Session Map. |
+| Documentation-only change | The owner doc of the section being edited; `commit.md` when it will be committed. | `doc-owner-route-index.md` when adding, moving, or archiving an Agent OS doc; `release-documentation.md` only when the doc is staff-facing. No deployment, incident, or implementation-readiness docs. |
 | Brainstorming or product design | `product-design.md`, `planning-artifacts.md`, relevant feature/project docs. | `ai-implementation-readiness.md` for handoff/cross-module/critical workflows; UI/UX docs for interface design. |
 | Bug or staff symptom | `diagnose.md`, `task-router.md`, current project rules. | Planner context for staff-reported SIMS/mobile issues; `related-impact-audit.md`; `TESTING.md`; feature docs. |
 | User-facing feature or fix | `task-router.md`, `verify.md`, `qa.md`, project rules, `TESTING.md` when present. | UI/UX docs, feature docs, E2E specs, `agent-os-evidence-model.md`, release communication rules. |
@@ -141,10 +142,82 @@ Missing a doc is recoverable.
 Pretending the doc was not needed is not.
 ```
 
+## Knowledge Architecture
+
+The Agent OS is a linked-Markdown library with progressive disclosure. There
+is no graph database, generator, or service behind it: entry points are small,
+and everything else is opened by path when a task triggers it.
+
+### Entry Points Per Model
+
+Verified 2026-09-22 with fresh `claude -p` and `codex exec` runs on marker
+files; the record is in [agent-os-research.md](agent-os-research.md).
+
+| Reader | Loaded at launch | How it reaches the shared rules |
+| --- | --- | --- |
+| Codex CLI (0.154) | `~/.codex/AGENTS.md`, then `AGENTS.md` from the Git root down to the cwd, at most one file per directory, 32 KiB across the chain (the file that crosses the cap is truncated and later files are dropped). | Natively. Inside a nested product repo it loads only that repo's chain, so every project `AGENTS.md` must link to `../AGENTS.md`. Codex never reads `CLAUDE.md`. |
+| Claude Code (2.1.222) | `~/.claude/CLAUDE.md`, `CLAUDE.md` in the cwd and every parent directory, and their `@imports`; auto-memory. | Through the `@AGENTS.md` line in `CLAUDE.md`. This version does not read `AGENTS.md` on its own; from 2.1.277 Claude reads it only where no `CLAUDE.md` exists, and the import is documented as never double-loading. Sub-project `CLAUDE.md` and `AGENTS.md` are not loaded at the umbrella cwd; `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD` stays unset by decision. |
+| Kilo Code | `.kilo/agents/sifututor-agent-os.md` | Reads `AGENTS.md` first, then the `.agents/skills/` wrappers. |
+| Future adapter | One small file for that tool | Imports or opens `AGENTS.md` first, adds tool mechanics only, stays under 8 KiB, and passes scenario NAV-11 of the navigation check. |
+
+Skill bodies, playbooks, project profiles, Session Maps, handoffs, and Koda
+are never loaded at launch by any model. Skill names and descriptions are.
+
+### Layers
+
+| Layer | Files | Loaded | Holds |
+| --- | --- | --- | --- |
+| Shared contract | `AGENTS.md` | always | rules every session needs; pointers to owners |
+| Adapters | `CLAUDE.md`, `~/.claude/CLAUDE.md`, `.kilo/agents/*`, `.agents/skills/*/SKILL.md`, `~/.claude/skills/*` | adapter file always; skill body on invocation | tool mechanics and command names only |
+| Router | `task-router.md`, this doc, `doc-owner-route-index.md` | when work starts | route, required docs, owner map |
+| Owner playbooks | `docs/agent-playbooks/*.md` | when the route or a trigger names them | one owner per rule |
+| Project contracts | `<project>/AGENTS.md`, `<project>/CLAUDE.md`, `project-profiles/*.md` | when working in that project | project-specific rules, kept near the project |
+| Runtime state | `.claude/tasks/active.json`, Session Maps, ledgers, handoffs, `.agent-os/` | on demand | current truth, never instructions |
+| Durable memory | Koda | on search | lessons and corrections, never copies of docs |
+| Archive | `archive/`, historical reports | never automatically | past record; overrides nothing |
+
+### Rules
+
+- One owner per rule, named in the owner index. Other files link to the owner
+  and do not restate it. Adapters never carry a rule that is not already in
+  `AGENTS.md` or a playbook.
+- Budgets: `AGENTS.md` at most 16 KiB, `CLAUDE.md` at most 8 KiB, any adapter
+  file at most 8 KiB, root plus project `AGENTS.md` at most 32 KiB. Entry files
+  hold no dated status, rollout notes, or tables that a config file already
+  owns; those belong to the owner doc or the config itself.
+- `@import` loads at launch, so `CLAUDE.md` imports `AGENTS.md` and nothing
+  else. Playbooks are referenced by path, never imported.
+- Naming: playbooks are lowercase-kebab `.md` files at the top of
+  `docs/agent-playbooks/`; Agent OS wide docs keep the `agent-os-` prefix;
+  project profiles live under `project-profiles/`, templates under
+  `templates/`, retired material under `archive/` with its original name.
+- A new doc is justified only through
+  [skill-quality-and-pruning.md](skill-quality-and-pruning.md), and the owner
+  index changes in the same commit.
+- Archive when a doc has no active route, no inbound link, and a superseding
+  owner: `git mv` it into `archive/` and move its index entry to the historical
+  list. Delete only after one audit cycle with no recall need. Historical docs
+  never override `AGENTS.md`, active playbooks, or current Git state.
+- Links are relative Markdown links and must resolve.
+  `scripts/agent-checks/agent-os-doc-navigation-check.py` runs inside
+  `agent-os-health.sh` and fails on broken links or imports, unindexed
+  playbooks, adapter drift, budget overruns, archived docs linked from the
+  entry layer, or a scenario that loses its safety wiring.
+- Sub-project rules are found by reading the nearest `AGENTS.md`, never by
+  auto-loading every project into the umbrella session.
+- Claude and Codex parity is tested by the navigation scenarios, by
+  `agent-os-parity-fixture-runner.py`, and by the recorded live loading tests;
+  rerun the live test when either CLI is upgraded.
+- Context size is measured with a fresh `claude -p "..." --output-format json`
+  at the umbrella root (prompt tokens are `input_tokens` plus the two cache
+  fields) and with `codex exec` (`tokens used`). Record before and after in the
+  PR whenever an entry file changes.
+
 ## What Future Automation Should Check
 
-The ideal future hook does not need to read every doc.
-It should warn when the selected route is missing a required doc family.
+`agent-os-doc-navigation-check.py` already proves the static wiring. The
+ideal future hook does not need to read every doc; it should warn when the
+selected route is missing a required doc family.
 
 Examples:
 

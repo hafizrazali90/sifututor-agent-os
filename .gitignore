@@ -6,6 +6,7 @@
 !.gitignore
 !README.md
 !AGENTS.md
+!CLAUDE.md
 
 # Track workspace documents (playbooks, product/QA references, staff guides,
 # analytics packets, partnership decks) so the team can refer to them.

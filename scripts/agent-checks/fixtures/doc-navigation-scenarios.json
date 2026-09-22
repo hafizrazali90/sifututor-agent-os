@@ -1,0 +1,410 @@
+{
+  "description": "Deterministic navigation scenarios for the Agent OS knowledge architecture. Each scenario names an entry file, the documents that must be reachable by following links or path pointers within a hop budget, phrases the owner document must still carry, and routing-matrix rows that must include or exclude documents. Consumed by scripts/agent-checks/agent-os-doc-navigation-check.py. Paths are relative to the umbrella root. Entries under optional_entry are skipped when the sub-project checkout is absent (product repos are separate Git repositories).",
+  "routing_matrix": "docs/agent-playbooks/doc-routing-and-context-loading.md",
+  "scenarios": [
+    {
+      "id": "NAV-01",
+      "title": "Claude starts at the umbrella root",
+      "entry": [
+        "CLAUDE.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 1,
+          "via": "import"
+        },
+        {
+          "file": "docs/agent-playbooks/task-router.md",
+          "max_hops": 2
+        },
+        {
+          "file": "docs/agent-playbooks/doc-owner-route-index.md",
+          "max_hops": 2
+        },
+        {
+          "file": "docs/agent-playbooks/agent-os-approval-gates.md",
+          "max_hops": 2
+        },
+        {
+          "file": "docs/agent-playbooks/commit.md",
+          "max_hops": 2
+        }
+      ],
+      "imports": [
+        {
+          "file": "CLAUDE.md",
+          "must_import": [
+            "AGENTS.md"
+          ],
+          "must_not_import_containing": [
+            "docs/agent-playbooks/",
+            "kelas/",
+            "sifu-tutor/",
+            "ripple-suite/",
+            "sifututor_tutor/",
+            "sifututor_parent/",
+            "lls",
+            "creative-hub/",
+            "finch-inbox/",
+            "cx-call-capture-android/",
+            "sims-owner-analytics/"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "Plane is exception-only"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-02",
+      "title": "Codex starts at the umbrella root",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/task-router.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/doc-owner-route-index.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/agent-os-approval-gates.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/commit.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/parallel-work-and-worktrees.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/agent-access-map.md",
+          "max_hops": 1
+        }
+      ],
+      "mentions": [
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "pre-commit-guard.sh",
+            ".env*",
+            "live/",
+            "--no-verify",
+            "Never push, open a PR, merge, deploy, release, or perform a destructive",
+            "nearest `AGENTS.md`"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-03",
+      "title": "Claude works inside ripple-suite",
+      "optional_entry": true,
+      "entry": [
+        "ripple-suite/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/project-profiles/ripple-suite.md",
+          "max_hops": 1
+        },
+        {
+          "file": "AGENTS.md",
+          "max_hops": 2
+        }
+      ],
+      "note": "Claude also receives the umbrella CLAUDE.md automatically because parent-directory CLAUDE.md files are concatenated (verified 2026-09-22 with a nested repo).",
+      "advisory": true
+    },
+    {
+      "id": "NAV-04",
+      "title": "Codex works inside sifu-tutor",
+      "optional_entry": true,
+      "entry": [
+        "sifu-tutor/AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 1
+        }
+      ],
+      "note": "Codex does not load the umbrella AGENTS.md from inside a nested repository (verified 2026-09-22), so the project contract must link upward.",
+      "advisory": true
+    },
+    {
+      "id": "NAV-05",
+      "title": "A documentation-only task does not pull deployment guidance",
+      "matrix_rows": [
+        {
+          "row": "Documentation-only change",
+          "include": [
+            "commit.md"
+          ],
+          "exclude": [
+            "release-deploy-live-monitoring.md",
+            "push-pr-ci-automation.md",
+            "incident-workflow.md",
+            "ai-implementation-readiness.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-06",
+      "title": "A production deployment task finds the production safety instructions",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/release-deploy-live-monitoring.md",
+          "max_hops": 1
+        }
+      ],
+      "matrix_rows": [
+        {
+          "row": "Review, push, PR, merge, deploy, or live claim",
+          "include": [
+            "release-deploy-live-monitoring.md",
+            "review.md"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "docs/agent-playbooks/release-deploy-live-monitoring.md",
+          "phrases": [
+            "smoke"
+          ]
+        },
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "smoke-test the actual changed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-07",
+      "title": "A payment or migration task finds the critical-lane rules",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/agent-os-approval-gates.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/ai-implementation-readiness.md",
+          "max_hops": 1
+        }
+      ],
+      "matrix_rows": [
+        {
+          "row": "Critical lane",
+          "include": [
+            "diagnose.md",
+            "ai-implementation-readiness.md",
+            "agent-os-approval-gates.md"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "critical lanes",
+            "Payments, commission, auth, migrations"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-08",
+      "title": "A user-facing SIMS change finds E2E and release-documentation rules",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/release-documentation.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/test-coverage.md",
+          "max_hops": 1
+        }
+      ],
+      "matrix_rows": [
+        {
+          "row": "User-facing feature or fix",
+          "include": [
+            "verify.md",
+            "qa.md",
+            "TESTING.md"
+          ]
+        },
+        {
+          "row": "User-facing behavior changes",
+          "include": [
+            "TESTING.md",
+            "test-coverage.md",
+            "agent-os-evidence-model.md"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "permanent E2E test",
+            "RELEASE-DOCS.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-09",
+      "title": "A workflow-improvement task finds the improvement loop",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/agent-os-improvement-loop.md",
+          "max_hops": 1
+        }
+      ],
+      "matrix_rows": [
+        {
+          "row": "Agent OS docs or workflow improvement",
+          "include": [
+            "agent-os-improvement-loop.md",
+            "doc-owner-route-index.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-10",
+      "title": "A handoff task finds delegation and return-contract rules",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/handoff.md",
+          "max_hops": 1
+        },
+        {
+          "file": "docs/agent-playbooks/multi-agent-adapter-workflow.md",
+          "max_hops": 2
+        }
+      ],
+      "matrix_rows": [
+        {
+          "row": "Save, handoff, snapshot, or continuation",
+          "include": [
+            "handoff.md",
+            "save-session.md"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "docs/agent-playbooks/handoff.md",
+          "phrases": [
+            "Continuation Pack",
+            "Delegation",
+            "continuation prompt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-11",
+      "title": "A future model adapter reaches the shared entry point without a second handbook",
+      "entry": [
+        ".kilo/agents/sifututor-agent-os.md"
+      ],
+      "reach": [
+        {
+          "file": "AGENTS.md",
+          "max_hops": 1
+        }
+      ],
+      "mentions": [
+        {
+          "file": ".kilo/agents/sifututor-agent-os.md",
+          "phrases": [
+            ".agents/skills/",
+            "docs/agent-playbooks/"
+          ]
+        }
+      ],
+      "max_bytes": [
+        {
+          "file": ".kilo/agents/sifututor-agent-os.md",
+          "bytes": 8192
+        }
+      ]
+    },
+    {
+      "id": "NAV-12",
+      "title": "Broken links, missing owners, oversize entry points, and adapter drift are detected",
+      "self_test": true
+    },
+    {
+      "id": "NAV-13",
+      "title": "Sub-project rules stay reachable without loading every sub-project into the umbrella session",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/agent-playbooks/project-adoption.md",
+          "max_hops": 2
+        }
+      ],
+      "imports": [
+        {
+          "file": "CLAUDE.md",
+          "must_not_import_containing": [
+            "kelas/",
+            "sifu-tutor/",
+            "ripple-suite/",
+            "sifututor_tutor/",
+            "sifututor_parent/",
+            "lls",
+            "creative-hub/",
+            "finch-inbox/",
+            "cx-call-capture-android/",
+            "sims-owner-analytics/"
+          ]
+        }
+      ],
+      "mentions": [
+        {
+          "file": "AGENTS.md",
+          "phrases": [
+            "Before editing a sub-project, read its `AGENTS.md`"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -9,16 +9,32 @@ This is the library shelf map.
 It tells future agents where a rule belongs before they add another file.
 ```
 
-This index is intentionally higher level than [README.md](README.md).
-The README lists available docs.
-This index explains who owns the decision.
+This is the single inventory of active Agent OS documents.
+[README.md](README.md) only says where to start; this index says who owns
+the decision and what is active, reference-only, or archived.
+[doc-routing-and-context-loading.md](doc-routing-and-context-loading.md) owns
+how each model loads its entry point and which documents a route requires.
+
+## Entry Points
+
+| Reader | Entry file | Reaches the shared rules by |
+| --- | --- | --- |
+| Codex | `AGENTS.md` (plus the project `AGENTS.md` when launched inside a project) | native load |
+| Claude Code | `CLAUDE.md` | the `@AGENTS.md` import; the rest of the file is Claude mechanics only |
+| Kilo Code | `.kilo/agents/sifututor-agent-os.md` | reads `AGENTS.md` first, then `.agents/skills/` |
+| Future adapter | one small file per tool | imports or opens `AGENTS.md` first; adds tool mechanics only |
+| Human | [README.md](README.md) then this index | links |
+
+The loading rules, byte budgets, and verification record live in the
+Knowledge Architecture section of
+[doc-routing-and-context-loading.md](doc-routing-and-context-loading.md).
 
 ## Core Owners
 
 | Owner | Owns | Main docs |
 | --- | --- | --- |
 | Operating contract | Rules every agent must obey. | `AGENTS.md`, `agent-os.md`, `agent-os-general-guidelines.md` |
-| Routing and context loading | What workflow applies and which docs to read. | `task-router.md`, `agent-os-routing-model.md`, `doc-routing-and-context-loading.md`, `agent-os-workflow-lanes.md`, `agent-os-runtime-reliability.md` |
+| Routing and context loading | What workflow applies, which docs to read, and how entry points load. | `task-router.md`, `agent-os-routing-model.md`, `doc-routing-and-context-loading.md`, `agent-os-workflow-lanes.md`, `agent-os-runtime-reliability.md` |
 | Skill and doc quality | Whether to create, update, merge, park, or delete Agent OS artifacts. | `skill-quality-and-pruning.md`, `agent-os-skill-registry.md`, this index |
 | Communication with Hafiz | How to explain work, status, risk, and next steps. | `working-with-hafiz.md`, `agent-os-communication.md` |
 | State and continuation | What is drafted, local, committed, pushed, PR-open, merged, deployed, live, parked, or handed off. | `agent-os-state-model.md`, `session-map.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `session-release-ledger.md` |
@@ -27,12 +43,12 @@ This index explains who owns the decision.
 | Staff documentation in a release | Whether a staff-facing change ships its documentation, defers it with a named owner and follow-up issue, or genuinely does not need it. | `release-documentation.md` |
 | Safety and approvals | What needs approval or must never happen. | `agent-os-approval-gates.md`, `agent-access-map.md`, `agent-os-capability-model.md`, `commit.md` |
 | Workflow improvement and governance | How the Agent OS changes itself safely. | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md` |
-| Multi-agent and adapters | How Claude, Codex, and future LLMs use the same core. | `agent-os-parity-contract.md`, `agent-os-skill-registry.md`, `agent-os-adapter-readiness.md`, `agent-os-hook-dispatcher.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md` |
+| Multi-agent and adapters | How Claude, Codex, Kilo, and future LLMs use the same core. | `agent-os-parity-contract.md`, `agent-os-skill-registry.md`, `agent-os-adapter-readiness.md`, `agent-os-hook-dispatcher.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `codex-hook-trust.md` |
 | Planning, governed artifacts, and product design | How vague ideas become understandable build work, and how documents, presentations, identity work, and artifact evidence are routed. | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md` |
 | Delivery and release | How PR, CI, merge, deploy, smoke, monitoring, and incidents work. | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, `incident-workflow.md` |
 | Project adoption and rollout | How repos and developer staff adopt the Agent OS. | `project-adoption.md`, `agent-os-rollout-readiness.md`, `agent-os-installation.md`, `agent-os-staff-quick-start.md`, project profiles |
 | Bigger goals and future work | What is useful but not execution-ready. | `mission-ledger.md`, `mission-ledger/*`, `workflow-efficiency-audit.md` |
-| Research and history | Why decisions were made or what happened in old sessions. | `agent-os-research.md`, `agent-os-review-roadmap.md`, session-save docs, parity/status reports |
+| Research and history | Why decisions were made or what happened in old sessions. | `agent-os-research.md`, `agent-os-review-roadmap.md`, archived session saves, parity/status reports |
 | Weekly delivery reporting | What shipped, what is blocked, and whether source coverage is trustworthy. | `weekly-delivery-report.md` |
 
 ## Route Quick Map
@@ -52,6 +68,8 @@ This index explains who owns the decision.
 | "Push/open PR/merge/deploy" | `review.md` | push-pr-ci automation or release monitoring, approval gates |
 | "Does this need a staff guide / changelog / What's New?" | `release-documentation.md` | commit, review, release monitoring |
 | "Save or hand off" | `save-session.md` or `handoff.md` | Session Map, Koda, state model |
+| "What shipped this week?" | `weekly-delivery-report.md` | GitHub, deploy records, Session Release Ledgers |
+| "Is the workflow too heavy?" | `workflow-efficiency-audit.md` | improvement loop, coverage audit, research |
 
 ## Active Doc Inventory
 
@@ -65,33 +83,42 @@ If a new idea fits one of these rows, update that owner first.
 | Skill and adapter system | `agent-os-skill-registry.md`, `skill-quality-and-pruning.md`, `agent-os-parity-contract.md`, `agent-os-adapter-readiness.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `agent-os-hook-dispatcher.md`, `codex-hook-trust.md` |
 | Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
 | Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md` |
-| Diagnosis, implementation proof, and QA | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, `no-mistakes-lite.md`, `related-impact-audit.md`, `test-coverage.md`, `agent-os-evidence-model.md` |
-| State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md` |
+| Diagnosis, implementation proof, and QA | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, `no-mistakes-lite.md`, `related-impact-audit.md`, `test-coverage.md`, `agent-os-evidence-model.md`, `sims-ui-audit.md` |
+| State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md`, `autonomous-work-packets.md`, `parallel-work-and-worktrees.md` |
 | Memory | `agent-os-memory.md`, `agent-os-memory-architecture.md` |
-| Safety, capability, and access | `agent-os-approval-gates.md`, `agent-os-capability-model.md`, `agent-access-map.md`, `commit.md` |
+| Safety, capability, and access | `agent-os-approval-gates.md`, `agent-os-capability-model.md`, `agent-access-map.md`, `commit.md`, `capabilities.example.json` |
 | GitHub, PR, release, deploy, and incidents | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `release-documentation.md`, `monitor-production-logs.md`, `incident-workflow.md`, `product-push-map.md` |
-| Governance, improvement, and evals | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md`, `agent-os-coverage-audit.md`, `workflow-efficiency-audit.md` |
-| Installation, rollout, and project profiles | `agent-os-installation.md`, `agent-os-install-manifest.json`, `agent-os-rollout-readiness.md`, `agent-os-staff-quick-start.md`, `project-adoption.md`, `agent-os-profile-registry-operations.md`, project profiles under `project-profiles/` |
+| Governance, improvement, and evals | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md`, `agent-os-coverage-audit.md`, `workflow-efficiency-audit.md`, `quick-check.md` |
+| Installation, rollout, and project profiles | `agent-os-installation.md`, `agent-os-install-manifest.json`, `agent-os-rollout-readiness.md`, `agent-os-staff-quick-start.md`, `project-adoption.md`, `agent-os-profile-registry-operations.md`, `developer-full-adoption-pack.md`, project profiles under `project-profiles/`, templates under `templates/` |
 | Mission and future work | `mission-ledger.md`, `mission-ledger/*`, `plane.md` |
-| Research and roadmap | `agent-os-research.md`, `agent-os-review-roadmap.md`, `parity-status.md`, `claude-codex-parity-implementation-report.md`, `commit-plan.md`, `lls-workflow-migration.md`, `workflow-rollout-cleanup.md`, `README.md` |
-| Historical session saves | `session-save-*.md` |
+| Reporting | `weekly-delivery-report.md` |
+| Research and roadmap | `agent-os-research.md`, `agent-os-review-roadmap.md` |
 
 ## Historical Or Reference-Only Docs
 
 Historical docs may be useful, but they should not silently control new work.
-
 Treat these as reference unless the active route points to them:
 
-- `claude-codex-parity-implementation-report.md`
-- `commit-plan.md`
-- `parity-status.md`
-- `product-push-map.md`
-- `session-save-*.md`
-- `lls-workflow-migration.md`
-- `workflow-rollout-cleanup.md`
+- [claude-codex-parity-implementation-report.md](claude-codex-parity-implementation-report.md)
+- [commit-plan.md](commit-plan.md)
+- [parity-status.md](parity-status.md) (still read by `workflow-doctor.sh` and the project registry check)
+- [product-push-map.md](product-push-map.md)
+- [lls-workflow-migration.md](lls-workflow-migration.md) (remaining migration work only)
+- [workflow-rollout-cleanup.md](workflow-rollout-cleanup.md)
+- [archive/](archive/): completed session saves and other retired material, kept for history
 
 If a historical doc conflicts with current `AGENTS.md`, active playbooks, or
 current Git state, the current source wins.
+
+## Validation
+
+`scripts/agent-checks/agent-os-doc-navigation-check.py` reads this index and
+fails health when an active playbook is missing from the inventory above, when
+the inventory names a file that does not exist, when a link or `@import` in
+the instruction layer is broken, when `CLAUDE.md` stops importing `AGENTS.md`,
+when an entry file exceeds its budget, or when a navigation scenario loses its
+safety wiring. Run it with `--verbose` to see every check, and `--self-test`
+to prove it still detects each failure on synthetic roots.
 
 ## When Adding A New Doc
 
@@ -120,5 +147,5 @@ Plain version:
 Pick one owner.
 Move the useful rule there.
 Turn the duplicate into a pointer or park it.
-Delete only when references are clean.
+Archive when nothing active links to it; delete only when references are clean.
 ```

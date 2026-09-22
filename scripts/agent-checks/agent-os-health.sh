@@ -157,6 +157,8 @@ check_file "Agent OS production logs probe" "$ROOT/scripts/agent-checks/agent-os
 check_file "Agent OS live evidence report" "$ROOT/scripts/agent-checks/agent-os-live-evidence-report.py"
 check_file "Agent OS conversation fixtures" "$ROOT/scripts/agent-checks/agent-os-conversation-fixture-runner.py"
 check_file "Agent OS parity fixtures" "$ROOT/scripts/agent-checks/agent-os-parity-fixture-runner.py"
+check_file "Agent OS doc navigation check" "$ROOT/scripts/agent-checks/agent-os-doc-navigation-check.py"
+check_file "Agent OS doc navigation scenarios" "$ROOT/scripts/agent-checks/fixtures/doc-navigation-scenarios.json"
 check_file "Agent OS validation loop" "$ROOT/scripts/agent-checks/agent-os-validation-loop.py"
 check_file "Agent OS scenario lab" "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py"
 check_file "Agent OS behavior trace" "$ROOT/scripts/agent-checks/agent-os-behavior-trace-runner.py"
@@ -377,6 +379,26 @@ else
   sed -n '1,8p' $TMP_DIR/agent-os-parity-fixtures.err 2>/dev/null || true
 fi
 rm -f $TMP_DIR/agent-os-parity-fixtures.out $TMP_DIR/agent-os-parity-fixtures.err
+
+if "$ROOT/scripts/agent-checks/agent-os-doc-navigation-check.py" >$TMP_DIR/agent-os-doc-navigation.out 2>$TMP_DIR/agent-os-doc-navigation.err; then
+  doc_navigation_summary="$(tail -1 $TMP_DIR/agent-os-doc-navigation.out 2>/dev/null || true)"
+  pass "Agent OS doc navigation" "${doc_navigation_summary:-passed}"
+else
+  fail "Agent OS doc navigation" "doc navigation check failed (links, owner index, adapter import, budgets, scenarios)"
+  sed -n '1,12p' $TMP_DIR/agent-os-doc-navigation.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-doc-navigation.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-doc-navigation.out $TMP_DIR/agent-os-doc-navigation.err
+
+if "$ROOT/scripts/agent-checks/agent-os-doc-navigation-check.py" --self-test >$TMP_DIR/agent-os-doc-navigation-self-test.out 2>$TMP_DIR/agent-os-doc-navigation-self-test.err; then
+  doc_navigation_self_test_summary="$(tail -1 $TMP_DIR/agent-os-doc-navigation-self-test.out 2>/dev/null || true)"
+  pass "Agent OS doc navigation self-test" "${doc_navigation_self_test_summary:-passed}"
+else
+  fail "Agent OS doc navigation self-test" "doc navigation self-test failed"
+  sed -n '1,12p' $TMP_DIR/agent-os-doc-navigation-self-test.out 2>/dev/null || true
+  sed -n '1,8p' $TMP_DIR/agent-os-doc-navigation-self-test.err 2>/dev/null || true
+fi
+rm -f $TMP_DIR/agent-os-doc-navigation-self-test.out $TMP_DIR/agent-os-doc-navigation-self-test.err
 
 if python3 "$ROOT/scripts/agent-checks/agent-os-scenario-lab-runner.py" --target 0.90 >$TMP_DIR/agent-os-scenario-lab.out 2>$TMP_DIR/agent-os-scenario-lab.err; then
   scenario_lab_summary="$(tail -1 $TMP_DIR/agent-os-scenario-lab.out 2>/dev/null || true)"

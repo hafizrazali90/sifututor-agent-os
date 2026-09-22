@@ -50,6 +50,21 @@ The hook should never silently perform expensive state changes.
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
 | `Stop` | When Codex is about to stop. | Reminds Codex to save meaningful session state. |
 
+## Codex Hook Notes
+
+`SessionStart` is also a Koda startup gate. If it reports `Koda: FAILED`, repair
+Koda before non-trivial work:
+
+```bash
+python3 scripts/agent-checks/codex-lifecycle-hook.py --check-koda
+```
+
+The Codex Bash guard blocks `--no-verify`, destructive resets, unsafe branch
+names, protected-path removals, and `.env` reads; it runs
+`scripts/agent-checks/pre-commit-guard.sh` before `git commit`; and it logs
+failed Bash commands to `~/.codex-friction.log`. Codex may ask to review or
+trust project hooks through `/hooks` after the config changes; that is expected.
+
 ## Dispatch Rule
 
 Skill selection is:
