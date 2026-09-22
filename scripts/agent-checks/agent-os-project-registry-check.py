@@ -91,10 +91,10 @@ BASH_REGISTRIES = {
 # an unreadable-registry error.
 MARKDOWN_REGISTRIES = {
     "AGENTS.md": (
-        ("active project table", "Active projects:", ("Retired projects:", "`live/` contains production snapshots")),
+        ("active project table", "| Project | Purpose |", ("Retired projects:", "`team-inbox` is retired", "`live/` contains production snapshots")),
     ),
     "docs/agent-playbooks/README.md": (
-        ("project families table", "## Project Families", "## Universal Order"),
+        ("project families table", "## Project Families", ("## Where Rules Live", "## Universal Order")),
     ),
     "docs/agent-playbooks/parity-status.md": (
         ("completed baseline table", "## Completed Baseline", "## Source Of Truth"),
