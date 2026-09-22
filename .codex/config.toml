@@ -9,27 +9,9 @@ matcher = ".*"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py'
-timeout = 10
-statusMessage = "Checking the current task approval boundary"
-
-[[hooks.PreToolUse]]
-matcher = ".*"
-
-[[hooks.PreToolUse.hooks]]
-type = "command"
-command = 'python3 scripts/agent-checks/secret_output_guard.py'
-timeout = 10
-statusMessage = "Preventing secret-bearing tool output"
-
-[[hooks.PreToolUse]]
-matcher = "^(Bash|exec_command|functions\\.exec)$"
-
-[[hooks.PreToolUse.hooks]]
-type = "command"
-command = 'python3 scripts/agent-checks/codex-pre-tool-use.py'
+command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-pre-tool-dispatch.py'
 timeout = 30
-statusMessage = "Checking Sifututor Bash guardrails"
+statusMessage = "Checking Agent OS safety rules"
 
 [[hooks.PostToolUse]]
 matcher = "^(Bash|exec_command|functions\\.exec)$"

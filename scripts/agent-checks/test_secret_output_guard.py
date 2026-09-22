@@ -490,11 +490,15 @@ class SecretOutputGuardTest(unittest.TestCase):
     def test_codex_guard_runs_for_all_tools(self) -> None:
         config = tomllib.loads((ROOT / ".codex" / "config.toml").read_text())
         groups = config["hooks"]["PreToolUse"]
+        self.assertEqual(len(groups), 1)
         self.assertTrue(
             any(
                 group.get("matcher") == ".*"
                 and any(
-                    "secret_output_guard.py" in hook.get("command", "")
+                    (
+                        "secret_output_guard.py" in hook.get("command", "")
+                        or "codex-pre-tool-dispatch.py" in hook.get("command", "")
+                    )
                     for hook in group.get("hooks", [])
                 )
                 for group in groups
