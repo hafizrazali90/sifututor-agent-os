@@ -56,7 +56,7 @@ class BuildRecordFieldsTest(unittest.TestCase):
         record = observability.build_record(full_response())
         self.assertEqual(
             set(record.keys()),
-            {"decision_type", "provider", "latency_ms", "cost", "confidence", "fallback_used", "outcome"},
+            {"decision_type", "provider", "latency_ms", "cost", "usage_input_tokens", "usage_output_tokens", "confidence", "fallback_used", "outcome"},
         )
 
     def test_record_values_match_the_response(self) -> None:
