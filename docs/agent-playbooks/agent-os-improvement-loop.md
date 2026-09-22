@@ -210,7 +210,15 @@ Run focused checks while editing, then one full owner at completion. Do not run
 runs health internally, and health already runs the deterministic eval and
 fixture suite.
 
-For documentation and skill-wrapper changes, the completion sweep is:
+For documentation and skill-wrapper changes, run the navigation check while
+editing (it is fast and names the exact broken link, missing owner-index entry,
+adapter drift, or budget overrun):
+
+```bash
+scripts/agent-checks/agent-os-doc-navigation-check.py --verbose
+```
+
+The completion sweep is:
 
 ```bash
 git diff --check

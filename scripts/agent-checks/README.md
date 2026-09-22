@@ -114,6 +114,25 @@ PYTHONPATH=scripts/agent-checks python3 -m unittest test_agent_os_active_task_fr
 full workspace scan runs inside `workflow-doctor.sh`. Owning playbook:
 `docs/agent-playbooks/active-tasks.md`.
 
+## Doc Navigation
+
+```bash
+scripts/agent-checks/agent-os-doc-navigation-check.py
+scripts/agent-checks/agent-os-doc-navigation-check.py --verbose
+scripts/agent-checks/agent-os-doc-navigation-check.py --self-test
+```
+
+Proves the knowledge architecture stays navigable without a model call: every
+relative link and `@import` in `AGENTS.md`, `CLAUDE.md`, the playbooks, Codex
+skills, and the Kilo adapter resolves; `CLAUDE.md` imports `AGENTS.md` and
+nothing else; entry files stay inside their byte budgets (including the Codex
+32 KiB `AGENTS.md` chain for any sub-project checkout present); every active
+playbook is named in `doc-owner-route-index.md`; archived docs are not linked
+from the entry layer; and the scenarios in
+`fixtures/doc-navigation-scenarios.json` still reach the documents they must
+reach with the safety phrases intact. `--self-test` mutates synthetic roots to
+prove each failure is detected. `agent-os-health.sh` runs both modes.
+
 ## Doctor
 
 ```bash

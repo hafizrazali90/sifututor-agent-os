@@ -1099,3 +1099,119 @@ but the project behavior still comes from the same Sifututor Agent OS.
 - Should Plane be visible to all staff or only Hafiz and engineering leads?
 - What is the smallest safe workflow for non-technical staff to report bugs
   without touching code?
+
+
+## 2026-09-22 Knowledge Architecture Research (Issue #198)
+
+Research, measurement, and runtime tests behind the progressive-disclosure
+redesign of the instruction layer. Implementation and scenario evidence are in
+the pull request for issue #198 and the navigation check; this section keeps the sources and the
+decisions so future agents do not re-derive them.
+
+### Question
+
+How should Claude, Codex, and future models reach the same shared rules with
+less always-loaded context, one owner per rule, and no new infrastructure?
+
+### Runtime tests (this machine, fresh runs on marker files)
+
+| Test | Claude Code 2.1.222 | Codex CLI 0.154.0 |
+| --- | --- | --- |
+| Directory with only `AGENTS.md` | not loaded (`NONE`) | loaded |
+| `CLAUDE.md` containing `@AGENTS.md` | `AGENTS.md` loaded | `CLAUDE.md` not read |
+| `CLAUDE.md` symlinked to `AGENTS.md` | loaded | n/a |
+| Subdirectory `CLAUDE.md`/`AGENTS.md` below cwd, no file opened | not loaded | not loaded |
+| Parent-directory file above a nested Git repo cwd | `CLAUDE.md` loaded | `AGENTS.md` not loaded |
+| `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD` | unset in this environment | n/a |
+
+Method: `claude -p "<codeword question>" --model haiku --output-format json`
+and `codex exec --skip-git-repo-check -s read-only` in scratch directories
+that contained only the marker files. These prove loading behaviour, not
+instruction compliance.
+
+### Measured baseline (before the change, umbrella root)
+
+| Measure | Value |
+| --- | --- |
+| Root `CLAUDE.md` (untracked in Git before this change) | 23,664 bytes |
+| Root `AGENTS.md` | 12,454 bytes |
+| Global `~/.claude/CLAUDE.md` | 12,405 bytes |
+| Global `~/.codex/AGENTS.md` | 4,014 bytes |
+| Claude prompt at launch, fresh `claude -p` at root (two runs) | 46,385 and 47,207 tokens |
+| Claude prompt in an empty directory (tools plus global adapter only) | about 30,100 tokens |
+| Codex prompt at launch, `codex exec` at root | 8,533 tokens |
+| Active playbooks in `docs/agent-playbooks/` (top level) | 88 files, 1,225,016 bytes, 183,279 words |
+| Largest playbooks | `agent-os-workflows.md` 84.9 KB, `agent-os-evals.md` 63.7 KB, `agent-os-review-roadmap.md` 53.7 KB |
+| Broken relative links across the instruction layer | 0 of 468 |
+| Playbooks with zero inbound Markdown links | 7 (3 historical session saves with no reference at all) |
+| Exact duplicate sentences of 8+ words across instruction files | 19 (mostly skill-wrapper boilerplate) |
+| Index layers describing the same library | 4 (`README.md`, `doc-owner-route-index.md`, `doc-routing-and-context-loading.md`, `agent-os-quick-start.md`) plus alias tables in 3 docs |
+| Most-churned instruction files, last 90 days | `agent-os-eval-coverage-map.md` 78 commits, `agent-os-evals.md` 63, install manifest 54, `task-router.md` 26, `AGENTS.md` 23 |
+| Sub-project `AGENTS.md` files linking to the root contract | 5 of 12 |
+
+The important finding was not file size. Claude never received the shared
+contract automatically: the umbrella `CLAUDE.md` was a 23.7 KB Claude-only
+handbook that told Claude in words to read `AGENTS.md`, which the vendor docs
+say only happens "if it decides to open the file". Codex received the contract
+natively. That is a structural parity gap, closed by the `@AGENTS.md` import.
+
+### Options compared
+
+| Option | Evidence | Decision |
+| --- | --- | --- |
+| A. `CLAUDE.md` symlinked to `AGENTS.md` | Documented and tested working; Edit/Write refuse to write through the link; Windows checkouts get a text file; no room for Claude mechanics. | Rejected |
+| B. Thin `CLAUDE.md` that imports `AGENTS.md` | Documented exact pattern (`@AGENTS.md` then a Claude section); tested working; never double-loaded even after Claude 2.1.277 adds direct `AGENTS.md` reading; used by `modelcontextprotocol/python-sdk` and `cloudflare/workers-sdk`. | Adopted |
+| C. Duplicated model-specific files | No vendor endorses it; Claude docs say contradictory rules are picked arbitrarily; `PostHog/posthog` keeps 40 KB twins that exceed Codex's 32 KiB cap. | Rejected |
+| D. Generated adapters | Only one-time copies exist in vendors (`/import`, `/init`); a generator is extra machinery to avoid a one-line import. | Not needed |
+| E. Small shared index plus task-triggered docs | Matches Claude's 200-line guidance, Codex's 32 KiB chain cap, Cursor's "reference files instead of copying", llms.txt, and Anthropic's three-level progressive disclosure; `mastra-ai/mastra` is a live example. | Adopted with B |
+
+Graph database or new infrastructure: rejected. No vendor loads a graph;
+every vendor loads a small file with links, and Anthropic's own guidance says
+path-based just-in-time retrieval avoids "stale indexing". The repo already
+has `/graphify` as an optional secondary tool.
+
+### Sources
+
+| Source | Accessed | Tier | What it proves |
+| --- | --- | --- | --- |
+| https://code.claude.com/docs/en/memory | 2026-09-22 | official | Load order; lazy subdirectory files; `@import` (4 hops, code blocks skipped, external approval); `@AGENTS.md` example; symlink support and limits; 200-line target; direct `AGENTS.md` reading only from 2.1.277 and only without a `CLAUDE.md`; additional-directories env var |
+| https://code.claude.com/docs/en/best-practices | 2026-09-22 | official | "keep it short"; "link to docs instead"; over-specified `CLAUDE.md` failure pattern; skills for on-demand knowledge |
+| https://code.claude.com/docs/en/skills | 2026-09-22 | official | Descriptions loaded up front, bodies on invocation; 500-line guidance |
+| https://code.claude.com/docs/en/prompt-caching | 2026-09-22 | official | `CLAUDE.md` is rebuilt at session start and `/compact`; size of the always-loaded layer is the repeatable cost |
+| https://platform.claude.com/docs/en/build-with-claude/prompt-caching | 2026-09-22 | official | Cache invalidation order tools, system, messages; 5-minute TTL refreshed on use |
+| https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md | 2026-09-22 | official | 2.1.277: "in a project with no CLAUDE.md, Claude Code reads AGENTS.md instead" |
+| Installed `claude` 2.1.222 binary (`strings`) | 2026-09-22 | primary artefact | The "hardcodes CLAUDE.md / AGENTS.md discovery" string belongs to the one-time Codex `/import` feature, not to memory loading |
+| https://learn.chatgpt.com/docs/agent-configuration/agents-md | 2026-09-22 | official | Codex chain built once per run, root to cwd, one file per directory, 32 KiB default, stops adding files |
+| https://learn.chatgpt.com/docs/config-file/config-reference | 2026-09-22 | official | `project_doc_max_bytes`, `project_doc_fallback_filenames` (empty by default, so `CLAUDE.md` is never read), skills catalog budget |
+| https://github.com/openai/codex/blob/main/codex-rs/core/src/agents_md.rs and `config_toml.rs` | 2026-09-22 | OSS source | Shared byte budget; crossing file truncated; later files dropped |
+| https://agents.md/ | 2026-09-22 | spec | Nested `AGENTS.md` for monorepos; nearest file wins |
+| https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions | 2026-09-22 | official | `copilot-instructions.md`; path-specific `applyTo`; nearest `AGENTS.md` wins; a single root `CLAUDE.md` accepted |
+| https://cursor.com/docs/context/rules | 2026-09-22 | official | `.mdc` rules; `AGENTS.md` alternative; "Reference files instead of copying their contents" |
+| https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | 2026-09-22 | vendor publication | Context rot; just-in-time retrieval; progressive disclosure; grep and paths bypass stale indexing |
+| https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills | 2026-09-22 | vendor publication | Three levels of progressive disclosure |
+| https://llmstxt.org/ | 2026-09-22 | community spec | Index plus links; detail fetched only when needed |
+| GitHub contents API for `modelcontextprotocol/python-sdk`, `cloudflare/workers-sdk`, `mastra-ai/mastra`, `microsoft/vscode`, `openai/codex`, `PostHog/posthog`, `pydantic/pydantic-ai` | 2026-09-22 | OSS | Sizes and patterns of real `AGENTS.md`/`CLAUDE.md` pairs |
+
+Inference, not vendor evidence: the mapping of the three skill levels onto an
+instruction system (contract, triggered doc, deep playbook), and the claim that
+circular prose pointers are a practical failure mode. Community claims that
+smaller files improve compliance were not relied on; the 2026 factorial study
+cited in the earlier efficiency research found no size effect, so size limits
+here are budget constraints, not compliance claims.
+
+### Decisions recorded
+
+- `CLAUDE.md` at the umbrella root is tracked in Git from this change so the
+  Claude adapter is reviewable and parity-checked. The old untracked file is
+  replaced by the thin adapter; the machine-local copy must be moved aside
+  before pulling `main`.
+- `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD` stays unset. Sub-project
+  rules are reached by reading the nearest `AGENTS.md`, which the contract
+  already requires.
+- `doc-owner-route-index.md` is the single inventory; `README.md` is a short
+  start page; the Knowledge Architecture section of
+  `doc-routing-and-context-loading.md` owns loading rules and budgets.
+- Sub-project `AGENTS.md` files that do not link to `../AGENTS.md` (7 of 12)
+  leave Codex without the shared contract inside that repo. Tracked as a
+  follow-up in the product repositories, reported by navigation scenarios
+  NAV-03 and NAV-04 as advisory when those checkouts are present.

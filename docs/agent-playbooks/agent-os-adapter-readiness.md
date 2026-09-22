@@ -164,6 +164,23 @@ Kilo should be ready when:
 - installed-path discovery (`--installed-kilo`) and real GLM traces
   (`--live-kilo`) pass when explicitly requested as rollout evidence.
 
+Kilo operational notes (moved here from the playbook README):
+
+- The configured Z.ai Coding Plan connection is text-only. If an image was
+  attached and Z.ai returned a `messages.content.type` 400 response, reload
+  Kilo's config and start a new task so the retained image is not replayed.
+- For visual work, install Z.ai's local Vision MCP Server and refer to an
+  image saved in the workspace (for example `./screenshots/error.png`) instead
+  of pasting it; the agent keeps `zai-vision_*` on `ask`, so approve the
+  specific image-analysis call in Kilo's permission dock.
+- After changing the Kilo adapter, verify portable behavior first, then the
+  installed adapter and real GLM traces when rollout evidence is needed:
+
+```bash
+python3 scripts/agent-checks/kilo-agent-os-adapter-check.py --installed
+python3 scripts/agent-checks/agent-os-adapter-readiness.py --require-installed-kilo --require-live-kilo
+```
+
 Kilo strength:
 
 ```text

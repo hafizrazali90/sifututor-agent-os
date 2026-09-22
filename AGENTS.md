@@ -1,7 +1,8 @@
 # AGENTS.md — Sifututor Agent OS
 
-Shared operating contract for Claude, Codex, and future agents. `CLAUDE.md`
-adds Claude-specific orientation; project `AGENTS.md` files may add stricter
+Shared operating contract for Claude, Codex, and future agents. Codex loads
+it natively; Claude loads it through the `@AGENTS.md` import in `CLAUDE.md`,
+which adds only Claude mechanics. Project `AGENTS.md` files may add stricter
 rules. This file keeps only rules that must be visible in every task. Detailed
 procedures live in `docs/agent-playbooks/`.
 
