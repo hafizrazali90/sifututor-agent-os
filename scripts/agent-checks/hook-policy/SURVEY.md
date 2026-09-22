@@ -1,221 +1,167 @@
-# Hook survey — what exists today (read 2026-09-22)
+# hook-policy: live-hook parity harness (issue #161, PR #175)
 
-This is the source-of-truth survey for bundle 8 (issue #161). Every script
-named below was opened and read in full before writing this file; nothing
-here is from memory. File contents can drift after this date — re-read the
-named source before trusting this file for anything beyond understanding
-`hook-policy`'s design intent.
+**This PR is a tested parity harness, not completed consolidation.** The only
+live behaviour it changes is one regex in `scripts/agent-checks/codex-pre-tool-use.py`
+(issue #177). No hook was moved, merged, re-registered, or removed. This
+directory owns no policy: every rule lives in the live script the harness
+invokes.
 
-Scope note: this survey covers the umbrella `sifututor-agent-os` repo
-(`.claude/hooks/`, `scripts/agent-checks/`) plus four sub-project
-`.claude/hooks/` directories in the sibling `~/Projects/Sifututor` workspace
-(`ripple-suite`, `sifu-tutor`, `sifututor_tutor`, `lls`), read read-only for
-survey purposes. This repo does not vendor copies of those sub-project
-files; two representative ones (`quality-gate.py`, `workflow-gate.py`) were
-snapshotted into `fixtures/originals/` for parity testing — see the header
-comment on each snapshot for the exact source path and read date.
-
-## 1. Branch name validation
-
-**Claude side** — `.claude/hooks/validate-branch-name.py` (this repo, the
-umbrella copy; installed verbatim into `sifututor_tutor`, `lls`, and
-`ripple-suite` — byte-identical, confirmed by md5). `sifu-tutor`'s copy has
-drifted: different docstring, different exception handling (`except
-json.JSONDecodeError` + exit 1 vs a silent catch-all + exit 0), a narrower
-deployment-branch allowlist (missing `nakngaji-*`), and no `release/*`
-allowlist. This drift is the concrete "duplicated logic" problem: four
-supposedly-identical copies, one of them silently different.
-
-- Input: Claude `PreToolUse` JSON on stdin — `{tool_name, tool_input:
-  {command}}`.
-- Only inspects `Bash` tool calls containing `git checkout -b` or `git
-  switch -c`.
-- Extracts the branch name with `git (?:checkout -b|switch -c)\s+([^\s]+)`.
-- Allows a fixed base-branch set (`main`, `master`, `develop`, `staging`,
-  `dev`, `live-qa`, `integration`, `sifu-staging`, `sifu-backport`),
-  deployment branches matching `^(sifu|lls|learnest|nakngaji)-[a-z0-9...]`,
-  release branches matching `^release[/-][a-z0-9...]`, and anything inside
-  an `ssh ` command (can't validate a remote branch name).
-- Otherwise requires `type/kebab-description` where type is one of `feat
-  feature fix refactor hotfix chore docs perf test ci`.
-- Output on reject: `hookSpecificOutput.permissionDecision = "deny"` with a
-  long human-readable reason. Output on accept: exit 0, no stdout.
-
-**Codex side** — `scripts/agent-checks/codex-pre-tool-use.py`, lines ~108-119.
-Same intent, independently reimplemented as one inline regex compiled from
-the same four allow-groups, checked with `.match()` instead of allow-list
-membership. It reads `tool_input.command`/`tool_input.cmd` rather than
-Claude's `tool_input.command` only, and resolves `cwd` differently (see
-`read_request()`). This is real cross-agent duplication: the same policy,
-written twice, already observed to be able to drift the way the Claude
-copies did.
-
-## 2. Commit message format (Conventional Commits)
-
-**Claude side** — `.claude/hooks/conventional-commits.py` (this repo's
-umbrella copy; the four sub-projects' copies are NOT identical — see md5
-table below). Parses the *first* `-m "..."` flag's value with a regex, takes
-its first line, and requires it to match `^[^\x00-\x7F\s]*\s*?(feat|fix|docs
-|style|refactor|perf|test|chore|ci|build|revert|wip)(\(.+\))?:\s.+` (an
-optional leading emoji, then a conventional-commits type). Skipped entirely
-if `--no-verify` is present, or if no `-m` flag can be extracted (e.g.
-`--amend` with no message). Deny output uses the same
-`hookSpecificOutput.permissionDecision = "deny"` shape as branch validation.
-
-md5 of `conventional-commits.py` across projects: ripple-suite ==
-sifu-tutor (`c16699d2...`), sifututor_tutor and lls each have their own
-distinct hash — three different bodies for what is meant to be one shared
-rule.
-
-**Codex side** — no independent Conventional Commits regex exists. Instead
-`codex-pre-tool-use.py` blocks the *HEREDOC* commit-message pattern
-(`$(cat <<`, `<<EOF`, `<<'EOF'`) outright on any `git commit`, which the
-Claude-side script does not check at all (its docstring only *warns* that
-HEREDOC messages parse wrong; it does not block them). This is a real
-coverage gap in the opposite direction: Codex blocks something Claude
-silently mis-parses.
-
-## 3. Quality gate (pre-commit lint/build reminder)
-
-Representative real implementation read: `ripple-suite/.claude/hooks/
-quality-gate.py` (frozen snapshot: `fixtures/originals/
-ripple_quality_gate_snapshot.py`, read 2026-09-22 from
-`~/Projects/Sifututor/ripple-suite/.claude/hooks/quality-gate.py`).
-
-- Only fires on `git commit` (not `--no-verify`).
-- Reads staged files via `git diff --cached --name-only --diff-filter=ACMR`
-  in `project_root` (two directories above the hook file).
-- If any staged `.ts/.tsx/.js/.jsx` file sits under a "code directory"
-  (`src/`, `app/`, `pages/`, `components/`, `lib/`, `hooks/`, `utils/`,
-  `types/`, `modules/`), emits `permissionDecision: "ask_user"` listing the
-  files and asking the human to confirm `npm run lint && npm run build`
-  passed. This is a soft, human-confirmable gate — it never hard-denies.
-- If any staged file starts with one of a fixed critical-path list
-  (`src/middleware.ts`, `src/lib/db.ts`, `src/app/api/auth/`, tutor-payments
-  module, etc.), emits a second, stricter `ask_user` prompt.
-- `lls` and `sifututor_tutor` have their own `quality-gate.py` with
-  different extensions/paths/commands (PHP lint vs `npm run check` vs `npm
-  run lint && npm run build`) — same shape, different parameters. This is
-  exactly the "same policy, different config" case `hook-policy`'s
-  `checks/quality_gate.py` is written to generalize instead of duplicate.
-
-## 4. Workflow gate (mandatory step enforcement before commit)
-
-Representative real implementation read: `ripple-suite/.claude/hooks/
-workflow-gate.py` (frozen snapshot: `fixtures/originals/
-ripple_workflow_gate_snapshot.py`, read 2026-09-22).
-
-- Only fires on `git commit` (not `--no-verify`).
-- Reads `.claude/tasks/active.json` → `taskFile` → the task JSON at that
-  path. Exits 0 (allow) whenever any of these are missing/unreadable — a
-  project with no active task state is never blocked by this gate.
-- Reads `route` and `steps` (list of `{name, status, ...}`) from the task.
-- Unconditionally requires `verify` and `qa` steps to be `done` or
-  `skipped` when present in `steps`.
-- On `route in {hotfix, bugfix}`: requires `regression_test` to be `done`
-  (with non-empty `evidence.red_output` and `evidence.green_output`) or
-  `skipped`; requires `defect_analysis` to be `done` or `skipped`.
-- On `route in {hotfix, bugfix, feature, small-change}`: requires
-  `release_notes` to be `done` or `skipped`.
-- Any unmet requirement accumulates into one `deny` with a bulleted list of
-  every missing step plus the task file path to edit.
-- `sifu-tutor`/`sifututor_tutor` share one workflow-gate.py body (md5
-  `f0b36490...`); `ripple-suite` and `lls` each have their own distinct
-  body (different route names, e.g. LLS routes differ). Three genuinely
-  different bodies encoding "the same idea, parameterized by project" —
-  again a config-not-code case.
-
-## 5. Command-safety / content guard
-
-`scripts/agent-checks/secret_output_guard.py` (this repo) is already the
-single shared implementation — every hook (`quality-gate.py`,
-`workflow-gate.py` via `claude_hook_dispatch.py`, and the Codex lifecycle
-hook per `docs/agent-playbooks/agent-os-hook-dispatcher.md`) is expected to
-route through it rather than reimplement it. It exposes
-`evaluate_command(command: str) -> Decision(allowed, reason)`, a large
-ordered table of regexes blocking whole-environment dumps, raw credential
-files, secret-store reads, shell tracing, etc., plus a separate
-`evaluate_tool_request()` for visual-capture-during-credential-reveal
-blocking. Because this one is already consolidated, `hook-policy`'s
-`checks/command_safety.py` **wraps it directly** (imports and calls the
-real function) rather than reimplementing it — the "parity" here is
-definitional, not approximate.
-
-`codex-pre-tool-use.py` additionally hard-denies, inline, a short list not
-covered by `secret_output_guard.py`: `--no-verify`, `git reset --hard`,
-`git checkout --`, `rm -rf` on `live/`/`.workflow-rollout/`, and direct
-reads of `.env*` via `cat/sed/awk/.../node`. These are cheap, deterministic,
-always-safe checks with no Claude-side equivalent found (Claude relies on
-its own permission `deny` rules in `settings.local.json` for some of these
-instead of a hook). `hook-policy` reimplements this short list as its own
-checks (`check_codex_safety_guards.py`: `NoVerifyBypassGuard`,
-`DestructiveGitGuard`, `ProtectedPathGuard`) so the *policy* — not just the
-Codex script — becomes the one shared source, with a parity fixture proving
-equal behavior against the real `codex-pre-tool-use.py`.
-
-**Known upstream gap found while writing the parity fixture**: the real
-`git checkout --` regex in `codex-pre-tool-use.py` is `` git\s+checkout\s+--\b ``.
-`\b` is a word-boundary assertion, and `-` is not a word character, so this
-only matches when `--` is immediately followed by a word character with no
-space (`git checkout --foo`) — it does **not** match the actual common Git
-syntax `git checkout -- <path>` (space before the path), which is the real
-destructive form this guard is meant to catch. Confirmed directly against
-the live script (`echo '{"tool_name":"exec","tool_input":{"command":"git
-checkout -- file.txt"}}' | python3 scripts/agent-checks/codex-pre-tool-use.py`
-prints nothing, i.e. allows). `DestructiveGitGuard.run()` mirrors this exact
-(buggy) behavior on purpose — `test_check_codex_safety_guards.py` locks
-both the caught form and the missed form as separate, named tests — because
-this bundle's job is behavior-identical parity, not silently fixing an
-upstream hook it is explicitly forbidden from touching. Fixing the regex
-itself is a small, separate, future change to `codex-pre-tool-use.py` (or,
-after cutover, to this module) and is out of this bundle's scope.
-
-## 6. What's genuinely expensive/model-backed today
-
-Nothing in the surveyed hooks calls a network service or a model directly.
-The closest real analogue is `docs/agent-playbooks/agent-os-hook-dispatcher.md`'s
-description of Codex's `SessionStart` Koda health check and
-`.claude/hooks/koda-context-injector.py`'s memory lookup, both of which are
-documented to "fail silently" today rather than degrade visibly. Bundle 1's
-`scripts/agent-checks/decision-layer/` already builds a bounded
-timeout/retry/fallback wrapper for a real model-backed provider (see
-`engine.py`, `retry.py`, `provider_jev.py`) for a *different* concern
-(typed yes/no policy decisions, not hook gating). `hook-policy` does not
-depend on or modify that module; it implements its own small, purpose-built
-timeout wrapper (`dispatcher.py::_run_expensive`) for the two representative
-expensive-check examples this bundle ships
-(`checks/expensive_examples.py`), because hook gating's failure contract
-(required → block, advisory → degrade-visibly) is stricter than the
-decision-layer's (always falls back to `"undetermined"`, whether the check
-was required or advisory). Documenting this distinction here is intentional
-so a future engineer does not "simplify" by merging the two.
-
-## md5 table (evidence for the duplication claims above)
+## Files
 
 ```text
-validate-branch-name.py:
-  ripple-suite      == sifututor_tutor == lls == (this repo's umbrella copy)  1f3a003a46fde3d0de40e5205fc5f993
-  sifu-tutor (DRIFTED)                                                         87f1474ade3fb21dec2101a12b55404b
-
-conventional-commits.py:
-  ripple-suite      == sifu-tutor        c16699d283fe89a53a5a8ec0fd688948
-  sifututor_tutor (own body)             9840c798b69e381247b4ee22fcbda3b4
-  lls (own body)                         97bccf5e1c6c765d1455c30ca6a6ff42
-
-workflow-gate.py:
-  sifu-tutor        == sifututor_tutor   f0b36490dae818c33f481389afc7be23
-  ripple-suite (own body)                9fa6c1d02c2b756e4162950b313be798
-  lls (own body)                         9c315d8e107fce7517032bb8c07f3f9d
+parity_harness.py       fixtures + subprocess runner over the live hooks + md5 drift report
+test_parity_harness.py  the tests (unittest); one skip when no sub-projects are reachable
+measure.py              latency and false-block rate of the live hooks over the same fixtures
+SURVEY.md               this file
 ```
 
-## What this bundle does and does not do with the above
+Run:
 
-`hook-policy` (this directory) implements one parameterized check per
-policy above, proves each one produces the same accept/reject decision as
-the *current* real script for the same input (see `tests/test_parity_*.py`),
-and exposes thin Claude/Codex adapters that call the same checks instead of
-each reimplementing them. It does not touch, replace, or re-register any of
-the files named in this survey. Live cutover — pointing an actual
-`.claude/hooks/*.py` file or `settings.json` hook registration at this
-module — is a separate, future, carefully-reviewed decision. See the PR
-body for the explicit statement.
+```bash
+python3 -m unittest discover -s scripts/agent-checks/hook-policy -p 'test_*.py'
+python3 scripts/agent-checks/hook-policy/parity_harness.py   # parity + drift table
+python3 scripts/agent-checks/hook-policy/measure.py          # JSON latency report
+```
+
+From a worktree (no sub-project checkouts under the repo root) set
+`SIFUTUTOR_WORKSPACE_ROOT=~/Projects/Sifututor` to get the drift table; without
+it the drift test skips and says so.
+
+## Authoritative hook per policy
+
+| Policy | Authoritative live script | Registered by | Fixtures |
+|---|---|---|---|
+| Branch name (`type/kebab`) for Claude | `.claude/hooks/validate-branch-name.py` (umbrella) | umbrella `.claude/settings.json` (gitignored), sub-project `settings.json` pointing at each project's own copy | `BRANCH_FIXTURES` (12) |
+| Conventional Commits for Claude | `.claude/hooks/conventional-commits.py` (umbrella) | same as above | `COMMIT_FIXTURES` (9) |
+| Branch name for Codex | `scripts/agent-checks/codex-pre-tool-use.py` lines 110 to 119 (inline copy of the same rule) | `.codex/config.toml` | `BRANCH_FIXTURES` (12), run against this script too |
+| `--no-verify`, `git reset --hard`, `git checkout --`, `rm -rf live|.workflow-rollout`, `.env` reads, HEREDOC commits (Codex) | `scripts/agent-checks/codex-pre-tool-use.py` | `.codex/config.toml` | `CODEX_FIXTURES` (17) |
+| Hook path resolution for umbrella vs project launches | `scripts/agent-checks/claude_hook_dispatch.py` `audit_project_hook_configuration()` | n/a (audit) | planted temp fixture |
+| Secret and command safety | `scripts/agent-checks/secret_output_guard.py` | umbrella `settings.json`, `run-shared-hook.sh` | not in this harness; it has its own tests |
+| `quality-gate.py`, `workflow-gate.py`, `session-start.py`, `memory-flush.py` | each sub-project's own copy; the umbrella files of the same name are dispatcher wrappers that hand off to the project copy | sub-project `settings.json` | none (see cutover map, step 4) |
+
+The Codex branch-name rule is a second implementation of the Claude one. The
+harness runs the same 12 fixtures against both and both agree today; that is
+the parity claim, not a merge.
+
+## Issue #177 fix (the one live change)
+
+Old guard: `git\s+checkout\s+--\b`. `\b` after `--` only matches when a word
+character follows with no space, so `git checkout -- file.txt` and a bare
+`git checkout --` were allowed.
+
+New guard: `git\s+checkout\s+--(?:\s|$|\b)`. Every other rule in the file is
+byte-identical. Regression fixtures in `CODEX_FIXTURES` and named tests:
+`git checkout -- file.txt` (deny), `git checkout --` (deny),
+`git status && git checkout -- src/` (deny), `git checkout --foo` (still
+deny), `git checkout -b feat/x` (still allow).
+
+## Drift table (md5, computed 2026-09-22 by `parity_harness.drift_report`)
+
+Umbrella copies: `validate-branch-name.py` = `9aaece19`,
+`conventional-commits.py` = `81ba4d42`. Every sub-project copy differs from
+the umbrella copy. Rows are grouped by identical md5; the harness prints one
+row per directory.
+
+| Hook | md5 | Sub-projects carrying that body |
+|---|---|---|
+| `validate-branch-name.py` | `1f3a003a` | ripple-suite, sifututor_tutor, lls, lls-frontend, lls-mobile |
+| `validate-branch-name.py` | `87f1474a` | sifu-tutor (and its seven `sifu-tutor-*` task worktrees) |
+| `validate-branch-name.py` | `a1f184ea` | creative-hub |
+| `validate-branch-name.py` | absent | cx-call-capture-android, finch-inbox, kelas, sifututor_parent, sims-owner-analytics |
+| `conventional-commits.py` | `c16699d2` | ripple-suite, sifu-tutor (and its task worktrees) |
+| `conventional-commits.py` | `9840c798` | sifututor_tutor |
+| `conventional-commits.py` | `97bccf5e` | lls |
+| `conventional-commits.py` | `d653e3ec` | lls-frontend |
+| `conventional-commits.py` | `8ef4e72f` | lls-mobile |
+| `conventional-commits.py` | `77a3f6b6` | creative-hub |
+| `conventional-commits.py` | absent | cx-call-capture-android, finch-inbox, kelas, sifututor_parent, sims-owner-analytics |
+
+Diffed against the umbrella `validate-branch-name.py` on 2026-09-22: the
+`1f3a003a` body and creative-hub's `a1f184ea` body lack the `nakngaji-*`
+deployment and `release/*` allowlists and exit 1 on malformed JSON (the
+umbrella exits 0); sifu-tutor's `87f1474a` body is narrower still, with base
+branches `main master develop staging dev` only and no deployment or release
+allowlist at all. The `conventional-commits.py` bodies were not diffed here.
+
+`sims-owner-analytics` is absent because it already has no hook logic of its
+own: its `.claude/hooks/run-shared-hook.sh` resolves the umbrella script and
+`exec`s it. That is the end state the cutover map moves the others to. The
+earlier version of this file claimed the umbrella copy of
+`validate-branch-name.py` matched ripple-suite; it does not, and that claim is
+withdrawn. Reconverging these copies is issue #176, not this PR.
+
+## Cutover and removal map (future, none of it done here)
+
+There is one source of truth per policy (the table above). Each step below
+replaces a duplicate with a hand-off to that source and names the evidence
+required before it may land.
+
+**Step 0 (this PR).** Harness + #177 fix. Evidence: both suites green, 50/50
+fixtures match, `claude_hook_dispatch.py --root ~/Projects/Sifututor` reports
+60/60 resolvable, 0 blocking.
+
+**Step 1 (issue #176, one PR per project, in this order):** ripple-suite,
+sifututor_tutor, lls, lls-frontend, lls-mobile, creative-hub, then sifu-tutor
+last because its copy differs most from the umbrella rule (narrower base and
+deployment allowlists), so its behaviour change is the largest. In each
+project, replace `.claude/hooks/validate-branch-name.py` and
+`.claude/hooks/conventional-commits.py` with a byte-identical copy of the
+umbrella file. `settings.json` is not edited in this step. The `sifu-tutor-*`
+task worktrees are not edited; they pick the change up when rebased.
+Evidence before merge: `drift_report` shows `identical` for that project on
+both hooks; `run_hook(<project copy>, ...)` over `BRANCH_FIXTURES` and
+`COMMIT_FIXTURES` reports 0 mismatches; `claude_hook_dispatch.py --root`
+still 0 blocking; Hafiz confirms the umbrella allowlist is the agreed rule for
+that project.
+
+**Step 2 (after every Step 1 row reads `identical`, one PR per project, same
+order):** delete the project's two copies and add the project-side
+`run-shared-hook.sh` exactly as `sims-owner-analytics` ships it; change the
+two `settings.json` entries to `bash .claude/hooks/run-shared-hook.sh
+validate-branch-name.py` and `... conventional-commits.py`. After this the
+umbrella file is the only body on disk. Evidence before merge:
+`run-shared-hook.sh --resolve-only <hook>` prints the umbrella path from both
+a direct checkout and a `Sifututor-worktrees/<name>` worktree;
+`claude_hook_dispatch.py --root` 0 blocking; `drift_report` shows `absent`
+for that project; a real `git checkout -b bad_name` in that project is
+denied from both launch positions (manual check, recorded in the PR).
+
+**Step 3 (after Step 2 is complete for every project):** remove the inline
+branch-name regex from `codex-pre-tool-use.py` (lines 110 to 119) and have it
+invoke `.claude/hooks/validate-branch-name.py` by subprocess with the same
+payload shape the harness uses. Evidence before merge: `codex:branch-name`
+suite 0 mismatches before and after; `measure.py` latency for that suite
+recorded before and after (baseline today: mean 29 ms, median 28 ms,
+subprocess-inclusive) and the delta accepted by Hafiz; `.codex/config.toml`
+unchanged.
+
+**Step 4 (not scheduled):** `quality-gate.py`, `workflow-gate.py`,
+`session-start.py`, `memory-flush.py`. Each project's copy is its own source
+of truth today and no shared implementation exists, so there is nothing to
+cut over to. Prerequisite before any consolidation is proposed: a fixture set
+per project, of the same shape as `BRANCH_FIXTURES`, run by this harness
+against the project's live copy, green in that project's CI. Until then those
+files stay project-owned and out of this directory's scope.
+
+## What remains for #161 after this PR
+
+- One PreToolUse dispatcher: the umbrella still registers five separate
+  PreToolUse processes (approval guard, secret guard, branch name, commit
+  message, test-coverage gate) and each sub-project registers its own set.
+- Metadata-only failure logging across that dispatcher.
+- Route-scoped optional MCP loading with capability preflight.
+- Before/after latency and false-block comparison. `measure.py` is the
+  baseline tool; today's baseline is 22 to 29 ms mean per live hook
+  invocation (subprocess-inclusive) and 0.0 false-block rate on every suite.
+
+## Known limitations
+
+- The harness asserts documented accept/deny outcomes for fixture commands.
+  It does not prove two implementations are equivalent for all inputs.
+- No plain `git commit` fixture runs against the Codex guard, because the
+  live guard would shell out to `pre-commit-guard.sh` against the current
+  checkout, which is git state, not policy.
+- `secret_output_guard.py` and the per-project gates are not covered here.
+- The live drift test skips from a worktree unless
+  `SIFUTUTOR_WORKSPACE_ROOT` is set; the planted-fixture drift test always
+  runs.
