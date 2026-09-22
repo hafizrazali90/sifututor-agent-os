@@ -37,8 +37,12 @@ class DefaultConfigTest(unittest.TestCase):
         self.assertGreater(threshold, 0.0)
         self.assertLess(threshold, 1.0)
 
-    def test_default_jev_api_key_is_absent(self) -> None:
-        self.assertIsNone(config.DEFAULT_CONFIG["jev_api_key"])
+    def test_config_never_carries_the_jev_credential(self) -> None:
+        # The key lives only in the sidecar's environment (TYPESAFE_API_KEY);
+        # no config key may hold it, so it can never land in an overrides file.
+        self.assertFalse(any("key" in name.lower() for name in config.DEFAULT_CONFIG))
+        self.assertIsNone(config.DEFAULT_CONFIG["jev_base_url"])
+        self.assertIsNone(config.DEFAULT_CONFIG["jev_model"])
 
 
 class LoadConfigTest(unittest.TestCase):
@@ -52,20 +56,25 @@ class LoadConfigTest(unittest.TestCase):
         self.assertEqual(loaded["provider"], "jev")
         self.assertEqual(loaded["confidence_threshold"], config.DEFAULT_CONFIG["confidence_threshold"])
 
-    def test_jev_api_key_env_var_is_picked_up_without_mutating_defaults(self) -> None:
-        loaded = config.load_config(env={"JEV_API_KEY": "test-only-placeholder"})
-        self.assertEqual(loaded["jev_api_key"], "test-only-placeholder")
-        self.assertIsNone(config.DEFAULT_CONFIG["jev_api_key"])
+    def test_non_secret_base_url_and_model_env_overrides_apply_without_mutating_defaults(self) -> None:
+        loaded = config.load_config(env={"TYPESAFE_BASE_URL": "http://127.0.0.1:1", "TYPESAFE_MODEL": "jev-test"})
+        self.assertEqual(loaded["jev_base_url"], "http://127.0.0.1:1")
+        self.assertEqual(loaded["jev_model"], "jev-test")
+        self.assertIsNone(config.DEFAULT_CONFIG["jev_base_url"])
+
+    def test_api_key_env_var_is_never_copied_into_config(self) -> None:
+        loaded = config.load_config(env={"TYPESAFE_API_KEY": "placeholder-not-a-real-key"})
+        self.assertNotIn("placeholder-not-a-real-key", repr(loaded))
 
     def test_does_not_read_the_real_process_environment_unless_asked(self) -> None:
         # Passing env explicitly (even {}) must never fall through to
         # os.environ -- config loading is deterministic and test-isolated.
-        os.environ["JEV_API_KEY"] = "must-not-leak-into-this-call"
+        os.environ["TYPESAFE_BASE_URL"] = "http://must-not-leak.invalid"
         try:
             loaded = config.load_config(env={})
-            self.assertIsNone(loaded["jev_api_key"])
+            self.assertIsNone(loaded["jev_base_url"])
         finally:
-            del os.environ["JEV_API_KEY"]
+            del os.environ["TYPESAFE_BASE_URL"]
 
 
 if __name__ == "__main__":

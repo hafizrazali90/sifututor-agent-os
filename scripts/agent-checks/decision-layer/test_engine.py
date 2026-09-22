@@ -228,7 +228,7 @@ class EngineJevNotConfiguredFallsBackTest(unittest.TestCase):
     fallback, with zero network attempts."""
 
     def test_falls_back_when_jev_is_not_configured(self) -> None:
-        jev = provider_jev.JevProvider(config={"jev_api_key": None})
+        jev = provider_jev.JevProvider(env={})
         response = engine.decide(request(), config=test_config(), provider=jev)
         self.assertEqual(response["outcome"], "not_configured")
         self.assertTrue(response["fallback_used"])
@@ -251,7 +251,7 @@ class EngineObservabilityIntegrationTest(unittest.TestCase):
         record = observability.build_record(response)
         self.assertEqual(
             set(record.keys()),
-            {"decision_type", "provider", "latency_ms", "cost", "confidence", "fallback_used", "outcome"},
+            {"decision_type", "provider", "latency_ms", "cost", "usage_input_tokens", "usage_output_tokens", "confidence", "fallback_used", "outcome"},
         )
 
 
