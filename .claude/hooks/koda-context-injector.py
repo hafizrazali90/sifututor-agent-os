@@ -24,7 +24,7 @@ if str(AGENT_CHECKS) not in sys.path:
 
 from secret_output_guard import prompt_requests_secret_reveal, sync_secret_visual_boundary
 
-KODA_URL = "https://koda.tutorla.tech/mcp"
+from koda_endpoint import KODA_MCP_URL as KODA_URL  # single source, issue #163
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
 MIN_PROMPT_LEN = 10
 CLOSEOUT_REMINDER = (

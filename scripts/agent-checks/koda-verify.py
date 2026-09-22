@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 from koda_contract import ALL_KODA_TOOLS, capability_report
 
-KODA_URL = "https://koda.tutorla.tech/mcp"
+from koda_endpoint import KODA_MCP_URL as KODA_URL  # single source, issue #163
 GREEN  = "\033[92m"
 RED    = "\033[91m"
 YELLOW = "\033[93m"
