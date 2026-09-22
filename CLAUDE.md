@@ -32,8 +32,6 @@ contract says. Loading rules per model and how they were verified live in
   to the launch cwd; umbrella-launched sessions survive through the shared
   dispatcher described in
   [agent-os-hook-dispatcher.md](docs/agent-playbooks/agent-os-hook-dispatcher.md).
-- Read `GOALS.md` here and in the project when the task needs current focus.
-
 ## Claude mechanics in this workspace
 
 - Parent hooks from `.claude/settings.json`: approval guard, secret-output
@@ -44,8 +42,8 @@ contract says. Loading rules per model and how they were verified live in
   `.workflow-rollout/`. Bash is not pattern-blocked there, so the `live/` rule
   in `AGENTS.md` still applies to shell commands.
 - MCP servers come from the parent `.mcp.json`; Koda is the `memory` server.
-  If the Koda MCP is missing, use `scripts/agent-checks/koda`; never ask for
-  `KODA_API_KEY`. Memory rules:
+  If the Koda MCP is missing, use `scripts/agent-checks/koda`. The shared
+  access and security rules are owned by:
   [agent-os-memory.md](docs/agent-playbooks/agent-os-memory.md).
 - `.claude/tasks/active.json`, project slash commands (`/sifu-commit`,
   `/ripple-qa`, ...), and Claude hooks are adapter helpers, not the Agent OS.
@@ -53,10 +51,6 @@ contract says. Loading rules per model and how they were verified live in
   invent gate fields such as `gate4_evidence` unless the project task file uses
   them. Shared workflows are `/save-session`, `$save-session`, or the plain
   request, all following the shared playbook.
-- Plane is exception-only and Planner is read-only intake; `AGENTS.md` owns
-  both rules.
-- Naming: write `Sifututor` in prose; keep literal casing for identifiers.
-
 ## Find the right document
 
 [doc-owner-route-index.md](docs/agent-playbooks/doc-owner-route-index.md) is
