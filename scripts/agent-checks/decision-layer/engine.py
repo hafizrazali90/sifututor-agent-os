@@ -95,15 +95,15 @@ def _finish(
 
 
 def _validate_provider_answer(raw: object) -> provider_base.ProviderAnswer:
-    if not isinstance(raw, provider_base.ProviderAnswer):
-        raise provider_base.ProviderMalformedOutput(code="not_a_provider_answer")
-    if isinstance(raw.confidence, bool) or not isinstance(raw.confidence, (int, float)):
-        raise provider_base.ProviderMalformedOutput(code="confidence_not_numeric")
-    if not (0.0 <= raw.confidence <= 1.0):
-        raise provider_base.ProviderMalformedOutput(code="confidence_out_of_range")
-    if raw.answer is None or (isinstance(raw.answer, str) and not raw.answer.strip()):
-        raise provider_base.ProviderMalformedOutput(code="answer_empty")
-    return raw
+    """Validate and normalize the documented provider-answer contract.
+
+    Test discovery and adapter loading may import provider_base.py under more
+    than one module identity. Requiring one exact class object rejects a valid
+    answer even when every contract field is present. Treat provider output as
+    untrusted structural data, validate every field below, and copy it into the
+    engine's canonical ProviderAnswer type.
+    """
+    return provider_base.normalize_provider_answer(raw)
 
 
 def decide(request: dict, config: dict | None = None, provider: object | None = None) -> dict:

@@ -95,7 +95,9 @@ def _ask_provider_to_break_tie(query: str, tied: list[dict], provider: object) -
         raw = provider.dispatch(request)
     except provider_base.ProviderError:
         return None
-    if not isinstance(raw, provider_base.ProviderAnswer):
+    try:
+        raw = provider_base.normalize_provider_answer(raw)
+    except provider_base.ProviderMalformedOutput:
         return None
     if raw.confidence < PROVIDER_CONFIDENCE_THRESHOLD:
         return None

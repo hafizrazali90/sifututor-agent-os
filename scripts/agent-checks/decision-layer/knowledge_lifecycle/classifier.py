@@ -208,7 +208,9 @@ def _ask_provider(candidate: dict, provider: object) -> ClassificationResult | N
         raw = provider.dispatch(request)
     except provider_base.ProviderError:
         return None
-    if not isinstance(raw, provider_base.ProviderAnswer):
+    try:
+        raw = provider_base.normalize_provider_answer(raw)
+    except provider_base.ProviderMalformedOutput:
         return None
     confidence = raw.confidence
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
