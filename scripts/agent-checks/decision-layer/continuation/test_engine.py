@@ -167,7 +167,7 @@ class EngineRegressionFixturesTest(ApprovalStateFixture):
         request = base_request(session_state=self.claims())
         response = self.decide(request, provider=provider)
         self.assertEqual(response["approval_status"], "approved")
-        self.assertEqual(response["approval_reason"], "trusted_packet_matches")
+        self.assertEqual(response["approval_reason"], "local_boundary_packet_matches")
         self.assertEqual(response["outcome"], "continue")
         self.assertEqual(response["source"], "pre_policy")
         self.assertEqual(response["reason"], pre_policy.REASON_TRUSTED_APPROVAL_CONTINUE)
