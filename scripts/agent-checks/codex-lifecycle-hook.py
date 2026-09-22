@@ -45,7 +45,11 @@ _DEFAULT_WORKSPACE = Path(_THIS_FILE).resolve().parents[2] if _THIS_FILE else Pa
 WORKSPACE = Path(os.environ.get("SIFUTUTOR_AGENT_OS_ROOT", _DEFAULT_WORKSPACE)).resolve()
 SESSION_MAP_DIR = WORKSPACE / ".agent-os" / "session-maps"
 CODEX_CONFIG = Path.home() / ".codex" / "config.toml"
-KODA_URL = "https://koda.tutorla.tech/mcp"
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("koda_endpoint", Path(__file__).resolve().with_name("koda_endpoint.py"))
+_koda_endpoint = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_koda_endpoint)
+KODA_URL = _koda_endpoint.KODA_MCP_URL  # single source, issue #163
 KODA_STDIO_BRIDGE = str(Path.home() / ".codex" / "bin" / "koda-memory-stdio-bridge.js")
 KODA_TIMEOUT = 10
 KODA_HEALTH_TAGS = ["sifututor", "codex", "koda-health"]
