@@ -65,7 +65,10 @@ def shadow_config(env: dict[str, str] | None = None) -> dict[str, object]:
     config.update(
         {
             "provider": "jev",
-            "timeout_s": 0.75,
+            # Live canaries on this machine complete around 1.5 seconds. Keep
+            # one bounded attempt with enough headroom, rather than retrying a
+            # deadline that is shorter than normal provider latency.
+            "timeout_s": 3.0,
             "max_retries": 0,
             "authoritative_decision_types": [],
         }

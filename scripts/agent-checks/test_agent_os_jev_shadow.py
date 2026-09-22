@@ -27,6 +27,11 @@ class RecordingProvider:
 
 
 class JevShadowTests(unittest.TestCase):
+    def test_live_timeout_covers_measured_provider_latency_without_retrying(self):
+        config = shadow.shadow_config({})
+        self.assertEqual(config["timeout_s"], 3.0)
+        self.assertEqual(config["max_retries"], 0)
+
     def test_missing_credential_falls_back_without_advice(self):
         with tempfile.TemporaryDirectory() as tmp:
             advice = shadow.observe_prompt(
