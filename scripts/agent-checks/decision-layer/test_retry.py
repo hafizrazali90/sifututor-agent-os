@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""TDD tests for bounded timeout/retry/cancellation around a provider call
-(build item 7)."""
+"""Tests for sequential retry with a single-in-flight guard (build item 7).
+
+The transport owns the timeout; this layer must never run attempts
+concurrently and must never spawn a thread of its own.
+"""
 
 from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
 import sys
-import time
+import threading
 import unittest
 
 HERE = Path(__file__).resolve().parent
@@ -26,50 +29,39 @@ provider_base = load_module("provider_base")
 retry = load_module("retry")
 
 
-class CallWithRetrySuccessTest(unittest.TestCase):
-    def test_returns_the_function_result_on_first_success(self) -> None:
-        result = retry.call_with_retry(lambda: "ok", timeout_s=0.2, max_retries=2)
-        self.assertEqual(result, "ok")
+class SuccessAndTimeoutPropagationTest(unittest.TestCase):
+    def test_returns_the_result_and_passes_the_timeout_to_the_attempt(self) -> None:
+        seen: list[float] = []
 
+        def attempt(timeout_s: float) -> str:
+            seen.append(timeout_s)
+            return "ok"
 
-class CallWithRetryTimeoutTest(unittest.TestCase):
-    def test_raises_timeout_error_after_exhausting_retries(self) -> None:
-        attempts = {"count": 0}
+        self.assertEqual(retry.call_with_retry(attempt, timeout_s=0.25, max_retries=2), "ok")
+        self.assertEqual(seen, [0.25])
 
-        def hang():
+    def test_retries_a_reported_timeout_sequentially_then_raises_it(self) -> None:
+        attempts = {"count": 0, "overlap": False, "running": False}
+
+        def attempt(timeout_s: float):
+            if attempts["running"]:
+                attempts["overlap"] = True
+            attempts["running"] = True
             attempts["count"] += 1
-            time.sleep(1.0)
-            return "too_late"
+            attempts["running"] = False
+            raise provider_base.ProviderTimeout("transport aborted")
 
-        started = time.monotonic()
-        with self.assertRaises(TimeoutError):
-            retry.call_with_retry(hang, timeout_s=0.02, max_retries=2)
-        elapsed = time.monotonic() - started
-
-        # 3 attempts (1 + 2 retries) bounded near 3 * timeout_s, never
-        # anywhere close to the 1s hang -- this is the "never unbounded
-        # wait" proof.
+        with self.assertRaises(provider_base.ProviderTimeout):
+            retry.call_with_retry(attempt, timeout_s=0.01, max_retries=2)
         self.assertEqual(attempts["count"], 3)
-        self.assertLess(elapsed, 0.5)
-
-    def test_does_not_block_process_exit_on_a_hang(self) -> None:
-        # The background thread from a timed-out call must be a daemon
-        # thread so it never prevents the interpreter (or the test
-        # runner) from exiting while it keeps sleeping.
-        def hang():
-            time.sleep(1.0)
-
-        with self.assertRaises(TimeoutError):
-            retry.call_with_retry(hang, timeout_s=0.01, max_retries=0)
-        leftover = [t for t in retry.threading.enumerate() if t.name.startswith("decision-layer-retry")]
-        self.assertTrue(all(t.daemon for t in leftover))
+        self.assertFalse(attempts["overlap"])
 
 
-class CallWithRetryUnavailableTest(unittest.TestCase):
+class RetryableVersusContractErrorsTest(unittest.TestCase):
     def test_retries_on_provider_unavailable_then_raises(self) -> None:
         attempts = {"count": 0}
 
-        def flaky():
+        def flaky(timeout_s: float):
             attempts["count"] += 1
             raise provider_base.ProviderUnavailable("down")
 
@@ -80,39 +72,78 @@ class CallWithRetryUnavailableTest(unittest.TestCase):
     def test_succeeds_after_a_transient_unavailable_error(self) -> None:
         attempts = {"count": 0}
 
-        def flaky():
+        def flaky(timeout_s: float):
             attempts["count"] += 1
             if attempts["count"] < 2:
                 raise provider_base.ProviderUnavailable("down")
             return "recovered"
 
-        result = retry.call_with_retry(flaky, timeout_s=0.2, max_retries=2)
-        self.assertEqual(result, "recovered")
+        self.assertEqual(retry.call_with_retry(flaky, timeout_s=0.2, max_retries=2), "recovered")
         self.assertEqual(attempts["count"], 2)
 
+    def test_contract_errors_are_never_retried(self) -> None:
+        for error in (
+            provider_base.ProviderMalformedOutput("bad shape"),
+            provider_base.ProviderNotConfigured("no key"),
+            provider_base.ProviderUnsupportedRequest("no"),
+        ):
+            attempts = {"count": 0}
 
-class CallWithRetryNonRetryableErrorTest(unittest.TestCase):
-    def test_malformed_output_error_is_not_retried(self) -> None:
+            def attempt(timeout_s: float, error=error):
+                attempts["count"] += 1
+                raise error
+
+            with self.assertRaises(type(error)):
+                retry.call_with_retry(attempt, timeout_s=0.2, max_retries=3)
+            self.assertEqual(attempts["count"], 1)
+
+
+class SingleInFlightGuardTest(unittest.TestCase):
+    def test_a_concurrent_caller_gets_busy_instead_of_a_duplicate_attempt(self) -> None:
+        lock = threading.Lock()
+        started = threading.Event()
+        release = threading.Event()
         attempts = {"count": 0}
 
-        def bad():
+        def slow(timeout_s: float) -> str:
             attempts["count"] += 1
-            raise provider_base.ProviderMalformedOutput("bad shape")
+            started.set()
+            release.wait()
+            return "done"
+
+        first: list[object] = []
+        worker = threading.Thread(target=lambda: first.append(retry.call_with_retry(slow, timeout_s=1, max_retries=3, in_flight=lock)))
+        worker.start()
+        self.assertTrue(started.wait(timeout=1.0))
+
+        with self.assertRaises(provider_base.ProviderBusy):
+            retry.call_with_retry(slow, timeout_s=1, max_retries=3, in_flight=lock)
+        self.assertEqual(attempts["count"], 1)
+
+        release.set()
+        worker.join(timeout=1.0)
+        self.assertEqual(first, ["done"])
+        self.assertTrue(lock.acquire(blocking=False))
+        lock.release()
+
+    def test_lock_is_released_after_a_failure(self) -> None:
+        lock = threading.Lock()
+
+        def bad(timeout_s: float):
+            raise provider_base.ProviderMalformedOutput("x")
 
         with self.assertRaises(provider_base.ProviderMalformedOutput):
-            retry.call_with_retry(bad, timeout_s=0.2, max_retries=3)
-        self.assertEqual(attempts["count"], 1)
+            retry.call_with_retry(bad, timeout_s=0.1, max_retries=0, in_flight=lock)
+        self.assertTrue(lock.acquire(blocking=False))
+        lock.release()
 
-    def test_not_configured_error_is_not_retried(self) -> None:
-        attempts = {"count": 0}
 
-        def unconfigured():
-            attempts["count"] += 1
-            raise provider_base.ProviderNotConfigured("no key")
-
-        with self.assertRaises(provider_base.ProviderNotConfigured):
-            retry.call_with_retry(unconfigured, timeout_s=0.2, max_retries=3)
-        self.assertEqual(attempts["count"], 1)
+class NoThreadsInThisLayerTest(unittest.TestCase):
+    def test_module_never_starts_a_thread(self) -> None:
+        source = (HERE / "retry.py").read_text(encoding="utf-8")
+        self.assertNotIn("Thread(", source)
+        self.assertNotIn("daemon", source)
+        self.assertNotIn("time.sleep", source)
 
 
 if __name__ == "__main__":
