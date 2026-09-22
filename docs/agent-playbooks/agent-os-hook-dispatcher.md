@@ -94,6 +94,36 @@ silently, but both non-trivial-prompt communication reminders must still be emit
 This is adapter parity at the behavior boundary; the two hook mechanisms do
 not need identical internal code.
 
+### Jev shadow advice
+
+Both prompt adapters also call one shared observer:
+
+```text
+scripts/agent-checks/agent_os_jev_shadow.py
+```
+
+It asks Jev for a workflow-route opinion only after local secret/PII and
+critical-lane checks pass. Jev receives a bounded first-sentence summary and
+route tags, never the raw prompt. Its answer is displayed as advice and cannot
+approve, block, continue, clean up, commit, merge, deploy, or override the
+deterministic route. Missing credentials, missing SDK files, timeouts, and bad
+answers fall back silently to the existing Agent OS behavior.
+
+The observer stores one metadata-only daily aggregate under
+`~/.local/state/sifututor-agent-os/jev-shadow/`. It never stores prompt text,
+provider answers, project names, or reasons. Set `SIFUTUTOR_JEV_SHADOW=0` for
+an immediate local kill switch.
+
+Owner activation is one-time:
+
+1. Install the pinned sidecar dependency with `npm ci --omit=dev` inside
+   `scripts/agent-checks/decision-layer/jev-sidecar/`.
+2. Put `TYPESAFE_API_KEY=<value>` in the owner-only file
+   `~/.config/sifututor/agent-access/typesafe-jev.conf` and set mode `0600`.
+3. Run `python3 scripts/agent-access/check-jev-shadow.py --live`.
+
+Do not paste the key into chat, repository files, hook settings, logs, or Koda.
+
 ## Dispatch Inputs
 
 The dispatcher uses these signals:
@@ -324,6 +354,8 @@ The hook may:
   path can return the sensitive value,
 - clear the quarantine after an explicit safe-state prompt, session stop, or
   replacement session start.
+- request and emit a non-authoritative Jev shadow route after local critical
+  and secret checks pass.
 
 The hook must not:
 

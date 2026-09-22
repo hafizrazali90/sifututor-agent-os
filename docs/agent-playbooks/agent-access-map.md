@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 24 lanes — 22 scoped files under
+Current registry count: 25 lanes — 23 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane.
 
@@ -458,6 +458,25 @@ approved SharePoint files.
 
 ---
 
+### 25. `typesafe-jev-shadow` — TypeSafe Jev Advisory Provider
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `typesafe-jev.conf` |
+| **Purpose** | Supply typed, non-authoritative workflow-route advice to Claude and Codex |
+| **Tier** | write (bounded external provider call) |
+| **Allowed data** | A locally minimized first-sentence summary and workflow tags after secret/PII and critical-lane checks pass |
+| **Hafiz approval** | Required once to enable the lane; this issue/session supplies that approval. No per-prompt approval after owner activation. |
+| **Safe verification** | `python3 scripts/agent-access/check-jev-shadow.py --live` |
+| **Kill switch** | Set `SIFUTUTOR_JEV_SHADOW=0` or remove the scoped conf file |
+| **Forbidden** | No raw prompts, secrets, PII, approval state, production data, critical lanes, stored provider bodies, or authoritative actions |
+
+The file must contain only `TYPESAFE_API_KEY=<value>` and must have mode
+`0600`. Agents may verify only configured/not-configured status; they must
+never print, copy, log, commit, or store the key.
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -476,6 +495,7 @@ approved SharePoint files.
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
 | `sharepoint-readonly` | `agent-access/sharepoint-readonly.conf` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
 | `ripple-destination-readonly` | `ripple-destination-readonly.conf` | auto-read | Never for existing scoped reads |
+| `typesafe-jev-shadow` | `typesafe-jev.conf` | write | One-time owner activation; automatic bounded shadow calls afterward |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
@@ -509,6 +529,7 @@ never print secret values.
 | `check-monitoring.sh` | Sentry unresolved issues count; BetterStack monitor status |
 | `check-microsoft-planner.sh` | Lokka / M365 access availability |
 | `check-backups.sh` | Backup storage object count and latest timestamp |
+| `check-jev-shadow.py` | Jev credential/SDK readiness and optional non-sensitive live canary |
 
 ---
 

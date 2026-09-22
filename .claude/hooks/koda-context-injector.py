@@ -23,6 +23,11 @@ if str(AGENT_CHECKS) not in sys.path:
     sys.path.insert(0, str(AGENT_CHECKS))
 
 from secret_output_guard import prompt_requests_secret_reveal, sync_secret_visual_boundary
+try:
+    from agent_os_jev_shadow import observe_prompt as observe_jev_shadow
+except (ImportError, OSError):
+    def observe_jev_shadow(*_args, **_kwargs):
+        return ""
 
 from koda_endpoint import KODA_MCP_URL as KODA_URL  # single source, issue #163
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
@@ -53,10 +58,10 @@ SECRET_SAFETY_REMINDER = (
 )
 
 
-def _emit_context(memory_context="", safety_context=""):
+def _emit_context(memory_context="", safety_context="", jev_context=""):
     sections = [
         section
-        for section in (memory_context, safety_context, EXPLANATION_REMINDER, CLOSEOUT_REMINDER)
+        for section in (memory_context, safety_context, jev_context, EXPLANATION_REMINDER, CLOSEOUT_REMINDER)
         if section
     ]
     print(json.dumps({
@@ -153,16 +158,16 @@ def main():
     safety_context = (
         SECRET_SAFETY_REMINDER if prompt_requests_secret_reveal(user_prompt) else ""
     )
+    detected_project = _detect_project_intent(user_prompt)
+    jev_context = observe_jev_shadow(user_prompt, project=detected_project or None)
 
     api_key = os.environ.get("KODA_API_KEY", "")
     if not api_key:
-        _emit_context(safety_context=safety_context)
+        _emit_context(safety_context=safety_context, jev_context=jev_context)
         return
 
     # Detect project intent — if user mentioned a specific project, we'll
     # boost relevance by running an additional tag-filtered search.
-    detected_project = _detect_project_intent(user_prompt)
-
     base_headers = {
         "Content-Type": "application/json",
         # Streamable HTTP MCP transport requires BOTH json + SSE accept.
@@ -210,7 +215,7 @@ def main():
         "id": 1,
     })
     if not init_body or not session_id:
-        _emit_context(safety_context=safety_context)
+        _emit_context(safety_context=safety_context, jev_context=jev_context)
         return
 
     # Step 2: send the initialized notification (some MCP servers require it)
@@ -236,7 +241,7 @@ def main():
     )
 
     if not body:
-        _emit_context(safety_context=safety_context)
+        _emit_context(safety_context=safety_context, jev_context=jev_context)
         return
 
     body = _unwrap_sse(body, content_type)
@@ -301,7 +306,7 @@ def main():
         merged.append(mem)
 
     if not merged:
-        _emit_context(safety_context=safety_context)
+        _emit_context(safety_context=safety_context, jev_context=jev_context)
         return
 
     # Format top 5 (or 7 if we had a project boost — more cross-project signal)
@@ -319,14 +324,14 @@ def main():
             bullets.append(f"- ({mem_id}{tag_str}) {snippet}")
 
     if not bullets:
-        _emit_context(safety_context=safety_context)
+        _emit_context(safety_context=safety_context, jev_context=jev_context)
         return
 
     header = "Relevant Koda memories (search-injected — verify before relying on):"
     if detected_project:
         header = f"Relevant Koda memories (detected project: {detected_project}; cross-project + tag-boosted):"
     context = header + "\n" + "\n".join(bullets)
-    _emit_context(context, safety_context)
+    _emit_context(context, safety_context, jev_context)
 
 
 if __name__ == "__main__":

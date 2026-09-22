@@ -127,7 +127,7 @@ Use it only as read-only reference.
 Before declaring that a credential, tool, or infrastructure check is unavailable,
 consult `docs/agent-playbooks/agent-access-map.md`. It documents all approved
 access lanes with tier, allowed operations, Hafiz approval requirement, and a safe
-verification command for each. The current registry has 24 lanes: 22 scoped
+verification command for each. The current registry has 25 lanes: 23 scoped
 agent-access conf files, the Microsoft 365 Planner read-only env lane, and the
 delegated SharePoint read-only lane.
 
@@ -147,6 +147,7 @@ Wrapper scripts for common checks live in `scripts/agent-access/`:
 | `check-microsoft-planner.sh` | M365/Teams Planner access (Lokka binary + m365-readonly.env) |
 | `sharepoint-readonly.py` | Model-agnostic SharePoint list, metadata, and controlled download access |
 | `check-backups.sh` | Backup/Wasabi object count and latest timestamp |
+| `check-jev-shadow.py` | Jev credential/SDK readiness and optional bounded live canary |
 
 Approval tiers (from `agent-access-map.md`):
 
