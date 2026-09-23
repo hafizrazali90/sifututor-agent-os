@@ -92,6 +92,13 @@ compact = " ".join(command.split())
 if not compact:
     sys.exit(0)
 
+if re.fullmatch(
+    r"\s*(?:python3\s+)?(?:\S*/)?worktree-lifecycle\.py\s+attach-local-env"
+    r"(?:\s+[^;&|`$\r\n]+)+\s*",
+    command,
+):
+    sys.exit(0)
+
 if "--no-verify" in compact:
     deny("Do not bypass hooks or quality gates with --no-verify.")
 

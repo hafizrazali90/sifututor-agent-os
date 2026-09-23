@@ -51,6 +51,16 @@ class CodexPreToolDispatchTests(unittest.TestCase):
         self.assertEqual(output["permissionDecision"], "deny")
         self.assertIn("environment", output["permissionDecisionReason"].lower())
 
+    def test_governed_local_env_attachment_is_allowed_but_chaining_is_not(self) -> None:
+        command = (
+            "python3 scripts/agent-checks/worktree-lifecycle.py attach-local-env "
+            "--source /workspace/app/.env.local --worktree /workspace/task "
+            "--session fixture --apply"
+        )
+        self.assertEqual(invoke(command).stdout, "")
+        output = self.decision(command + "; cat /workspace/app/.env.local")
+        self.assertEqual(output["permissionDecision"], "deny")
+
     def test_non_command_tool_still_runs_universal_guards(self) -> None:
         output = self.decision("printenv", tool_name="custom_tool")
         self.assertEqual(output["permissionDecision"], "deny")

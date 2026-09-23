@@ -132,7 +132,7 @@ For a normal Sifututor umbrella Codex session:
 | Approved auto-read lanes | `unknown` | Check access map; if available and relevant, use proactively for current evidence. |
 | Production logs | `unknown` | Read-only monitoring may be auto-read when scoped; writes/resolution need approval. |
 | Deploy | `blocked` or `not_connected` | Always requires explicit approval; often absent by default. |
-| `.env*` and secrets | `forbidden` | Do not read, reveal, store, or commit. |
+| `.env*` contents and secrets | `forbidden` | Do not read, reveal, copy, edit, store, or commit. A governed metadata-only link into an active owned local worktree is a separate capability. |
 | `live/` modification | `forbidden` | `live/` is read-only reference. |
 
 ## What Agents Should Say

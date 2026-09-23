@@ -65,7 +65,8 @@ the action is non-destructive and inside the current request:
 
 | Action | Conditions |
 | --- | --- |
-| Read normal docs and code | Do not read `.env*`, production secrets, or modify `live/`. |
+| Read normal docs and code | Do not read `.env*` contents, production secrets, or modify `live/`. |
+| Attach existing local development configuration to an owned worktree | Use only `worktree-lifecycle.py attach-local-env`; the source must already exist inside the same repository, the target worktree must have an active current-session lease, and the helper must not read, copy, replace, or print file contents. |
 | Search files, git status, and git diff | Keep it scoped to the current repo/task. |
 | Run safe local checks | Commands must be non-destructive and not require production access. |
 | Use approved auto-read access | Only the narrowest task-relevant read-only lane from `agent-access-map.md`; no writes, deploys, mutation, or secret output. |
@@ -197,7 +198,8 @@ Standing access approval is not blanket access. The agent must still:
 - use the narrowest relevant access file or tool
 - explain the evidence source used when it affects the recommendation
 - keep secrets out of chat, docs, screenshots, logs, commits, and Koda
-- avoid repository `.env*` files and `live/`
+- avoid repository `.env*` contents and `live/`; the governed local-worktree
+  attachment helper is the only metadata-only exception
 - avoid unrelated credentials or systems
 - avoid broad evidence gathering outside the active task
 - stop before destructive data/file actions unless Hafiz explicitly requested
