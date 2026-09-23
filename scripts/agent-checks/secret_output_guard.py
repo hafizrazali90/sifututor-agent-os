@@ -201,6 +201,12 @@ def evaluate_command(command: str) -> Decision:
     compact = str(command).strip()
     if not compact:
         return Decision(True)
+    if re.fullmatch(
+        r"\s*(?:python3\s+)?(?:\S*/)?worktree-lifecycle\.py\s+attach-local-env"
+        r"(?:\s+[^;&|`$\r\n]+)+\s*",
+        compact,
+    ):
+        return Decision(True)
     if (
         re.match(r"^\s*(?:rg|grep)\b", compact, re.I)
         and not re.search(r"(?:\$|<)\(|[;&|\n\r]", compact)

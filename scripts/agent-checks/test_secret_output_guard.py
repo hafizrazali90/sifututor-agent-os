@@ -113,6 +113,15 @@ class SecretOutputGuardTest(unittest.TestCase):
             with self.subTest(command=command):
                 self.assert_allowed(command)
 
+    def test_allows_only_the_governed_local_env_attachment_command(self) -> None:
+        command = (
+            "python3 scripts/agent-checks/worktree-lifecycle.py attach-local-env "
+            "--source /workspace/app/.env.local --worktree /workspace/task "
+            "--session fixture --apply"
+        )
+        self.assert_allowed(command)
+        self.assert_blocked(command + "; cat /workspace/app/.env.local")
+
     def test_allows_benign_prose_and_github_body_text(self) -> None:
         for command in (
             "rg -n 'Shell history output' scripts/agent-checks",

@@ -44,7 +44,12 @@ modify.
 - Current user instruction, this contract, and the nearest project contract
   define scope. If they conflict with `CLAUDE.md`, stop before editing and
   explain the conflict.
-- Do not read or modify repository `.env*`, production secrets, or `live/`.
+- Do not read, print, copy, edit, or commit repository `.env*` contents,
+  production secrets, or files under `live/`. For local development only, an
+  agent may attach an existing repository `.env*` file to its own active,
+  registered worktree through `worktree-lifecycle.py attach-local-env`; that
+  helper may inspect path metadata and create the link but must never open or
+  output the file contents.
   Approved scoped access files outside repositories may be used only for the
   active task; never print, log, copy, commit, or expose their values.
 - Do not output broad process, container, service, shell, or secret-store

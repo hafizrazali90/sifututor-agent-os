@@ -410,6 +410,37 @@ of running it. A failed setup parks the lease for inspection; it never force
 deletes a partial checkout. The result records whether dependencies were
 seeded, installed, not applicable, or still required.
 
+### Local development environment attachment
+
+When an isolated worktree cannot start because its local development
+environment file is intentionally untracked, do not ask Hafiz to build a raw
+symlink and do not inspect or copy the file. Preview, then apply the governed
+attachment:
+
+```bash
+python3 scripts/agent-checks/worktree-lifecycle.py attach-local-env \
+  --source <existing-repository-env-file> \
+  --worktree <leased-worktree> --session <exact-session-id>
+
+python3 scripts/agent-checks/worktree-lifecycle.py attach-local-env \
+  --source <existing-repository-env-file> \
+  --worktree <leased-worktree> --session <exact-session-id> --apply
+```
+
+The source must be an existing regular `.env*` file inside another registered
+worktree of the same repository. The target is the same repository-relative
+path inside an active worktree leased to the current session. The helper
+refuses external sources, inactive or foreign leases, source symlinks,
+pre-existing files, and links to a different source. Its output contains only
+path/status metadata; it never opens, copies, or prints configuration values.
+Applied attachments are recorded in the machine-local lease so lifecycle
+cleanup can remove the worktree later, but only while the ignored entry remains
+the exact recorded symlink; replacements or changed links still block cleanup.
+
+This is a local-development convenience, not authority to inspect secrets or
+use production credentials. Agents must still keep these files out of chat,
+logs, screenshots, Git, Koda, and delegation artifacts.
+
 Do not symlink mutable dependency directories between worktrees. First find a
 donor with byte-identical lockfiles:
 

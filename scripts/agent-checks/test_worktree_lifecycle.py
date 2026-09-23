@@ -32,7 +32,7 @@ def init_repo(root: Path) -> Path:
     run("git", "config", "user.name", "Fixture", cwd=repo)
     run("git", "config", "user.email", "fixture@example.invalid", cwd=repo)
     (repo / ".gitignore").write_text(
-        "node_modules/\nvendor/\n__pycache__/\n.agent-os/\n.private-note\n"
+        "node_modules/\nvendor/\n__pycache__/\n.agent-os/\n.private-note\n.env*\n"
     )
     (repo / "tracked.txt").write_text("base\n")
     run("git", "add", ".gitignore", "tracked.txt", cwd=repo)
@@ -128,6 +128,86 @@ class LeaseTests(unittest.TestCase):
             leases = list(pool.map(enroll, enumerate(worktrees)))
         self.assertEqual({lease["session"] for lease in leases}, {f"session-{i}" for i in range(10)})
         self.assertEqual(len(list((self.root / "state" / "leases").glob("*.json"))), 10)
+
+    def test_attach_local_env_without_reading_or_copying_contents(self):
+        source = self.repo / ".env.local"
+        source.write_text("fixture-secret-that-must-not-appear\n")
+        self.lease()
+
+        preview = worktree_lifecycle.attach_local_env(
+            source, self.worktree, self.store, "one", apply=False,
+        )
+        self.assertEqual(preview["state"], "absent")
+        self.assertNotIn("fixture-secret", json.dumps(preview))
+        self.assertFalse((self.worktree / ".env.local").exists())
+
+        applied = worktree_lifecycle.attach_local_env(
+            source, self.worktree, self.store, "one", apply=True,
+        )
+        target = self.worktree / ".env.local"
+        self.assertEqual(applied["state"], "attached")
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(target.resolve(), source.resolve())
+        lease = self.store.get(self.worktree)
+        self.assertEqual(lease["attachments"], [{
+            "relative_path": ".env.local",
+            "source_worktree": str(self.repo.resolve()),
+        }])
+
+        repeated = worktree_lifecycle.attach_local_env(
+            source, self.worktree, self.store, "one", apply=True,
+        )
+        self.assertEqual(repeated["state"], "already-attached")
+        self.assertFalse(repeated["applied"])
+
+    def test_recorded_attachment_does_not_block_cleanup_but_replacement_does(self):
+        source = self.repo / ".env.local"
+        source.write_text("fixture\n")
+        self.lease()
+        worktree_lifecycle.attach_local_env(
+            source, self.worktree, self.store, "one", apply=True,
+        )
+        self.store.set_status(self.worktree, "one", "released")
+
+        record = next(item for item in worktree_lifecycle.parse_worktrees(self.repo)
+                      if Path(item["path"]).resolve() == self.worktree.resolve())
+        result = worktree_lifecycle.inspect_worktree(
+            self.repo, record, self.store, base_ref="origin/main",
+        )
+        self.assertEqual(result["classification"], "reclaim_candidate")
+
+        target = self.worktree / ".env.local"
+        target.unlink()
+        different = self.repo / ".env.different"
+        different.write_text("fixture\n")
+        target.symlink_to(different)
+        result = worktree_lifecycle.inspect_worktree(
+            self.repo, record, self.store, base_ref="origin/main",
+        )
+        self.assertEqual(result["classification"], "preserve")
+        self.assertTrue(any("non-generated ignored" in reason for reason in result["reasons"]))
+
+    def test_attach_local_env_refuses_wrong_owner_external_source_and_existing_target(self):
+        source = self.repo / ".env.local"
+        source.write_text("fixture\n")
+        self.lease()
+        with self.assertRaises(worktree_lifecycle.LifecycleError):
+            worktree_lifecycle.attach_local_env(
+                source, self.worktree, self.store, "other", apply=True,
+            )
+
+        external = self.root / ".env.local"
+        external.write_text("fixture\n")
+        with self.assertRaises(worktree_lifecycle.LifecycleError):
+            worktree_lifecycle.attach_local_env(
+                external, self.worktree, self.store, "one", apply=True,
+            )
+
+        (self.worktree / ".env.local").write_text("keep\n")
+        with self.assertRaises(worktree_lifecycle.LifecycleError):
+            worktree_lifecycle.attach_local_env(
+                source, self.worktree, self.store, "one", apply=True,
+            )
 
 
 class ClassificationTests(unittest.TestCase):

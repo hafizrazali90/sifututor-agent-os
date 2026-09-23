@@ -175,6 +175,7 @@ class LeaseStore:
                 "created_at": existing.get("created_at", iso(now)) if existing else iso(now),
                 "heartbeat_at": iso(now),
                 "ttl_hours": ttl_hours,
+                "attachments": existing.get("attachments", []) if existing else [],
             }
             atomic_json(self.path_for(worktree), value)
             return value
@@ -222,6 +223,30 @@ class LeaseStore:
 
     def get(self, worktree: Path) -> dict[str, Any] | None:
         return self._read(worktree)
+
+    def record_attachment(self, worktree: Path, session: str, *,
+                          relative_path: str, source_worktree: Path) -> dict[str, Any]:
+        handle = self._locked()
+        try:
+            value = self._read(worktree)
+            if not valid_lease(value, worktree):
+                raise LifecycleError("No valid lease exists for this worktree")
+            if value["session"] != session or value["status"] != "active":
+                raise LifecycleError("Only the active owning session may record an attachment")
+            attachment = {
+                "relative_path": relative_path,
+                "source_worktree": str(source_worktree.resolve()),
+            }
+            attachments = [
+                item for item in value.get("attachments", [])
+                if isinstance(item, dict) and item.get("relative_path") != relative_path
+            ]
+            attachments.append(attachment)
+            value["attachments"] = attachments
+            atomic_json(self.path_for(worktree), value)
+            return value
+        finally:
+            handle.close()
 
 
 def valid_lease(value: Any, worktree: Path | None = None) -> bool:
@@ -301,6 +326,25 @@ def empty_agent_os_runtime(worktree: Path, ignored_path: str) -> bool:
     if not root.is_dir() or root.is_symlink():
         return False
     return not any(item.is_file() or item.is_symlink() for item in root.rglob("*"))
+
+
+def ignored_path_is_managed_attachment(worktree: Path, ignored_path: str,
+                                       lease: dict[str, Any] | None) -> bool:
+    """Allow only the exact symlink recorded by the governed attach command."""
+    relative = ignored_path.rstrip("/")
+    target = worktree / relative
+    if not target.is_symlink() or not isinstance(lease, dict):
+        return False
+    for attachment in lease.get("attachments", []):
+        if not isinstance(attachment, dict) or attachment.get("relative_path") != relative:
+            continue
+        source_root = Path(str(attachment.get("source_worktree", "")))
+        if not source_root.is_absolute():
+            return False
+        expected = (source_root / relative).resolve()
+        actual = (target.parent / os.readlink(target)).resolve()
+        return actual == expected
+    return False
 
 
 def active_task(worktree: Path, base_ref: str) -> tuple[str, str]:
@@ -389,22 +433,23 @@ def inspect_worktree(repo: Path, record: dict[str, Any], store: LeaseStore,
     if status.strip():
         result["reasons"].append("tracked or untracked changes exist")
         return result
-    ignored = ignored_paths(path)
-    blocked_ignored = [
-        item for item in ignored
-        if not ignored_path_is_generated(item)
-        and not empty_agent_os_runtime(path, item)
-    ]
-    if blocked_ignored:
-        result["reasons"].append("non-generated ignored files exist")
-        result["ignored_blocker_count"] = len(blocked_ignored)
-        return result
     lease = store.get(path)
     if store.path_for(path).exists() and lease is None:
         result["reasons"].append("lease record is unreadable or malformed")
         return result
     if lease is not None and not valid_lease(lease, path):
         result["reasons"].append("lease record is invalid")
+        return result
+    ignored = ignored_paths(path)
+    blocked_ignored = [
+        item for item in ignored
+        if not ignored_path_is_generated(item)
+        and not empty_agent_os_runtime(path, item)
+        and not ignored_path_is_managed_attachment(path, item, lease)
+    ]
+    if blocked_ignored:
+        result["reasons"].append("non-generated ignored files exist")
+        result["ignored_blocker_count"] = len(blocked_ignored)
         return result
     owns_ignored_lease = bool(
         ignore_lease_session
@@ -682,6 +727,88 @@ def seed_dependencies(source: Path, target: Path, *, apply: bool) -> dict[str, A
     return result
 
 
+def containing_worktree(repo: Path, path: Path) -> Path | None:
+    """Return the most specific registered worktree containing path."""
+    candidates = []
+    for record in parse_worktrees(repo.resolve()):
+        root = Path(record["path"]).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError:
+            continue
+        candidates.append(root)
+    return max(candidates, key=lambda item: len(item.parts), default=None)
+
+
+def attach_local_env(source: Path, worktree: Path, store: LeaseStore,
+                     session: str, *, apply: bool) -> dict[str, Any]:
+    """Attach a local env file without opening or copying its contents."""
+    worktree = worktree.resolve()
+    lease = store.get(worktree)
+    if not valid_lease(lease, worktree):
+        raise LifecycleError("No valid lease exists for this worktree")
+    if lease["session"] != session or lease["status"] != "active":
+        raise LifecycleError("Only the active owning session may attach local environment configuration")
+
+    repo = Path(lease["repository"]).resolve()
+    if not repo.is_dir():
+        raise LifecycleError("Leased repository does not exist")
+    source = source.expanduser().absolute()
+    if source.is_symlink() or not source.is_file():
+        raise LifecycleError("Source must be an existing regular file, not a symlink")
+    source = source.resolve(strict=True)
+
+    source_root = containing_worktree(repo, source)
+    if source_root is None:
+        raise LifecycleError("Source must be inside a registered worktree of the leased repository")
+    relative = source.relative_to(source_root)
+    if not relative.name.startswith(".env"):
+        raise LifecycleError("Source must be a repository environment file")
+
+    target = worktree / relative
+    target_parent = target.parent.resolve()
+    try:
+        target_parent.relative_to(worktree)
+    except ValueError as exc:
+        raise LifecycleError("Target path escapes the leased worktree") from exc
+
+    state = "absent"
+    if target.is_symlink():
+        linked = (target.parent / os.readlink(target)).resolve()
+        if linked != source.resolve():
+            raise LifecycleError("Target is already a symlink to a different source")
+        state = "already-attached"
+    elif target.exists():
+        raise LifecycleError("Target already exists and will not be replaced")
+
+    result = {
+        "action": "attach-local-env",
+        "applied": False,
+        "source_worktree": str(source_root),
+        "target_worktree": str(worktree),
+        "relative_path": str(relative),
+        "state": state,
+        "safety": "file contents were not read, copied or printed",
+    }
+    if apply:
+        created = False
+        if state == "absent":
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.symlink_to(source)
+            created = True
+        try:
+            store.record_attachment(
+                worktree, session, relative_path=str(relative),
+                source_worktree=source_root,
+            )
+        except Exception:
+            if created:
+                target.unlink(missing_ok=True)
+            raise
+        result.update(applied=created, state="attached" if created else state)
+    return result
+
+
 def dependency_install_commands(worktree: Path) -> list[tuple[str, list[str]]]:
     node_commands = (
         ("pnpm-lock.yaml", ["pnpm", "install", "--frozen-lockfile"]),
@@ -887,6 +1014,12 @@ def build_parser() -> argparse.ArgumentParser:
     seed.add_argument("--source", type=Path, required=True)
     seed.add_argument("--target", type=Path, required=True)
     seed.add_argument("--apply", action="store_true")
+
+    attach = sub.add_parser("attach-local-env")
+    attach.add_argument("--source", type=Path, required=True)
+    attach.add_argument("--worktree", type=Path, required=True)
+    attach.add_argument("--session", required=True)
+    attach.add_argument("--apply", action="store_true")
     return parser
 
 
@@ -941,6 +1074,10 @@ def main() -> int:
             emit(dependency_donors(args.repo, args.worktree))
         elif args.command == "seed-dependencies":
             emit(seed_dependencies(args.source, args.target, apply=args.apply))
+        elif args.command == "attach-local-env":
+            emit(attach_local_env(
+                args.source, args.worktree, store, args.session, apply=args.apply,
+            ))
         return 0
     except LifecycleError as exc:
         print(f"worktree-lifecycle: refused: {exc}", file=sys.stderr)
