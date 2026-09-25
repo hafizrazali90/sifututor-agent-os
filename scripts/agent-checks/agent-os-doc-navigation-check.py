@@ -17,8 +17,19 @@ This check proves the wiring without a model call:
   index names exists; archived docs are not linked from the entry layer;
 - scenario fixtures (`fixtures/doc-navigation-scenarios.json`) reach the
   documents they must reach within a hop budget, still carry the safety
-  phrases they own, and the routing matrix rows include or exclude the
-  expected documents.
+  phrases they own, import exactly what they must (a product `CLAUDE.md`
+  imports its own `AGENTS.md` and nothing else), and the routing matrix rows
+  include or exclude the expected documents.
+
+Every result has one state:
+
+- pass: evaluated and correct; counted as passed.
+- fail: evaluated and wrong; fails the run.
+- advisory: evaluated and wrong in a product repository that is still
+  migrating; reported, does not fail the run, and is NOT counted as passed.
+- unavailable: the optional product checkout is absent, so nothing was
+  evaluated; reported, does not fail the run, and is excluded from the counts.
+  An absent checkout is never evidence that the repository is correct.
 
 Run: scripts/agent-checks/agent-os-doc-navigation-check.py [--verbose]
 Self-test on synthetic roots: --self-test
@@ -30,6 +41,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from collections import deque
@@ -72,6 +84,15 @@ class Result:
     passed: bool
     detail: str
     warning: bool = False
+    state: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.state:
+            self.state = "pass" if self.passed else "fail"
+        # Advisory and unavailable are non-blocking, but they are not passes.
+        # `run()` decides blocking from state, so keep the legacy boolean
+        # semantically honest for any caller that inspects it directly.
+        self.passed = self.state == "pass"
 
 
 @dataclass
@@ -353,14 +374,15 @@ def scenario_checks(root: Path, graph: Graph, fixture: dict) -> list[Result]:
         entries = scenario.get("entry", [])
         missing_entries = [e for e in entries if not (root / e).is_file()]
         if missing_entries and scenario.get("optional_entry"):
-            results.append(Result(sid, True, f"{title}: skipped, checkout absent ({missing_entries})", warning=True))
+            results.append(Result(sid, True, f"{title}: not evaluated, checkout absent ({missing_entries})", state="unavailable"))
             continue
         failures: list[str] = []
         if missing_entries:
             failures.append(f"entry missing {missing_entries}")
-        # Sub-project entry files live outside the default scan; add them to the graph.
+        # Sub-project entry and import files live outside the default scan; add them to the graph.
         local_graph = graph
-        extra = [root / e for e in entries if not any(e == k for k in graph.texts)]
+        wanted = list(entries) + [spec["file"] for spec in scenario.get("imports", [])]
+        extra = [root / e for e in dict.fromkeys(wanted) if e not in graph.texts and (root / e).is_file()]
         if extra:
             local_graph = build_graph(root, extra_files=extra)
         for want in scenario.get("reach", []):
@@ -381,10 +403,17 @@ def scenario_checks(root: Path, graph: Graph, fixture: dict) -> list[Result]:
                 if phrase not in text:
                     failures.append(f"{spec['file']} no longer says {phrase!r}")
         for spec in scenario.get("imports", []):
+            if not (root / spec["file"]).is_file():
+                failures.append(f"{spec['file']} missing, so it cannot import {spec.get('must_import', [])}")
+                continue
             imports = local_graph.imports.get(spec["file"], [])
             for must in spec.get("must_import", []):
                 if must not in imports:
-                    failures.append(f"{spec['file']} must import {must}")
+                    failures.append(f"{spec['file']} must import {must} (found {imports or 'no import'})")
+            if spec.get("only"):
+                extra_imports = [i for i in imports if i not in spec.get("must_import", [])]
+                if extra_imports:
+                    failures.append(f"{spec['file']} imports {extra_imports} beyond {spec.get('must_import', [])}")
             for fragment in spec.get("must_not_import_containing", []):
                 bad = [i for i in imports if fragment in i]
                 if bad:
@@ -407,7 +436,7 @@ def scenario_checks(root: Path, graph: Graph, fixture: dict) -> list[Result]:
         if failures and scenario.get("advisory"):
             # Product repositories are separate Git repos; report their wiring
             # gaps without failing the umbrella health sweep.
-            results.append(Result(sid, True, f"{title}: advisory, fix in the product repo: " + "; ".join(failures), warning=True))
+            results.append(Result(sid, False, f"{title}: advisory, fix in the product repo: " + "; ".join(failures), state="advisory"))
         elif failures:
             results.append(Result(sid, False, f"{title}: " + "; ".join(failures)))
         else:
@@ -419,21 +448,36 @@ def run(root: Path, fixture_path: Path, verbose: bool = False) -> int:
     graph = build_graph(root)
     fixture = json.loads(fixture_path.read_text()) if fixture_path.is_file() else {"scenarios": []}
     results = structural_checks(root, graph) + scenario_checks(root, graph, fixture)
-    failures = [r for r in results if not r.passed]
-    warnings = [r for r in results if r.passed and r.warning]
+    print_results(results, verbose)
+    return 1 if any(r.state == "fail" for r in results) else 0
+
+
+def summarise(results: list[Result]) -> str:
+    counts = {k: sum(1 for r in results if r.state == k) for k in ("pass", "fail", "advisory", "unavailable")}
+    evaluated = counts["pass"] + counts["fail"] + counts["advisory"]
+    notes = sum(1 for r in results if r.state == "pass" and r.warning)
+    scenarios = len([r for r in results if r.check_id.startswith("NAV")])
+    return (
+        f"agent-os-doc-navigation-check: {counts['pass']}/{evaluated} evaluated checks passed, "
+        f"{counts['fail']} failed, {counts['advisory']} advisory, "
+        f"{counts['unavailable']} unavailable (not evaluated, not counted), "
+        f"{scenarios} scenarios, {notes} note(s)"
+    )
+
+
+def print_results(results: list[Result], verbose: bool) -> None:
     for r in results:
-        if not r.passed:
+        if r.state == "fail":
             print(f"FAIL {r.check_id} {r.detail}")
+        elif r.state == "advisory":
+            print(f"ADVISORY {r.check_id} {r.detail}")
+        elif r.state == "unavailable":
+            print(f"UNAVAILABLE {r.check_id} {r.detail}")
         elif r.warning:
-            print(f"WARN {r.check_id} {r.detail}")
+            print(f"NOTE {r.check_id} {r.detail}")
         elif verbose:
             print(f"PASS {r.check_id} {r.detail}")
-    scenario_total = len([r for r in results if r.check_id.startswith("NAV")])
-    print(
-        f"agent-os-doc-navigation-check: {len(results) - len(failures)}/{len(results)} checks passed, "
-        f"{scenario_total} scenarios, {len(warnings)} warning(s)"
-    )
-    return 1 if failures else 0
+    print(summarise(results))
 
 
 # --- self-test on synthetic roots -------------------------------------------
@@ -451,6 +495,12 @@ def _synthetic_root(root: Path) -> None:
     _write(root, "docs/agent-playbooks/commit.md", "# Commit\nRun the guard.\n")
     _write(root, "docs/agent-playbooks/doc-owner-route-index.md", "# Index\n`task-router.md`, `commit.md`, `doc-routing-and-context-loading.md`\n")
     _write(root, "docs/agent-playbooks/doc-routing-and-context-loading.md", "# Routing\n| Work type | Must read first | Then |\n| --- | --- | --- |\n| Commit | `commit.md` | none |\n")
+    # A present, correctly wired product checkout (evaluated as blocking).
+    _write(root, "prod/AGENTS.md", "# prod\nShared contract: [../AGENTS.md](../AGENTS.md)\n")
+    _write(root, "prod/CLAUDE.md", "# prod\n@AGENTS.md\n")
+    # A product checkout still migrating (evaluated as advisory).
+    _write(root, "mig/AGENTS.md", "# mig\nShared contract: [../AGENTS.md](../AGENTS.md)\n")
+    _write(root, "mig/CLAUDE.md", "# mig\nRead AGENTS.md.\n")
 
 
 def _synthetic_fixture() -> dict:
@@ -464,43 +514,107 @@ def _synthetic_fixture() -> dict:
                 "reach": [{"file": "docs/agent-playbooks/commit.md", "max_hops": 3}],
                 "mentions": [{"file": "AGENTS.md", "phrases": [".env*"]}],
                 "matrix_rows": [{"row": "Commit", "include": ["commit.md"], "exclude": ["release-deploy-live-monitoring.md"]}],
-            }
+            },
+            {
+                "id": "NAV-SP",
+                "title": "product checkout wiring",
+                "optional_entry": True,
+                "entry": ["prod/AGENTS.md"],
+                "reach": [{"file": "AGENTS.md", "max_hops": 1}],
+                "imports": [{"file": "prod/CLAUDE.md", "must_import": ["AGENTS.md"], "only": True}],
+            },
+            {
+                "id": "NAV-SA",
+                "title": "migrating product checkout",
+                "optional_entry": True,
+                "advisory": True,
+                "entry": ["mig/AGENTS.md"],
+                "reach": [{"file": "AGENTS.md", "max_hops": 1}],
+                "imports": [{"file": "mig/CLAUDE.md", "must_import": ["AGENTS.md"], "only": True}],
+            },
         ],
     }
 
 
+def _state(results: list[Result], check_id: str) -> str:
+    return next((r.state for r in results if r.check_id == check_id), "absent")
+
+
+def _pass_count(results: list[Result]) -> int:
+    return sum(1 for r in results if r.state == "pass")
+
+
 def self_test() -> int:
+    def failed(check_id):
+        return lambda res: check_id in {r.check_id for r in res if r.state == "fail"}
+
+    def baseline(res):
+        return (
+            not [r for r in res if r.state == "fail"]
+            and _state(res, "NAV-SP") == "pass"
+            and _state(res, "NAV-SA") == "advisory"
+        )
+
+    def absent_not_counted(res):
+        # Removing a passing checkout must lower the passed count by exactly
+        # one: the scenario becomes unavailable, never a pass.
+        return (
+            _state(res, "NAV-SP") == "unavailable"
+            and not next(r for r in res if r.check_id == "NAV-SP").passed
+            and _pass_count(res) == _pass_count(_baseline_results()) - 1
+            and "1 unavailable" in summarise(res)
+        )
+
+    def advisory_not_passed(res):
+        item = next(r for r in res if r.check_id == "NAV-SA")
+        return item.state == "advisory" and not item.passed
+
     cases = [
-        ("baseline passes", lambda r: None, None),
-        ("broken link detected", lambda r: _write(r, "docs/agent-playbooks/task-router.md", "# Router\nUse [missing](nope.md).\n"), "DN-001"),
-        ("missing AGENTS import detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\nRead AGENTS.md please.\n"), "DN-002"),
-        ("extra launch import detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\n@AGENTS.md\n@docs/agent-playbooks/commit.md\n"), "DN-002"),
-        ("oversize entry point detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\n@AGENTS.md\n" + ("x" * (BUDGETS["CLAUDE.md"] + 1)) + "\n"), "DN-003"),
-        ("unindexed playbook detected", lambda r: _write(r, "docs/agent-playbooks/orphan.md", "# Orphan\n"), "DN-005"),
-        ("index naming a missing file detected", lambda r: _write(r, "docs/agent-playbooks/doc-owner-route-index.md", "# Index\n`task-router.md`, `commit.md`, `doc-routing-and-context-loading.md`, `ghost.md`\n"), "DN-006"),
-        ("archived doc linked from entry detected", lambda r: (_write(r, "docs/agent-playbooks/archive/old.md", "# Old\n"), _write(r, "AGENTS.md", "# AGENTS\n[task-router.md](docs/agent-playbooks/task-router.md) [index](docs/agent-playbooks/doc-owner-route-index.md) [old](docs/agent-playbooks/archive/old.md)\nnever read `.env*`.\n")), "DN-007"),
-        ("unreachable scenario target detected", lambda r: (_write(r, "docs/agent-playbooks/task-router.md", "# Router\nNo links here.\n"), _write(r, "docs/agent-playbooks/doc-owner-route-index.md", "# Index\n`task-router.md`, `doc-routing-and-context-loading.md`\n")), "NAV-S1"),
-        ("lost safety phrase detected", lambda r: _write(r, "AGENTS.md", "# AGENTS\n[task-router.md](docs/agent-playbooks/task-router.md) [index](docs/agent-playbooks/doc-owner-route-index.md)\n"), "NAV-S1"),
-        ("matrix row drift detected", lambda r: _write(r, "docs/agent-playbooks/doc-routing-and-context-loading.md", "# Routing\n| Work type | Must read first | Then |\n| --- | --- | --- |\n| Commit | `commit.md`, `release-deploy-live-monitoring.md` | none |\n"), "NAV-S1"),
+        ("baseline passes; present product checkout evaluated as pass; migrating one as advisory", lambda r: None, baseline),
+        ("broken link detected", lambda r: _write(r, "docs/agent-playbooks/task-router.md", "# Router\nUse [missing](nope.md).\n"), failed("DN-001")),
+        ("missing AGENTS import detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\nRead AGENTS.md please.\n"), failed("DN-002")),
+        ("extra launch import detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\n@AGENTS.md\n@docs/agent-playbooks/commit.md\n"), failed("DN-002")),
+        ("oversize entry point detected", lambda r: _write(r, "CLAUDE.md", "# CLAUDE\n@AGENTS.md\n" + ("x" * (BUDGETS["CLAUDE.md"] + 1)) + "\n"), failed("DN-003")),
+        ("unindexed playbook detected", lambda r: _write(r, "docs/agent-playbooks/orphan.md", "# Orphan\n"), failed("DN-005")),
+        ("index naming a missing file detected", lambda r: _write(r, "docs/agent-playbooks/doc-owner-route-index.md", "# Index\n`task-router.md`, `commit.md`, `doc-routing-and-context-loading.md`, `ghost.md`\n"), failed("DN-006")),
+        ("archived doc linked from entry detected", lambda r: (_write(r, "docs/agent-playbooks/archive/old.md", "# Old\n"), _write(r, "AGENTS.md", "# AGENTS\n[task-router.md](docs/agent-playbooks/task-router.md) [index](docs/agent-playbooks/doc-owner-route-index.md) [old](docs/agent-playbooks/archive/old.md)\nnever read `.env*`.\n")), failed("DN-007")),
+        ("unreachable scenario target detected", lambda r: (_write(r, "docs/agent-playbooks/task-router.md", "# Router\nNo links here.\n"), _write(r, "docs/agent-playbooks/doc-owner-route-index.md", "# Index\n`task-router.md`, `doc-routing-and-context-loading.md`\n")), failed("NAV-S1")),
+        ("lost safety phrase detected", lambda r: _write(r, "AGENTS.md", "# AGENTS\n[task-router.md](docs/agent-playbooks/task-router.md) [index](docs/agent-playbooks/doc-owner-route-index.md)\n"), failed("NAV-S1")),
+        ("matrix row drift detected", lambda r: _write(r, "docs/agent-playbooks/doc-routing-and-context-loading.md", "# Routing\n| Work type | Must read first | Then |\n| --- | --- | --- |\n| Commit | `commit.md`, `release-deploy-live-monitoring.md` | none |\n"), failed("NAV-S1")),
+        ("missing product CLAUDE import detected", lambda r: _write(r, "prod/CLAUDE.md", "# prod\nPlease read AGENTS.md.\n"), failed("NAV-SP")),
+        ("wrong product CLAUDE import detected", lambda r: _write(r, "prod/CLAUDE.md", "# prod\n@../AGENTS.md\n"), failed("NAV-SP")),
+        ("extra product CLAUDE import detected", lambda r: _write(r, "prod/CLAUDE.md", "# prod\n@AGENTS.md\n@README.md\n"), failed("NAV-SP")),
+        ("missing product CLAUDE file detected", lambda r: (r / "prod/CLAUDE.md").unlink(), failed("NAV-SP")),
+        ("product contract without upward route detected", lambda r: _write(r, "prod/AGENTS.md", "# prod\nNo shared route.\n"), failed("NAV-SP")),
+        ("absent optional checkout is unavailable and not counted as passed", lambda r: (shutil.rmtree(r / "prod")), absent_not_counted),
+        ("advisory migration failure is not counted as passed", lambda r: None, advisory_not_passed),
     ]
     failures = 0
-    for name, mutate, expected in cases:
+    for name, mutate, check in cases:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _synthetic_root(root)
             mutate(root)
-            graph = build_graph(root)
-            results = structural_checks(root, graph) + scenario_checks(root, graph, _synthetic_fixture())
-            failed_ids = {r.check_id for r in results if not r.passed}
-            if expected is None:
-                ok = not failed_ids
-            else:
-                ok = expected in failed_ids
-            print(f"{'PASS' if ok else 'FAIL'} self-test: {name}" + ("" if ok else f" (failed ids: {sorted(failed_ids)})"))
+            results = _results(root)
+            ok = bool(check(results))
+            detail = "" if ok else f" (states: {sorted((r.check_id, r.state) for r in results if r.state != 'pass')})"
+            print(f"{'PASS' if ok else 'FAIL'} self-test: {name}{detail}")
             if not ok:
                 failures += 1
     print(f"agent-os-doc-navigation-check self-test: {len(cases) - failures}/{len(cases)} cases passed")
     return 1 if failures else 0
+
+
+def _results(root: Path) -> list[Result]:
+    graph = build_graph(root)
+    return structural_checks(root, graph) + scenario_checks(root, graph, _synthetic_fixture())
+
+
+def _baseline_results() -> list[Result]:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        _synthetic_root(root)
+        return _results(root)
 
 
 def main() -> int:
