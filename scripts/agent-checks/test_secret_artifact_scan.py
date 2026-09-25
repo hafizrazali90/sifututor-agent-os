@@ -69,6 +69,22 @@ Use `pm2 jlist` only as an example of a blocked command.
         self.assertTrue(self.scanner.find_secret_findings('password: "' + reference + '"'))
         self.assertTrue(self.scanner.find_secret_findings("password: " + reference + ', token: "' + "A" * 32 + '"'))
 
+    def test_php_static_token_calls_are_not_literal_credentials(self) -> None:
+        for expression in [
+            '$token = ' + 'ParentServiceAcceptanceLink::generateToken();',
+            '$token = ' + 'Crypt::decryptString($link->token_ciphertext);',
+            '$token = ' + 'PersonalAccessToken::findToken($response);',
+        ]:
+            self.assertEqual(self.scanner.find_secret_findings(expression, path='app/Services/Example.php'), [])
+        self.assertTrue(self.scanner.find_secret_findings(
+            '$token = "' + 'ParentServiceAcceptanceLink::generateToken()";',
+            path='app/Services/Example.php',
+        ))
+        self.assertTrue(self.scanner.find_secret_findings(
+            'CLIENT_SECRET=' + 'A' * 32,
+            path='app/Services/Example.php',
+        ))
+
     def test_fixture_words_are_only_allowed_in_test_sources(self) -> None:
         sample = 'JWT_SECRET: "outreach-isolated-browser-fixture-secret-not-a-credential"'
         for path in ["scripts/fixtures/browser.ts", "scripts/agent-checks/test_secret_artifact_scan.py", "scripts/test-outreach-browser.cjs", "scripts/start-outreach-chain-fixture.cjs", "src/module/__tests__/facts.test.ts"]:
