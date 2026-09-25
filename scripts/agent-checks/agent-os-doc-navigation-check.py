@@ -89,9 +89,10 @@ class Result:
     def __post_init__(self) -> None:
         if not self.state:
             self.state = "pass" if self.passed else "fail"
-        # Only fail blocks the run; advisory and unavailable are reported
-        # separately and never counted as passed.
-        self.passed = self.state != "fail"
+        # Advisory and unavailable are non-blocking, but they are not passes.
+        # `run()` decides blocking from state, so keep the legacy boolean
+        # semantically honest for any caller that inspects it directly.
+        self.passed = self.state == "pass"
 
 
 @dataclass
@@ -559,9 +560,14 @@ def self_test() -> int:
         # one: the scenario becomes unavailable, never a pass.
         return (
             _state(res, "NAV-SP") == "unavailable"
+            and not next(r for r in res if r.check_id == "NAV-SP").passed
             and _pass_count(res) == _pass_count(_baseline_results()) - 1
             and "1 unavailable" in summarise(res)
         )
+
+    def advisory_not_passed(res):
+        item = next(r for r in res if r.check_id == "NAV-SA")
+        return item.state == "advisory" and not item.passed
 
     cases = [
         ("baseline passes; present product checkout evaluated as pass; migrating one as advisory", lambda r: None, baseline),
@@ -581,7 +587,7 @@ def self_test() -> int:
         ("missing product CLAUDE file detected", lambda r: (r / "prod/CLAUDE.md").unlink(), failed("NAV-SP")),
         ("product contract without upward route detected", lambda r: _write(r, "prod/AGENTS.md", "# prod\nNo shared route.\n"), failed("NAV-SP")),
         ("absent optional checkout is unavailable and not counted as passed", lambda r: (shutil.rmtree(r / "prod")), absent_not_counted),
-        ("advisory migration failure is not counted as passed", lambda r: None, lambda res: _state(res, "NAV-SA") == "advisory" and not any(x.check_id == "NAV-SA" and x.state == "pass" for x in res)),
+        ("advisory migration failure is not counted as passed", lambda r: None, advisory_not_passed),
     ]
     failures = 0
     for name, mutate, check in cases:
