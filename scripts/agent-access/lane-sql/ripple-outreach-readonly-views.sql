@@ -5,8 +5,11 @@
 -- bodies, phone numbers, staff identities or free-text reasons are exposed.
 BEGIN;
 CREATE SCHEMA IF NOT EXISTS agent_read AUTHORIZATION postgres;
-CREATE OR REPLACE VIEW agent_read.tutor_offer_restrictions AS
-  SELECT id, tutor_id, policy, source, set_at, lifted_at, related_conduct_id FROM public.tutor_offer_restrictions;
+DROP VIEW IF EXISTS agent_read.tutor_offer_restrictions;
+CREATE VIEW agent_read.tutor_offer_restrictions AS
+  SELECT id, tutor_id, NULL::varchar AS tutor_uid, policy, NULL::text AS reason, related_conduct_id, source,
+         NULL::integer AS set_by_user_id, set_at, NULL::integer AS lifted_by_user_id, lifted_at, NULL::text AS lifted_reason
+  FROM public.tutor_offer_restrictions;
 CREATE OR REPLACE VIEW agent_read.app_settings AS
   SELECT key, value, updated_at FROM public.app_settings
   WHERE key IN ('general_exclude_test_data', 'level_categories', 'algorithm_config');
@@ -52,4 +55,31 @@ CREATE OR REPLACE VIEW agent_read.outreach_dispatch_grants AS
   FROM public.outreach_dispatch_grants;
 CREATE OR REPLACE VIEW agent_read.outreach_discovery_sweeps AS
   SELECT * FROM public.outreach_discovery_sweeps;
+DROP VIEW IF EXISTS agent_read.crm_direct_contact_outcomes;
+CREATE VIEW agent_read.crm_direct_contact_outcomes AS
+  SELECT operation_id, sims_request_id, fulfilment_cycle_id, sims_tutor_id, outcome, status, outreach_binding, occurred_at, recorded_at
+  FROM public.crm_direct_contact_outcomes;
+-- Candidate/parent outcome evidence used by outreach matching. Free-text notes,
+-- reasons and staff IDs are returned as NULL so application reads run unchanged.
+CREATE OR REPLACE VIEW agent_read.crm_fulfilment_cycles AS
+  SELECT id, request_id, cycle_number, status, version, closed_at, created_at, updated_at, cycle_kind FROM public.crm_fulfilment_cycles;
+CREATE OR REPLACE VIEW agent_read.crm_request_candidates AS
+  SELECT id, request_id, fulfilment_cycle_id, sims_tutor_id, source, status, version, created_at, updated_at FROM public.crm_request_candidates;
+CREATE OR REPLACE VIEW agent_read.crm_request_candidate_outcome_events AS
+  SELECT id, operation_id, request_id, fulfilment_cycle_id, sims_tutor_id, responsibility, action, category,
+         NULL::text AS reason, NULL::integer AS recorded_by, recorded_at, previous_outcome_id,
+         CASE WHEN legacy_evidence IS NULL THEN NULL ELSE jsonb_build_object('id', legacy_evidence->'id',
+           'cycleId', legacy_evidence->'cycleId', 'recordedAt', legacy_evidence->'recordedAt') END AS legacy_evidence
+  FROM public.crm_request_candidate_outcome_events;
+CREATE OR REPLACE VIEW agent_read.crm_parent_outcome_events AS
+  SELECT id, request_id, fulfilment_cycle_id, event_class, outcome, supersedes_event_id, correction_of_event_id,
+         NULL::text AS note, NULL::text AS compensation_note, NULL::integer AS recorded_by, decided_at, recorded_at
+  FROM public.crm_parent_outcome_events;
+CREATE OR REPLACE VIEW agent_read.crm_parent_outcome_tutor_states AS
+  SELECT id, event_id, candidate_id, state, NULL::text AS note FROM public.crm_parent_outcome_tutor_states;
+CREATE OR REPLACE VIEW agent_read.crm_recovery_events AS
+  SELECT id, request_id, sims_request_id, fulfilment_cycle_id, kind, candidate_id, sims_tutor_id, withdrawal_stage,
+         decision - 'note' AS decision, NULL::text AS reason, NULL::integer AS recorded_by, occurred_at, created_at
+  FROM public.crm_recovery_events;
+GRANT SELECT ON ALL TABLES IN SCHEMA agent_read TO ripple_outreach_readonly;
 COMMIT;

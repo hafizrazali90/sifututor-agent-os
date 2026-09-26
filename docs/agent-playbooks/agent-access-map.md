@@ -487,7 +487,7 @@ prints only status labels and row counts. Rotate by rerunning
 | **Purpose** | Run the real matching engine and request-first planner read paths against production for no-send comparisons, and measure outreach state |
 | **Tier** | auto-read |
 | **Access method** | Local SSH tunnel to PostgreSQL on the `staging` (KVM8) box; role `ripple_outreach_readonly` on `ripple_suite_prod` |
-| **Allowed data** | `SELECT` on the 14 `agent_read` views only (`scripts/agent-access/lane-sql/ripple-outreach-readonly-views.sql`). The role's `search_path` is `agent_read`, so unchanged application read queries resolve to the views; sessions are read-only with a 30 s timeout |
+| **Allowed data** | `SELECT` on the 21 `agent_read` views only (`scripts/agent-access/lane-sql/ripple-outreach-readonly-views.sql`). Free-text notes, reasons, staff IDs and tutor UIDs that application reads select are returned as NULL, and the verifier proves it. The role's `search_path` is `agent_read`, so unchanged application read queries resolve to the views; sessions are read-only with a 30 s timeout |
 | **Hafiz approval** | Not required for reads; creation approved 26/09/2026 (agent-os #206, ripple-suite #1250) |
 | **Safe verification** | `scripts/agent-access/check-ripple-outreach-readonly.sh` |
 | **Run a scoped reader** | `scripts/agent-access/ripple-outreach-readonly-run.sh -- <command>` gives the child `PG*` variables and `RIPPLE_OUTREACH_READ_URL` only |
