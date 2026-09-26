@@ -458,6 +458,43 @@ approved SharePoint files.
 
 ---
 
+### 26. `finch-outreach-readonly` — Finch Production Outreach Read
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `finch-outreach-readonly.conf` |
+| **Purpose** | Measure live tutor outreach (operations, jobs, batches, holds, manual evidence, costs, delivery status) and reconstruct Finch sending state for no-send planner comparisons |
+| **Tier** | auto-read |
+| **Access method** | Local SSH tunnel to the `finch-mssql` container port on the `finch` box; SQL Server login `agent_outreach_readonly` on database `teaminbox` (Finch production) |
+| **Allowed data** | `SELECT` on the 13 `agent_read` views only (`scripts/agent-access/lane-sql/finch-outreach-readonly-views.sql`) |
+| **Hafiz approval** | Not required for reads; creation approved 26/09/2026 (agent-os #206, ripple-suite #1250) |
+| **Safe verification** | `scripts/agent-access/check-finch-outreach-readonly.sh` |
+| **Run a scoped reader** | `scripts/agent-access/finch-outreach-readonly-run.sh -- <command>` gives the child `SQLCMD*` variables only |
+| **Forbidden** | No base tables, `finch_staging`, phone numbers, names, message bodies, template values, provider payloads, staff free text, writes, DDL, impersonation or view widening |
+
+The verifier proves every view is readable, no personal column exists, and base
+tables, the staging database, writes, DDL and impersonation are refused. It
+prints only status labels and row counts. Rotate by rerunning
+`lane-sql/make-lane-conf.py` with the login template (reuses the conf, never prints).
+
+---
+
+### 27. `ripple-outreach-readonly` — Ripple Production Outreach and Matching Read
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `ripple-outreach-readonly.conf` |
+| **Purpose** | Run the real matching engine and request-first planner read paths against production for no-send comparisons, and measure outreach state |
+| **Tier** | auto-read |
+| **Access method** | Local SSH tunnel to PostgreSQL on the `staging` (KVM8) box; role `ripple_outreach_readonly` on `ripple_suite_prod` |
+| **Allowed data** | `SELECT` on the 14 `agent_read` views only (`scripts/agent-access/lane-sql/ripple-outreach-readonly-views.sql`). The role's `search_path` is `agent_read`, so unchanged application read queries resolve to the views; sessions are read-only with a 30 s timeout |
+| **Hafiz approval** | Not required for reads; creation approved 26/09/2026 (agent-os #206, ripple-suite #1250) |
+| **Safe verification** | `scripts/agent-access/check-ripple-outreach-readonly.sh` |
+| **Run a scoped reader** | `scripts/agent-access/ripple-outreach-readonly-run.sh -- <command>` gives the child `PG*` variables and `RIPPLE_OUTREACH_READ_URL` only |
+| **Forbidden** | No base tables, parent addresses/material facts, message bodies, phones, staff identities, free-text reasons, writes, DDL, role switching or view widening |
+
+---
+
 ### 25. `typesafe-jev-shadow` — TypeSafe Jev Advisory Provider
 
 | Field | Value |
@@ -495,6 +532,8 @@ never print, copy, log, commit, or store the key.
 | `m365-readonly` | `m365-readonly.env` | auto-read | Never |
 | `sharepoint-readonly` | `agent-access/sharepoint-readonly.conf` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
 | `ripple-destination-readonly` | `ripple-destination-readonly.conf` | auto-read | Never for existing scoped reads |
+| `finch-outreach-readonly` | `finch-outreach-readonly.conf` | auto-read | Never for existing scoped reads |
+| `ripple-outreach-readonly` | `ripple-outreach-readonly.conf` | auto-read | Never for existing scoped reads |
 | `typesafe-jev-shadow` | `typesafe-jev.conf` | write | One-time owner activation; automatic bounded shadow calls afterward |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
@@ -523,6 +562,10 @@ never print secret values.
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
+| `check-finch-outreach-readonly.sh` | Finch outreach lane: views, no personal columns, read/write and cross-database boundary checks |
+| `finch-outreach-readonly-run.sh` | Runs one command with the Finch outreach read-only login over a temporary SSH tunnel |
+| `check-ripple-outreach-readonly.sh` | Ripple outreach lane: views, search path, no personal columns, read/write boundary checks |
+| `ripple-outreach-readonly-run.sh` | Runs one command with the Ripple outreach read-only role over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |

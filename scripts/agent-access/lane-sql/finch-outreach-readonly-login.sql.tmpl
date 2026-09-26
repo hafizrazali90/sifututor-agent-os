@@ -1,0 +1,14 @@
+SET NOCOUNT ON;
+USE master;
+IF NOT EXISTS (SELECT 1 FROM sys.sql_logins WHERE name = 'agent_outreach_readonly')
+  CREATE LOGIN agent_outreach_readonly WITH PASSWORD = '__PASSWORD__', CHECK_POLICY = ON, DEFAULT_DATABASE = teaminbox;
+ELSE
+  ALTER LOGIN agent_outreach_readonly WITH PASSWORD = '__PASSWORD__';
+GO
+USE teaminbox;
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'agent_outreach_readonly')
+  CREATE USER agent_outreach_readonly FOR LOGIN agent_outreach_readonly;
+GRANT SELECT ON SCHEMA::agent_read TO agent_outreach_readonly;
+DENY SELECT, INSERT, UPDATE, DELETE, EXECUTE, ALTER, REFERENCES, VIEW DEFINITION ON SCHEMA::dbo TO agent_outreach_readonly;
+DENY INSERT, UPDATE, DELETE, EXECUTE, ALTER ON SCHEMA::agent_read TO agent_outreach_readonly;
+GO
