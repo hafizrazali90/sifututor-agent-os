@@ -81,16 +81,23 @@ fake second reviewer.
 
 ## CI Behavior
 
-CI is mechanical evidence, so the agent should automate it where possible:
+CI is mechanical evidence, so the agent should automate it when jobs can run:
 
 1. After PR creation or push, check the CI status.
 2. If CI is still running, say it is waiting and keep polling when the boundary
    includes CI monitoring.
 3. If CI fails, read the logs, explain the practical meaning, and fix only when
    the failure is clearly inside the approved scope.
-4. If the failure is unrelated, flaky, infrastructure-only, critical-lane, or
-   requires new scope, report it and recommend the next action.
-5. Do not call the work merge-ready until CI and required local evidence match
+4. If a job fails after running, distinguish a product failure from a flaky or
+   unrelated failure. Fix only work inside the approved scope.
+5. If hosted jobs cannot start, use the manual evidence path: run the equivalent
+   local checks and changed-workflow staging smoke where applicable, record the
+   exact results in the PR, and mark hosted CI `unavailable`, never `passed`.
+   Hafiz has chosen this path for now. Do not ask him to restore the hosted CI
+   account or make that a release prerequisite. Respect any required status
+   check that GitHub enforces; do not bypass a branch rule.
+6. Do not call the work merge-ready until required local evidence, review, and
+   either running CI results or the documented manual evidence path support
    the claimed state.
 
 ## Before Merge
@@ -99,7 +106,8 @@ Before merging, the agent must confirm:
 
 - the approved boundary included merge
 - the target branch and PR are correct
-- CI passed or the named exception was accepted
+- CI passed, or hosted CI was unavailable and the manual evidence path above
+  was completed; any enforced branch rule still applies
 - required review/risk checks passed
 - no permanent E2E, release communication, related-impact, or session-ledger
   blocker applies
