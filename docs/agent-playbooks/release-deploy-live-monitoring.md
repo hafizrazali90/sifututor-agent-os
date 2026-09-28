@@ -59,7 +59,7 @@ After the correct boundary is approved, the agent should handle the mechanical
 release work:
 
 - source commit/PR identification
-- local and CI evidence review
+- required local evidence and available CI results review
 - release preflight
 - backup/pre-deploy checklist where the project requires it
 - staging or production deploy command only when deploy is approved
@@ -71,6 +71,13 @@ release work:
 
 The agent should not ask Hafiz to list these steps. The agent should recommend
 the path and explain where it will stop.
+
+When hosted CI cannot start, use the manual evidence path in
+[push-pr-ci-automation.md](push-pr-ci-automation.md). During deployment, focus
+Hafiz's updates on the tests, staging proof, changed-workflow smoke, and live
+health. Do not raise hosted CI account administration as a deployment decision
+or repeat it in release status messages. Keep the technical record accurate:
+an unavailable check is not a passing check.
 
 ## What Must Stay Explicit
 
