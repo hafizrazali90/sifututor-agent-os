@@ -67,7 +67,7 @@ ripple_flags() {
     git -C /opt/deploy/ripple-suite/repo-prod rev-parse --short HEAD 2>/dev/null || echo 'sha=unknown'
     sudo -n test -r '$RIPPLE_FLAG_FILE' || { echo 'ERROR:ripple_flag_file_unreadable'; exit 1; }
     { sudo -n grep -E '^($keys)=' '$RIPPLE_FLAG_FILE' || true; } \
-      | sed -E 's/^([A-Z_]+)=\"?(true|false|legacy|pgboss|0|1)\"?\$/env.\1=\2/; t; s/^([A-Z_]+)=.*/env.\1=<hidden>/' | sort
+      | sed -E 's/^(TUTOR_OUTREACH_EXECUTION)=\"?(legacy|pgboss)\"?\$/env.\1=\2/; t; s/^([A-Z_]+_ENABLED|USE_[A-Z_]+)=\"?(true|false|0|1)\"?\$/env.\1=\2/; t; s/^([A-Z_]+)=.*/env.\1=<hidden>/' | sort
     for k in \$(echo '$keys' | tr '|' ' '); do sudo -n grep -q \"^\$k=\" '$RIPPLE_FLAG_FILE' || echo \"env.\$k=unset\"; done
     q() { sudo -n -u postgres psql -v ON_ERROR_STOP=1 -d '$RIPPLE_DB' -AtF '=' -c \"\$1\" 2>/dev/null || { echo 'ERROR:ripple_db_query_failed'; exit 1; }; }
     q \"SELECT 'db.capability.' || flag_key, CASE WHEN enabled THEN 'ON' ELSE 'off' END FROM integration_capability_flags ORDER BY 1\"
