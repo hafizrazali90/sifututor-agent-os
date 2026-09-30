@@ -204,7 +204,9 @@
         {
           "file": "docs/agent-playbooks/release-deploy-live-monitoring.md",
           "phrases": [
-            "smoke"
+            "smoke",
+            "Never run direct `composer install`",
+            "canonical cache exists"
           ]
         },
         {
