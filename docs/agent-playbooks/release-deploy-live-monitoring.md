@@ -15,6 +15,16 @@ replace a safe smoke of the actual user-facing functionality that changed. If a
 changed-workflow smoke cannot be run safely, name the blocker and the strongest
 evidence gathered instead.
 
+For SIMS production, read the current `sifu-tutor/docs/deployment/production-deployment-playbook.md`
+at the deployed candidate SHA before running install, build, or cache commands.
+Use its protected runtime controller and `install-and-optimize-protected-runtime.sh`.
+Never run direct `composer install`, `composer dump-autoload`, or Composer hooks
+in the live SIMS checkout: Laravel's hook deletes the protected config cache.
+After the release, verify that the canonical cache exists and that the reviewed
+payment controls and Ripple identity still have their intended values. A 200
+response alone is insufficient. Stop and recover through the governed controller
+if any of those checks fail.
+
 ## State Ladder
 
 Use these words exactly when the distinction matters:
