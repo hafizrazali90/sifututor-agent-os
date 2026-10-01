@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Print the effective production feature flags for SIMS or Ripple, read-only.
+# Print the effective production feature flags for SIMS, Ripple or Finch, read-only.
 # Safe: prints only boolean flag values and allowlisted mode values. Any other
 # value is replaced by "<hidden>". Never prints secrets, URLs, or whole files.
 # Fails closed: a remote error or a suspiciously short report exits non-zero
 # with an ERROR line instead of printing a partial list that looks complete.
-# Usage: ./scripts/agent-access/check-runtime-flags.sh sims|ripple
+# Usage: ./scripts/agent-access/check-runtime-flags.sh sims|ripple|finch
 # Diff two runs to prove a deploy or flag change touched nothing else.
 
 set -euo pipefail
@@ -16,6 +16,8 @@ RIPPLE_ALIAS="staging"   # Ripple production runs on KVM8 (staging SSH alias)
 RIPPLE_FLAG_FILE="/etc/prod-env/ripple-suite.env"
 RIPPLE_DB="ripple_suite_prod"
 SIMS_MIN_FLAGS=20
+FINCH_ALIAS="finch"      # Finch production host
+FINCH_FLAG_FILE="/etc/team-inbox.env"   # historical name, by design (finch-inbox naming.md)
 
 sims_flags() {
   local out
@@ -88,8 +90,69 @@ ripple_flags() {
   printf '%s\n' "$out" | sed '$d'
 }
 
+# Comma-separated: ssh joins remote arguments with spaces, so no spaces here.
+FINCH_KEYS='TUTOR_OUTREACH_AUTOMATIC_ENABLED,RIPPLE_TUTOR_OUTREACH_ENABLED,TUTOR_OUTREACH_MANUAL_SEND_RESTRICTION_ENABLED,RIPPLE_TUTOR_BROADCAST_ENABLED,RIPPLE_ACTIVITY_PROJECTION_ENABLED,RIPPLE_WHATSAPP_ACTIVITY_EXPORT_ENABLED'
+
+finch_flags() {
+  # #232: named Finch outreach switches from Finch's production settings file,
+  # i.e. the value the next Finch (re)start loads. Parsed like an env file: an
+  # optional "export " prefix, CR line endings and one level of quotes are
+  # accepted, and the LAST definition of a key wins. Each key prints once as
+  # true/false/unset; anything else is <hidden>. The file is never printed, and
+  # remote and local stderr are discarded so no error text can carry a path or
+  # value. The script travels on stdin, so nothing is interpolated remotely.
+  local out
+  if ! out=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$FINCH_ALIAS" \
+    bash -s -- "$FINCH_FLAG_FILE" "$FINCH_KEYS" 2>/dev/null <<'REMOTE'
+exec 2>/dev/null
+set -uo pipefail
+file="$1"; keys="$2"
+sha=$(git -C /opt/team-inbox rev-parse --short HEAD || true)
+echo "control_main=${sha:-unknown}"
+sudo -n test -r "$file" || { echo 'ERROR:finch_flag_file_unreadable'; exit 1; }
+sudo -n cat -- "$file" | awk -v keys="$keys" '
+  BEGIN { n = split(keys, K, ","); for (i = 1; i <= n; i++) want[K[i]] = 1 }
+  {
+    sub(/\r$/, ""); line = $0
+    sub(/^[ \t]*export[ \t]+/, "", line)
+    p = index(line, "="); if (p == 0) next
+    k = substr(line, 1, p - 1); if (!(k in want)) next
+    v = substr(line, p + 1)
+    if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) v = substr(v, 2, length(v) - 2)
+    val[k] = v
+  }
+  END {
+    for (i = 1; i <= n; i++) {
+      k = K[i]
+      if (!(k in val)) print "env." k "=unset"
+      else if (val[k] == "true" || val[k] == "false") print "env." k "=" val[k]
+      else print "env." k "=<hidden>"
+    }
+  }' || { echo 'ERROR:finch_parse_failed'; exit 1; }
+echo 'report.complete=yes'
+REMOTE
+  ); then
+    grep '^ERROR:' <<<"${out:-}" >&2 || echo "ERROR:finch_read_failed" >&2
+    return 1
+  fi
+  if grep -q '^ERROR:' <<<"$out" || [ "$(tail -n 1 <<<"$out")" != 'report.complete=yes' ]; then
+    grep '^ERROR:' <<<"$out" >&2 || echo "ERROR:finch_report_incomplete" >&2
+    return 1
+  fi
+  # Defence in depth: only the named keys, once each, in the allowed shapes.
+  local allowed
+  allowed="^(control_main=([0-9a-f]{7,12}|unknown)|env\\.($(tr ',' '|' <<<"$FINCH_KEYS"))=(true|false|unset|<hidden>)|report\\.complete=yes)$"
+  if grep -vqE "$allowed" <<<"$out" ||
+    [ "$(grep -c '^env\.' <<<"$out")" -ne "$(tr ',' '\n' <<<"$FINCH_KEYS" | grep -c .)" ]; then
+    echo "ERROR:finch_unexpected_output" >&2
+    return 1
+  fi
+  printf '%s\n' "$out" | sed '$d'
+}
+
 case "$TARGET" in
   sims) sims_flags ;;
   ripple) ripple_flags ;;
-  *) echo "usage: $0 sims|ripple" >&2; exit 2 ;;
+  finch) finch_flags ;;
+  *) echo "usage: $0 sims|ripple|finch" >&2; exit 2 ;;
 esac

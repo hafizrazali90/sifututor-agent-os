@@ -557,7 +557,7 @@ never print secret values.
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
-| `check-runtime-flags.sh sims\|ripple` | Effective production feature flags, booleans and named modes only; diff two runs before and after a deploy or flag change |
+| `check-runtime-flags.sh sims\|ripple\|finch` | Effective production feature flags, booleans and named modes only; diff two runs before and after a deploy or flag change. `finch` reads only named outreach switches (for example `TUTOR_OUTREACH_AUTOMATIC_ENABLED`) from Finch's production settings file, the value the next Finch (re)start loads, as true/false/unset (last definition wins), plus the control checkout SHA; it discards error text and refuses any other output (#232). For the running process, use Finch's read-only `ProductionTutorOutreachApplyTemplateStatus` operation |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |
 | `check-monitoring.sh` | Sentry unresolved issues count; BetterStack monitor status |
