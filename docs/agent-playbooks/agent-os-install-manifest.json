@@ -160,6 +160,8 @@
     "scripts/agent-checks/weekly-delivery-data.py",
     "scripts/agent-checks/test_weekly_delivery_data.py",
     "scripts/agent-checks/test_weekly_delivery_routing.py",
+    "scripts/agent-checks/biome_staged_check.py",
+    "scripts/agent-checks/test_biome_staged_check.py",
     "scripts/agent-checks/pre-commit-guard.sh",
     "scripts/agent-checks/worktree-inventory.sh",
     "scripts/agent-checks/worktree-lifecycle.py",
