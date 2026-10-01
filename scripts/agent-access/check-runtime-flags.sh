@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Print the effective production feature flags for SIMS or Ripple, read-only.
+# Print the effective production feature flags for SIMS, Ripple or Finch, read-only.
 # Safe: prints only boolean flag values and allowlisted mode values. Any other
 # value is replaced by "<hidden>". Never prints secrets, URLs, or whole files.
 # Fails closed: a remote error or a suspiciously short report exits non-zero
 # with an ERROR line instead of printing a partial list that looks complete.
-# Usage: ./scripts/agent-access/check-runtime-flags.sh sims|ripple
+# Usage: ./scripts/agent-access/check-runtime-flags.sh sims|ripple|finch
 # Diff two runs to prove a deploy or flag change touched nothing else.
 
 set -euo pipefail
@@ -16,6 +16,8 @@ RIPPLE_ALIAS="staging"   # Ripple production runs on KVM8 (staging SSH alias)
 RIPPLE_FLAG_FILE="/etc/prod-env/ripple-suite.env"
 RIPPLE_DB="ripple_suite_prod"
 SIMS_MIN_FLAGS=20
+FINCH_ALIAS="finch"      # Finch production host
+FINCH_FLAG_FILE="/etc/team-inbox.env"   # historical name, by design (finch-inbox naming.md)
 
 sims_flags() {
   local out
@@ -88,8 +90,39 @@ ripple_flags() {
   printf '%s\n' "$out" | sed '$d'
 }
 
+finch_flags() {
+  # #232: named Finch outreach switches only. Every printed value is true/false
+  # or unset; anything else becomes <hidden>. The file itself is never printed.
+  local keys='TUTOR_OUTREACH_AUTOMATIC_ENABLED|RIPPLE_TUTOR_OUTREACH_ENABLED|TUTOR_OUTREACH_MANUAL_SEND_RESTRICTION_ENABLED|RIPPLE_TUTOR_BROADCAST_ENABLED|RIPPLE_ACTIVITY_PROJECTION_ENABLED|RIPPLE_WHATSAPP_ACTIVITY_EXPORT_ENABLED'
+  local out
+  if ! out=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$FINCH_ALIAS" "
+    set -euo pipefail
+    sha=\$(git -C /opt/team-inbox rev-parse --short HEAD 2>/dev/null || true)
+    echo \"control_main=\${sha:-unknown}\"
+    sudo -n test -r '$FINCH_FLAG_FILE' || { echo 'ERROR:finch_flag_file_unreadable'; exit 1; }
+    { sudo -n grep -E '^($keys)=' '$FINCH_FLAG_FILE' || true; } \
+      | sed -E 's/^([A-Z_]+_ENABLED)=[\"]?(true|false)[\"]?\$/env.\1=\2/; t; s/^([A-Z_]+)=.*/env.\1=<hidden>/' | sort
+    for k in \$(echo '$keys' | tr '|' ' '); do sudo -n grep -q \"^\$k=\" '$FINCH_FLAG_FILE' || echo \"env.\$k=unset\"; done
+    echo 'report.complete=yes'
+  "); then
+    grep '^ERROR:' <<<"${out:-}" >&2 || echo "ERROR:finch_read_failed" >&2
+    return 1
+  fi
+  if grep -q '^ERROR:' <<<"$out" || [ "$(tail -n 1 <<<"$out")" != 'report.complete=yes' ]; then
+    grep '^ERROR:' <<<"$out" >&2 || echo "ERROR:finch_report_incomplete" >&2
+    return 1
+  fi
+  # Defence in depth: refuse to print anything outside the allowed line shapes.
+  if grep -vqE '^(control_main=([0-9a-f]{7,12}|unknown)|env\.[A-Z_]+=(true|false|unset|<hidden>)|report\.complete=yes)$' <<<"$out"; then
+    echo "ERROR:finch_unexpected_output" >&2
+    return 1
+  fi
+  printf '%s\n' "$out" | sed '$d'
+}
+
 case "$TARGET" in
   sims) sims_flags ;;
   ripple) ripple_flags ;;
-  *) echo "usage: $0 sims|ripple" >&2; exit 2 ;;
+  finch) finch_flags ;;
+  *) echo "usage: $0 sims|ripple|finch" >&2; exit 2 ;;
 esac
