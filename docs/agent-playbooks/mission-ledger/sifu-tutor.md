@@ -104,9 +104,9 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **End goal:** SIMS has a clearer class/session model where schedule, reschedule/postpone history, attendance, verification, quota, invoice allocation, and tutor-payment state are understandable without reading raw duplicate-looking rows in `classes`.
 - **Why it matters:** The current model stores both the live class and lifecycle history in the same table, so postponed/rescheduled flows can look like extra classes, confuse staff review, and make quota/invoice diagnosis harder even when the allocator excludes postponed rows correctly.
 - **Source:** Hafiz class lifecycle redesign discussion and postponed duplicate repair session, 2026-06-24.
-- **Next action:** Hafiz decision gate for Phase 4: approve or adjust the tutor-app-only same-row postpone backend contract, then create the implementation issue/branch before coding.
+- **Next action:** The mobile app developer owns tutor app validation and coordination for the later same-row postpone flag rollout. PR #2871 is merged and deployed on the SIMS server with the production flag off; keep activation separate until the mobile flow is ready and a representative flag-on staging journey is checked.
 - **Promote to:** PRD
-- **Links:** `Sifututor/sifu-tutor#1637`, `Sifututor/sifu-tutor#1640`, `Sifututor/sifu-tutor#1648`, Koda `mem_5b825d408b45`, `sifu-tutor/docs/features/class-lifecycle-option-c/phase-4-readiness.md`
+- **Links:** `Sifututor/sifu-tutor#1637`, `Sifututor/sifu-tutor#1640`, `Sifututor/sifu-tutor#1648`, `Sifututor/sifu-tutor#2871`, Koda `mem_5b825d408b45`, `sifu-tutor/docs/features/class-lifecycle-option-c/phase-4-readiness.md`
 
 ### SIMS-CLASS-LIFECYCLE-001.A1 — Planning Reservation Ledger For Future Scheduling
 
