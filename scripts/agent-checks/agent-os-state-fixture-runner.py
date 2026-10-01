@@ -20,6 +20,10 @@ STATE_ORDER = [
 REMOTE_WORDS = ("pushed", "pr open", "merged", "deployed", "live", "smoke passed", "production")
 DEPLOY_WORDS = ("deployed", "live", "smoke passed", "production")
 LIVE_WORDS = ("live", "smoke passed", "production")
+# #220 (Hafiz 02/10/2026): a live-smoke claim must name both smokes: the
+# normal smoke (SHA, health, sign-in, logs) and the change smoke of exactly
+# what shipped, run as the affected role.
+LIVE_SMOKE_EVIDENCE = ("normal smoke", "change smoke")
 
 CASES = [
     {
@@ -109,8 +113,9 @@ CASES = [
         "id": "ST-009",
         "name": "live smoke passed",
         "text": (
-            "Status: live smoke passed. Release 2026-06-29.1 is deployed and the safe "
-            "production smoke check passed. Recommended next: monitor logs or close."
+            "Status: live smoke passed. Release 2026-06-29.1 is deployed. Normal smoke "
+            "passed (live SHA, health, sign-in, logs) and the change smoke passed for each "
+            "changed screen as the affected role. Recommended next: monitor logs or close."
         ),
         "expected_state": "live smoke passed",
         "should_pass": True,
@@ -167,6 +172,20 @@ CASES = [
         "required_snippets": ("Release", "commit"),
         "should_pass": False,
         "why": "Deploy claims need source/release evidence before the agent can call them deployed.",
+    },
+    {
+        "id": "ST-015",
+        "name": "live smoke claimed from generic health only",
+        "text": (
+            "Status: live smoke passed. Release 2026-10-01.1 is deployed, /login returns "
+            "200 and the process is online. Recommended next: close."
+        ),
+        "expected_state": "live smoke passed",
+        "should_pass": False,
+        "why": (
+            "Hafiz 02/10/2026 (#220): every deploy needs a normal smoke AND a change "
+            "smoke of exactly what shipped; generic health alone is not live smoke proof."
+        ),
     },
 ]
 
@@ -314,6 +333,11 @@ def validate_case(case: dict) -> tuple[bool, list[str]]:
     for snippet in case.get("required_snippets", ()):
         if not contains_text(normalized, snippet):
             errors.append(f"missing required evidence snippet: {snippet}")
+
+    if expected_state == "live smoke passed":
+        for snippet in LIVE_SMOKE_EVIDENCE:
+            if not contains_text(normalized, snippet):
+                errors.append(f"live smoke claim does not name the {snippet}")
 
     if "done." in normalized and not states:
         errors.append("uses vague done without target state")

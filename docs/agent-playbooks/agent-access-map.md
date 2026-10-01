@@ -477,6 +477,25 @@ never print, copy, log, commit, or store the key.
 
 ---
 
+### 26. `ripple-prod-smoke` — Ripple Production Authenticated Smoke
+
+| Field | Value |
+|-------|-------|
+| **Conf files** | `ripple-prod-smoke.conf` (Admin smoke login); one file per extra role, e.g. `ripple-prod-smoke-helpdesk.conf` (QA Helpdesk, Helpdesk role) |
+| **Base URL** | `https://ripple.admin.sifututor.my` |
+| **Purpose** | The normal smoke and the change smoke after every Ripple production deploy ([release-deploy-live-monitoring.md](release-deploy-live-monitoring.md)) |
+| **Tier** | auto-read (read-only browser and GET checks) |
+| **Hafiz approval** | Not required for read-only smoke after an approved deploy; adding a new role login needs Hafiz to create the account |
+| **Safe verification** | `ripple-suite/scripts/qa/prod-auth-smoke.sh`; set `RIPPLE_PROD_SMOKE_CONF` to pick the role file, and `RIPPLE_SMOKE_SPEC` / `RIPPLE_SMOKE_GREP` to run a release's read-only change-smoke spec under `tests/e2e/smoke/` |
+| **Allowed operations** | Sign in, `GET` APIs, open pages, forms and dialogs, then back out; screenshots |
+| **Forbidden** | Never submit or save anything (no cancel, payment, receipt, complaint, publish, assignment); never print or commit credentials, cookies or tokens |
+
+Expected variable names in each file: `RIPPLE_PROD_SMOKE_EMAIL`, `RIPPLE_PROD_SMOKE_PASSWORD`.
+Before saying a production login is unavailable for any project, list the file
+names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smoke*`.
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -496,6 +515,7 @@ never print, copy, log, commit, or store the key.
 | `sharepoint-readonly` | `agent-access/sharepoint-readonly.conf` + private runtime token cache | auto-read after first consent | First login and boundary expansion only |
 | `ripple-destination-readonly` | `ripple-destination-readonly.conf` | auto-read | Never for existing scoped reads |
 | `typesafe-jev-shadow` | `typesafe-jev.conf` | write | One-time owner activation; automatic bounded shadow calls afterward |
+| `ripple-prod-smoke` | `ripple-prod-smoke*.conf` | auto-read | Never for read-only smoke; new role logins need Hafiz to create the account |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
