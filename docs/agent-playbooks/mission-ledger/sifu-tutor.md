@@ -237,3 +237,16 @@ Use this for SIMS missions, child tasks, adjacent ideas, and paused follow-ups.
 - **Next action:** Review the production deploy playbook for migration-backed public APIs; consider a two-phase deploy, maintenance window, pre-created compatible tables, or route-safe fallback before code that references new tables is exposed.
 - **Promote to:** GitHub issue
 - **Links:** `Sifututor/sifu-tutor#1690`, production deploy `e7795dccf`, Koda `mem_5142b503a88e`, Koda `mem_ef97d14fb34b`
+
+### SIMS-FIUU-PAYMENT-REVIEW-001.R1 — Coordinate FIUU integration-key exposure follow-up
+
+- **Project:** sifu-tutor
+- **Status:** paused
+- **Type:** risk
+- **Parent:** SIMS-FIUU-PAYMENT-REVIEW-001
+- **End goal:** Configuration owner assesses and coordinates any required FIUU key rotation without interrupting payments.
+- **Why it matters:** A merchant-home accessibility snapshot exposed integration-key fields during payment investigation. No values are retained in this ledger; later UI reads were filtered.
+- **Source:** Codex payment session, 2026-09-29; user informed during investigation.
+- **Next action:** Coordinate with the configuration owner before any rotation; no credential or production configuration change is authorized by this note.
+- **Promote to:** Scoped security follow-up after owner coordination
+- **Links:** `.agent-os/session-maps/2026-09-29-sims-payment-combined.md`

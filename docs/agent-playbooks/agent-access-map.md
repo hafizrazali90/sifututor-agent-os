@@ -260,6 +260,15 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Safe verification** | `scripts/agent-access/check-ripple-prod.sh` (includes payment API reachability) |
 | **Forbidden** | Do not use this lane to trigger charges, refunds, or voids — use `payment-write` which requires approval |
 
+For FIUU sandbox investigation, check the authenticated merchant portal at
+`https://sandbox-portal.fiuu.com/` before declaring simulator access unavailable.
+Its left navigation includes **Bank Simulator** and a Testing Guide. Open the
+Testing Guide's collapsed **FPX B2C** section for sandbox-only demo-bank login
+instructions and masked credentials. This is separate from the live portal at
+`https://portal.fiuu.com/` and from the FPX demo-bank login shown after a
+hosted checkout. Use narrow UI inspection; do not print, log, or store portal
+keys or simulator credentials.
+
 ---
 
 ### 16. `payment-write` — FIUU Payment Gateway (Write) ⚠️ CRITICAL
