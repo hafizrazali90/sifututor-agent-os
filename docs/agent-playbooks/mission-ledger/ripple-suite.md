@@ -317,6 +317,24 @@ follow-ups.
 - **Promote to:** none yet
 - **Links:** `tests/e2e/smoke/commitment-fee-permission-production.spec.ts`
 
+### RS-CF-001.4 — Check how "Payment, fee needs review" is used
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** task
+- **Parent:** RS-CF-001
+- **End goal:** Know whether the fee-review option is a rare safety net or a
+  shortcut, from real use.
+- **Why it matters:** Hafiz decided on 2 Oct 2026 to keep it (payment recorded
+  once as credit with a Finance review case, never a fee created). Real use
+  shows whether missing fee records need the #1396 action, or the wording needs
+  tightening.
+- **Source:** Session f4ec316a decision, 2 Oct 2026
+- **Next action:** Around 2 Nov 2026, count `commitment_fee_review` cases and
+  their reasons read-only and report to Hafiz.
+- **Promote to:** none yet
+- **Links:** `Sifututor/ripple-suite#1376`, `Sifututor/ripple-suite#1396`
+
 ### RS-CX-ROSTER-001 — Reconcile CX roster and agree work handover
 
 - **Project:** ripple-suite
