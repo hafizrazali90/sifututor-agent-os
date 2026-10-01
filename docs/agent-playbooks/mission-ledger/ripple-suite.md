@@ -247,3 +247,72 @@ follow-ups.
   normal upload should suggest attaching to generated receipt records.
 - **Promote to:** GitHub issue or PRD
 - **Links:** none yet
+
+### RS-CF-001 — Record Commitment Fees from full payments and parent credit
+
+- **Project:** ripple-suite
+- **Status:** done
+- **Type:** mission
+- **Parent:** none
+- **End goal:** A parent's payment that includes the Commitment Fee is recorded
+  once and linked to the TREQ; the fee is paid in SIMS from it, and the rest
+  stays as parent credit. Finance can also pay a fee from existing credit.
+- **Why it matters:** Staff had no correct way to record a full advance that
+  included the fee (original staff report, TREQ-505012 / CRM-98300).
+- **Source:** Session f4ec316a, 1 to 2 Oct 2026; Codex handoff pack for #1376
+- **Next action:** None. Reopen `Sifututor/ripple-suite#1376` if staff report a
+  problem; the follow-ups below hold the remaining work.
+- **Promote to:** none yet
+- **Links:** `Sifututor/ripple-suite#1376`, PRs #1383, #1386, #1389, #1392,
+  #1403, #1405, #1408; production releases a60ef35e and fb5ed23f; staff
+  guide `docs/features/accounts/advance-credit-commitment-fees/staff-guide.md`
+
+### RS-CF-001.1 — Resolve missing Commitment Fee records one case at a time
+
+- **Project:** ripple-suite
+- **Status:** paused
+- **Type:** task
+- **Parent:** RS-CF-001
+- **End goal:** Finance can create a missing fee record from Ripple as owed,
+  paid from credit, or waived, at most one fee per parent, without going to SIMS.
+- **Why it matters:** Before 22 Jul 2026 SIMS charged one fee per parent, so
+  older requests may lack a fee row. On 2 Oct 2026, 375 active requests of
+  un-registered parents had none; only TREQ-505012 had a tutor matched. Hafiz
+  decided no bulk backfill.
+- **Source:** Session f4ec316a, 2 Oct 2026
+- **Next action:** Start when another blocked older request appears; fee 22601
+  for TREQ-505012 was created manually with Hafiz's approval.
+- **Promote to:** GitHub issue (done)
+- **Links:** `Sifututor/ripple-suite#1396`
+
+### RS-CF-001.2 — Show a just-paid fee as paid without the 2-minute delay
+
+- **Project:** ripple-suite
+- **Status:** promoted
+- **Type:** task
+- **Parent:** RS-CF-001
+- **End goal:** CRM screens show a Commitment Fee as paid as soon as SIMS
+  settles it.
+- **Why it matters:** The fee readiness display cache (#1382) can show
+  "Awaiting parent fee" for up to 2 minutes (10 on the Worklist), which can
+  make a PIC upload twice.
+- **Source:** Cross-session check with the #1379 and #1360 sessions, 2 Oct 2026
+- **Next action:** Ships inside the #1360 release (owner: #1360 session).
+- **Promote to:** GitHub issue (done)
+- **Links:** `Sifututor/ripple-suite#1391`, #1360
+
+### RS-CF-001.3 — CX Sales production smoke account
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** question
+- **Parent:** RS-CF-001
+- **End goal:** A read-only CX Sales test account proves role-based features in
+  production, the way the QA Helpdesk account does for Helpdesk.
+- **Why it matters:** The only positive production smoke account is a
+  superadmin, which passes some checks through superadmin shortcuts.
+- **Source:** Production smoke of fb5ed23f, 2 Oct 2026
+- **Next action:** Hafiz decides whether to create it through SIMS Add Staff
+  and store it as `ripple-prod-smoke-cxsales.conf`.
+- **Promote to:** none yet
+- **Links:** `tests/e2e/smoke/commitment-fee-permission-production.spec.ts`
