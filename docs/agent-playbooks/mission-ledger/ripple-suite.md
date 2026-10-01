@@ -316,3 +316,98 @@ follow-ups.
   and store it as `ripple-prod-smoke-cxsales.conf`.
 - **Promote to:** none yet
 - **Links:** `tests/e2e/smoke/commitment-fee-permission-production.spec.ts`
+
+### RS-CX-ROSTER-001 — Reconcile CX roster and agree work handover
+
+- **Project:** ripple-suite
+- **Status:** paused
+- **Type:** mission
+- **Parent:** none
+- **End goal:** CX allocation roster reflects the approved current ST team, with any existing work handover explicitly agreed.
+- **Why it matters:** Operations confirmed extra accounts in the eligible roster; changing eligibility must not silently redistribute existing work.
+- **Source:** Hafiz allocation support session, 2026-09-21; explicitly deferred staff cleanup.
+- **Next action:** Resume only when Hafiz requests it; recheck the current roster and prepare exact account corrections and recipient choices for approval. No automatic deactivation, role changes or reassignment. NakNgaji integration has not rolled out and is not part of this follow-up.
+- **Promote to:** GitHub issue after scope and correction recipients are agreed
+- **Links:** https://github.com/Sifututor/ripple-suite/issues/1129; .agent-os/session-maps/2026-09-21-063600-codex-1129-allocation-save.md
+
+- **Follow-ups reaffirmed by Hafiz:** Keep for later: (1) Operations confirms CX availability for the actual operating day in CRM Settings > Team attendance before assigning leads; completion has not been verified. (2) Resigned/transferred staff cleanup and review of existing assignments remain deferred. This reminder authorises no settings, staff or assignment changes.
+
+### RS-V16-001 — Land the V16 operational-spreadsheet migration (#1089) safely
+
+- **Project:** ripple-suite
+- **Status:** active
+- **Type:** mission
+- **Parent:** none
+- **End goal:** The P1-P8 V16 migration build (local, uncommitted on `worktree-ripple-1089-v16-migration`) is renumbered, rebased, independently reviewed by Codex, then committed and released through the protected lane with the sealed staff workbook answered by staff.
+- **Why it matters:** Seven local passes and five Codex reviews have made the build genuinely verified (rehearsal 200/200, migrations 82/82, races proven), but it is still local-only and now collides with `origin/main` migration numbers.
+- **Source:** Claude V16 sessions 2026-09-19 to 2026-09-22; Codex independent reviews four and five.
+- **Next action:** RS-V16-001.1 below, then hand back to Codex for its next independent review.
+- **Promote to:** existing GitHub issue #1089 once renumbered and rebased
+- **Links:** .agent-os/session-maps/2026-09-22-104800-claude-v16-review-holds-race-save.md; ripple-suite/.agent-os/reports/v16-migration-2026-09-19/claude-p1-p8-final-completion-handback.md
+
+### RS-V16-001.1 — Renumber V16 migrations 190-193 and rebase onto origin/main
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** task
+- **Parent:** RS-V16-001
+- **End goal:** V16 migrations 190-193 become 192-195 (179-189 are free on both `origin/main` and `origin/staging`; main's highest is 191 from CRM PRs #1130/#1136), every reference is updated (both test scripts, dry-run schema chain, TESTING.md, handback, docs/features/v16-migration), the branch is rebased onto `origin/main` (20 behind at 2026-09-22), and the full local chain reruns green.
+- **Why it matters:** Publishing with a colliding migration number is refused by the protected lane; fixing it before review avoids a wasted Codex round.
+- **Source:** Fresh `git fetch` at the 2026-09-22 save-session.
+- **Next action:** Do the renumber and rebase on the worktree, rerun `test-v16-migrations-181-182-postgres` and `test-v16-package-dry-run`, then update the handback numbers.
+- **Promote to:** part of the #1089 PR
+- **Links:** none yet
+
+### RS-V16-001.A1 — Ingest completed staff answers from the sealed V16 workbook (Path B)
+
+- **Project:** ripple-suite
+- **Status:** captured
+- **Type:** adjacent
+- **Parent:** RS-V16-001
+- **End goal:** A separately approved phase adds explicit immutable decision fields, reviewer identity and provenance to the three review tables, plus a safe ingestion path from `v16-staff-confirmations.xlsx`, under the same per-key advisory lock the writers already use.
+- **Why it matters:** This phase deliberately records question-version and resolution-marker state only; staff answers stay in the sealed workbook until this is approved.
+- **Source:** Codex fifth review, Path A/B choice, 2026-09-22.
+- **Next action:** Wait for Hafiz to decide whether and when to scope it. Do not infer approval.
+- **Promote to:** PRD after Hafiz decision
+- **Links:** none yet
+
+### RS-RECON-001.A1 — Automatic Ripple GitHub CI paused
+
+- **Project:** ripple-suite
+- **Status:** paused
+- **Type:** adjacent
+- **Parent:** RS-RECON-001
+- **End goal:** Use manual local checks and staging proof as the current release path. Revisit automatic pull-request and main-branch CI only if Hafiz explicitly requests it.
+- **Why it matters:** Automatic CI is paused. Releases must keep using the documented manual evidence path without making account administration a deployment topic.
+- **Source:** Bank-rule release session, 2026-09-23; issue #1176 and PR #1178.
+- **Next action:** No action during deployments. If Hafiz later requests CI restoration, scope it separately, restore the documented triggers in an issue and PR, run manual checks before merge, and verify automatic runs start successfully.
+- **Promote to:** GitHub issue when Hafiz requests restoration
+- **Links:** https://github.com/Sifututor/ripple-suite/issues/1176; https://github.com/Sifututor/ripple-suite/pull/1178; ripple-suite/docs/qa/github-actions-manual-checks.md; .agent-os/session-maps/2026-09-22-170000-codex-ripple-cdm.md
+
+
+### RS-OUTREACH-HEARTBEAT-001 — Revisit external outreach heartbeat alerts later
+
+- **Project:** ripple-suite
+- **Status:** paused
+- **Type:** mission
+- **Parent:** none
+- **Why it matters:** Preserve the owner deferral without claiming external alert delivery was verified.
+- **Promote to:** GitHub issue when Hafiz explicitly resumes monitoring setup
+- **End goal:** Verify delivered external failure and recovery alerts for tutor outreach when Hafiz chooses to resume monitoring setup.
+- **Source:** Hafiz, 29 September 2026: "can we do thos later? please remember this".
+- **Decision:** Defer heartbeat purchase/setup; earlier US$20/month approval is on hold. Nothing purchased. Do not repeatedly block outreach progress on this deferred item or represent its tests as passed.
+- **Next action:** Wait until Hafiz explicitly revisits external heartbeat monitoring. Keep the staging wakeup timer running; this decision does not authorise production deployment.
+- **Links:** .agent-os/handoffs/2026-09-29-tutor-outreach-bundle-2-staging-result.md; https://github.com/Sifututor/ripple-suite/pull/1300
+
+### RS-OUTREACH-SPEED-001 — Speed up tutor outreach preview after launch
+
+- **Project:** ripple-suite
+- **Status:** active
+- **Type:** mission
+- **Parent:** none
+- **End goal:** Prepare tutor offers quickly without reducing suitable applications, request coverage, or cost performance against current automation and the staff manual baseline.
+- **Why it matters:** The live preview was still progressing after about 90 minutes; local no-send evidence and code inspection identify repeated planning across checkpointed slices as a likely contributor, but production timing has not been fully attributed.
+- **Source:** Hafiz, 30 September 2026: initially defer; after the missed 09:00 send, Claude should solve and prepare a PR for independent Codex review.
+- **Next action:** Claude diagnoses new production job failures first, then builds and proves the smallest preview-progress repair in an owned worktree and prepares a PR. Codex independently reviews it before release.
+- **Promote to:** GitHub issue/PR through Claude's approved workflow
+- **Links:** .agent-os/handoffs/2026-09-30-tutor-outreach-preview-delay-claude-handoff.md; .agent-os/session-maps/2026-09-28-codex-outreach-durable-runtime.md; .agent-os/handoffs/2026-09-28-tutor-outreach-workload-review.md
