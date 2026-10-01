@@ -9,9 +9,14 @@ hosted CI. This check closes that gap at commit time.
 - A project with no installed Biome binary reports UNAVAILABLE and passes.
 - Only staged added, copied, modified, or renamed files are checked, so older
   errors in untouched files never block an unrelated commit.
+- Biome reads files from disk, so a staged file whose disk copy differs from
+  the staged copy is refused; otherwise a fix made on disk but never staged
+  would pass while the unfixed version is committed.
+- A Biome binary that cannot start (for example node missing from PATH) reports
+  UNAVAILABLE instead of blaming the staged files.
 
-Biome reads the working-tree copy of each staged file. The binary defaults to
-the project's node_modules/.bin/biome; AGENT_OS_BIOME_BIN overrides it.
+The binary defaults to the project's node_modules/.bin/biome;
+AGENT_OS_BIOME_BIN overrides it.
 """
 
 from __future__ import annotations
@@ -40,6 +45,11 @@ def staged_files() -> list[str]:
     return [path for path in out.split("\0") if path]
 
 
+def files_with_unstaged_changes(files: list[str]) -> list[str]:
+    out = git("diff", "--name-only", "-z", "--", *files)
+    return [path for path in out.split("\0") if path]
+
+
 def biome_binary(root: Path) -> Path | None:
     override = os.environ.get("AGENT_OS_BIOME_BIN")
     candidate = Path(override) if override else root / "node_modules" / ".bin" / "biome"
@@ -64,12 +74,22 @@ def main() -> int:
 
     try:
         files = staged_files()
+        unstaged = files_with_unstaged_changes(files) if files else []
     except RuntimeError as exc:
         print(f"{PREFIX} {exc}", file=sys.stderr)
         return 1
     if not files:
         print(f"{PREFIX} no staged files to check")
         return 0
+    if unstaged:
+        print(
+            f"{PREFIX} these staged files have unstaged changes, so Biome would not check "
+            "what is being committed. Stage or set aside those changes, then retry:",
+            file=sys.stderr,
+        )
+        for path in unstaged:
+            print(f"- {path}", file=sys.stderr)
+        return 1
 
     try:
         result = subprocess.run(
@@ -90,9 +110,18 @@ def main() -> int:
     except subprocess.TimeoutExpired:
         print(f"{PREFIX} Biome did not finish within {TIMEOUT_SECONDS}s", file=sys.stderr)
         return 1
+    except OSError as exc:
+        print(f"{PREFIX} UNAVAILABLE Biome could not start ({exc.strerror})")
+        return 0
 
     if result.returncode == 0:
         print(f"{PREFIX} {len(files)} staged file(s) pass Biome")
+        return 0
+    if result.returncode != 1:
+        # Biome reports diagnostics with exit 1. Anything else, such as 127
+        # from `env: node: No such file or directory`, means it never ran.
+        detail = (result.stderr or result.stdout).strip().splitlines()[:1]
+        print(f"{PREFIX} UNAVAILABLE Biome could not run (exit {result.returncode}) {' '.join(detail)}")
         return 0
 
     sys.stderr.write(result.stdout)

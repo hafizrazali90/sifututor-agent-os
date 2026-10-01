@@ -118,6 +118,24 @@ class BiomeStagedCheckTest(unittest.TestCase):
         self.assertIn("src/bad.ts format", result.stderr)
         self.assertIn("biome check --write", result.stderr)
 
+    def test_reports_unavailable_when_biome_cannot_start(self) -> None:
+        self.write("biome.json", "{}\n")
+        self.git("add", "biome.json")
+        result = self.run_check(exit_code=127)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("UNAVAILABLE", result.stdout)
+        self.assertIn("exit 127", result.stdout)
+
+    def test_refuses_a_staged_file_whose_disk_copy_differs(self) -> None:
+        self.write("biome.json", "{}\n")
+        self.write("src/bad.ts", "export const  bad=1\n")
+        self.git("add", "biome.json", "src/bad.ts")
+        self.write("src/bad.ts", "export const bad = 1;\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("- src/bad.ts", result.stderr)
+        self.assertEqual(self.biome_calls(), [])
+
 
 if __name__ == "__main__":
     unittest.main()
