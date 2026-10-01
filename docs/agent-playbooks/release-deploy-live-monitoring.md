@@ -8,12 +8,27 @@ Plain meaning: merged is not live. Deployed is not automatically healthy. A
 release is only trustworthy when the agent can name the exact state reached and
 what evidence proves it.
 
-Project-wide release rule: after any staging or production deploy in any
-Sifututor project, changed-workflow smoke is mandatory before the release is
-called done. Generic route availability can support the report, but it does not
-replace a safe smoke of the actual user-facing functionality that changed. If a
-changed-workflow smoke cannot be run safely, name the blocker and the strongest
-evidence gathered instead.
+Project-wide release rule (Hafiz, 2 Oct 2026, issue #220): after every staging
+or production deploy in any Sifututor project, run two smokes before the
+release is called done, and report them separately.
+
+1. **Normal smoke:** exact live SHA or version, process and HTTP health,
+   sign-in works, the main pages load, and logs show no new errors.
+2. **Change smoke:** every screen, action and permission this release changed,
+   checked live as the role that uses it (a Helpdesk change is smoked with a
+   Helpdesk login), with screenshots. Open the screen or dialog and back out.
+   Never submit anything that changes real data (no real cancel, payment,
+   receipt, complaint or publish); name what only tests prove.
+
+Plan both before deploying: list each changed behaviour with the role and
+login that will smoke it. Before saying a login is unavailable, search the
+lane files in `~/.config/sifututor/agent-access/` (file names only) and the
+project's `scripts/qa/*smoke*`, and read
+[agent-access-map.md](agent-access-map.md). If a role login is genuinely
+missing, ask Hafiz for a test account before the deploy; he stores the
+password in a lane file himself, never in chat. Generic route availability
+supports the report but never replaces the change smoke. If a change smoke
+cannot run safely, name the blocker and the strongest evidence gathered.
 
 For SIMS production, read the current `sifu-tutor/docs/deployment/production-deployment-playbook.md`
 at the deployed candidate SHA before running install, build, or cache commands.
@@ -151,6 +166,8 @@ Release state:
 - Source: <commit/PR/branch>.
 - Highest proven state: <merged | staging deployed | staging smoke checked | production deployed | production smoke checked | production monitored | accepted / closed>.
 - What proves it: <deploy record, SHA, smoke, logs, monitoring>.
+- Normal smoke: <live SHA, health, sign-in, main pages, logs: pass/fail>.
+- Change smoke: <each changed screen/action, role used, screenshot, pass/fail; what only tests prove>.
 - What is not proven yet: <gap or none>.
 - User impact: <what changed for staff/parents/tutors/admins/customers>.
 - Staff documentation: <relevant, and the files that shipped | not relevant, and why | urgently deferred, with owner and follow-up issue | not staff-facing>.

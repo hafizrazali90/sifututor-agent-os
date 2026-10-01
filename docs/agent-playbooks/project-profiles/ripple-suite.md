@@ -128,7 +128,7 @@ implementation when the task changes behavior or risk.
 | Legacy host | `https://ripple-suite.vercel.app` redirects to production and must not be used as proof that production is live. |
 | Deploy path | Manual KVM8 deploy via `ssh staging` and `sudo -u deploy /usr/local/bin/deploy-ripple-suite prod` after approval. |
 | Release proof | Source branch/SHA, KVM8 deploy output, PM2/HTTP proof, migration status when relevant. |
-| Smoke proof | Authenticated browser/API smoke on the changed workflow plus public HTTP checks where relevant. |
+| Smoke proof | Normal smoke plus change smoke after every deploy ([release-deploy-live-monitoring.md](../release-deploy-live-monitoring.md)). Production uses the `ripple-prod-smoke` lane: `scripts/qa/prod-auth-smoke.sh`, one conf file per role (`RIPPLE_PROD_SMOKE_CONF`), and a read-only change spec per release in `tests/e2e/smoke/` (`RIPPLE_SMOKE_SPEC`, `RIPPLE_SMOKE_GREP`). |
 | Monitoring proof | PM2/log/monitoring review where available and approved. |
 
 ## What Done Means
