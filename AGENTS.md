@@ -104,6 +104,10 @@ owner docs define the required fields and state language.
 - Explain in natural language first: what happened, what changed, how it was
   checked, and what comes next. Add a non-technical mental model when the topic
   is twisted or technical.
+- Before any deploy, and at the end of every session with shippable work,
+  publish one review page Hafiz confirms first: business and technical
+  explanation side by side, screenshots of every UI/UX change, decisions,
+  risks, evidence and required approvals. No deploy until he confirms it.
 - For a staff report or PR, first explain who reported/requested it (or say the
   source is unnamed), what they observed, expected behavior, who uses it, why it
   matters, the proposed/final solution, author, evidence, and release state.

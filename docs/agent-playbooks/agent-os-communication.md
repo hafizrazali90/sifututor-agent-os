@@ -174,6 +174,32 @@ Still include the file path in the chat so Hafiz can reopen it later. Do not
 auto-open files that contain secrets, credentials, raw tokens, `.env*` content,
 or production-sensitive private payloads.
 
+## Pre-Deploy Review Artifact (Every Session)
+
+Hafiz, 01/10/2026: before any deploy, and at the end of every session that
+produced shippable work, he confirms the change from one published review page,
+not from chat or a repo file. This applies to every project and every agent.
+
+The page must contain:
+
+- **Two layers for every section.** A plain business explanation (what changes
+  for staff, parents, tutors or money, and why it matters) and the technical
+  explanation in natural language (what the code and database do, how it was
+  proven). Neither layer may be skipped.
+- **Screenshots of every UI/UX change.** Each new or changed screen and state,
+  desktop and phone where relevant, captured from the real styled app (mock data
+  or staging). An unstyled test harness is not acceptable evidence.
+- Decisions the agent made on his behalf, so he can overrule them.
+- Risks, limits and what is not yet proven (for example staging-only proof).
+- Evidence with real numbers (tests, reviews, negative controls) and the
+  baseline failures that are not this change.
+- The release plan and exactly which approvals are still needed.
+
+Order: finish the adversarial review and fix its findings first, then build and
+publish the page, then ask for confirmation. Never deploy before Hafiz confirms
+the page. Publish it as an Artifact (Claude) or the equivalent shareable page
+(other agents); still give the local path of any source file.
+
 ## Explanation Layers
 
 When something is technical, explain it in layers.
