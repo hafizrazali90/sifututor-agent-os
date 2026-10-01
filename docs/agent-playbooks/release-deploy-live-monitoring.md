@@ -129,6 +129,25 @@ monitored, or accepted, apply [no-mistakes-lite.md](no-mistakes-lite.md). Plain
 meaning: merged, deployed, smoke checked, monitored, and accepted are different
 states, and the agent must not collapse them into "done."
 
+## Release On The Live Commit
+
+When production deploys from a release ref built on the serving commit (for
+example Ripple's `release/<issue>-...` refs), other sessions may deploy while
+you prepare. A release built on an older serving commit silently removes their
+changes. Plain meaning: always build on what is live at the moment you deploy.
+
+Right before a production deploy:
+
+1. Read the live serving commit from the deploy target itself (for Ripple, the
+   production checkout HEAD and the last `Deploy complete: prod` line).
+2. Confirm no other deploy is running on that target. If one is, wait for it
+   to finish; never deploy over it.
+3. If the live commit moved since you built the release, rebuild the release on
+   top of the new live commit, resolve overlaps, and re-run the release checks
+   before deploying.
+4. After deploying, tell any other session preparing a release for the same
+   target the new live commit, so they rebuild too.
+
 ## Staff Documentation Gate
 
 Before a staff-facing release leaves for staging or production, the change must

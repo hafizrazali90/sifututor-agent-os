@@ -36,6 +36,13 @@ authoritative state after failures/retries and check applicable flag-off and
 configuration behavior. Verify the negative control failed for the actual weak
 behavior, not an unrelated import or environment error, and was restored.
 
+For permission or role gates, prove reach against the real role definitions
+(for Ripple, the role bundles a real session resolves). A test that only hands
+a fake user the permission proves the check runs, not that any real role can
+pass it. Require a test that shows the intended roles get the permission and
+named other roles do not. Plain meaning: a button no real role can see passes
+every fake-user test.
+
 A structurally valid receipt, green builder suite, self-supplied reviewer ID or
 contract digest is not independent acceptance. Compare the full requirement set
 and target to the trusted task, inspect evidence and reviewer provenance, and
