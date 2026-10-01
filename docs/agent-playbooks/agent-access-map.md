@@ -490,7 +490,7 @@ never print, copy, log, commit, or store the key.
 
 | Field | Value |
 |-------|-------|
-| **Conf files** | `ripple-prod-smoke.conf` (Admin smoke login); one file per extra role, e.g. `ripple-prod-smoke-helpdesk.conf` (QA Helpdesk, Helpdesk role) |
+| **Conf files** | `ripple-prod-smoke.conf` (Admin smoke login); one file per extra role: `ripple-prod-smoke-helpdesk.conf` (QA Helpdesk, SIMS user 376, Helpdesk role), `ripple-prod-smoke-cxsales.conf` (QA CX Sales, SIMS user 377, Customer Experience (Sales) role) |
 | **Base URL** | `https://ripple.admin.sifututor.my` |
 | **Purpose** | The normal smoke and the change smoke after every Ripple production deploy ([release-deploy-live-monitoring.md](release-deploy-live-monitoring.md)) |
 | **Tier** | auto-read (read-only browser and GET checks) |
@@ -500,6 +500,10 @@ never print, copy, log, commit, or store the key.
 | **Forbidden** | Never submit or save anything (no cancel, payment, receipt, complaint, publish, assignment); never print or commit credentials, cookies or tokens |
 
 Expected variable names in each file: `RIPPLE_PROD_SMOKE_EMAIL`, `RIPPLE_PROD_SMOKE_PASSWORD`.
+A CX Sales login can open only Requests where it is the PIC, and it owns none,
+so it proves role permissions (`/api/auth/me`) and refusals, not owned-Request
+screens. A new SIMS staff login may get "Sign-in is temporarily unavailable"
+for about a minute while Ripple catches up with the new SIMS revision.
 Before saying a production login is unavailable for any project, list the file
 names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smoke*`.
 

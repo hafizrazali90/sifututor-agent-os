@@ -304,7 +304,7 @@ follow-ups.
 ### RS-CF-001.3 — CX Sales production smoke account
 
 - **Project:** ripple-suite
-- **Status:** captured
+- **Status:** done
 - **Type:** question
 - **Parent:** RS-CF-001
 - **End goal:** A read-only CX Sales test account proves role-based features in
@@ -312,9 +312,16 @@ follow-ups.
 - **Why it matters:** The only positive production smoke account is a
   superadmin, which passes some checks through superadmin shortcuts.
 - **Source:** Production smoke of fb5ed23f, 2 Oct 2026
-- **Next action:** Hafiz decides whether to create it through SIMS Add Staff
-  and store it as `ripple-prod-smoke-cxsales.conf`.
-- **Promote to:** none yet
+- **Result:** Created 2 Oct 2026 with Hafiz's approval by the Helpdesk
+  session through SIMS Add Staff: SIMS user 377, QA CX Sales (smoke test),
+  Customer Experience (Sales). Lane file `ripple-prod-smoke-cxsales.conf`
+  (access map lane 26). Read-only production check passed: role
+  `customer_experience_sales` holds `crm.record_commitment_fee_receipt`, the
+  fee lookup on a Request it does not own returns 403, and the Request page
+  shows "You cannot view Request details" with no upload button.
+- **Next action:** None. Use the lane for CX Sales permission smokes; it owns
+  no Requests, so it cannot show owned-Request screens.
+- **Promote to:** closed
 - **Links:** `tests/e2e/smoke/commitment-fee-permission-production.spec.ts`
 
 ### RS-CF-001.4 — Check how "Payment, fee needs review" is used
