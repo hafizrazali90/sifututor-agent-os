@@ -23,4 +23,10 @@ python3 "$script_dir/coverage_enforcement.py" --project . --mode change --staged
 # or detected staff-documentation shape reports UNAVAILABLE and passes.
 python3 "$script_dir/release_documentation.py" --project . --mode advisory --staged
 
+# Issue 230. Style errors returned to Ripple days after a clean-up because
+# nothing checked them before commit. Blocking, but scoped to staged files; a
+# project with no biome.json is skipped and one without Biome installed reports
+# UNAVAILABLE and passes.
+python3 "$script_dir/biome_staged_check.py"
+
 echo "pre-commit-guard: completed"
