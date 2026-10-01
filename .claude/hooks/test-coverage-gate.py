@@ -218,43 +218,45 @@ def _parse_manifest(content: str) -> list[dict]:
     return rows
 
 
+def _git(project_root: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], cwd=project_root, capture_output=True, text=True
+    )
+
+
 def _get_changed_files(project_root: Path) -> list[str]:
     """
-    Return files changed in current branch vs the branch's merge base with
-    main or integration. Falls back to HEAD~1 diff if no base branch found.
+    Return files changed in the current branch since its real base.
+
+    The base is the NEWEST merge base among the local and remote-tracking
+    copies of main/integration/master/develop. A stale local main (for
+    example one checked out in another worktree) would otherwise pull other
+    people's merged work into this branch's "changed files" (#222).
+    Falls back to HEAD~1 diff if no base branch is found.
     """
     try:
-        # Discover base branch
-        for base in ("main", "integration", "master", "develop"):
-            result = subprocess.run(
-                ["git", "rev-parse", "--verify", base],
-                cwd=project_root,
-                capture_output=True,
-                text=True,
+        candidates: list[str] = []
+        for name in ("main", "integration", "master", "develop"):
+            for ref in (f"origin/{name}", name):
+                if _git(project_root, "rev-parse", "--verify", "--quiet", ref).returncode == 0:
+                    base = _git(project_root, "merge-base", "HEAD", ref)
+                    if base.returncode == 0 and base.stdout.strip():
+                        candidates.append(base.stdout.strip())
+            if candidates:
+                break
+        if candidates:
+            # The newest merge base has the fewest commits between it and HEAD.
+            best = min(
+                candidates,
+                key=lambda sha: int(
+                    _git(project_root, "rev-list", "--count", f"{sha}..HEAD").stdout.strip() or "0"
+                ),
             )
-            if result.returncode == 0:
-                merge_base = subprocess.run(
-                    ["git", "merge-base", "HEAD", base],
-                    cwd=project_root,
-                    capture_output=True,
-                    text=True,
-                )
-                if merge_base.returncode == 0:
-                    diff = subprocess.run(
-                        ["git", "diff", "--name-only", merge_base.stdout.strip(), "HEAD"],
-                        cwd=project_root,
-                        capture_output=True,
-                        text=True,
-                    )
-                    if diff.returncode == 0:
-                        return [f for f in diff.stdout.splitlines() if f.strip()]
+            diff = _git(project_root, "diff", "--name-only", best, "HEAD")
+            if diff.returncode == 0:
+                return [f for f in diff.stdout.splitlines() if f.strip()]
         # Fallback: diff HEAD~1
-        diff = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-        )
+        diff = _git(project_root, "diff", "--name-only", "HEAD~1", "HEAD")
         return [f for f in diff.stdout.splitlines() if f.strip()]
     except Exception:
         return []
