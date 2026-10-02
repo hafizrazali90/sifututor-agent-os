@@ -1,0 +1,15 @@
+{
+  "rule_id": "BR-001",
+  "intent_source": "docs/business-rules/README.md#shared-class-contract-br-001",
+  "implementation_observation": "Legacy student_id requires participant relationship inspection; it does not define business intent.",
+  "requests": [
+    {
+      "request": "request-example",
+      "students": ["student-a", "student-b", "student-c"],
+      "scheduled_lessons": ["lesson-1"],
+      "expected_sessions": [
+        {"lesson": "lesson-1", "participants": ["student-a", "student-b", "student-c"]}
+      ]
+    }
+  ]
+}

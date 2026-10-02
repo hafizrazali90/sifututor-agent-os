@@ -66,6 +66,18 @@ change request or business-rule change instead of pretending it is already true.
 
 ## Source Of Truth Map
 
+For product work, start with the [business-rule index](../business-rules/README.md)
+and load the relevant rule and exact domain owner. The compilation is not
+blanket approval of its historical memories or draft sources. State the rule
+ID, governing source/status/date, intended example, observed implementation
+and required verification before changing behaviour. In particular, a singular
+class student key does not override BR-001's shared-session decision.
+
+Recall full Koda records when chronology matters: search snippets can omit
+outdated status and dates. An outdated flag without a replacement does not
+establish a new policy. Resolve existing explicit decisions without asking
+again; hold only the dependent change when a material product choice remains.
+
 | Context type | Source of truth | Accuracy owner |
 | --- | --- | --- |
 | Product/business rule | Hafiz, approved PRD, approved business docs | Hafiz |

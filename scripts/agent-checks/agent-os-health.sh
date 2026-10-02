@@ -178,6 +178,15 @@ else
   warn "Claude SIMS UI audit skill" "sifu-tutor not cloned; skipped for scoped staff workspace"
 fi
 
+if python3 "$ROOT/scripts/agent-checks/business-rule-check.py" >$TMP_DIR/business-rules.out 2>&1 &&
+   python3 -m unittest discover -s "$ROOT/scripts/agent-checks" -p 'test_business_rules.py' >>$TMP_DIR/business-rules.out 2>&1; then
+  pass "business-rule protection" "inventory, authority wiring and shared-class negative fixtures passed"
+else
+  fail "business-rule protection" "source/authority or shared-class example regression"
+  tail -12 $TMP_DIR/business-rules.out
+fi
+rm -f $TMP_DIR/business-rules.out
+
 if "$ROOT/scripts/agent-checks/agent-os-eval-runner.py" >$TMP_DIR/agent-os-eval-runner.out 2>$TMP_DIR/agent-os-eval-runner.err; then
   eval_summary="$(tail -1 $TMP_DIR/agent-os-eval-runner.out 2>/dev/null || true)"
   pass "Agent OS evals" "${eval_summary:-passed}"

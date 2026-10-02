@@ -31,6 +31,12 @@ Knowledge Architecture section of
 
 ## Core Owners
 
+Product business intent is indexed in [Business rules](../business-rules/README.md).
+Existing domain documents retain decision ownership; `context-authority.md`
+owns how agents distinguish desired rules from implementation and old memory.
+The compilation and its source/audit files are product research, not additional
+Agent OS playbooks.
+
 | Owner | Owns | Main docs |
 | --- | --- | --- |
 | Operating contract | Rules every agent must obey. | `AGENTS.md`, `agent-os.md`, `agent-os-general-guidelines.md` |

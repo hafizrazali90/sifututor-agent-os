@@ -133,6 +133,12 @@ Detailed response and recipient rules live in
 
 ## Access And Current Evidence
 
+For product behaviour, load the relevant rules and source owners through
+[Business rules](docs/business-rules/README.md) before planning, coding or
+reviewing. State the applicable rule IDs and acceptance example. Code and
+database structure prove implementation, never business intent; preserve draft,
+historical and unresolved status. Follow `context-authority.md` for conflicts.
+
 Before declaring access unavailable, consult
 [agent-access-map.md](docs/agent-playbooks/agent-access-map.md). Its wrappers
 under `scripts/agent-access/` cover production health, read-only databases,
