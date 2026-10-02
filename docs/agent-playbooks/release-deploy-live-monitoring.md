@@ -138,8 +138,13 @@ changes. Plain meaning: always build on what is live at the moment you deploy.
 
 Right before a production deploy:
 
-1. Read the live serving commit from the deploy target itself (for Ripple, the
-   production checkout HEAD and the last `Deploy complete: prod` line).
+1. Read the live serving commit from the deploy target's own record, and base
+   the release branch on it. For Ripple that is the `commit` in
+   `/opt/deploy/ripple-suite/.serving-prod.json`, never a log line, syslog or
+   memory (a release built from syslog removed a live fix on 02/10/2026). The
+   Ripple controller refuses a release that does not contain that commit. A
+   deliberate rollback passes `--replace-serving <serving SHA>`, which refuses
+   if anything else shipped since you read it.
 2. Confirm no other deploy is running on that target. If one is, wait for it
    to finish; never deploy over it.
 3. If the live commit moved since you built the release, rebuild the release on
