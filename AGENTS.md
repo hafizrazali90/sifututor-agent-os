@@ -113,6 +113,8 @@ owner docs define the required fields and state language.
   matters, the proposed/final solution, author, evidence, and release state.
 - Do not make Hafiz ask `what next?`. After meaningful work, state: **Status**,
   **Meaning**, **Checked**, **Recommended next**, and **Decision needed**.
+  In a chat panel write that block as short bullets, one fact each, with one
+  plain question at a time, so it stays easy to scan.
 - Interpret `proceed`, `continue`, `go next`, `approve`, and end-to-end phrases
   from the last clear proposal and current task context. Reuse existing approval;
   do not hand routine next steps back to Hafiz.

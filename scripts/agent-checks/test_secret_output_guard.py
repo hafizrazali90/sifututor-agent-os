@@ -94,6 +94,13 @@ class SecretOutputGuardTest(unittest.TestCase):
             "printf '%s\\n' \"${DATABASE_PASSWORD}\"",
             "set -x; source ~/.config/sifututor/agent-access/ripple-prod.conf",
             "curl -v -H 'Authorization: Bearer '$API_TOKEN https://example.test",
+            "cat apps/web/.env.local",
+            "grep -n DATABASE apps/web/.env",
+            "grep -n 'x' src/app.ts | env",
+            "grep -n 'x' src/app.ts; printenv",
+            "grep -n \"$(printenv)\" src/app.ts",
+            "grep -n 'x' src/app.ts `printenv`",
+            "grep -n 'x' src/app.ts && /usr/bin/env",
         ):
             with self.subTest(command=command):
                 self.assert_blocked(command)
@@ -109,6 +116,8 @@ class SecretOutputGuardTest(unittest.TestCase):
             "source ~/.config/sifututor/agent-access/ripple-prod.conf; curl -fsS https://example.test/health",
             "rg -n 'secret handling' docs/agent-playbooks",
             "rg -n 'pm2 jlist' docs/agent-playbooks",
+            "grep -n -E 'process.env|process.argv|printenv' src/app.ts",
+            "grep -n 'env)' scripts/agent-checks/secret_output_guard.py",
         ):
             with self.subTest(command=command):
                 self.assert_allowed(command)

@@ -35,11 +35,12 @@ _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
         "Direct process environment and command-line reads are blocked.",
     ),
     (
-        re.compile(r"\b(?:printenv|export\s+-p)(?:\s|[;&|'\"\)]|$)", re.I),
+        re.compile(r"\b(?:printenv|export\s+-p)(?:\s|[;&|'\"\)`]|$)", re.I),
         "Whole-environment output is blocked; request only a non-secret status field.",
     ),
     (
-        re.compile(r"\benv\s*(?:[;&|'\"\)]|$)", re.I),
+        # Not the member access in process.env or ENV.env: only a bare env command.
+        re.compile(r"(?<![.$-])\benv\s*(?:[;&|'\"\)`]|$)", re.I),
         "Whole-environment output is blocked; use env only to launch a scoped command.",
     ),
     (
@@ -115,7 +116,7 @@ _BLOCKS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
             r"\b(?:cat|head|tail|less|more|sed|awk|grep|rg|jq|cut|tr|base64|xxd|strings|perl|python3?|node)\b"
-            r"[^\n;&|]*(?:\.env(?:\b|[._-])|\.config/sifututor/[^\s'\"]*"
+            r"[^\n;&|]*(?:(?<!process)\.env(?:\b|[._-])|\.config/sifututor/[^\s'\"]*"
             r"(?:\.conf|\.env)|credentials(?:\.json)?|id_(?:rsa|ed25519))",
             re.I,
         ),
@@ -193,6 +194,15 @@ def _safe_inspect_formats(command: str) -> bool:
     return True
 
 
+def _strip_quoted(command: str) -> str:
+    """Drop quoted spans so a pipe inside a search pattern is not a shell pipe.
+
+    Substitutions and newlines are rejected by the caller on the raw text. An
+    unbalanced quote stays in the result, which keeps the check conservative.
+    """
+    return re.sub(r"'[^']*'|\"(?:\\.|[^\"\\])*\"", "", command)
+
+
 def evaluate_command(command: str) -> Decision:
     """Return a safe decision without including submitted command text."""
 
@@ -209,9 +219,10 @@ def evaluate_command(command: str) -> Decision:
         return Decision(True)
     if (
         re.match(r"^\s*(?:rg|grep)\b", compact, re.I)
-        and not re.search(r"(?:\$|<)\(|[;&|\n\r]", compact)
+        and not re.search(r"(?:\$|<)\(|`|[\n\r]", compact)
+        and not re.search(r"[;&|]", _strip_quoted(compact))
         and not re.search(
-            r"(?:\.env(?:\b|[._-])|\.config/sifututor/[^\s'\"]*(?:\.conf|\.env)|"
+            r"(?:(?<!process)\.env(?:\b|[._-])|\.config/sifututor/[^\s'\"]*(?:\.conf|\.env)|"
             r"credentials(?:\.json)?|id_(?:rsa|ed25519))",
             compact,
             re.I,
