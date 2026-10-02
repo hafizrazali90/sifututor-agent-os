@@ -71,6 +71,7 @@ Open these docs when the trigger is present.
 
 | Trigger | Open |
 | --- | --- |
+| Product behaviour, business rules, Request/class semantics, pricing or eligibility | [Business-rule index](../business-rules/README.md), relevant rule IDs and exact governing domain source; `context-authority.md` for conflicts. |
 | `sifu-tutor` browser UI, SIMS page layout, staff-facing copy, visual QA | `sifu-tutor/docs/ui-ux/README.md` and the relevant feature docs it points to. |
 | User-facing behavior changes | Project `TESTING.md` if present, existing E2E specs, `test-coverage.md`, `agent-os-evidence-model.md`. |
 | Staff-reported SIMS/tutor/parent app issue | Planner intake context when available, then normal engineering route. |

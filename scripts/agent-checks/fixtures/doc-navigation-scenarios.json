@@ -667,6 +667,52 @@
           "only": true
         }
       ]
+    },
+    {
+      "id": "NAV-24",
+      "title": "Business intent and shared-class rules reachable from AGENTS.md",
+      "entry": [
+        "AGENTS.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/business-rules/README.md",
+          "max_hops": 1
+        }
+      ],
+      "mentions": [
+        {
+          "file": "docs/business-rules/README.md",
+          "phrases": [
+            "one shared class session",
+            "not one class per student",
+            "not a live model-compliance guarantee"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NAV-25",
+      "title": "Business intent and shared-class rules reachable from CLAUDE.md",
+      "entry": [
+        "CLAUDE.md"
+      ],
+      "reach": [
+        {
+          "file": "docs/business-rules/README.md",
+          "max_hops": 2
+        }
+      ],
+      "mentions": [
+        {
+          "file": "docs/business-rules/README.md",
+          "phrases": [
+            "one shared class session",
+            "not one class per student",
+            "not a live model-compliance guarantee"
+          ]
+        }
+      ]
     }
   ]
 }

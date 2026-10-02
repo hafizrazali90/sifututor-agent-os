@@ -166,7 +166,18 @@
     "scripts/agent-checks/worktree-inventory.sh",
     "scripts/agent-checks/worktree-lifecycle.py",
     "scripts/agent-checks/test_worktree_lifecycle.py",
-    "scripts/agent-checks/workflow-doctor.sh"
+    "scripts/agent-checks/workflow-doctor.sh",
+    "scripts/agent-checks/business-rule-check.py",
+    "scripts/agent-checks/test_business_rules.py",
+    "docs/business-rules/README.md",
+    "docs/business-rules/memory-audit.md",
+    "docs/business-rules/open-decisions.md",
+    "docs/business-rules/reconciliation.md",
+    "docs/business-rules/register.md",
+    "docs/business-rules/review.md",
+    "docs/business-rules/shared-class-plan.example.json",
+    "docs/business-rules/sources.json",
+    "docs/business-rules/decision-reasons.md"
   ],
   "codex_skill_files": [
     ".agents/skills/task-router/SKILL.md",

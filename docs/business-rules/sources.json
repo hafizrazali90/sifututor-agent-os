@@ -1,0 +1,1346 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-03",
+  "workspace_locator": "/Users/hafizrazali/Projects/Sifututor",
+  "coverage": "149 local candidate documents catalogued, not a claim of full semantic review of every line. Focused decisions are summarized in register.md. No production database read was needed to establish intent.",
+  "external_evidence": [
+    "https://chatgpt.com/space/page_0c12378ffa248191a228cd67fce17720",
+    "https://chatgpt.com/space/page_8ab8bb4a21ac819189634d6470a4831a",
+    "https://github.com/hafizrazali90/sifututor-agent-os/issues/241"
+  ],
+  "sources": [
+    {
+      "path": "docs/ai-classroom-concept/production/internal-team-sourcebook-acceptance.md",
+      "title": "Internal team sourcebook: local acceptance record",
+      "lines": 51,
+      "sha256": "cc61d711de1290d2488d88d47e030065723aff55ae4ba9119d832c0bd720af27",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/ai-classroom-concept/production/internal-team-sourcebook-blueprint.md",
+      "title": "Blueprint: Kota Buku whole-team sourcebook",
+      "lines": 96,
+      "sha256": "e2397ecd26ef5e20a81a9d6820e18228fc25231a1ac21547e1ec6d61a1dcf986",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/ai-classroom-concept/production/internal-team-sourcebook-evidence.md",
+      "title": "Internal sourcebook: evidence and claim register",
+      "lines": 47,
+      "sha256": "6bbe5b9c05190ee50bc5ea63b2d8d122d1e48fdaf900ac445460ebc4480d0dc5",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/ai-classroom-concept/production/internal-team-sourcebook.md",
+      "title": "Kota Buku AI classroom programme",
+      "lines": 851,
+      "sha256": "c1f28dd0badfd8b29264e5ca1d97ebaf06bfef4b4b1388113cb97ac651423f9d",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/group-class-saas/BUILD-LOG.md",
+      "title": "Kelasapp \u2014 Build Log",
+      "lines": 474,
+      "sha256": "97db4c7ecaf8be3470e6224dbc951c4776c0626d5459fe450a1592fee8df138a",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/group-class-saas/PRD.md",
+      "title": "Kelasapp \u2014 Product Requirements Document (MVP)",
+      "lines": 646,
+      "sha256": "7d3bf2ba15b672caddf597baf2f26dcc4055b04111a184db4ee4b7d600389355",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/group-class-saas/features/m4-billing/DESIGN.md",
+      "title": "Kelasapp M4: Billing & Invoicing, Design & Build Plan",
+      "lines": 233,
+      "sha256": "ce50ef8935758988072a91e4f4a1a194472e653e1e4f2de929b50a817b76a158",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/group-class-saas/qa/test-plan-billing.md",
+      "title": "Test plan: Billing & Invoicing (M4)",
+      "lines": 747,
+      "sha256": "30e11540db549f2d0408c36f3b7fcef2860860a59fc2300a9cb44a37656f072a",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 3,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/parent-customer-ledger/DECISIONS.md",
+      "title": "Decision Log",
+      "lines": 57,
+      "sha256": "8e539834dbc9ef915790206b8e8194b62492141096c20152cc62263525020900",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/products/parent-customer-ledger/PRD.md",
+      "title": "Product Requirements",
+      "lines": 171,
+      "sha256": "1620d0190ecabdf4b08cc49eb97f053f8a9e8d9ee5eddb697f2e535b266be7a9",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/session-saves/2026-06-06-billing-cycle-revamp-critical-save.md",
+      "title": "Critical Save: Billing Cycle Revamp",
+      "lines": 55,
+      "sha256": "c49a79345569a25468088912fa7f654d1de566127a0974f6fd7ff65938580029",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/sifututor-ecosystem-sourcebook-blueprint.md",
+      "title": "Blueprint \u2014 The Sifututor Ecosystem: Built to Operate, Ready to Scale",
+      "lines": 950,
+      "sha256": "51e6d40f12d0959575a24edc07ad6945ea1d6948a9ab64b78089e362f2e1aed9",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/sifututor-ecosystem-sourcebook.md",
+      "title": "The Sifututor Ecosystem: Built to Operate, Ready to Scale",
+      "lines": 1306,
+      "sha256": "a6f69655162bfe6698322ebcbb173be8a3a9487e81253824e44b0c096ec918bf",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01/01-Executive-Decision/TEKUN-Executive-Stakeholder-Presentation.md",
+      "title": "TEKUN Corporation",
+      "lines": 323,
+      "sha256": "be90da5eef28db7cbd3013df80d1d72ce876f20a33d63057e5642513dd55ce95",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01/04-Governed-Sourcebook/TEKUN-Collection-Partnership-Sourcebook.md",
+      "title": "TEKUN Corporation Integrated Collection Growth Partnership",
+      "lines": 1227,
+      "sha256": "2deeb27c59febdba269f0d77e20b21665ce6472cab9ef9015bdc188bd5696717",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01/05-Research-Evidence/partnership-durability-strategy.md",
+      "title": "Partnership Durability Strategy",
+      "lines": 223,
+      "sha256": "aea271cf1eba3e1b8fcd42c683b2fc24ee0130f87dd8336d0cc38d836ecc6c97",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01 2/01-Executive-Decision/TEKUN-Executive-Stakeholder-Presentation.md",
+      "title": "TEKUN Corporation",
+      "lines": 323,
+      "sha256": "be90da5eef28db7cbd3013df80d1d72ce876f20a33d63057e5642513dd55ce95",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01 2/04-Governed-Sourcebook/TEKUN-Collection-Partnership-Sourcebook.md",
+      "title": "TEKUN Corporation Integrated Collection Growth Partnership",
+      "lines": 1227,
+      "sha256": "2deeb27c59febdba269f0d77e20b21665ce6472cab9ef9015bdc188bd5696717",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-pack/TEKUN-Partnership-Complete-Internal-Pack-2026-09-01 2/05-Research-Evidence/partnership-durability-strategy.md",
+      "title": "Partnership Durability Strategy",
+      "lines": 223,
+      "sha256": "aea271cf1eba3e1b8fcd42c683b2fc24ee0130f87dd8336d0cc38d836ecc6c97",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-partnership-sourcebook.md",
+      "title": "TEKUN Corporation Integrated Collection Growth Partnership",
+      "lines": 1227,
+      "sha256": "2deeb27c59febdba269f0d77e20b21665ce6472cab9ef9015bdc188bd5696717",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "docs/tekun-collection-research/partnership-durability-strategy.md",
+      "title": "Partnership Durability Strategy",
+      "lines": 223,
+      "sha256": "aea271cf1eba3e1b8fcd42c683b2fc24ee0130f87dd8336d0cc38d836ecc6c97",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/changelogs/release-notes-2026-06-06-push-4-tutor-request-lifecycle.md",
+      "title": "Push 4 - Tutor Request Lifecycle Reconsideration",
+      "lines": 24,
+      "sha256": "522019b74fdc3d88e6f558c45d5e775cedd9b5fa89c5ef6bd8db089539e9fe5b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/changelogs/release-notes-2026-06-07-billing-operations-centre-adjustments.md",
+      "title": "Release Notes - Billing Operations Centre Adjustment Review",
+      "lines": 32,
+      "sha256": "785c8c1c60b440ac716e56b7f46b7174f408df26cd2ab0dd584defa20d74e6f6",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/changelogs/release-notes-2026-06-08-billing-follow-up-queue.md",
+      "title": "Release Notes - Billing Follow-up Queue",
+      "lines": 35,
+      "sha256": "b970cb2e942d23fdf2db326fa477b45cb9a594a8547afa66830a7c48f849444b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/changelogs/release-notes-2026-06-10-billing-quota-safety.md",
+      "title": "Release Notes - Billing Quota Safety",
+      "lines": 38,
+      "sha256": "396f7e42d9660a9811f4d0a8425349a960892bd09c78938fd342ef196d38d285",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/changelogs/release-notes-2026-06-11-billing-follow-up-case-management.md",
+      "title": "Release Notes - Billing Follow-up Case Management",
+      "lines": 37,
+      "sha256": "5f94d1120a9490d35ee11e92b4f20db32a363e20329db21ce67d0995bd243942",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/backup-disaster-recovery/prd-clarification-session.md",
+      "title": "SIMS Backup And Disaster Recovery Clarification Session",
+      "lines": 134,
+      "sha256": "e3abd23facfc0b685619622cd5ecf11b7580c474fbee147887ba70b33449df3b",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/backup-disaster-recovery/prd.md",
+      "title": "SIMS Backup And Disaster Recovery PRD",
+      "lines": 426,
+      "sha256": "9a3f5ac6e9c7c6c9e52e2ae089ab896bc17fd8cf4b098176cceabc7b43711574",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/ADDENDUM-B-class-invoice-separation.md",
+      "title": "Addendum B \u2014 Separate Class Planning From Invoice Consumption",
+      "lines": 548,
+      "sha256": "06871485f3127c80f2fa26ffd2b7197437c55c8c472d2cc95e94f0650b738388",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 3,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/BUILD-PROMPTS.md",
+      "title": "Billing Cycle Revamp - Build Prompts And Claude Handoff",
+      "lines": 953,
+      "sha256": "3fd94de96ff79e6e60418d73269f7cf6cce6e1ec7183c8910a3091e06e0c177e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/CLAUDE-PRODUCTION-READINESS-HANDOFF.md",
+      "title": "Billing Cycle Revamp - Claude Production Readiness Handoff",
+      "lines": 668,
+      "sha256": "0db741c2db26f80aeda2788c06fe815f7ff7d26eb1f86c34658e7f37634e8250",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/DECISIONS-AND-OPERATIONS.md",
+      "title": "Billing Cycle Revamp \u2014 Decisions And Operations Reference",
+      "lines": 1171,
+      "sha256": "6499d664002203244e3cb86eb2037f7a9ed0f680f649457e6879f3bcfc3aa336",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 4,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/DESIGN-BRAINSTORM.md",
+      "title": "Billing Cycle Revamp \u2014 Design Brainstorm Record",
+      "lines": 461,
+      "sha256": "de9a09638ba8bd67a42e5884e958179c380909deb4d65cfc97b114044a20eff1",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/E2E-COVERAGE-MAP-2026-06-08.md",
+      "title": "Billing Cycle Revamp Coverage Map",
+      "lines": 135,
+      "sha256": "c4131999ace22f41d6bf515ff1a4fa8fd203557b59d186960e8bc2b6840e5cd3",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/E2E-PRESENT-DAY-SUITE-CLEANUP.md",
+      "title": "E2E Present-Day Suite Cleanup",
+      "lines": 390,
+      "sha256": "bcc99dc9d252fc64e6c0c6bc42e9f413df4d12d24554960dc6694f6dee350b1b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/IMPLEMENTATION-ACCEPTANCE-CHECKLIST.md",
+      "title": "Billing Cycle Revamp \u2014 Implementation Acceptance Checklist",
+      "lines": 470,
+      "sha256": "23067198c8d6f5d28278aa04794f77bd70a1e39c18bb578de74793d325235ff8",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/PLAN-REVIEW-2026-06-07.md",
+      "title": "Billing Cycle Revamp Plan Review",
+      "lines": 342,
+      "sha256": "7b939c7fc35a9ed3cce99fee640970a39389f268014a895fadeca44b3e3acdf4",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/PRD.md",
+      "title": "PRD \u2014 Billing Cycle Revamp",
+      "lines": 1971,
+      "sha256": "2532e70ff4b2f059ac2f4a43ad2e4fcb4cd0830f1e94cb2d0d8fafd479895f02",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 4,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/ROLLOUT-STATUS-2026-06-11.md",
+      "title": "Billing Cycle Revamp \u2014 Rollout Status",
+      "lines": 321,
+      "sha256": "ccc835417b2d2b5a94e4c887dd18663482fd2d94ddc508ecb251fc688abac7ad",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/STAGING-E2E-CLEANUP-LEDGER.md",
+      "title": "Staging E2E Cleanup Ledger",
+      "lines": 830,
+      "sha256": "9bacc495e052add0ee80895bf343256571e21705dcb10c4ba92b2e0d9b9bd067",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/TEST-PLAN.md",
+      "title": "Billing Cycle Revamp \u2014 Test Plan",
+      "lines": 1316,
+      "sha256": "4970ea87b35fdbead3117f6b493d7fcbbf4855002eb970ea88be670425e288ac",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 5,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/TRACEABILITY-AUDIT-2026-06-08.md",
+      "title": "Billing Cycle Revamp \u2014 Traceability Audit",
+      "lines": 248,
+      "sha256": "208eeb2f72b82849cf71e806bef5e32596ddb3cc886e827e4a2eb5d34d26a9ae",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/billing-cycle-revamp/USER-STORIES.md",
+      "title": "Billing Cycle Revamp \u2014 User Stories",
+      "lines": 1802,
+      "sha256": "a999018d541c8e9589080aad74fb31d11c1b06874fbf862eb239c5a8f4b473ad",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 5,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/class-lifecycle-option-c/backend-contract.md",
+      "title": "Option C-lite Class Lifecycle Backend Contract",
+      "lines": 510,
+      "sha256": "c5b4d08f159ce9d5a06ecc3444c4dba30fb8123749d688ccb1ca5f58f656992f",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/class-lifecycle-option-c/prd.md",
+      "title": "Option C-lite Class Lifecycle PRD",
+      "lines": 433,
+      "sha256": "6266d567cb16b6062cdebd63360ec0a9eb301c3126c662a9a4beab8d1e972f97",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 3,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/class-lifecycle-option-c/read-only-audit.md",
+      "title": "Option C-lite Class Lifecycle - Phase 1 Read-Only Audit",
+      "lines": 357,
+      "sha256": "5ac1f3ef15be9bec1697377e7f5a73194c94c0e52bf1267b44686da1844b3936",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/copy-content/class-lifecycle-copy-inventory.md",
+      "title": "Class Lifecycle Copy Inventory",
+      "lines": 331,
+      "sha256": "7dcb197bd15b28bb6e0519b79c65fcb9e0687b593ee2a18d9655f9d20bba6439",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/copy-content/copy-decision-log.md",
+      "title": "SIMS Copy Decision Log",
+      "lines": 342,
+      "sha256": "47dfe84b4555249a55db70b77c387825e4cc59a297be4f9d01a74ea6cf207c52",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/customer-tutor-public-links/prd.md",
+      "title": "Customer And Tutor Public Links PRD",
+      "lines": 222,
+      "sha256": "2764132eac2f44cfe7f010c2e1529e6ecf65a3f07dcdfbc059fa26354d4d8a0e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/finance-ui-transformation/PRD.md",
+      "title": "Finance UI Transformation PRD",
+      "lines": 131,
+      "sha256": "21a6d7a85a8b365b51b21cc3e8a1017133beffcaf772e261984803613aebaa8c",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/nakngaji/business-rule-change-register.md",
+      "title": "Nakngaji Business Rule Change Register",
+      "lines": 138,
+      "sha256": "eea19dcbd5e9ce3544d6d6a76c9e9179b4581396c2e1e3eaec1de9e19d96f0bb",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/nakngaji/prd.md",
+      "title": "Nakngaji Phase 1 Product Requirements",
+      "lines": 359,
+      "sha256": "6aefe3bc5d13516ee9e08b951bd40ed0ecd4e848c691f9ea77cd16f03e371374",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/notification-architecture/parent-tutor-notification-policy-review.md",
+      "title": "Parent and Tutor Notification Policy Review",
+      "lines": 114,
+      "sha256": "cd056ffd2c84d485710ca38a6453bc9622e2cce5866c39943418e3dac60ad985",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-lifecycle-reconsideration/backend-contract.md",
+      "title": "Backend Contract: Tutor Request Lifecycle And Reconsideration",
+      "lines": 119,
+      "sha256": "aa022430a15b593c6bd96f350129974eb02d46548057255e7fd35fdb8b1e54c0",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-lifecycle-reconsideration/build-prompts.md",
+      "title": "Build Prompts: Tutor Request Lifecycle And Reconsideration",
+      "lines": 114,
+      "sha256": "1b5089e92cb664513a4c4687244cd29ffe610a4571c5de79230f50c9c9a1ebef",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-lifecycle-reconsideration/prd-clarification-session.md",
+      "title": "PRD Clarification Session: Tutor Request Lifecycle And Reconsideration",
+      "lines": 24,
+      "sha256": "e2f12f05a0ed950839cf3ec0c7e55dfeeab54b46e1a7c7866e42bec13b51fb30",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-lifecycle-reconsideration/prd.md",
+      "title": "PRD: Tutor Request Lifecycle And Reconsideration",
+      "lines": 166,
+      "sha256": "777045b0a9f38d22e99accd84b91e89c2f67d84b8e526130e09bf8b830224537",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-lifecycle-reconsideration/ux-spec.md",
+      "title": "Tutor Request Lifecycle Reconsideration UX Spec",
+      "lines": 54,
+      "sha256": "00ed2b93a4d60a1b58ae256db2884d1d9724c99e86c5595c23f0e258f4379e62",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-sharing-acquisition/prd-clarification-session.md",
+      "title": "Tutor Request Sharing PRD Clarification And Decision Log",
+      "lines": 66,
+      "sha256": "78075ef47c34c5450c03ea688821e9235f681d2062d0be7409aa82e1c62c8e7c",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/features/tutor-request-sharing-acquisition/prd.md",
+      "title": "Tutor Request Sharing And Web Acquisition PRD",
+      "lines": 504,
+      "sha256": "8c50f70cb54e338cb62df5683f72c04e324be76733b65c6dbfe3b85c83ced5fc",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifu-tutor/docs/qa/staff-commission-test-plan-2026-06-02.md",
+      "title": "Staff Commission Test Plan - 2026-06-02",
+      "lines": 335,
+      "sha256": "22f316d10e2ed5634cd5beb0fb34a134c7aab2a84b77a2ffe60835ef7ac58660",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/archive/tutor-payment-prd-backup.md",
+      "title": "Tutor Payment Module \u2014 Product Requirements Document (BACKUP: DigitalOcean Self-Hosted Plan)",
+      "lines": 383,
+      "sha256": "71a489242b8ea6ce604a9c8acd003f91314299df1efa3fe0e27e2440c4a7db28",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/archive/tutor-payments-clarification-v1.md",
+      "title": "PRD Clarification Session",
+      "lines": 246,
+      "sha256": "1d2a70dd604ff3955503d86ba27312bc1917c64f512ab9deac9a5d1891b7510e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 28,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/accounts/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 241,
+      "sha256": "e2f295fa47ceaffcf187e740498132a36aaaa529d728fe7f375e5968602272e5",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/accounts/prd.md",
+      "title": "Customer Ledger (Parent AR) - PRD",
+      "lines": 547,
+      "sha256": "9ea05d11878e9f720891087db0d18bfc447c747537591bbf672df8aa33e9c768",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/audit-trail-v2/audit-trail-v2-prd-clarification-session.md",
+      "title": "PRD Clarification Session",
+      "lines": 81,
+      "sha256": "67509927b3a98583a6a809bd1919bb52534211fb35d0e75fc5cc9dc7f9803acb",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/audit-trail-v2/audit-trail-v2-prd.md",
+      "title": "Audit Trail v2 - Complete Coverage PRD",
+      "lines": 229,
+      "sha256": "e40f63ce641aff75168e4dc37594e3630838cfe383173a86e35b05133de29611",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/collection/collection-customer-phones-prd.md",
+      "title": "PRD: Collection Customer Extra Phone Numbers",
+      "lines": 248,
+      "sha256": "00cb9a099d8d5a8a47d2ea3e8f4a5be216cd3986acb963acd4ef9a64d5a1c1f5",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/collection/prd-clarification-session.md",
+      "title": "PRD Clarification Session",
+      "lines": 114,
+      "sha256": "68fe7d5ca55f6553ad5de8ca1f01b1c10d047582a3c4a304166ce8dd8a02776f",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/collection/prd.md",
+      "title": "Collections Module \u2014 PRD",
+      "lines": 408,
+      "sha256": "d23b2047864c1f0e567375285ef8dadae4a32d45ac8ff4a5fa3857a1037e7238",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/collection/workbench-redesign-prd.md",
+      "title": "Collection Workbench Redesign \u2014 PRD",
+      "lines": 157,
+      "sha256": "99a852893d8ec4a68d05026ab9ba1022185ec33e84331ca0e687b29fc1ef7ea1",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/confirmed-decisions-test-plan.md",
+      "title": "CRM Confirmed-Decisions Test Plan",
+      "lines": 980,
+      "sha256": "27816aefeab03ed549072021885ba89f5e69a2b3ea4f0d0330e3e37a93948e01",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/crm-prd-clarification-session.md",
+      "title": "PRD Clarification Session",
+      "lines": 257,
+      "sha256": "b21621f9e3d3bcca0547c0a14c5d1146318c55630a8d1fdad995fc2171933bc5",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/crm-prd.md",
+      "title": "CRM Module - Product Requirements Document",
+      "lines": 323,
+      "sha256": "5591ee099be3efc8d882fd0b7dc31a5581615c4d9931c49c2f4d6d061f5bc478",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/crm-v2-prd.md",
+      "title": "CRM Module v2 - Product Requirements Document",
+      "lines": 637,
+      "sha256": "08dc426bc566ace355bfd17a723c789f4317702634d5f0720a3fa91bae8a5cd2",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/cx-call-capture-prd-clarification-session.md",
+      "title": "PRD Clarification Session",
+      "lines": 211,
+      "sha256": "18b4169884059ea1ba04db7766719c3b219bb2ecc75da05ce5906294ad017a56",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/cx-call-capture-prd.md",
+      "title": "CX Call Capture \u2014 PRD",
+      "lines": 303,
+      "sha256": "17daacfd6b54209a5007c3c50535b9d8f3b769370e825beee8ce421f82c0ba5a",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/ripple-first-crm-prd-2026-07-19.md",
+      "title": "Ripple-First CRM Target PRD and Operating Model",
+      "lines": 2903,
+      "sha256": "1f1749bfa7ca4afd755424209795437bad8b656b3372081fefa0172c7ae4cdea",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 3,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/status-and-automation-map-2026-07-19.md",
+      "title": "CRM Status and Automation Map",
+      "lines": 3753,
+      "sha256": "54dc793075475941e5ce22cc6e90b3dcd878f93224612371f6b24276b142207e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 28,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/v15-automated-tutor-outreach-decisions-2026-09-19.md",
+      "title": "V15 automated tutor outreach: agreed design and remaining checks",
+      "lines": 347,
+      "sha256": "89d0c5433c1913e308c450e39ea11ad83ca05cf83082dff3c4dcb29b7f7fb343",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 4,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/v15-outreach-build-pack/clarifications.md",
+      "title": "Confirmed decisions and remaining launch inputs",
+      "lines": 50,
+      "sha256": "a5666495d4426243ff54248bb8219ec1aa2efa22ec5237354ba73a4bb8daa09f",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/v15-outreach-build-pack/prd.md",
+      "title": "Product requirements",
+      "lines": 66,
+      "sha256": "7afa3171bc59b6bfedebafd570d6bd2340fa1f13094c7f0d88939e19fe9aeae9",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/customer-retention/prd.md",
+      "title": "Customer Retention Module - Product Requirements Document",
+      "lines": 583,
+      "sha256": "b8c9307ef0eb701003301608ec388ea859521f67a842b0ddf0c95d9b617fc332",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/help/help-prd-clarification-session.md",
+      "title": "PRD Clarification Session",
+      "lines": 18,
+      "sha256": "5827f95bdd9d199dc04106ecd921ce64c365e4aa2cd9fd3a55b95a1a10179fd0",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/help/help-prd.md",
+      "title": "PRD: Help Documentation Center",
+      "lines": 293,
+      "sha256": "8384b4ce8397dfb67a4a49bb4b8ff4ff023a6d2dc1ec9f3f8bc02a2c09b2cfb0",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/knowledge-assistant/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 273,
+      "sha256": "6e3a1918f2e194f1220837dfb34fd951755a71ccadeef6554766205e0aaf061d",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 35,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/knowledge-assistant/multi-agent-clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 264,
+      "sha256": "a46aba8320e4f26ed8cd822851b0e18d9c115fe67ce80df7f1325ef8786c34b2",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 36,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/knowledge-assistant/multi-agent-prd.md",
+      "title": "Multi-Agent Reasoning PRD",
+      "lines": 382,
+      "sha256": "b861021e410cf99c01183bfab896afa28e3f1166eed765e3d25182e1257da0bf",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/knowledge-assistant/prd.md",
+      "title": "Staff Knowledge Assistant - PRD",
+      "lines": 298,
+      "sha256": "4369e8f31f979d703091e8a99f51c1a139bf5776799d7c6092549f491fb23b26",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/matching/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 116,
+      "sha256": "c364b294e6f475a9a1f1b9ad85117f3f75dcc340f0bef11e9e8da820b1a89d73",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/matching/prd.md",
+      "title": "Ripple Match \u2014 Standalone Tutor Matching App",
+      "lines": 315,
+      "sha256": "41b70cac807e3295c578fea90dc8df6131a134703427f9d72ff0a71f3317e015",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/profiles/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 151,
+      "sha256": "6c22e900a798dcae295a5c1998fa105030698fba497a286ce50a20da7c0057c7",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/profiles/list-actions-prd.md",
+      "title": "Profile List Actions \u2014 PRD",
+      "lines": 122,
+      "sha256": "e27c8e5207133e9b93e83df86495e9d51dacd935139b6b8ac37bde9270f4cd8f",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/profiles/prd.md",
+      "title": "Tutor Profile Generator \u2014 PRD",
+      "lines": 337,
+      "sha256": "2b832213901fac9dc8e1690f22c46c111465b07112c2c89f2c524e11c321310d",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/rating/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 161,
+      "sha256": "bb47c9b641b0cada3dd74c1c263c927507bdb2855840beefe0806a57367957a8",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/rating/prd.md",
+      "title": "Tutor Rating: Conduct Tracking & Rating System",
+      "lines": 285,
+      "sha256": "360f6d95b27aa1ee4113e3e21ceea6f8f3aa05fa3941d29fd3affd4e57ed0f0d",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/reconciliation/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 240,
+      "sha256": "638100751612260a6a81bbf2d9af0c2e809abfbc517be6bd03ed32e4353d513e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/reconciliation/prd.md",
+      "title": "Bank Reconciliation Module \u2014 PRD",
+      "lines": 305,
+      "sha256": "ff8c3ce4fe98885f5471c33a5dc95945a5f1991d596e35a2008b0d72384badad",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/reconciliation/source-ledgers-prd.md",
+      "title": "PRD: Source Ledgers for Reconciliation",
+      "lines": 213,
+      "sha256": "a8c89aa84eee505d421b602e577a6f68374cde61fef587a54bc1572bbd885e8f",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/reconciliation/team-performance-prd.md",
+      "title": "PRD: Reconciliation Team Performance Tab",
+      "lines": 223,
+      "sha256": "b12d75d030a4b9c4800886924d622612f54de9e6cfbeb511acb6d936df11b0d0",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/revenue/revenue-clarification.md",
+      "title": "Revenue Clarification and Decision Register",
+      "lines": 94,
+      "sha256": "933cefacf925d7c50e1773fb3012e249d81bdce314d0a8c64d6653267137742b",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/revenue/revenue-prd.md",
+      "title": "Ripple Revenue Module PRD",
+      "lines": 445,
+      "sha256": "e7f603cc6ab655772a28490794b4ef96b3e0879f52e4c56c2df9f118f3aeac4d",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/roles/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 112,
+      "sha256": "2585348184f8e95bb825a1b261a3c0c548e61075453772090df0981ab76a938e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/roles/prd.md",
+      "title": "F17: Superadmin Prompt Template Settings + Role-Based Access",
+      "lines": 614,
+      "sha256": "af902246b671ee478d216586ed666b4fba7b5de37b79901b6d13f7ccab95bf81",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 4,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/tutor-ledger/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 103,
+      "sha256": "54debfc679071351dc20245bd31ac03ff9f5b9aa99ddeede641c617307dd1962",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/tutor-ledger/prd.md",
+      "title": "Tutor Ledger (AP) - PRD",
+      "lines": 346,
+      "sha256": "14463a01135f41d064de0179c092dd2b7912517606caf562dbb182ac91980545",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/tutor-payments/clarification.md",
+      "title": "PRD Clarification Session",
+      "lines": 245,
+      "sha256": "38298dfa63ba7ae60630978b70272e5802b8aa01748631f1531f6cfa75bd2add",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/tutor-payments/prd.md",
+      "title": "Tutor Payment Module \u2014 Product Requirements Document",
+      "lines": 395,
+      "sha256": "f743ba94910b714486fff94d8a0e766d2742d6c7f2c4480fec0532a405b8151a",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/sims-handoff/bug-8h-commission-tier.md",
+      "title": "Bug Report: 8-Hour Commission Tier Calculated in Wrong Order",
+      "lines": 129,
+      "sha256": "c26b290af33b30229e9e6e73bcf6fa31beb8c3f03e7d07818ead4c050615ca93",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/sims-handoff/commission-audit-columns.md",
+      "title": "SIMS Change Request: Commission Audit Columns on Classes Table",
+      "lines": 125,
+      "sha256": "88a433c6e6eb8127a211e11d7c69b3f39397bd8093eb798406a6ea811737624e",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/PLATFORM-ROADMAP-DECISIONS.md",
+      "title": "Platform Gap Roadmap - User Decisions",
+      "lines": 79,
+      "sha256": "7603473cd148d5c0827f2498e5a52020fbd76bfd923c817033ae60ae3d574190",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 2,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/_archive/2026-02-baseline-audits/2026-02-06-ux-business.md",
+      "title": "UX & Business Audit Report - Sifututor Tutor App",
+      "lines": 1066,
+      "sha256": "9ffa6b6d1a25c1659e51a902df7e39ecd08076dee5bf21304fa2c8f9c90ec023",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/backend-reference/BUSINESS-RULES.md",
+      "title": "Business Rules Reference",
+      "lines": 419,
+      "sha256": "12b7392f4862b70e51ed9c513057aabdf0bc1a203f73b04b7729167590c89801",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/design-system/decisions.md",
+      "title": "Design System v1.0 \u2014 LOCKED 2026-04-10",
+      "lines": 310,
+      "sha256": "12b5778e2a54045e622e30ccfb9699385ebac3044af9897258c0bc2ef6d487dc",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/design-system/v2.0/phase1-decisions-locked.md",
+      "title": "DS v2.0 Phase 1 Decisions Locked",
+      "lines": 120,
+      "sha256": "cda97d34fddb4240bd3b5e82ea26511036be8fec15e2f41460989f9a96cda812",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/plans/uiux-sprints/branch-strategy.md",
+      "title": "Branch strategy \u2014 post-DS-v1.1 finalization",
+      "lines": 84,
+      "sha256": "f3bbd501cf883729cd2b1e8b154969e4e8fb69e031f045c5a168698573ced23b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/prd/done/wave-6-unified-add-class.md",
+      "title": "Lite-PRD \u2014 Wave 6: Unified Add Class + Photo Proof Verification",
+      "lines": 740,
+      "sha256": "4c68ff8406b8b1c03cba9082af6d295beca6a4ee3f1323379fc4d8616a8083be",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/ux-pass/decisions.md",
+      "title": "Discussion 1 \u2014 UX + global UI decisions",
+      "lines": 189,
+      "sha256": "35b1e26c871d9ad18fded09169cb4d2db95ae394080c94fe162eadb552adb35b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/ux-revamp/help-centre-prd-clarification-session.md",
+      "title": "PRD Clarification Session \u2014 Help Centre Rebuild",
+      "lines": 247,
+      "sha256": "40b62c3d18ac613c01ecd47fadf170e823e66ecf61333cd6bef62833747bbe47",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_tutor/docs/ux-revamp/help-centre-prd.md",
+      "title": "PRD \u2014 Help Centre Rebuild (Tutor App)",
+      "lines": 611,
+      "sha256": "556587b4e4490d1b5746d41b10e01d315c994b17f67eb30d21369a9ede1efa18",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_parent/docs/strategy/competitor-features-we-are-missing.md",
+      "title": "SifuParent: Features Competitors Have That We Don't",
+      "lines": 117,
+      "sha256": "fde9634decb1b018f3604ec89a4179c88e097a997671b47fe115fefb2059d095",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sifututor_parent/docs/strategy/industry-gap-analysis.md",
+      "title": "SifuParent: Industry Gap Analysis and UX Improvement Roadmap",
+      "lines": 274,
+      "sha256": "4c801f9b82c945e61a48c10f4b44581f357b003b4e29ec7cda9e06d859cf3536",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "kelas/docs/legal/privacy-policy.md",
+      "title": "Privacy Policy",
+      "lines": 37,
+      "sha256": "9186fffc77f4ba13dc091181e9e8b3436d8c3c493e6173e375ff1f1c139bac6c",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "lls/docs/features/sims-student-identity-linking/prd-clarification-session.md",
+      "title": "SIMS Student Identity Linking \u2014 Clarification Record",
+      "lines": 156,
+      "sha256": "c12cf19bbe02e558a374bc94b2da09cba888c5aab555fb06b18367fe9aab698e",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "lls/docs/features/sims-student-identity-linking/prd.md",
+      "title": "SIMS Student Identity Linking \u2014 Product Requirements",
+      "lines": 270,
+      "sha256": "19bc5cefabf27a9a2d38635975c2360f158e8ebc3a9370ac7b810bb069149d53",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "lls/docs/superpowers/prds/phase-1-prd.md",
+      "title": "Product Requirements Document \u2014 Phase 1",
+      "lines": 737,
+      "sha256": "3f580cbac54d86bf8283ea1680e81599b3912e51e71b713e4a7a1dfe1e7193ef",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 3,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "lls-frontend/docs/BACKEND_LIVE_CLASSES_REQUIREMENTS.md",
+      "title": "Backend Requirements \u2013 Tutor Live Classes (Design-Aligned)",
+      "lines": 147,
+      "sha256": "987fff9d874461d3318a7d1545c70bf2556041f661b0473a24375db56a99a41e",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "creative-hub/docs/plans/archived/tuah-milestone-2026-05/REQUIREMENTS.md",
+      "title": "Requirements: Tuah Agent Improvements",
+      "lines": 82,
+      "sha256": "aafe4c79aa0bfd713dfbe5cb1ba7e024244249011ce04d6993292272eb100a25",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "creative-hub/docs/prds/PRD-studio.md",
+      "title": "PRD \u2014 Studio (Module 1: Creative Generation Pipeline)",
+      "lines": 254,
+      "sha256": "51fe46bdfb7bbd4ef7dd301d1c93339ae6563809075f20bdfdcfce36917b9f9b",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "creative-hub/docs/prds/README.md",
+      "title": "PRDs \u2014 Product Requirements",
+      "lines": 14,
+      "sha256": "028297c78c1bb17006edaa06674289d94bc044aa5bc18eee191a14614f6d82a9",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/ai/DECISION_LOG.md",
+      "title": "Finch active decision log",
+      "lines": 70,
+      "sha256": "9089bd930c5f81dcce32686b7932b7b4eea0ef1e08e66c92372c63a0658115be",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/decisions/2026-08-12-standard-web-delivery.md",
+      "title": "Standard web delivery replaces Finch's custom release pipeline",
+      "lines": 72,
+      "sha256": "80e17229614dee591c7d6b30ed8d96999a3827501ff18a6de9f0975fcc734fd8",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/decisions/login-policy-for-hafiz.md",
+      "title": "Login policy decision \u2014 for Hafiz to approve",
+      "lines": 171,
+      "sha256": "64e2329ffb28c372f1dd5d5db811b3071b3262922b562f49c60cff86f2c91a70",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/runbooks/billing-invoice-cron-flip.md",
+      "title": "Runbook - Flipping `BILLING_INVOICE_CRON_ENABLED` (Phase F2)",
+      "lines": 191,
+      "sha256": "dd030dce6bbdae14b8deb9180d4a3fc67999e65734d64936589915f80d97a98d",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/runbooks/billing-payment-method-recovery.md",
+      "title": "Runbook \u2014 `POST /api/billing/me/payment-method` 500/503 recovery",
+      "lines": 384,
+      "sha256": "01f4538c10eed9bc40c238ec24a682d151573368f48f2be870934fbe02c0c634",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/runbooks/db-backup-strategy.md",
+      "title": "Database backup and transaction-log recovery",
+      "lines": 587,
+      "sha256": "5b1b791572a0b212ac93d10bc179b650ff58454ad8702002bbbd7705214f3d78",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/spec/pricing-strategy.md",
+      "title": "Finch Pricing Strategy",
+      "lines": 103,
+      "sha256": "66d72e2dfd2a154b74ad3a09e0929b9f7c2079418f02d257d67283456d332400",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "finch-inbox/docs/superpowers/specs/2026-06-12-saas-platform-owner-billing-master-plan.md",
+      "title": "Finch billing architecture contract",
+      "lines": 82,
+      "sha256": "0593a6e829e889883206ea92aa0993d203788394c44e5f180b11996f0dfae4d3",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sims-owner-analytics/docs/backup-policy.md",
+      "title": "Analytics backup policy",
+      "lines": 35,
+      "sha256": "c86005f099ed20ad02d05dc374a00b4a3eb8e7391838fc7762bc7f061784f9f8",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sims-owner-analytics/docs/decisions.md",
+      "title": "Binding decisions",
+      "lines": 23,
+      "sha256": "16f0c7d2a80475cc2a57e5f11dea5810b6cf0c28e406ba3470481ef1aa70dc30",
+      "depth": "indexed; selected passages extracted",
+      "passage_count": 1,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "sims-owner-analytics/docs/design/risk-decisions.md",
+      "title": "Revised Risks, Residuals, and Owner Decisions (Bundle A)",
+      "lines": 65,
+      "sha256": "51762ea53e6177632be082ef76a64bb88dfbc6f47e5f119aac07d536718f2550",
+      "depth": "indexed; no matching passages extracted",
+      "passage_count": 0,
+      "authority": "candidate only; use register reconciliation, not filename or heading as approval"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/request-change-and-legacy-duplicate-build-ready-addendum-2026-07-29.md",
+      "title": "Tutor Request Change and Legacy Duplicate Build-Ready Addendum",
+      "lines": 756,
+      "sha256": "335bcf1f6d2b10be7c05ed70cb48f9dff340623df71c762e3a91ee100715e008",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/dual-cx-build-ready-pack-2026-09-14.md",
+      "title": "Dual CX proposal \u2014 implementation plan",
+      "lines": 243,
+      "sha256": "bac608c57ecd922667729bdb315d6171e54bf2fe095938290245be43624c17a1",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/workforce-access-and-sims-outage-build-ready-pack-2026-08-04.md",
+      "title": "Workforce Access and SIMS Outage Build-Ready Pack",
+      "lines": 686,
+      "sha256": "93b69d05b18c93cd7031592a5255e1bf830ebec749cb7f95b8ccb5fdd4da112e",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/c1-safe-tutor-request-creation-build-ready-pack-2026-08-02.md",
+      "title": "C1 Safe Tutor Request Creation Build-Ready Pack",
+      "lines": 1490,
+      "sha256": "cc1efa5476156992e7f705cf7675ed9ff5155e3421e2fac954daf8a8d758115c",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/tutor-matching-candidate-build-ready-pack-2026-08-14.md",
+      "title": "CRM Tutor Matching and Candidate Journey \u2014 Build-Ready Pack",
+      "lines": 1051,
+      "sha256": "c9c4d603441715098f92cfd97bc858051a6096e96f1ee92756eb54cd75fa4c7b",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/finch-tutor-whatsapp-activity-build-ready-pack-2026-09-16.md",
+      "title": "Finch Tutor WhatsApp Activity in Ripple \u2014 Starter Build-Ready Pack",
+      "lines": 1228,
+      "sha256": "a05c42c9cdbd6598de1d4b2e97396fcdb190a7e168e260b3956719455022c30a",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": "ripple-suite/docs/features/crm/request-workspace-owner-assignment-build-ready-pack-2026-08-07.md",
+      "title": "CRM Request Workspace and CX Support Ownership",
+      "lines": 362,
+      "sha256": "e66d8a352e6416fdcbba0cbd3647828145721a2cf44d4eab637c005b68bb648e",
+      "depth": "focused business decision reconciliation",
+      "authority": "see source declared status and register"
+    },
+    {
+      "path": ".worktrees/nakngaji-current-staging-2232/docs/features/nakngaji/authoritative-corrective-build-ready-pack.md",
+      "title": "Nakngaji Phase 1 \u2014 Authoritative Corrective Build-Ready Pack",
+      "lines": 664,
+      "sha256": "e44dbdf989e3cdf3e4565278e6c3a46a7d883781457aa346d931e19c33834ee1",
+      "depth": "business sections 1-3 (lines 1-374) read and reconciled; implementation slices not treated as authorization",
+      "authority": "source declares confirmed behaviour; later explicit scoped decisions still apply"
+    }
+  ]
+}
