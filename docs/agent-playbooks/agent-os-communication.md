@@ -37,6 +37,24 @@ allowed when they are useful for:
 Do not use those labels as filler. If the label does not make the message
 clearer, leave it out.
 
+## Time And Dates
+
+Every time Hafiz reads is Malaysian time (Asia/Kuala_Lumpur, MYT, UTC+8). This
+covers chat replies, review pages, staff messages, GitHub issue and PR
+comments, checklists, session saves and Koda memories.
+
+- Servers, deploy logs, PostgreSQL, SIMS cron and GitHub all report UTC.
+  Convert before quoting, and label it: `16:36 MYT`, not `08:36` or a bare
+  `16:36`. Malaysia has no daylight saving, so the offset is always +8.
+- Keep UTC only inside a raw log excerpt or a filename that genuinely contains
+  it, and say so: `/tmp/deploy.log 08:22 UTC (16:22 MYT)`.
+- Dates are `DD/MM/YYYY`. A date with a time keeps the same rule:
+  `03/10/2026 16:36 MYT`.
+- "Today", "tonight", "after office hours" and release windows all mean
+  Malaysian time. Office hours are the Malaysian working day; a window such as
+  "after office hours" is judged in MYT, never in the server's clock.
+- Durations stay durations: "about 30 minutes", not a UTC range.
+
 ## Language Default
 
 Reply to Hafiz in English by default, even when the underlying report, staff
