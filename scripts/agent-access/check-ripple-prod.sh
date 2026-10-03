@@ -90,6 +90,30 @@ elif echo "$SIMS_API_URL" | grep -q "cloud.tutorla.tech"; then
 fi
 
 echo ""
+echo "── Sentry in PM2 env (flag value and presence only, never the address) ──"
+if [[ -n "$PM2_ID" ]]; then
+  SENTRY_FLAG=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$KVM8_ALIAS" \
+    "PM2_HOME=/home/deploy/.pm2 pm2 env '$PM2_ID' 2>/dev/null | grep -E '(^|[^A-Z_])SENTRY_ENABLED: '" 2>/dev/null | \
+    sed 's/.*SENTRY_ENABLED: //' | perl -pe 's/\e\[[0-9;]*[A-Za-z]//g' | xargs || echo "")
+  SENTRY_DSN_LINES=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$KVM8_ALIAS" \
+    "PM2_HOME=/home/deploy/.pm2 pm2 env '$PM2_ID' 2>/dev/null | grep -cE '(^|[^A-Z_])SENTRY_DSN: '" 2>/dev/null || echo "0")
+else
+  SENTRY_FLAG=""
+  SENTRY_DSN_LINES="0"
+fi
+case "$SENTRY_FLAG" in
+  true|false) ;;
+  "") SENTRY_FLAG="unset" ;;
+  *) SENTRY_FLAG="other" ;;
+esac
+printf '  SENTRY_ENABLED = %s\n' "$SENTRY_FLAG"
+if [[ "${SENTRY_DSN_LINES//[^0-9]/}" -ge 1 ]]; then
+  echo "  SENTRY_DSN = set"
+else
+  echo "  SENTRY_DSN = unset"
+fi
+
+echo ""
 echo "── Recent SIMS API errors (last 5 min) ──"
 ERROR_LOGS=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$KVM8_ALIAS" \
   "PM2_HOME=/home/deploy/.pm2 pm2 logs ripple-suite-prod --lines 50 --nostream 2>/dev/null | \
