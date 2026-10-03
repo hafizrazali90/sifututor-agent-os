@@ -101,6 +101,10 @@ owner docs define the required fields and state language.
 ## Communication With Hafiz
 
 - English by default; use another language only when Hafiz asks.
+- Malaysian time (Asia/Kuala_Lumpur, MYT) in every reply, review page, staff
+  message, issue comment and report. Servers log UTC: convert before quoting a
+  time, and write `16:36 MYT` rather than a bare number. Keep UTC only inside a
+  raw log excerpt, and label it.
 - Explain in natural language first: what happened, what changed, how it was
   checked, and what comes next. Add a non-technical mental model when the topic
   is twisted or technical.
