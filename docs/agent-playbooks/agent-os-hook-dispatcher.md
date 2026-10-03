@@ -45,7 +45,7 @@ The hook should never silently perform expensive state changes.
 | --- | --- | --- |
 | `SessionStart` | Startup, resume, clear, or compact session start. | Loads Sifututor context and verifies Koda read/write health once for the session. |
 | `UserPromptSubmit` | Every Hafiz prompt. | Emits one compact route hint when a workflow skill is genuinely useful. |
-| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and visual capture while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. |
+| `PreToolUse` | Before tools run. | Blocks secret-bearing command output and visual capture while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. Claude also runs `ask-question-size-guard.py` on `AskUserQuestion` and denies boxes over the Decision Questions limits. |
 | `PostToolUse` | After shell/exec commands. | Records metadata-only failed-command diagnostics without command arguments or raw output. |
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
 | `Stop` | When Codex is about to stop. | Reminds Codex to save meaningful session state. |

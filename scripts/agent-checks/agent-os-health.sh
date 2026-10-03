@@ -169,6 +169,7 @@ check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-r
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
 check_file "Kilo adapter check" "$ROOT/scripts/agent-checks/kilo-agent-os-adapter-check.py"
 check_file "secret output guard" "$ROOT/scripts/agent-checks/secret_output_guard.py"
+check_file "question size guard" "$ROOT/scripts/agent-checks/ask-question-size-guard.py"
 check_file "secret artifact scan" "$ROOT/scripts/agent-checks/secret_artifact_scan.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
 check_file "Codex SIMS UI audit skill" "$ROOT/.agents/skills/sims-ui-audit/SKILL.md"
