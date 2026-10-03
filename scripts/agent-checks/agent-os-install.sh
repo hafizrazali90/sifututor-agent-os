@@ -218,7 +218,15 @@ has_guard = any(
     for hook in group.get("hooks", [])
     if isinstance(hook, dict)
 )
-print("OK" if needed.issubset(hooks) and has_guard and has_lease_dir else "MISSING")
+has_ask_guard = any(
+    group.get("matcher") == "AskUserQuestion"
+    and "ask-question-size-guard.py" in str(hook.get("command") or "")
+    for group in hooks.get("PreToolUse", [])
+    if isinstance(group, dict)
+    for hook in group.get("hooks", [])
+    if isinstance(hook, dict)
+)
+print("OK" if needed.issubset(hooks) and has_guard and has_ask_guard and has_lease_dir else "MISSING")
 PY
 )"
 
@@ -283,7 +291,10 @@ for group in pre_tool_groups:
         for hook in group.get("hooks", [])
         if not (
             isinstance(hook, dict)
-            and "secret_output_guard.py" in str(hook.get("command") or "")
+            and (
+                "secret_output_guard.py" in str(hook.get("command") or "")
+                or "ask-question-size-guard.py" in str(hook.get("command") or "")
+            )
         )
     ]
 pre_tool_groups[:] = [
@@ -299,6 +310,19 @@ pre_tool_groups.insert(
             {
                 "type": "command",
                 "command": guard_command,
+                "timeout": 10,
+            }
+        ],
+    },
+)
+pre_tool_groups.insert(
+    1,
+    {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+            {
+                "type": "command",
+                "command": f"python3 {root}/scripts/agent-checks/ask-question-size-guard.py",
                 "timeout": 10,
             }
         ],
@@ -414,6 +438,16 @@ settings_json='{
           {
             "type": "command",
             "command": "python3 '"$ROOT"'/scripts/agent-checks/secret_output_guard.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 '"$ROOT"'/scripts/agent-checks/ask-question-size-guard.py",
             "timeout": 10
           }
         ]
