@@ -1097,6 +1097,89 @@ def release_handoff_violations(case: dict[str, object]) -> list[str]:
     return violations
 
 
+# Decision question boxes (AskUserQuestion). Source: Hafiz, 03/10/2026, "i cant read it properly".
+# The box holds only the decision. Explanation belongs in the chat reply as short bullets.
+DECISION_BOX_MAX_QUESTION_WORDS = 35
+DECISION_BOX_MAX_QUESTION_SENTENCES = 2
+DECISION_BOX_MAX_OPTIONS = 4
+DECISION_BOX_MAX_LABEL_WORDS = 5
+DECISION_BOX_MAX_DESCRIPTION_WORDS = 14
+
+DECISION_BOX_CASES = [
+    {
+        "id": "DB-001",
+        "name": "tiny decision box with an escape option",
+        "question": "Run the existing backup cleanup on the Ripple server now?",
+        "options": [
+            {"label": "Run it now", "description": "Frees about 81 GiB of old backups."},
+            {"label": "Wait until 03:17", "description": "The same tool runs by itself then."},
+            {"label": "Explain more first", "description": "I explain in chat, then ask again."},
+        ],
+        "should_pass": True,
+        "why": "One short question, three short options, and a way to ask for detail instead of a wall of text.",
+    },
+    {
+        "id": "DB-002",
+        "name": "explanation stuffed into the question",
+        "question": (
+            "Where we are: the Learnest practice site called staging has been frozen since July and runs old code, "
+            "so tonight I could not test the release there. Real example: the staging branch holds six changes that "
+            "exist nowhere else. I tried merging the live branch and it clashes in fourteen files. Which direction do you choose?"
+        ),
+        "options": [
+            {"label": "Rebuild", "description": "Save the old commits first."},
+            {"label": "Leave it", "description": "No change."},
+        ],
+        "should_pass": False,
+        "why": "The 03/10/2026 failure: facts, history and an example inside the box made it unreadable.",
+    },
+    {
+        "id": "DB-003",
+        "name": "long option descriptions",
+        "question": "Which project should I activate next?",
+        "options": [
+            {"label": "Kelasapp alert", "description": "I create the Better Stack error alert for Kelasapp, then run a labelled test error so you receive the alert and its recovery notice by email and push."},
+            {"label": "Stop for tonight", "description": "No more changes."},
+        ],
+        "should_pass": False,
+        "why": "Option descriptions must stay one short line; detail belongs in the chat bullets.",
+    },
+    {
+        "id": "DB-004",
+        "name": "too many options and long labels",
+        "question": "What next?",
+        "options": [
+            {"label": "A", "description": "One."},
+            {"label": "B", "description": "Two."},
+            {"label": "C", "description": "Three."},
+            {"label": "D", "description": "Four."},
+            {"label": "Do everything on the list in the order I proposed earlier tonight", "description": "All of it."},
+        ],
+        "should_pass": False,
+        "why": "More than four options, or a label that is a sentence, cannot be scanned.",
+    },
+]
+
+
+
+def decision_box_violations(case: dict[str, object]) -> list[str]:
+    violations = []
+    question = str(case["question"])
+    if len(question.split()) > DECISION_BOX_MAX_QUESTION_WORDS:
+        violations.append("question_too_long")
+    if len(re.findall(r"[.?!](?:\s|$)", question.strip())) > DECISION_BOX_MAX_QUESTION_SENTENCES:
+        violations.append("too_many_sentences")
+    options = list(case["options"])
+    if not 2 <= len(options) <= DECISION_BOX_MAX_OPTIONS:
+        violations.append("option_count")
+    for option in options:
+        if len(str(option["label"]).split()) > DECISION_BOX_MAX_LABEL_WORDS:
+            violations.append("label_too_long")
+        if len(str(option["description"]).split()) > DECISION_BOX_MAX_DESCRIPTION_WORDS:
+            violations.append("description_too_long")
+    return sorted(set(violations))
+
+
 def explanation_violations(case: dict[str, object]) -> list[str]:
     normalized = normalize(str(case["text"]))
     if case["kind"] == "explanation_first":
@@ -1316,6 +1399,22 @@ def run(verbose: bool = False) -> int:
         if not ok:
             failures.append(case["id"])
 
+    for case in DECISION_BOX_CASES:
+        violations = decision_box_violations(case)
+        passed_shape = not violations
+        ok = passed_shape is case["should_pass"]
+        status = "PASS" if ok else "FAIL"
+
+        if verbose or not ok:
+            print(f"{status} {case['id']} {case['name']}")
+            print(f"  expected pass={case['should_pass']}, observed pass={passed_shape}")
+            if violations:
+                print("  violations: " + ", ".join(violations))
+            print(f"  why={case['why']}")
+
+        if not ok:
+            failures.append(case["id"])
+
     total = (
         len(CASES)
         + len(COPY_READY_CASES)
@@ -1323,6 +1422,7 @@ def run(verbose: bool = False) -> int:
         + len(SAVE_SESSION_CASES)
         + len(EXPLANATION_CASES)
         + len(TODAY_BRIEFING_CASES)
+        + len(DECISION_BOX_CASES)
     )
     passed = total - len(failures)
     print(f"agent-os-response-shape-runner: {passed}/{total} passed")
