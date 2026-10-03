@@ -3,9 +3,9 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 25 lanes — 23 scoped files under
+Current registry count: 29 lanes (27 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
-the delegated SharePoint read-only lane.
+the delegated SharePoint read-only lane).
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
@@ -507,6 +507,47 @@ for about a minute while Ripple catches up with the new SIMS revision.
 Before saying a production login is unavailable for any project, list the file
 names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smoke*`.
 
+### 27. `betterstack-write` - Better Stack Telemetry (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `betterstack-write.conf` (mode 600) |
+| **Variable name** | `BETTERSTACK_TELEMETRY_API_TOKEN` (Telemetry API token Hafiz created 03/10/2026) |
+| **Purpose** | Create log sources, explorations and exploration alerts; incident emails go to the current team |
+| **Tier** | write |
+| **Hafiz approval** | Yes: state the exact source, query and alert before creating; test incidents need approval because they email the team |
+| **Safe verification** | `GET https://telemetry.betterstack.com/api/v2/sources` with the token; print only names and ids |
+| **Forbidden** | Never print the token; never delete sources or alerts; never add call or SMS escalation without approval |
+
+---
+
+### 28. `sentry-write` - Sentry Alerts and Projects (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `sentry-write.conf` (mode 600) |
+| **Variable name** | `SENTRY_WRITE_TOKEN` |
+| **Sentry org / host** | `sifu-edu-learning-sdn-bhd`, region host `https://de.sentry.io` |
+| **Purpose** | Create workflows and detectors (`/organizations/{org}/workflows/`, `/detectors/`); the old `rules/` endpoints return 404 |
+| **Tier** | write |
+| **Hafiz approval** | Yes: state the exact alert before creating |
+| **Safe verification** | `GET /api/0/organizations/{org}/workflows/` and print only names |
+| **Known limits** | Members cannot create projects by API; Hafiz creates projects in the Sentry UI. Issues API `statsPeriod` accepts only `24h` or `14d` |
+| **Forbidden** | Never print the token; never delete projects, workflows or issues; never bulk-resolve issues |
+
+---
+
+### 29. `monitoring-project-settings` - Per-Project Monitoring Addresses
+
+| Field | Value |
+|-------|-------|
+| **Conf files** | `kelasapp-betterstack-prod.conf` (`KELASAPP_BS_HOST`, `KELASAPP_BS_TOKEN`), `lls-sentry-backend.conf` (`LLS_SENTRY_DSN`), `lls-sentry-frontend.conf` (`LLS_FRONTEND_SENTRY_DSN`), `ripple-sentry.conf` (`RIPPLE_SENTRY_DSN`); all mode 600 |
+| **Purpose** | Hold the private ingest address of each production monitoring project so a probe or a redeploy can reuse it without asking again |
+| **Server side** | LLS website build reads root-only `/etc/learnest/frontend-sentry.env`; Ripple reads `/etc/prod-env/ripple-suite.env`; Kelasapp reads `.env.local`; SIMS and LLS backend read their own `.env` (each backed up as `.pre-<change>-<time>` before the 03/10/2026 changes) |
+| **Tier** | auto-read for using an address in a read-only probe; changing a server setting is write |
+| **Hafiz approval** | Reads and probes: not required. Changing a server setting or sending a probe event to production Sentry: yes, exact action first |
+| **Forbidden** | Never print an address or token; never copy these values into a handoff, issue, ledger or memory; a probe event must carry a clear synthetic label |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -530,6 +571,9 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `typesafe-jev-shadow` | `typesafe-jev.conf` | write | One-time owner activation; automatic bounded shadow calls afterward |
 | `ripple-prod-smoke` | `ripple-prod-smoke*.conf` | auto-read | Never for read-only smoke; new role logins need Hafiz to create the account |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
+| `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
+| `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
+| `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
 | `server-ssh` (writes) | `server-ssh.conf` | write | Yes — state command |
