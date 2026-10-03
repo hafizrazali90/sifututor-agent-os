@@ -324,6 +324,34 @@ Rules that keep a reply readable:
   he asks. Every status update says what, if anything, he needs to do.
 - Short is not the goal. A clear order is. Length follows from it.
 
+## Decision Questions
+
+Source: Hafiz, 03/10/2026, after a decision box carried a whole explanation
+("I can't read it properly"). It builds on the six-step order above and on his
+29/09/2026 complaint about options with no context. Both must hold: the facts
+are shown, and the box stays tiny.
+
+- **Explain in the chat reply first**, as a short bullet list: where we are, what
+  it is, a real example, the recommendation. One line per bullet. This is steps 1
+  to 5 of "Technical In Natural Language".
+- **The box holds only the decision.** Question: at most two short sentences,
+  about 30 words, no history, no lists of numbers, no pros and cons. Options: two
+  or three, up to four at most. Label: up to five words. Description: one short
+  line, up to fourteen words. Recommended option first.
+- **Always leave a way out of the box.** When the decision needs facts that are
+  not already in the chat bullets, add a last option "Explain more first". Choosing
+  it means: explain in chat, then ask again. Never answer a request to stop
+  with another long box.
+- **One decision per box, one box per message.** Do not batch decisions.
+- **If it cannot be said that briefly, do not use a box.** Ask in chat instead,
+  with numbered options, and let him reply with the number.
+- An answer such as "go", a complaint, or silence on a box is not approval of the
+  action it described.
+
+The shape limits above are checked by `agent-os-response-shape-runner.py`
+(cases DB-001 to DB-004). They check the size of a sample box; they cannot see a
+live session, so the rule still depends on the agent reading this section.
+
 ## Fit The Reply To The Task
 
 A trivial question can receive one sentence. A diagnosis or PR review needs
