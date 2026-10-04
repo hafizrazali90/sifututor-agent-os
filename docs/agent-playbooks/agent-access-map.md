@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 29 lanes (27 scoped files under
+Current registry count: 30 lanes (28 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane).
 
@@ -550,6 +550,24 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 
 ---
 
+### 30. `sentry-issues-write` - Sentry Issue Status (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `sentry-issues-write.conf` (mode 600) |
+| **Variable name** | `SENTRY_ISSUES_TOKEN` |
+| **Sentry org / host** | `sifu-edu-learning-sdn-bhd`, region host `https://de.sentry.io` |
+| **Credential** | Sentry Internal Integration `sifututor-issue-resolver`, permission **Issue & Event: Read & Write** only, created by Hafiz 04/10/2026 |
+| **Purpose** | Change the status of named Sentry issues (resolve a test or probe event, reopen one) |
+| **Tier** | write |
+| **Hafiz approval** | Yes: list the exact short IDs first. Used on 04/10/2026 for seven named test issues (RIPPLE-SUITE-1 and -2, LLS-FRONTEND-1, PHP-LARAVEL-LLS-BACKEND-5S, 5R, 5Q, SIMS-SIFU-TUTOR-7R) |
+| **Safe verification** | `GET /api/0/organizations/{org}/issues/?limit=1` returns 200. Never test by writing |
+| **Rules** | One issue per request, after reading its title and confirming it matches the approved description. Never a query-based or bulk update. Never delete issues. Never touch an issue another team owns without that owner's say |
+| **Known limits** | Plain 64-character token with no `sntrys_` prefix is normal for an Internal Integration. A Client Secret is a different value and returns 401. Revoke the integration in Sentry when no longer needed |
+| **Forbidden** | Never print the token; never paste it in chat; save it only through `save-sentry-token.sh`-style prompts that test the token and print no value |
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -573,6 +591,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
+| `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
 | `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
