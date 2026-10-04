@@ -614,6 +614,32 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Restore** | 1. Stop Koda. 2. Download the wanted `daily/brain-<time>.db` with this key and compare its sha256 with the object's `sha256` metadata. 3. Replace `/opt/koda/brain.db` (and remove any `-wal` and `-shm` beside it), owner root, mode 600. 4. Start Koda and run `scripts/agent-checks/koda health`. Rehearsed 04/10/2026 up to step 2 in a scratch folder: 73 MB downloaded in 3 s, checksum matched, full integrity check ok, 50 of 50 schema objects, 6,848 memories (equal to the backup's own record), text search working. The swap under a stopped Koda (steps 3 and 4) has not been done. A daily backup means up to 24 hours of new memories can be lost |
 | **Forbidden** | Never print the key; never widen the policy to delete; never use the account keys in `~/.wasabi-creds` for routine work |
 
+### 34. `cloudflare-access-write` - Cloudflare Login Gate (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `cloudflare-access-write.conf` (mode 600) |
+| **Variable names** | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ALLOWED_ACTIONS` |
+| **Credential** | Cloudflare API token `agent-access-gate-write`, created by Hafiz 04/10/2026. Permissions: Access: Apps and Policies (Edit), Access: Service Tokens (Edit) |
+| **Purpose** | Manage the Zero Trust Access login gate: applications, policies and service tokens. The other Cloudflare lanes cannot (all answer 403 on Access) |
+| **Tier** | auto-read for listing applications, policies and service tokens; write needs Hafiz's approval per change |
+| **Verified limits (04/10/2026)** | Allowed: read Access applications and service tokens, list zone names, list Worker script names. Denied: DNS records, account members, billing |
+| **Known gate objects** | Application `Sifututor Status` (`status.sifututor.my`) with policies `Allowed people` (allow) and `robot sender` (Service Auth); service token `status-robot-sender` |
+| **Gotchas** | A policy is a reusable object: creating it does not attach it to an application, that is a second step. A service token's secret is shown once and cannot be read back. A logged-in dashboard session can read through the dashboard API but is refused on writes |
+| **Forbidden** | Never print the key; never remove or widen the `Allowed people` policy; never delete a service token that a server is using |
+
+### 35. `status-robot-sender` - Status Page Machine Pass (Hand In The Robot Report Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `status-robot-sender.conf` (mode 600). Server copy: `/etc/sifututor/status-robot-sender.env` on the Ripple host, root only |
+| **Variable names** | `PASS_ID`, `PASS_KEY` |
+| **Credential** | Cloudflare Access service token `status-robot-sender`, created by Hafiz 04/10/2026, allowed on `Sifututor Status` by the `robot sender` policy |
+| **Purpose** | `/opt/sifututor-monitoring/robot-report-sender.sh` on the Ripple host hands the outreach robot's numbers to `https://status.sifututor.my/ingest/robot` every 5 minutes |
+| **Tier** | Used by the server job, not by agents. Agents may use the local copy only to test that the gate still accepts it |
+| **Verified limits (04/10/2026)** | The status page accepts a report only from this client id (`ROBOT_SENDER_CLIENT_ID`), keeps only agreed counts and flags, and refuses every read route to a machine pass |
+| **Forbidden** | Never print the secret; never reuse this pass for another machine or another page |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -641,6 +667,8 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
+| `cloudflare-access-write` | `cloudflare-access-write.conf` | write (reads auto) | Yes: per change to the login gate |
+| `status-robot-sender` | `status-robot-sender.conf` | server job | Never for the server job; agents only test the gate |
 | `healthchecks-write` | `healthchecks-write.conf` | write | Yes: list the exact checks first |
 | `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
