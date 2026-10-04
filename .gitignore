@@ -93,6 +93,7 @@ sifu-tutor/
 sifututor_parent/
 sifututor_tutor/
 sims-owner-analytics/
+sifututor-status/
 
 # Retired: team-inbox was replaced by finch-inbox. Only the archived checkout
 # remains on disk.
