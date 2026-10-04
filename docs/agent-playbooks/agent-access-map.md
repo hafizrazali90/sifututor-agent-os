@@ -581,6 +581,8 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Hafiz approval** | Yes: list the exact checks (name, period, grace) before creating. The ping line on each server is a separate server-write approval per server |
 | **Safe verification** | `GET /checks/` with the read-only key returns 200. Limits test on 04/10/2026: period 30 d with grace 5 d, and period 5 min with grace 1 min, were accepted; the two test checks were deleted |
 | **Known limits** | The API cannot create integrations (email, Telegram): Hafiz adds them in the dashboard and checks are attached to them. Free plan: 20 jobs, 100 log entries per job |
+| **Where the ping key lives on servers** | `/etc/sifututor/healthchecks-ping.env` (root, mode 600) on the Ripple host and the Learnest host. Used by `/opt/sifututor-monitoring/job-watcher.sh` (every minute, `/etc/cron.d/sifututor-job-watcher`) and by Koda's `/opt/koda/monitor-check.sh` and `/opt/koda/backup.sh`. The key is passed to curl on standard input, never as an argument. Reviewed watcher source: `Sifututor/sifututor-status`, `server/job-watcher.sh` |
+| **Checks (04/10/2026)** | `koda-memory-check`, `koda-backup`, `ripple-offsite-backup`, `ripple-backup-retention`, `ripple-commitment-fee-settlement`, `ripple-commitment-fee-attention`, `lls-db-backup`, `kelasapp-db-backup`, and `lls-scheduler` (created, not wired: needs a signal from inside the Learnest app) |
 | **Forbidden** | Never print a key or a ping address; never delete a check except one this session created; never use more than one account to get around limits |
 
 ---
