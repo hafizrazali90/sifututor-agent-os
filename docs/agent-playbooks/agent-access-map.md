@@ -624,7 +624,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Purpose** | Manage the Zero Trust Access login gate: applications, policies and service tokens. The other Cloudflare lanes cannot (all answer 403 on Access) |
 | **Tier** | auto-read for listing applications, policies and service tokens; write needs Hafiz's approval per change |
 | **Verified limits (04/10/2026)** | Allowed: read Access applications and service tokens, list zone names, list Worker script names. Denied: DNS records, account members, billing |
-| **Known gate objects** | Application `Sifututor Status` (`status.sifututor.my`) with policies `Allowed people` (allow) and `robot sender` (Service Auth); service token `status-robot-sender` |
+| **Known gate objects** | Application `Sifututor Status` (`status.sifututor.my`) with policies `Allowed people` (allow) and `robot sender` (Service Auth, reusable); service tokens `status-robot-sender`, `status-notes-claude`, `status-notes-codex`, all three included in `robot sender` |
 | **Gotchas** | A policy is a reusable object: creating it does not attach it to an application, that is a second step. A service token's secret is shown once and cannot be read back. A logged-in dashboard session can read through the dashboard API but is refused on writes |
 | **Forbidden** | Never print the key; never remove or widen the `Allowed people` policy; never delete a service token that a server is using |
 
@@ -639,6 +639,41 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Tier** | Used by the server job, not by agents. Agents may use the local copy only to test that the gate still accepts it |
 | **Verified limits (04/10/2026)** | The status page accepts a report only from this client id (`ROBOT_SENDER_CLIENT_ID`), keeps only agreed counts and flags, and refuses every read route to a machine pass |
 | **Forbidden** | Never print the secret; never reuse this pass for another machine or another page |
+
+### 36. `status-notes-claude` and `status-notes-codex` - Status Page Notes (Post A Note Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf files** | `status-notes-claude.conf`, `status-notes-codex.conf` (mode 600) |
+| **Variable names** | `PASS_ID`, `PASS_KEY` |
+| **Credential** | Cloudflare Access service tokens `status-notes-claude` and `status-notes-codex`, created 04/10/2026 with lane 34 on Hafiz's approval, allowed on `Sifututor Status` through the reusable policy `robot sender` |
+| **Purpose** | Post one note to the status page's "What changed" list: what changed, why, and for which system |
+| **How** | `sifututor-status/scripts/post-note.sh claude\|codex <system> "<what changed>" "<why>"`. Systems: `sims`, `ripple`, `robot`, `analytics`, `finch`, `apps`, `lls`, `kelas`, `koda`, `status`, `all` |
+| **Tier** | auto-write for a truthful note about work the agent itself did; never to speak for another agent or for Hafiz |
+| **Verified limits (04/10/2026)** | The page shows the author from the pass (`Claude` or `Codex`), never from the text. A note pass cannot post "went live" or "merged", cannot read the page, and is limited to 30 notes an hour. Notes cannot be edited or deleted |
+| **Forbidden** | Never print the secret; never use one agent's pass from the other agent; never put a credential, a name of a private person or log text in a note |
+
+### 37. `github-status-feed-readonly` - GitHub Merged Pull Requests For The Status Page (Read-Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `github-status-feed-readonly.conf` (mode 600). Not present until Hafiz runs `outputs/production-monitoring-verification-2026-10-04/save-github-feed-keys.sh` |
+| **Variable names** | `GITHUB_TOKEN_SIFUTUTOR`, `GITHUB_TOKEN_LEARNEST_LAB` (a fine-grained key belongs to one owner, so there is one per owner) |
+| **Purpose** | The status page lists merged pull requests of 10 repositories as "Merged" entries. Stored as Worker secrets of the same names with `node scripts/set-secrets.mjs <conf>`; no redeploy needed |
+| **Tier** | Used by the status page, not by agents. Agents use `gh` for their own GitHub work |
+| **Scope wanted** | Repository permission Pull requests: Read-only. Nothing else |
+| **State (04/10/2026)** | Not created yet. Until it is, the page says "GitHub merges are not connected yet" |
+
+### 38. `telegram-status-alerts` - Status Page Telegram Bot
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `telegram-status-alerts.conf` (mode 600) |
+| **Variable names** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` |
+| **Credential** | Bot `@sifututor_status_bot` in the group "Sifututor Alerts", created by Hafiz 04/10/2026. Also stored as Worker secrets of the same names |
+| **Purpose** | The status page sends alert messages to that group when `ALERTS_MODE` is `live` |
+| **State (04/10/2026)** | `ALERTS_MODE = "dry-run"`: the page decides and logs, nothing is sent. Hafiz decided "web first, automation later"; going live needs his approval |
+| **Forbidden** | Never print the token; never send a message with it by hand except a test Hafiz asked for; never change `ALERTS_MODE` without his approval |
 
 ---
 
@@ -669,6 +704,9 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
 | `cloudflare-access-write` | `cloudflare-access-write.conf` | write (reads auto) | Yes: per change to the login gate |
 | `status-robot-sender` | `status-robot-sender.conf` | server job | Never for the server job; agents only test the gate |
+| `status-notes-claude`, `status-notes-codex` | `status-notes-<agent>.conf` | auto-write (own notes) | Never for a truthful note about the agent's own work |
+| `github-status-feed-readonly` | `github-status-feed-readonly.conf` | status page only | Not used by agents |
+| `telegram-status-alerts` | `telegram-status-alerts.conf` | status page only | Yes: any send by hand, and any change of `ALERTS_MODE` |
 | `healthchecks-write` | `healthchecks-write.conf` | write | Yes: list the exact checks first |
 | `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
