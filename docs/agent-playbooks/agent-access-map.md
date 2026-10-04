@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 32 lanes (30 scoped files under
+Current registry count: 33 lanes (31 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane).
 
@@ -595,6 +595,22 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Tier** | auto-read |
 | **Safe verification** | `GET https://healthchecks.io/api/v3/checks/` returns 200; print names and statuses only |
 | **Forbidden** | Never print the key |
+
+---
+
+### 33. `wasabi-koda-backup-uploader` - Wasabi Koda Backups (Upload And Read Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `wasabi-koda-backup-uploader.conf` (mode 600). Server copy: `/etc/koda-backup/wasabi.env` on the Koda host, root only |
+| **Variable names** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` |
+| **Bucket** | `sifututor-koda-backups`, region `ap-southeast-1`, private, versioning on, objects expire after 90 days |
+| **Credential** | Wasabi user `koda-backup` with policy `koda-backup-only`, created 04/10/2026 with the account keys at Hafiz's request |
+| **Purpose** | The Koda server uploads its daily memory backup and reads it back to prove the copy is restorable |
+| **Tier** | auto-read for listing; write for uploads (done by the server job, not by agents) |
+| **Verified limits (04/10/2026)** | Allowed: list this bucket, upload, read back. Denied: delete, list other buckets, read the Ripple bucket, change versioning |
+| **Restore** | Download `daily/brain-<time>.db` with this key and replace `/opt/koda/brain.db` while Koda is stopped. Not yet rehearsed |
+| **Forbidden** | Never print the key; never widen the policy to delete; never use the account keys in `~/.wasabi-creds` for routine work |
 
 ---
 
