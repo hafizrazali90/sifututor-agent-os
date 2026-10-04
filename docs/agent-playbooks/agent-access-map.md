@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 30 lanes (28 scoped files under
+Current registry count: 32 lanes (30 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane).
 
@@ -568,6 +568,36 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 
 ---
 
+### 31. `healthchecks-write` - Healthchecks.io Checks (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `healthchecks-write.conf` (mode 600) |
+| **Variable names** | `HC_API_KEY` (read-write API key), `HC_PING_KEY` (ping key) |
+| **Host** | `https://healthchecks.io/api/v3` (pings go to `hc-ping.com`) |
+| **Project** | `sifututor-monitoring` (free Hobbyist plan, 20 jobs), created by Hafiz 04/10/2026 |
+| **Purpose** | Create, adjust, pause and list heartbeat checks for jobs on our servers. The ping key lets a job send its "I ran" signal by check name |
+| **Tier** | write |
+| **Hafiz approval** | Yes: list the exact checks (name, period, grace) before creating. The ping line on each server is a separate server-write approval per server |
+| **Safe verification** | `GET /checks/` with the read-only key returns 200. Limits test on 04/10/2026: period 30 d with grace 5 d, and period 5 min with grace 1 min, were accepted; the two test checks were deleted |
+| **Known limits** | The API cannot create integrations (email, Telegram): Hafiz adds them in the dashboard and checks are attached to them. Free plan: 20 jobs, 100 log entries per job |
+| **Forbidden** | Never print a key or a ping address; never delete a check except one this session created; never use more than one account to get around limits |
+
+---
+
+### 32. `healthchecks-readonly` - Healthchecks.io Status (Read-Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `healthchecks-readonly.conf` (mode 600) |
+| **Variable name** | `HC_READONLY_KEY` |
+| **Purpose** | Read check status for the status page and for read-only checks. A read-only key omits ping addresses |
+| **Tier** | auto-read |
+| **Safe verification** | `GET https://healthchecks.io/api/v3/checks/` returns 200; print names and statuses only |
+| **Forbidden** | Never print the key |
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -579,6 +609,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `lls-database-readonly` | `lls-database-readonly.conf` | auto-read | Never |
 | `cloudflare-readonly` | `cloudflare-readonly.conf` | auto-read | Never |
 | `monitoring-readonly` | `monitoring-readonly.conf` | auto-read | Never |
+| `healthchecks-readonly` | `healthchecks-readonly.conf` | auto-read | Never |
 | `payment-readonly` | `payment-readonly.conf` | auto-read | Never |
 | `server-ssh` (reads) | `server-ssh.conf` | auto-read | Never |
 | `backup-readonly` | `backup-readonly.conf` | auto-read | Never |
@@ -592,6 +623,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
+| `healthchecks-write` | `healthchecks-write.conf` | write | Yes: list the exact checks first |
 | `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
