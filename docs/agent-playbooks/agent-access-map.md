@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 29 lanes (27 scoped files under
+Current registry count: 33 lanes (31 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane).
 
@@ -550,6 +550,72 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 
 ---
 
+### 30. `sentry-issues-write` - Sentry Issue Status (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `sentry-issues-write.conf` (mode 600) |
+| **Variable name** | `SENTRY_ISSUES_TOKEN` |
+| **Sentry org / host** | `sifu-edu-learning-sdn-bhd`, region host `https://de.sentry.io` |
+| **Credential** | Sentry Internal Integration `sifututor-issue-resolver`, permission **Issue & Event: Read & Write** only, created by Hafiz 04/10/2026 |
+| **Purpose** | Change the status of named Sentry issues (resolve a test or probe event, reopen one) |
+| **Tier** | write |
+| **Hafiz approval** | Yes: list the exact short IDs first. Used on 04/10/2026 for seven named test issues (RIPPLE-SUITE-1 and -2, LLS-FRONTEND-1, PHP-LARAVEL-LLS-BACKEND-5S, 5R, 5Q, SIMS-SIFU-TUTOR-7R) |
+| **Safe verification** | `GET /api/0/organizations/{org}/issues/?limit=1` returns 200. Never test by writing |
+| **Rules** | One issue per request, after reading its title and confirming it matches the approved description. Never a query-based or bulk update. Never delete issues. Never touch an issue another team owns without that owner's say |
+| **Known limits** | Plain 64-character token with no `sntrys_` prefix is normal for an Internal Integration. A Client Secret is a different value and returns 401. Revoke the integration in Sentry when no longer needed |
+| **Forbidden** | Never print the token; never paste it in chat; save it only through `save-sentry-token.sh`-style prompts that test the token and print no value |
+
+---
+
+### 31. `healthchecks-write` - Healthchecks.io Checks (Write) ⚠️ WRITE
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `healthchecks-write.conf` (mode 600) |
+| **Variable names** | `HC_API_KEY` (read-write API key), `HC_PING_KEY` (ping key) |
+| **Host** | `https://healthchecks.io/api/v3` (pings go to `hc-ping.com`) |
+| **Project** | `sifututor-monitoring` (free Hobbyist plan, 20 jobs), created by Hafiz 04/10/2026 |
+| **Purpose** | Create, adjust, pause and list heartbeat checks for jobs on our servers. The ping key lets a job send its "I ran" signal by check name |
+| **Tier** | write |
+| **Hafiz approval** | Yes: list the exact checks (name, period, grace) before creating. The ping line on each server is a separate server-write approval per server |
+| **Safe verification** | `GET /checks/` with the read-only key returns 200. Limits test on 04/10/2026: period 30 d with grace 5 d, and period 5 min with grace 1 min, were accepted; the two test checks were deleted |
+| **Known limits** | The API cannot create integrations (email, Telegram): Hafiz adds them in the dashboard and checks are attached to them. Free plan: 20 jobs, 100 log entries per job |
+| **Where the ping key lives on servers** | `/etc/sifututor/healthchecks-ping.env` (root, mode 600) on the Ripple host and the Learnest host. Used by `/opt/sifututor-monitoring/job-watcher.sh` (every minute, `/etc/cron.d/sifututor-job-watcher`) and by Koda's `/opt/koda/monitor-check.sh` and `/opt/koda/backup.sh`. The key is passed to curl on standard input, never as an argument. Reviewed watcher source: `Sifututor/sifututor-status`, `server/job-watcher.sh` |
+| **Checks (04/10/2026)** | `koda-memory-check`, `koda-backup`, `ripple-offsite-backup`, `ripple-backup-retention`, `ripple-commitment-fee-settlement`, `ripple-commitment-fee-attention`, `lls-db-backup`, `kelasapp-db-backup`, and `lls-scheduler` (created, not wired: needs a signal from inside the Learnest app) |
+| **Forbidden** | Never print a key or a ping address; never delete a check except one this session created; never use more than one account to get around limits |
+
+---
+
+### 32. `healthchecks-readonly` - Healthchecks.io Status (Read-Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `healthchecks-readonly.conf` (mode 600) |
+| **Variable name** | `HC_READONLY_KEY` |
+| **Purpose** | Read check status for the status page and for read-only checks. A read-only key omits ping addresses |
+| **Tier** | auto-read |
+| **Safe verification** | `GET https://healthchecks.io/api/v3/checks/` returns 200; print names and statuses only |
+| **Forbidden** | Never print the key |
+
+---
+
+### 33. `wasabi-koda-backup-uploader` - Wasabi Koda Backups (Upload And Read Only)
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | `wasabi-koda-backup-uploader.conf` (mode 600). Server copy: `/etc/koda-backup/wasabi.env` on the Koda host, root only |
+| **Variable names** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` |
+| **Bucket** | `sifututor-koda-backups`, region `ap-southeast-1`, private, versioning on, objects expire after 90 days |
+| **Credential** | Wasabi user `koda-backup` with policy `koda-backup-only`, created 04/10/2026 with the account keys at Hafiz's request |
+| **Purpose** | The Koda server uploads its daily memory backup and reads it back to prove the copy is restorable |
+| **Tier** | auto-read for listing; write for uploads (done by the server job, not by agents) |
+| **Verified limits (04/10/2026)** | Allowed: list this bucket, upload, read back. Denied: delete, list other buckets, read the Ripple bucket, change versioning |
+| **Restore** | 1. Stop Koda. 2. Download the wanted `daily/brain-<time>.db` with this key and compare its sha256 with the object's `sha256` metadata. 3. Replace `/opt/koda/brain.db` (and remove any `-wal` and `-shm` beside it), owner root, mode 600. 4. Start Koda and run `scripts/agent-checks/koda health`. Rehearsed 04/10/2026 up to step 2 in a scratch folder: 73 MB downloaded in 3 s, checksum matched, full integrity check ok, 50 of 50 schema objects, 6,848 memories (equal to the backup's own record), text search working. The swap under a stopped Koda (steps 3 and 4) has not been done. A daily backup means up to 24 hours of new memories can be lost |
+| **Forbidden** | Never print the key; never widen the policy to delete; never use the account keys in `~/.wasabi-creds` for routine work |
+
+---
+
 ## Quick Reference: Approval Matrix
 
 | Lane | Conf file | Tier | Approval |
@@ -561,6 +627,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `lls-database-readonly` | `lls-database-readonly.conf` | auto-read | Never |
 | `cloudflare-readonly` | `cloudflare-readonly.conf` | auto-read | Never |
 | `monitoring-readonly` | `monitoring-readonly.conf` | auto-read | Never |
+| `healthchecks-readonly` | `healthchecks-readonly.conf` | auto-read | Never |
 | `payment-readonly` | `payment-readonly.conf` | auto-read | Never |
 | `server-ssh` (reads) | `server-ssh.conf` | auto-read | Never |
 | `backup-readonly` | `backup-readonly.conf` | auto-read | Never |
@@ -573,6 +640,8 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
+| `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
+| `healthchecks-write` | `healthchecks-write.conf` | write | Yes: list the exact checks first |
 | `monitoring-project-settings` (server changes, probes) | `kelasapp-betterstack-prod.conf`, `lls-sentry-*.conf`, `ripple-sentry.conf` | write | Yes: state exact action; reads and local probes never |
 | `cloudflare-dns-write` | `cloudflare-dns-write.conf` | write | Yes — state record |
 | `cloudflare-sifututormy-dns-write` | `cloudflare-sifututormy-dns-write.conf` | write | Yes — state record |
