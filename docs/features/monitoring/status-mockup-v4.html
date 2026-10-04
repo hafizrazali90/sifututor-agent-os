@@ -1,0 +1,461 @@
+<title>Sifututor Status Mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: desktop = system map as a full-bleed header with live data flowing along the links and a floating drawer. Phone = a health ring, swipeable system cards, a bottom sheet for detail and a tab bar. Below both: a change feed with plain words first, technical line second. Single dark theme by choice. */
+:root{
+  color-scheme:dark;
+  --bg:#0f0d17; --canvas:#121019; --surface:#1a1727; --raised:#221e33; --line:#2c2742; --line2:#3d3760;
+  --fg:#ece9f7; --mute:#9a92b4; --faint:#665f86; --accent:#a78bfa;
+  --ok:#3ecf8e; --warn:#f5b84b; --bad:#f2647a; --nodata:#655f7d; --nodatat:#a8a2c2;
+  --sans:"Geist",system-ui,-apple-system,sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--sans);padding-block:0 64px}
+button{font:inherit;color:inherit}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(62,207,142,.6)}70%{box-shadow:0 0 0 7px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
+@keyframes alarm{0%,100%{opacity:.15}50%{opacity:.7}}
+@keyframes grow{from{transform:scaleY(.15)}to{transform:scaleY(1)}}
+@keyframes wide{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes flow{to{stroke-dashoffset:-22}}
+/* shared bits */
+.gl{width:30px;height:30px;border-radius:9px;background:var(--raised);border:1px solid var(--line2);display:grid;place-items:center;font:700 12px var(--sans);color:var(--accent);flex:none}
+.pill{font:500 11px var(--mono);border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ok{color:var(--ok);background:rgba(62,207,142,.12)}.warn{color:var(--warn);background:rgba(245,184,75,.13)}
+.bad{color:var(--bad);background:rgba(242,100,122,.14)}.nodata{color:var(--nodatat);background:rgba(101,95,125,.28)}
+.chip{font:12px var(--mono);color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface);white-space:nowrap}
+.chip b{color:var(--fg);font-weight:500}
+.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pulse 2.4s infinite}
+.k{font:10.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:0 0 7px}
+/* header canvas */
+.hero{position:relative;min-height:clamp(620px,84vh,800px);padding:0 20px 18px;display:grid;grid-template-columns:minmax(0,1fr) 410px;grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:20px;
+  background-color:var(--canvas);background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:22px 22px;border-bottom:1px solid var(--line)}
+.top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-block:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600}
+.mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#a78bfa,#6d4fe0);display:grid;place-items:center;font:700 13px var(--sans);color:#0f0d17}
+.sl{color:var(--faint);font-weight:400}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.verdict{grid-column:1;display:flex;justify-content:space-between;align-items:flex-end;gap:16px 28px;flex-wrap:wrap;padding-top:6px;z-index:1;animation:fade .5s both}
+.verdict h1{margin:0;font-size:clamp(1.7rem,3.2vw,2.5rem);font-weight:600;letter-spacing:-.03em;line-height:1.1;text-wrap:balance}
+.verdict h1 em{font-style:normal;color:var(--bad)}
+.verdict p{margin:8px 0 0;color:var(--mute);max-width:56ch}
+.counts{display:flex;gap:20px}
+.count b{display:block;font:600 1.6rem/1 var(--sans);font-variant-numeric:tabular-nums}
+.count small{font:10.5px var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.09em}
+.mapbox{grid-column:1;grid-row:3;min-width:0;overflow-x:auto;align-self:center;z-index:1}
+.mapbox svg{display:block;width:100%;height:auto;min-width:660px;max-height:560px}
+.legend{grid-column:1;grid-row:4;display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;font:11.5px var(--mono);color:var(--mute);z-index:1}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.legend .dsh{width:22px;height:0;border-top:1.5px dashed var(--faint);border-radius:0;vertical-align:middle}
+.legend button{all:unset;cursor:pointer;font:11.5px var(--mono);color:var(--fg);border:1px solid var(--line2);border-radius:999px;padding:3px 11px;background:var(--surface)}
+.legend button:hover{border-color:var(--accent)}
+.legend button:focus-visible{outline:2px solid var(--accent)}
+/* nodes */
+.n{cursor:pointer;transition:opacity .25s;animation:rise .55s both}
+.n g.lift{transition:transform .2s;transform-box:fill-box;transform-origin:center}
+.n:hover g.lift{transform:translateY(-3px)}
+.n rect.b{fill:var(--surface);stroke:var(--line2);stroke-width:1;transition:stroke .2s}
+.n:hover rect.b{stroke:var(--mute)}
+.n.on rect.b{stroke:var(--accent);stroke-width:1.7;filter:drop-shadow(0 0 16px rgba(167,139,250,.32))}
+.n.isbad rect.b{stroke:var(--bad)}
+.n.isbad.on rect.b{filter:drop-shadow(0 0 16px rgba(242,100,122,.35))}
+.n rect.halo{fill:none;stroke:var(--bad);stroke-width:2;animation:alarm 2.2s infinite}
+.n:focus{outline:none}.n:focus-visible rect.b{stroke:var(--accent);stroke-width:2}
+.dim{opacity:.42}
+.n .nm{fill:var(--fg);font:600 15px var(--sans)}
+.n .st{font:500 11px var(--mono)}
+.n .mt{fill:var(--mute);font:11px var(--mono)}
+.n .ic{fill:var(--raised);stroke:var(--line2)}
+.n .ig{fill:var(--accent);font:700 12px var(--sans)}
+.n .day{transform-box:fill-box;transform-origin:bottom;animation:grow .5s both}
+.e{stroke:var(--line2);stroke-width:1.5;fill:none;transition:opacity .25s,stroke .2s}
+.e.run{stroke-dasharray:3 8;stroke:var(--faint);animation:flow 1.4s linear infinite}
+.e.d{stroke-dasharray:5 6;stroke:var(--faint)}
+.e.broken{stroke:var(--bad);stroke-dasharray:2 7}
+.e.hot{stroke:var(--accent);stroke-width:2}
+.e.broken.hot{stroke:var(--bad)}
+.dotp{transition:opacity .25s}
+.el{transition:opacity .25s}
+.el rect{fill:var(--canvas);stroke:var(--line)}
+.el text{fill:var(--mute);font:10.5px var(--mono)}
+.el.brk rect{stroke:rgba(242,100,122,.5)}.el.brk text{fill:var(--bad)}
+.lane{fill:none;stroke:var(--line2);stroke-dasharray:3 6}
+.lanet{fill:var(--faint);font:10.5px var(--mono);letter-spacing:.08em}
+/* drawer (desktop) and bottom sheet (phone) */
+.drawer{grid-column:2;grid-row:2/5;align-self:start;margin-top:6px;border:1px solid var(--line2);border-radius:16px;background:rgba(26,23,39,.95);backdrop-filter:blur(8px);box-shadow:0 24px 60px rgba(0,0,0,.45);min-width:0;overflow:hidden;z-index:2}
+.grab,.shut{display:none}
+.dh{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.dh h2{margin:0;font-size:1.12rem;font-weight:600;flex:1;min-width:0}
+.db{padding:16px 18px 18px;display:flex;flex-direction:column;gap:16px;animation:fade .3s both}
+.say{margin:0;font-size:.98rem}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--raised);border-radius:10px;padding:10px 12px}
+.tile b{display:block;font:600 1.3rem/1.2 var(--sans);font-variant-numeric:tabular-nums}
+.tile small{font:11.5px/1.3 var(--sans);color:var(--mute);display:block}
+.days{display:grid;grid-template-columns:repeat(30,1fr);gap:2px}
+.days i{height:28px;border-radius:2px;background:var(--line);transform-origin:bottom;animation:grow .45s both;cursor:pointer;transition:filter .15s}
+.days i:hover{filter:brightness(1.5)}
+.days i.ok{background:var(--ok)}.days i.warn{background:var(--warn)}.days i.bad{background:var(--bad)}
+.ax{font:11.5px var(--sans);color:var(--mute);margin-top:7px;min-height:1.5em}
+.ax b{color:var(--fg);font-weight:500}
+.chk{margin:0;padding:0;list-style:none}
+.chk li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.chk li:first-child{border-top:0;padding-top:0}
+.chk small{grid-column:1/-1;font:11px var(--mono);color:var(--faint)}
+.rel{display:flex;gap:6px;flex-wrap:wrap}
+.rel span{font:12px var(--sans);color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+/* phone-only pieces */
+.mhero,.cardsx,.tabbar,.scrim,.swipe{display:none}
+/* below */
+.wrap{max-width:1280px;margin:0 auto;padding-inline:20px;padding-block:26px 0;display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:20px;align-items:start}
+.sech{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sech h3,.card h3{margin:0;font-size:1.05rem;font-weight:600;letter-spacing:-.01em}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{all:unset;cursor:pointer;font:12px var(--mono);color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:3px 11px;transition:all .15s}
+.filters button:hover{color:var(--fg)}
+.filters button[aria-pressed="true"]{color:var(--fg);border-color:var(--accent);background:rgba(167,139,250,.12)}
+.filters button:focus-visible{outline:2px solid var(--accent)}
+.day{font:10.5px var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:18px 0 8px}
+#feed .day:first-child{margin-top:0}
+.ev{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:8px;transition:border-color .15s,transform .15s;animation:fade .35s both}
+.ev:hover{border-color:var(--line2);transform:translateX(2px)}
+.ev[open]{border-color:var(--line2)}
+.ev summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 14px;padding:13px 16px;align-items:start}
+.ev summary::-webkit-details-marker{display:none}
+.ev summary:focus-visible{outline:2px solid var(--accent);border-radius:12px}
+.ev time{font:12px var(--mono);color:var(--mute);padding-top:2px}
+.hd{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sys{font:500 11px var(--mono);color:var(--fg);background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:1px 7px}
+.vb{font:500 11px var(--mono);border-radius:6px;padding:1px 7px}
+.vb.rel{color:var(--accent);background:rgba(167,139,250,.14)}.vb.cfg{color:var(--warn);background:rgba(245,184,75,.13)}
+.vb.fail{color:var(--bad);background:rgba(242,100,122,.14)}.vb.add{color:var(--ok);background:rgba(62,207,142,.12)}
+.ttl{font-weight:500;margin:6px 0 3px;font-size:1rem}
+.why{color:var(--mute);margin:0}
+.meta{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;font:12px var(--sans);color:var(--faint)}
+.meta b{color:var(--mute);font-weight:400}
+.cv{font:16px/1 var(--mono);color:var(--faint);align-self:center;transition:transform .2s}
+.ev[open] .cv{color:var(--accent);transform:rotate(90deg)}
+.more{border-top:1px solid var(--line);padding:12px 16px 14px 82px;color:var(--mute);animation:fade .25s both}
+.more ul{margin:0 0 10px;padding-left:1.1em}
+.tech{font:11.5px var(--mono);color:var(--faint);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tech s{text-decoration:none;color:var(--mute);background:var(--raised);border-radius:5px;padding:1px 6px}
+.tech u{text-decoration:none;color:var(--fg);background:rgba(167,139,250,.16);border-radius:5px;padding:1px 6px}
+.rail{display:flex;flex-direction:column;gap:16px}
+.card{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px 18px;min-width:0}
+.card h3{margin-bottom:12px}
+.need{display:flex;flex-direction:column;gap:10px}
+.it{border-radius:10px;padding:10px 12px;background:var(--raised)}
+.it.hot{background:rgba(242,100,122,.1);box-shadow:inset 0 0 0 1px rgba(242,100,122,.35)}
+.it b{font-weight:500;display:block}
+.it span{color:var(--mute);font-size:.93rem}
+.rn{display:flex;flex-direction:column;gap:12px}
+.rn .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:baseline}
+.rn .dd{font:12px var(--mono);color:var(--mute);font-variant-numeric:tabular-nums}
+.rn .tr{grid-column:1/-1;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.rn .tr i{display:block;height:100%;border-radius:3px;transform-origin:left;animation:wide .8s .2s both}
+.rn small{grid-column:1/-1;color:var(--faint);font-size:.86rem}
+.foot{grid-column:1/-1;font:11.5px var(--mono);color:var(--faint);text-align:center;padding-top:8px}
+/* phone */
+@media (max-width:900px){
+  body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+  .hero{display:block;min-height:0;padding:0 16px 18px}
+  .verdict,.mapbox,.legend{display:none}
+  .mhero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding-top:6px;animation:fade .5s both}
+  .ring{width:min(64vw,250px);height:auto;display:block;filter:drop-shadow(0 0 26px rgba(242,100,122,.22))}
+  .ring .seg{fill:none;stroke-width:13;stroke-linecap:round;transition:stroke-width .2s}
+  .ring text.big{fill:var(--fg);font:600 46px var(--sans)}
+  .ring text.lbl{fill:var(--mute);font:11px var(--mono);letter-spacing:.1em}
+  .mhero h1{margin:8px 0 0;font-size:1.55rem;font-weight:600;letter-spacing:-.025em;line-height:1.15;text-wrap:balance}
+  .mhero h1 em{font-style:normal;color:var(--bad)}
+  .mhero p{margin:4px 0 0;color:var(--mute);max-width:36ch}
+  .mcounts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+  .cardsx{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 16px 4px;margin-inline:-16px;scrollbar-width:none}
+  .cardsx::-webkit-scrollbar{display:none}
+  .cardsx button{all:unset;cursor:pointer;flex:0 0 76%;max-width:300px;scroll-snap-align:center;background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;animation:rise .5s both}
+  .cardsx button.isbad{border-color:rgba(242,100,122,.6);box-shadow:0 0 22px rgba(242,100,122,.14)}
+  .cardsx button:active{transform:scale(.98)}
+  .cardsx .hr{display:flex;align-items:center;gap:10px}
+  .cardsx .hr b{flex:1;font-weight:600;font-size:1.02rem}
+  .cardsx p{margin:0;color:var(--mute);font-size:.93rem;min-height:2.8em}
+  .cardsx .mini{display:grid;grid-template-columns:repeat(30,1fr);gap:2px}
+  .cardsx .mini i{height:18px;border-radius:2px;background:var(--line);transform-origin:bottom;animation:grow .5s both}
+  .cardsx .mini i.ok{background:var(--ok)}.cardsx .mini i.warn{background:var(--warn)}.cardsx .mini i.bad{background:var(--bad)}
+  .cardsx .tap{font:11px var(--mono);color:var(--accent)}
+  .swipe{display:block;text-align:center;font:11px var(--mono);color:var(--faint);margin-top:8px}
+  .scrim{display:block;position:fixed;inset:0;background:rgba(8,6,14,.6);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;left:0;right:0;bottom:0;margin:0;border-radius:20px 20px 0 0;border-width:1px 0 0;max-height:84vh;overflow-y:auto;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);z-index:21;background:var(--surface);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .drawer.open{transform:none}
+  .grab{display:block;width:40px;height:4px;border-radius:2px;background:var(--line2);margin:9px auto 0}
+  .shut{all:unset;display:block;cursor:pointer;width:30px;height:30px;border-radius:50%;background:var(--raised);text-align:center;font:16px/30px var(--mono);color:var(--mute)}
+  .wrap{grid-template-columns:minmax(0,1fr);padding-inline:16px}
+  .ev summary{grid-template-columns:44px minmax(0,1fr)}.cv{display:none}.more{padding-left:16px}
+  .tabbar{display:grid;grid-template-columns:repeat(3,1fr);position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:rgba(34,30,51,.92);backdrop-filter:blur(10px);border:1px solid var(--line2);border-radius:18px;padding:6px;z-index:15;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  .tabbar a{text-decoration:none;color:var(--mute);text-align:center;padding:9px 4px;border-radius:13px;font-size:.86rem;font-weight:500;position:relative}
+  .tabbar a.cur{background:var(--raised);color:var(--fg)}
+  .tabbar a sup{position:absolute;top:3px;right:6%;background:var(--bad);color:#12050a;border-radius:999px;font:700 10px/15px var(--sans);min-width:15px;height:15px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+
+<section class="hero" id="systems">
+  <header class="top">
+    <div class="brand"><div class="mark">S</div>Sifututor <span class="sl">/</span> status</div>
+    <div class="chips">
+      <span class="chip"><span class="live"></span>checked <b>02:55 MYT</b></span>
+      <span class="chip">updates every 5 min</span>
+    </div>
+  </header>
+
+  <div class="verdict">
+    <div>
+      <h1><em>One system needs you.</em><br>The rest are running.</h1>
+      <p>Owner Analytics could not finish last night's data update. Owners still see yesterday's numbers, and last night's backup was not made.</p>
+    </div>
+    <div class="counts">
+      <div class="count"><b style="color:var(--ok)" data-n="5">5</b><small>Online</small></div>
+      <div class="count"><b style="color:var(--faint)" data-n="0">0</b><small>Degraded</small></div>
+      <div class="count"><b style="color:var(--bad)" data-n="1">1</b><small>Down</small></div>
+      <div class="count"><b style="color:var(--nodatat)" data-n="2">2</b><small>No data</small></div>
+    </div>
+  </div>
+
+  <div class="mhero">
+    <svg class="ring" id="ring" viewBox="0 0 220 220" role="img" aria-label="5 online, 1 down, 2 with no data"></svg>
+    <h1><em>One system needs you.</em> The rest are running.</h1>
+    <p>Owner Analytics could not finish last night's data update.</p>
+    <div class="mcounts"><span class="pill ok">5 online</span><span class="pill bad">1 down</span><span class="pill nodata">2 no data</span></div>
+  </div>
+  <div class="cardsx" id="cardsx"></div>
+  <span class="swipe" id="swipe">swipe for more systems · tap a card for detail</span>
+
+  <div class="mapbox"><svg id="map" viewBox="0 0 1060 590" role="img" aria-label="Map of systems and what feeds what"></svg></div>
+
+  <div class="legend">
+    <span><i style="background:var(--ok)"></i>Online</span>
+    <span><i style="background:var(--warn)"></i>Degraded</span>
+    <span><i style="background:var(--bad)"></i>Down</span>
+    <span><i style="background:var(--nodata)"></i>No data</span>
+    <span><i class="dsh"></i>being tested, not live</span>
+    <span>moving dots = data flowing</span>
+    <button id="all">Show whole map</button>
+  </div>
+
+  <aside class="drawer" id="drawer" aria-live="polite"></aside>
+</section>
+<div class="scrim" id="scrim"></div>
+
+<div class="wrap">
+  <section id="changes">
+    <div class="sech">
+      <h3>What changed</h3>
+      <div class="filters" id="filters">
+        <button aria-pressed="true" data-f="all">All</button>
+        <button aria-pressed="false" data-f="SIMS">SIMS</button>
+        <button aria-pressed="false" data-f="Ripple">Ripple</button>
+        <button aria-pressed="false" data-f="Analytics">Analytics</button>
+        <button aria-pressed="false" data-f="Monitoring">Monitoring</button>
+      </div>
+    </div>
+    <div id="feed"></div>
+  </section>
+
+  <div class="rail" id="needs">
+    <section class="card">
+      <h3>Needs you</h3>
+      <div class="need">
+        <div class="it hot"><b>Analytics missed last night's update</b><span>No backup was made. The session that owns it has the details and will propose a fix.</span></div>
+        <div class="it"><b>Ripple's server storage is 77% full</b><span>Three new versions tonight each left a safety copy. The nightly cleanup runs at 03:17.</span></div>
+      </div>
+    </section>
+    <section class="card">
+      <h3>Running out soon</h3>
+      <div class="rn">
+        <div class="r"><span>Ripple's security certificate</span><span class="dd">04/11 · 32 days</span><div class="tr"><i style="width:64%;background:var(--warn)"></i></div><small>The padlock in the browser. Usually renews by itself.</small></div>
+        <div class="r"><span>nakngaji.my web address</span><span class="dd">22/11 · 50 days</span><div class="tr"><i style="width:44%;background:var(--warn)"></i></div><small>You renew this yourself.</small></div>
+        <div class="r"><span>tutorla.tech web address</span><span class="dd">02/12 · 60 days</span><div class="tr"><i style="width:33%;background:var(--accent)"></i></div><small>SIMS and Finch live on it. You renew this yourself.</small></div>
+      </div>
+    </section>
+    <section class="card">
+      <h3>Can we trust this page</h3>
+      <div class="rn">
+        <div class="r"><span>Websites answering</span><span class="dd">10 of 10</span><div class="tr"><i style="width:100%;background:var(--ok)"></i></div><small>An outside service opens each site every 3 minutes.</small></div>
+        <div class="r"><span>Jobs that reported in</span><span class="dd">9 of 10</span><div class="tr"><i style="width:90%;background:var(--bad)"></i></div><small>Each job sends an "I ran" signal, called a heartbeat. One is missing.</small></div>
+        <div class="r"><span>Error tracker allowance</span><span class="dd">837 of 5,000</span><div class="tr"><i style="width:17%;background:var(--accent)"></i></div><small>Sentry records app errors. Free plan, resets 21/10.</small></div>
+        <div class="r"><span>Backups being watched</span><span class="dd">2 of 6 systems</span><div class="tr"><i style="width:33%;background:var(--nodata)"></i></div><small>Learnest, Kelasapp, Finch and Koda are not watched yet.</small></div>
+      </div>
+    </section>
+  </div>
+  <div class="foot">Static design mockup. Nothing is connected. Readings taken 04/10/2026 around 02:55 MYT.</div>
+</div>
+
+<nav class="tabbar" aria-label="Sections">
+  <a href="#systems" class="cur">Systems</a>
+  <a href="#changes">Changes</a>
+  <a href="#needs">Needs you<sup>2</sup></a>
+</nav>
+
+<script>
+const calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const C={ok:"var(--ok)",warn:"var(--warn)",bad:"var(--bad)",nodata:"var(--nodata)"};
+const W={ok:"Online",warn:"Degraded",bad:"Down",nodata:"No data"};
+const NOTE={sims:{28:"03/10: a queue check failed 32 times. Nobody was affected."},ripple:{28:"03/10: server storage reached 88% full."},
+  analytics:{28:"03/10: health check failed at 75% storage.",29:"04/10: the nightly data update failed."}};
+const S={
+ analytics:{n:"Owner Analytics",g:"O",x:790,y:310,st:"bad",m:"update failed",short:"Last night's data update did not finish.",d:{29:"bad",28:"warn",27:"ok"},
+  say:"Last night's data update stopped just before the end. Owners still see yesterday's numbers, and the nightly backup was not made.",
+  t:[["100 of 101","data tables updated before it stopped"],["66%","of server storage used, steady"]],
+  c:[["Last night's data update","bad","failed 02:46","nightly refresh, stage main_pipeline"],["Daily \"I ran\" signal","bad","missing","heartbeat: Daily Pipeline"],["Last night's backup","bad","not made",""],["Temporary data cleaned up","ok","yes, 86 times","sync_seen_ids purge, 0 failures"],["Server health signal","ok","arriving","heartbeat: KVM8 Health"]],
+  rel:["copies its data from SIMS every night"]},
+ sims:{n:"SIMS",g:"S",x:415,y:165,st:"ok",m:"answers in 0.30s",short:"Staff can log in and timed jobs are running.",d:{29:"ok",28:"warn",27:"ok"},
+  say:"Staff can log in and the timed jobs are running. One new error was recorded at 02:03, caused by a one-off check script, not by the app.",
+  t:[["0.30s","to open the staff site"],["0.41","server load, low is good"]],
+  c:[["Staff can log in","ok","yes","uptime check: st.admin login"],["Timed jobs running","ok","yes","scheduler heartbeat"],["Backups made on time","ok","6 of 6","6 backup heartbeats"],["Errors recorded","warn","1 new","Sentry issue, one-off script 02:03"]],
+  rel:["Ripple reads logins and payments from it","Analytics copies its data nightly","Finch sends payment receipts to it","The tutor and parent apps talk to it"]},
+ ripple:{n:"Ripple",g:"R",x:790,y:60,st:"ok",m:"answers in 0.06s",short:"Staff can log in. Server storage is 77% full.",d:{29:"ok",28:"warn",27:"ok"},
+  say:"Staff can log in and no page is failing. Three new versions tonight each left a safety copy, so the server's storage is 77% full.",
+  t:[["0.06s","to open the login page"],["77%","of server storage used"]],
+  c:[["Staff can log in","ok","yes","uptime check: /login"],["Pages failing","ok","none","0 server errors (5xx)"],["Server storage","warn","77% full","93 GB free, cleanup 03:17"],["Copy kept off the server","ok","00:15","offsite backup to Wasabi"]],
+  rel:["reads logins and payments from SIMS","runs the outreach robot","Finch receipts are being tested, not live"]},
+ robot:{n:"Outreach robot",g:"O",x:810,y:178,w:210,h:66,st:"ok",m:"resting",short:"Running but resting until 09:00.",d:{},
+  say:"The robot that messages tutors is running, but resting. It only sends between 09:00 and 21:00.",
+  t:[["99","batches of work done since 02:30"],["0","batches failed"]],
+  c:[["Robot is running","ok","yes","pm2 worker online, 0 restarts"],["Paused by someone","ok","no","pause marker absent"],["Allowed to send now","nodata","no, until 09:00","sending window 09:00 to 21:00 MYT"]],
+  rel:["runs inside Ripple"]},
+ finch:{n:"Finch",g:"F",x:40,y:60,st:"ok",m:"answers in 0.07s",short:"The inbox is answering. Backups are not watched.",d:{29:"ok",28:"ok",27:"ok"},
+  say:"The inbox is answering quickly and has run 28 hours without a restart. Nobody is watching its backups yet.",
+  t:[["0.07s","to answer"],["28h","running without a restart"]],
+  c:[["Inbox answering","ok","yes","uptime check: /api/health"],["Background worker","ok","running","status-worker container healthy"],["Backups","nodata","not watched","no heartbeat yet"]],
+  rel:["sends payment receipts to SIMS","Ripple receipts are being tested, not live"]},
+ apps:{n:"Tutor + parent apps",g:"A",x:40,y:270,st:"nodata",m:"nothing reports",short:"Nothing reports on the apps yet.",d:{},
+  say:"Nothing reports on the apps yet, so we do not know how they are doing. Not knowing is not the same as healthy.",
+  t:[["—","app crashes"],["—","app errors"]],
+  c:[["App crashes","nodata","not connected","Firebase Crashlytics not linked"],["App errors","nodata","not connected","Sentry not linked for the apps"]],
+  rel:["both apps talk to SIMS"]},
+ lls:{n:"Learnest",g:"L",x:300,y:470,st:"ok",m:"answers in 0.12s",short:"Website and login service are answering.",d:{29:"ok",28:"ok",27:"ok"},
+  say:"The website and the service behind logins both answer. The midnight tidy-up removed 6 expired parent links and no users.",
+  t:[["0.12s","to open the website"],["6","expired parent links removed at 00:00"]],
+  c:[["Website opens","ok","yes","uptime check: learnest.my"],["Logins and payments service","ok","answering","uptime check: api health"],["Background jobs","ok","running","queue worker, restarts hourly by design"],["Backups","nodata","not watched","no heartbeat yet"]],
+  rel:["stands alone"]},
+ kelas:{n:"Kelasapp",g:"K",x:560,y:470,st:"ok",m:"answers in 0.21s",short:"Answering. Error alerts are switched on.",d:{29:"ok",28:"ok",27:"ok"},
+  say:"Kelasapp is answering and will email you if it logs an error. Its speed measurements are being thrown away by the error tracker, which does not affect error alerts.",
+  t:[["0.21s","to answer"],["1,684","speed records thrown away today"]],
+  c:[["App answering","ok","yes","uptime check: /api/health"],["Emails you on errors","ok","on, tested 03/10","Better Stack alert"],["Speed measurements","warn","thrown away","Sentry discards transactions"],["Backups","nodata","not watched","no heartbeat yet"]],
+  rel:["stands alone"]}
+};
+const E=[
+ {a:"finch",b:"sims",d:"M270 108 C340 108 350 195 415 200",l:"payment receipts",x:330,y:150},
+ {a:"finch",b:"ripple",d:"M270 80 H790",l:"payment receipts · being tested, not live",x:530,y:80,dash:1},
+ {a:"apps",b:"sims",d:"M270 318 C350 318 350 235 415 228",l:"apps talk to SIMS",x:326,y:292},
+ {a:"sims",b:"ripple",d:"M645 195 C720 195 715 108 790 108",l:"logins · payments",x:712,y:150},
+ {a:"sims",b:"analytics",d:"M645 228 C720 228 715 358 790 358",l:"nightly copy · failed",x:712,y:300,broken:1},
+ {a:"ripple",b:"robot",d:"M905 156 V178",plain:1}
+];
+const order=["analytics","sims","ripple","robot","finch","lls","kelas","apps"];
+const NS="http://www.w3.org/2000/svg",map=document.getElementById("map");
+function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+const defs=el("defs",{}),mk=el("marker",{id:"ar",viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto"});
+mk.appendChild(el("path",{d:"M0 1 L9 5 L0 9 z",fill:"#665f86"}));defs.appendChild(mk);map.appendChild(defs);
+map.appendChild(el("rect",{class:"lane",x:270,y:440,width:550,height:140,rx:14}));
+map.appendChild(el("text",{class:"lanet",x:286,y:460},"STAND ALONE"));
+E.forEach((e,i)=>{const live=!e.dash&&!e.broken&&!e.plain;
+  const p=el("path",{class:"e"+(e.dash?" d":"")+(e.broken?" broken":"")+(live?" run":""),d:e.d,"data-a":e.a,"data-b":e.b});if(!e.plain)p.setAttribute("marker-end","url(#ar)");map.appendChild(p);
+  if(live&&!calm){for(let j=0;j<2;j++){const c=el("circle",{class:"dotp",r:3,fill:"#a78bfa","data-a":e.a,"data-b":e.b});const m=el("animateMotion",{dur:"3.2s",begin:(j*1.6+i*.3)+"s",repeatCount:"indefinite",path:e.d});c.appendChild(m);map.appendChild(c);}}
+  if(e.l){const w=e.l.length*6.3+16,g=el("g",{class:"el"+(e.broken?" brk":""),"data-a":e.a,"data-b":e.b});g.appendChild(el("rect",{x:e.x-w/2,y:e.y-10,width:w,height:19,rx:9}));g.appendChild(el("text",{x:e.x,y:e.y+3.5,"text-anchor":"middle"},e.l));map.appendChild(g);}});
+order.forEach((k,i)=>{const s=S[k],w=s.w||230,h=s.h||96,g=el("g",{class:"n"+(s.st==="bad"?" isbad":""),tabindex:"0","data-k":k,role:"button","aria-label":s.n+", "+W[s.st],style:"animation-delay:"+(i*70)+"ms"}),L=el("g",{class:"lift"});
+  if(s.st==="bad")L.appendChild(el("rect",{class:"halo",x:s.x-5,y:s.y-5,width:w+10,height:h+10,rx:18}));
+  L.appendChild(el("rect",{class:"b",x:s.x,y:s.y,width:w,height:h,rx:14}));
+  L.appendChild(el("rect",{class:"ic",x:s.x+14,y:s.y+14,width:28,height:28,rx:8}));
+  L.appendChild(el("text",{class:"ig",x:s.x+28,y:s.y+33,"text-anchor":"middle"},s.g));
+  L.appendChild(el("text",{class:"nm",x:s.x+52,y:s.y+27},s.n));
+  L.appendChild(el("circle",{cx:s.x+56,cy:s.y+41,r:3.5,fill:C[s.st]}));
+  L.appendChild(el("text",{class:"st",x:s.x+65,y:s.y+45,fill:s.st==="nodata"?"#a8a2c2":C[s.st]},W[s.st]));
+  L.appendChild(el("text",{class:"mt",x:s.x+w-14,y:s.y+45,"text-anchor":"end"},s.m));
+  if(!s.h){const bw=(w-28-29*2)/30;for(let j=0;j<30;j++)L.appendChild(el("rect",{class:"day",x:s.x+14+j*(bw+2),y:s.y+66,width:bw,height:16,rx:1.5,fill:s.d[j]?C[s.d[j]]:"#2c2742",style:"animation-delay:"+(300+j*14)+"ms"}));}
+  g.appendChild(L);g.addEventListener("click",ev=>{ev.stopPropagation();show(k);});g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();show(k);}});
+  map.appendChild(g);});
+const drawer=document.getElementById("drawer"),scrim=document.getElementById("scrim"),cardsx=document.getElementById("cardsx");
+function bars(s,cls){let d="";for(let i=0;i<30;i++)d+='<i class="'+(s.d[i]||"")+'" data-i="'+i+'" style="animation-delay:'+(i*12)+'ms"></i>';return '<div class="'+cls+'">'+d+'</div>';}
+order.forEach((k,i)=>{const s=S[k],b=document.createElement("button");b.dataset.k=k;if(s.st==="bad")b.className="isbad";b.style.animationDelay=(i*60)+"ms";
+  b.innerHTML='<span class="hr"><span class="gl">'+s.g+'</span><b>'+s.n+'</b><span class="pill '+s.st+'">'+W[s.st]+'</span></span><p>'+s.short+'</p>'+bars(s,"mini")+'<span class="tap">'+s.m+' · tap for detail</span>';
+  b.addEventListener("click",()=>{show(k);drawer.classList.add("open");scrim.classList.add("open");});cardsx.appendChild(b);});
+function shut(){drawer.classList.remove("open");scrim.classList.remove("open");}
+scrim.addEventListener("click",shut);
+function day(i){const d=new Date(2026,8,5+i);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
+function show(k){const s=S[k];
+  drawer.innerHTML='<span class="grab"></span><div class="dh"><span class="gl">'+s.g+'</span><h2>'+s.n+'</h2><span class="pill '+s.st+'">'+W[s.st]+'</span><button class="shut" aria-label="Close">×</button></div>'
+  +'<div class="db"><p class="say">'+s.say+'</p>'
+  +'<div class="tiles">'+s.t.map(t=>'<div class="tile"><b>'+t[0]+'</b><small>'+t[1]+'</small></div>').join("")+'</div>'
+  +'<div><p class="k">Last 30 days · point at a day</p>'+bars(s,"days")+'<div class="ax" id="ax">Grey days were before we started recording, on 01/10.</div></div>'
+  +'<div><p class="k">What we check</p><ul class="chk">'+s.c.map(c=>'<li><span>'+c[0]+'</span><span class="pill '+c[1]+'">'+c[2]+'</span>'+(c[3]?'<small>'+c[3]+'</small>':'')+'</li>').join("")+'</ul></div>'
+  +'<div><p class="k">How it connects</p><div class="rel">'+s.rel.map(r=>'<span>'+r+'</span>').join("")+'</div></div></div>';
+  drawer.querySelector(".shut").addEventListener("click",shut);
+  const ax=drawer.querySelector("#ax");drawer.querySelectorAll(".days i").forEach(c=>{const i=+c.dataset.i,f=()=>{const st=s.d[i];ax.innerHTML='<b>'+day(i)+'</b> · '+((NOTE[k]&&NOTE[k][i])||(st?W[st]+", nothing to report.":"not recorded yet."));};c.addEventListener("pointerenter",f);c.addEventListener("click",f);});
+  const near=new Set([k]);E.forEach(e=>{if(e.a===k)near.add(e.b);if(e.b===k)near.add(e.a);});
+  map.querySelectorAll(".n").forEach(n=>{n.classList.toggle("on",n.dataset.k===k);n.classList.toggle("dim",!near.has(n.dataset.k));});
+  map.querySelectorAll(".e,.el,.dotp").forEach(p=>{const hit=p.dataset.a===k||p.dataset.b===k;p.classList.toggle("dim",!hit);if(p.classList.contains("e"))p.classList.toggle("hot",hit);});}
+function whole(){map.querySelectorAll(".dim").forEach(x=>x.classList.remove("dim"));map.querySelectorAll(".hot").forEach(x=>x.classList.remove("hot"));}
+document.getElementById("all").addEventListener("click",whole);map.addEventListener("click",whole);
+show("analytics");
+/* phone ring */
+(function(){const r=document.getElementById("ring"),R=92,CI=2*Math.PI*R,n=order.length,gap=9,seg=CI/n-gap;
+  r.appendChild(el("circle",{cx:110,cy:110,r:R,fill:"none",stroke:"#221e33","stroke-width":13}));
+  order.forEach((k,i)=>{const c=el("circle",{class:"seg",cx:110,cy:110,r:R,stroke:C[S[k].st],"stroke-dasharray":seg+" "+(CI-seg),"stroke-dashoffset":-(i*(seg+gap)),transform:"rotate(-90 110 110)"});
+    if(!calm){c.appendChild(el("animate",{attributeName:"stroke-dasharray",from:"0 "+CI,to:seg+" "+(CI-seg),dur:".7s",begin:(i*.08)+"s",fill:"freeze"}));}
+    r.appendChild(c);});
+  r.appendChild(el("text",{class:"big",x:110,y:118,"text-anchor":"middle"},"1"));
+  r.appendChild(el("text",{class:"lbl",x:110,y:140,"text-anchor":"middle"},"NEEDS YOU"));})();
+/* count up */
+if(!calm)document.querySelectorAll("[data-n]").forEach(b=>{const n=+b.dataset.n;let i=0;b.textContent="0";const t=setInterval(()=>{b.textContent=i;if(i++>=n)clearInterval(t);},110);});
+/* feed */
+const F=[
+ {day:"Today, 04/10/2026",t:"02:46",s:"Analytics",v:"fail",vl:"Failed",ttl:"Last night's data update did not finish",
+  why:"Owners see yesterday's numbers today, and no backup was made last night.",who:"automatic nightly job",ap:"",
+  more:["It ran for 32 minutes and updated 100 of 101 data tables","It stopped at the very end without saying why","The earlier storage fix worked: storage stayed at 66%","The session that owns Analytics has been told"],
+  tech:"nightly refresh · stage main_pipeline · exit code 1",df:["signal arriving","signal missing"]},
+ {day:"Today, 04/10/2026",t:"02:30",s:"Ripple",v:"rel",vl:"New version",ttl:"A behind-the-scenes fix to how old reviews are handled",
+  why:"Nothing looks different to staff. It was the second new version tonight.",who:"Claude, session 44",ap:"",
+  more:["Ripple restarted and came back cleanly","The outreach robot picked up where it left off: 99 batches, none failed","Server storage rose to 77% because each version keeps a safety copy"],
+  tech:"release #1489 · no database or screen change",df:["f217e4d2","0a498513"]},
+ {day:"Today, 04/10/2026",t:"01:48",s:"SIMS",v:"rel",vl:"New version",ttl:"A new SIMS version went live, with no explanation attached",
+  why:"Nobody wrote down who released it or why. This is the gap the notes are meant to close.",who:"not recorded",ap:"",
+  more:["A one-off check script failed at 02:03 and created one error record","Nothing else went wrong afterwards"],
+  tech:"release #3157 · historical production",df:["6da7346a","607e815e"]},
+ {day:"Today, 04/10/2026",t:"01:00",s:"Ripple",v:"rel",vl:"New version",ttl:"Confirming a Parent now brings their existing Tutor Requests along",
+  why:"Staff no longer need to re-attach a Parent's earlier Tutor Requests to the Lead by hand.",who:"Claude, session 44",ap:"Hafiz",
+  more:["No change to how the database is structured","One Lead had its Parent's 2 existing Tutor Requests attached as part of the release"],
+  tech:"release #1486",df:["eff47de0","f217e4d2"]},
+ {day:"Yesterday, 03/10/2026",t:"22:27",s:"Monitoring",v:"add",vl:"Added",ttl:"Six more websites are now checked from outside",
+  why:"Before this, nobody would have been told if Ripple, Learnest, Kelasapp, Finch or the SIMS staff site went down.",who:"Claude",ap:"Hafiz",
+  more:["Each site is opened every 3 minutes and you are emailed if it fails","You also get a warning 30 days before a certificate or web address runs out","The free plan is now full"],
+  tech:"Better Stack uptime monitors",df:["4 checks","10 checks"]},
+ {day:"Yesterday, 03/10/2026",t:"22:06",s:"SIMS",v:"rel",vl:"New version",ttl:"Sales staff can now admit a separate demand on a Tutor Request",
+  why:"The Customer Experience (Sales) role was missing a permission it needed.",who:"Claude, session 44",ap:"Hafiz",
+  more:["Only a permission changed, no program code","No errors after the change"],
+  tech:"release #3155 · migration only",df:["ddc3474b","6da7346a"]},
+ {day:"Yesterday, 03/10/2026",t:"21:28",s:"Ripple",v:"cfg",vl:"Setting",ttl:"Ripple now reports its server errors to the error tracker",
+  why:"Before this, a Ripple server error stayed in a file on the server where nobody would see it.",who:"Claude",ap:"Hafiz",
+  more:["Proven with a test message only","Still to prove: that the running app reports its own real errors"],
+  tech:"Sentry server reporting",df:["off","on"]},
+ {day:"Yesterday, 03/10/2026",t:"21:20",s:"SIMS",v:"cfg",vl:"Setting",ttl:"SIMS stopped sending speed measurements nobody could use",
+  why:"The error tracker had been throwing away about 280,000 of them a day for a week. Sending them slowed every page a little.",who:"Claude",ap:"Hafiz",
+  more:["Confirmed: none were sent in the following two hours","Error reporting is not affected"],
+  tech:"Sentry performance tracing sample rate",df:["100%","0%"]}
+];
+const feed=document.getElementById("feed");
+function draw(f){let h="",last="",i=0;F.filter(x=>f==="all"||x.s===f).forEach(x=>{
+  if(x.day!==last){h+='<p class="day">'+x.day+'</p>';last=x.day;}
+  h+='<details class="ev" style="animation-delay:'+(i++*45)+'ms"><summary><time>'+x.t+'</time><div><div class="hd"><span class="sys">'+x.s+'</span><span class="vb '+x.v+'">'+x.vl+'</span></div>'
+   +'<p class="ttl">'+x.ttl+'</p><p class="why">'+x.why+'</p>'
+   +'<div class="meta"><span>by <b>'+x.who+'</b></span>'+(x.ap?'<span>approved by <b>'+x.ap+'</b></span>':'<span>approval <b>not recorded</b></span>')+'</div></div>'
+   +'<span class="cv">›</span></summary><div class="more"><ul>'+x.more.map(m=>'<li>'+m+'</li>').join("")+'</ul>'
+   +'<div class="tech"><span>Technical:</span><span>'+x.tech+'</span><span><s>'+x.df[0]+'</s> → <u>'+x.df[1]+'</u></span></div></div></details>';});
+  feed.innerHTML=h||'<p class="day">Nothing recorded for this system</p>';}
+document.getElementById("filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#filters button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));draw(b.dataset.f);});
+draw("all");
+document.querySelectorAll(".tabbar a").forEach(a=>a.addEventListener("click",()=>{document.querySelectorAll(".tabbar a").forEach(x=>x.classList.toggle("cur",x===a));}));
+</script>
