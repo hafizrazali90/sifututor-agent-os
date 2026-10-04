@@ -609,7 +609,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Purpose** | The Koda server uploads its daily memory backup and reads it back to prove the copy is restorable |
 | **Tier** | auto-read for listing; write for uploads (done by the server job, not by agents) |
 | **Verified limits (04/10/2026)** | Allowed: list this bucket, upload, read back. Denied: delete, list other buckets, read the Ripple bucket, change versioning |
-| **Restore** | Download `daily/brain-<time>.db` with this key and replace `/opt/koda/brain.db` while Koda is stopped. Not yet rehearsed |
+| **Restore** | 1. Stop Koda. 2. Download the wanted `daily/brain-<time>.db` with this key and compare its sha256 with the object's `sha256` metadata. 3. Replace `/opt/koda/brain.db` (and remove any `-wal` and `-shm` beside it), owner root, mode 600. 4. Start Koda and run `scripts/agent-checks/koda health`. Rehearsed 04/10/2026 up to step 2 in a scratch folder: 73 MB downloaded in 3 s, checksum matched, full integrity check ok, 50 of 50 schema objects, 6,848 memories (equal to the backup's own record), text search working. The swap under a stopped Koda (steps 3 and 4) has not been done. A daily backup means up to 24 hours of new memories can be lost |
 | **Forbidden** | Never print the key; never widen the policy to delete; never use the account keys in `~/.wasabi-creds` for routine work |
 
 ---
