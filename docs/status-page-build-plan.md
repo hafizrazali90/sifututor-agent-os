@@ -3,7 +3,7 @@
 Written 04/10/2026 for Hafiz. Issue: hafizrazali90/sifututor-agent-os#240.
 Inputs: [status-page-prd.md](status-page-prd.md), [user stories](features/monitoring/user-stories.md), [accepted mockup v4](features/monitoring/status-mockup-v4.html).
 
-Status (04/10/2026, about 12:50 MYT): stages 0 and 1 are APPROVED, BUILT and LIVE at https://status.sifututor.my (see the progress log, newest entry first below the plan). Stages 2 to 5 are NOT approved and not built; each needs its own go. Stage 4 (Telegram) is the recommended next package, prepared in docs/status-page-stage4-telegram-plan.md.
+Status (04/10/2026, about 17:50 MYT): stages 0 and 1 are APPROVED, BUILT and LIVE, with the additions in the newest progress entry (timelines, incident history, Koda, job signals) at https://status.sifututor.my (see the progress log, newest entry first below the plan). Stages 2 to 5 are NOT approved and not built; each needs its own go. Stage 4 (Telegram) is the recommended next package, prepared in docs/status-page-stage4-telegram-plan.md.
 
 ## The idea in one paragraph
 
@@ -87,6 +87,19 @@ Approve Stage 0 and Stage 1 together. They touch no production system, and at th
 ## Progress log
 
 Newest entries first. Earlier entries are kept as written, so a value that changed later (for example who can sign in) is corrected in the entry above it, not rewritten.
+
+**04/10/2026, about 17:50 MYT. What was added after the Stage 1 corrections (all live, all merged).**
+
+Approved by Hafiz step by step in session. Repo `Sifututor/sifututor-status`, main `68b7c78`, Worker version `107a727e`.
+
+- Timelines: a 24-hour strip (one bar per hour, Malaysian time) and a 30-day strip coloured by minutes. A day is Down after 30 minutes down; a short outage or any degraded time is amber. Past days are rebuilt from Better Stack's incident list, only where a critical check already existed. New table `status_minutes`. Full readings are kept 7 days (about 36 KB each); the 30-day record is in `status_minutes`.
+- As public status pages do: pointing at a bar names what failed and for how long, each system lists its recent incidents, an uptime figure sits next to the 30-day bar (outages only, rounded down, shown only once a full day is covered), and "in this state since" uses the real start or the end of the last incident.
+- Two new sources: Healthchecks.io job signals (read-only key, Worker secret `HEALTHCHECKS_KEY`) and direct health checks (the Worker asks an address itself). Every outside request has an 8 second limit.
+- Koda memory card: service answers, memory can be read and searched (server test every 15 minutes), backup made.
+- Job signals, all amber-only by Hafiz's decision: Ripple offsite backup, backup clean-up, commitment-fee settlement job, fee failures in 24 hours; Learnest backup; Kelasapp backup. They come from a server-side watcher (`server/job-watcher.sh` in the repo) that reads each job's evidence and never edits a job.
+- Each change was rendered from the real reading on desktop and phone before going live, and reviewed independently. Tests: 139 unit and 50 browser on main.
+- Not covered: the Learnest scheduler (needs a signal from inside the Learnest app); the Koda backup's first signal is due 05/10 11:00 MYT; Sentry has no history, so past days reflect websites and jobs only.
+- This goes beyond the original Stage 1 and covers part of Stage 3 (server facts) by a different route: a watcher that signals Healthchecks.io, not a collector that posts to the site.
 
 **04/10/2026, about 12:50 MYT. Current state and Stage 1 corrections.**
 

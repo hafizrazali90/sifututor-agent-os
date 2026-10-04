@@ -97,7 +97,7 @@ Telegram bot: free. Cloudflare free plan: no extra timer is used. To confirm bef
 
 ## Built so far (A1, local only)
 
-- 95 unit tests pass (27 new for alerts), written first. The real readings from 04/10 04:20 to 12:25 MYT were replayed through the planner: 2 messages in 8 hours (one Down for Owner Analytics, one 10:00 summary). Replay output: outputs/production-monitoring-verification-2026-10-04/stage4-replay-of-todays-readings.txt. The "since" time reads 04:20 only because the replay began there; live, memory starts when alerts are switched on.
+- 168 unit tests pass on the Stage 4 branch (29 for alerts), written first. The branch is rebased on main `68b7c78` and knows the Koda system and the Healthchecks.io source: Healthchecks.io going silent is one message, not one per system. The real readings from 04/10 04:20 to 12:25 MYT were replayed through the planner: 2 messages in 8 hours (one Down for Owner Analytics, one 10:00 summary). Replay output: outputs/production-monitoring-verification-2026-10-04/stage4-replay-of-todays-readings.txt. The "since" time reads 04:20 only because the replay began there; live, memory starts when alerts are switched on.
 - Telegram is faked in every test. The bot token never appears in a log or error, and a network error is logged without its text.
 - Proposed wording for "who is affected" is in `src/config.js` (`affects`) for you to correct.
 
