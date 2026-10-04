@@ -92,10 +92,10 @@ Newest entries first. Earlier entries are kept as written, so a value that chang
 
 - Sign-in: Cloudflare account and One-time PIN are both switched on (PIN on since 04/10). Allowed emails: `hafiz.razali@sifututor.my`, `sifututor@gmail.com`, `syamil.yusoff@sifututor.my`. This replaces the "PIN not switched on, two emails" line in the 05:10 entry below.
 - Readings: 98 stored readings from 04:20 to 12:25 MYT, no gap above 7 minutes. All 20 Better Stack checks match Better Stack's incident history for that window (interim, 8.1 of 24 hours; the full 24-hour comparison completes after 04:25 MYT on 05/10).
-- Codex review of the live page found two truthfulness gaps. Both are fixed on branch `fix/240-truthful-rollup-and-sentry-proof` in `sifututor-status` (local commits, not pushed, not deployed, awaiting Hafiz's release approval):
+- Codex review of the live page found two truthfulness gaps. Both are fixed on branch `fix/240-truthful-rollup-and-sentry-proof` in `sifututor-status` (PR https://github.com/Sifututor/sifututor-status/pull/1, approved to push by Hafiz 04/10; deploy is a separate step):
   1. A silent optional check kept a system Online and the card said "All N checks are passing". Now Online requires every check to pass; a silent optional check makes the system Degraded and the card names what is not answering.
   2. Zero Sentry errors was shown as "Error tracker is receiving". Now the check says the tracker answers and is not rejecting records, zero errors is a quiet day (never an incident), and the trust panel lists which systems have not been seen sending an error in 24 hours. Proof that a running app delivers errors still needs a separately approved test event.
-- Tests: 65 unit tests and 21 stored browser tests (desktop 1440x900 and phone 390x844, fixture readings, no login or network) pass.
+- Tests: 68 unit tests and 25 stored browser tests (desktop 1440x900 and phone 390x844, fixture readings, no login or network) pass.
 - Still unproven: a real One-time PIN sign-in (needs a person to receive the code), and the full 24-hour comparison.
 - Not approved and not started: stages 2 to 5, any server collector, Telegram, extra heartbeats (parked). Mobile apps excluded.
 
