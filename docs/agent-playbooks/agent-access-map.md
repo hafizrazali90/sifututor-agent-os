@@ -139,6 +139,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Tier** | auto-read |
 | **Hafiz approval** | Not required |
 | **Safe verification** | `scripts/agent-access/check-cloudflare-dns.sh` |
+| **Also used by** | `scripts/agent-access/check-app-firewall-blocks.sh`: aggregated analytics counts only (GraphQL `httpRequestsAdaptiveGroups`), no client addresses printed; Cloudflare keeps about 30 days |
 | **Forbidden** | This token is read-only; do not attempt writes (they will fail) |
 
 ---
@@ -738,6 +739,7 @@ never print secret values.
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
 | `check-runtime-flags.sh sims\|ripple\|finch` | Effective production feature flags, booleans and named modes only; diff two runs before and after a deploy or flag change. `finch` reads only named outreach switches (for example `TUTOR_OUTREACH_AUTOMATIC_ENABLED`) from Finch's production settings file, the value the next Finch (re)start loads, as true/false/unset (last definition wins), plus the control checkout SHA; it discards error text and refuses any other output (#232). For the running process, use Finch's read-only `ProductionTutorOutreachApplyTemplateStatus` operation |
 | `check-cloudflare-dns.sh` | DNS records for key domains via CF read-only API |
+| `check-app-firewall-blocks.sh [hours]` | Mobile app requests the SIMS production server answered with 403 (the Imunify360 block, sifu-tutor #2438), from Cloudflare analytics: total, by day, by area and by app. Exit 0 when none, 1 when some, 2 when unreadable. Run it first when a parent or tutor "cannot log in" or "cannot pay" from the app |
 | `check-cpanel-autossl.sh` | AutoSSL last-run status on production by default; pass `--staging` for WebVoyager |
 | `check-monitoring.sh` | Sentry unresolved issues count; BetterStack monitor status |
 | `check-microsoft-planner.sh` | Lokka / M365 access availability |
