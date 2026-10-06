@@ -11,6 +11,10 @@ verify observability after a deploy, or watch for production regressions.
 - A log marker is allowed only when Hafiz asks for verification or when it is
   clearly useful; it writes one harmless Laravel `info` log.
 - Do not print tokens. Report only whether tokens/config are present.
+- On the SIMS server never run `git` (including `git status`) or `php artisan`
+  as root. They re-own `.git/index` or storage files to root and the next
+  deploy fails. `prod-monitor.sh` runs them as `sifututortutorla` and stops
+  rather than falling back to root; keep any new check the same way.
 - Prefer public HTTP smoke checks over `php artisan route:list` on production;
   route-list can boot database-backed providers and create noisy log entries on
   cPanel/HostArmada.
