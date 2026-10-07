@@ -50,6 +50,26 @@ The hook should never silently perform expensive state changes.
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
 | `Stop` | When Codex is about to stop. | Reminds Codex to save meaningful session state. |
 
+## Claude Hook Wiring On A New Machine
+
+`.claude/settings.json` is ignored by git, so a fresh clone has the guard
+scripts but no wiring that runs them. The tracked
+`.claude/settings.template.json` holds the same hook entries, written with
+`"${CLAUDE_PROJECT_DIR}"` instead of a machine path.
+
+```bash
+python3 scripts/agent-checks/render-claude-settings.py           # dry run
+python3 scripts/agent-checks/render-claude-settings.py --apply   # create when missing
+```
+
+- The script never overwrites an existing `settings.json`. If one exists it
+  reports any hook command that differs and exits 1.
+- The template carries only `$schema` and `hooks`. Personal settings such as
+  the model, extra directories and any variables stay in the local file.
+- When you change a hook entry, change the template and the local file
+  together. The test `test_render_claude_settings.py` checks the template for
+  machine paths and for missing scripts.
+
 ## Codex Hook Notes
 
 `SessionStart` is also a Koda startup gate. If it reports `Koda: FAILED`, repair
