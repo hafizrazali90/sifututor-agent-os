@@ -94,7 +94,7 @@ else
 fi
 
 # Browser QA login for sifu-tutor staging (lane 39). Missing is a warning:
-# Hafiz creates the account and runs setup-sims-browser-qa-lane.sh himself.
+# Created 08/10/2026; setup-sims-browser-qa-lane.sh is how Hafiz re-sets it himself.
 BROWSER_QA_CONF="$CONF_DIR/sims-staging-browser-qa.conf"
 if [[ -f "$BROWSER_QA_CONF" ]]; then
   MODE=$(stat -f '%Lp' "$BROWSER_QA_CONF" 2>/dev/null || stat -c '%a' "$BROWSER_QA_CONF" 2>/dev/null || echo unknown)
@@ -107,6 +107,22 @@ if [[ -f "$BROWSER_QA_CONF" ]]; then
   fi
 else
   warn "conf optional: sims-staging-browser-qa.conf (run scripts/agent-access/setup-sims-browser-qa-lane.sh)"
+  WARN=$((WARN+1))
+fi
+
+# Shared e2e password for the seeded staging test accounts (lane 39, second file).
+E2E_CONF="$CONF_DIR/sims-staging-e2e.conf"
+if [[ -f "$E2E_CONF" ]]; then
+  MODE=$(stat -f '%Lp' "$E2E_CONF" 2>/dev/null || stat -c '%a' "$E2E_CONF" 2>/dev/null || echo unknown)
+  if [[ "$MODE" == "600" ]]; then
+    green "conf: sims-staging-e2e.conf (mode 600)"
+    PASS=$((PASS+1))
+  else
+    red "conf: sims-staging-e2e.conf has unsafe mode $MODE (expected 600)"
+    FAIL=$((FAIL+1))
+  fi
+else
+  warn "conf optional: sims-staging-e2e.conf (E2E_ADMIN_PASSWORD for seeded staging test accounts)"
   WARN=$((WARN+1))
 fi
 
