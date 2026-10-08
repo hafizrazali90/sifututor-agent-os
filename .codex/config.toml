@@ -55,6 +55,12 @@ command = "python3 scripts/agent-checks/codex-lifecycle-hook.py"
 timeout = 10
 statusMessage = "Adding Sifututor prompt context"
 
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)"/scripts/agent-checks/skill-tips-hook.py --suggest --agent codex'
+timeout = 3
+statusMessage = "Checking for a skill suggestion"
+
 [[hooks.PreCompact]]
 matcher = "^(manual|auto)$"
 

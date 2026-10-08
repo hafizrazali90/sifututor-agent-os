@@ -17,6 +17,7 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-pre-too
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/secret_output_guard.py
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-post-tool-use.py
 python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecycle-hook.py
+python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/skill-tips-hook.py --suggest --agent codex
 ```
 
 ## What They Do
@@ -25,6 +26,7 @@ python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-lifecyc
 | --- | --- |
 | `SessionStart` | Adds startup project/task context and verifies Koda read/write health |
 | `UserPromptSubmit` | Dispatches the right Codex workflow skill and injects Koda context when safe |
+| `UserPromptSubmit` skill suggestion | `skill-tips-hook.py --suggest`: at most one quiet line naming a skill that could help; fail-open, no network |
 | `PreToolUse` | Blocks unsafe Bash patterns and runs the shared guard before commit |
 | `PreToolUse` secret guard | Runs for every tool. It blocks commands that can emit complete credentials and quarantines all tool use while a provider credential-reveal boundary is active. |
 | `PostToolUse` | Logs metadata-only failed-command diagnostics to `~/.codex-friction.log` |

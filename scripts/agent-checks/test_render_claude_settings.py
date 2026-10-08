@@ -33,8 +33,8 @@ class TemplateTest(unittest.TestCase):
         cls.mod = load_module()
         cls.template = json.loads(TEMPLATE_PATH.read_text())
 
-    def test_template_has_ten_hooks(self) -> None:
-        self.assertEqual(len(self.mod.hook_commands(self.template)), 10)
+    def test_template_has_twelve_hooks(self) -> None:
+        self.assertEqual(len(self.mod.hook_commands(self.template)), 12)
 
     def test_template_holds_no_machine_path(self) -> None:
         text = TEMPLATE_PATH.read_text()
@@ -57,6 +57,8 @@ class TemplateTest(unittest.TestCase):
             ".claude/hooks/conventional-commits.py",
             ".claude/hooks/test-coverage-gate.py",
             ".claude/hooks/friction-logger.py",
+            "scripts/agent-checks/skill-tips-hook.py --suggest",
+            "scripts/agent-checks/skill-tips-hook.py --tip",
         ])
         found = sorted(cmd.split('"${CLAUDE_PROJECT_DIR}"/', 1)[1] for _e, _m, cmd in self.mod.hook_commands(self.template))
         self.assertEqual(found, expected)
