@@ -73,6 +73,23 @@ Check first: <git status / files / docs / evidence>.
 Do not change: <boundaries>.
 ```
 
+### Suggested Skills And References
+
+Add two more things to every continuation pack:
+
+- **Suggested skills**: list the skills the next session should use, such as
+  `/verify`, `/qa`, or `/commit`. A skill is a packaged set of instructions an
+  agent loads for one kind of task. Naming them saves the receiver from
+  guessing the route.
+- **References, not copies**: point to existing artifacts by their issue
+  number, pull request number, playbook name, or file path. Do not paste their
+  contents into the handoff. A pasted copy goes stale; the reference stays
+  current.
+
+Every evidence and approval field above still applies.
+
+Adapted from the mattpocock/skills repository (MIT licence).
+
 ## Codex-To-Claude Max Delegation
 
 ### Provider-neutral packet and reconciliation
