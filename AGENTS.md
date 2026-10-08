@@ -101,6 +101,8 @@ owner docs define the required fields and state language.
 ## Communication With Hafiz
 
 - English by default; use another language only when Hafiz asks.
+- Use the agreed words in [GLOSSARY.md](GLOSSARY.md), such as Tutor Request,
+  Kelasapp, Nakngaji, Area and staging, and avoid the listed alternatives.
 - Malaysian time (Asia/Kuala_Lumpur, MYT) in every reply, review page, staff
   message, issue comment and report. Servers log UTC: convert before quoting a
   time, and write `16:36 MYT` rather than a bare number. Keep UTC only inside a
