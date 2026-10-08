@@ -206,13 +206,15 @@ Use these rules when writing or pruning any agent instruction.
   every chat, not only the chats that need it.
 - **Cut what the model already obeys.** Delete the sentence in your head; if
   behaviour would not change, delete it for real.
-- **State the positive behaviour.** Keep a prohibition only for a hard
-  guardrail that a hook or check backs. Example: the rule against printing
+- **State the positive behaviour.** Say what to do, not only what to avoid.
+  Keep a "do not" for a hard guardrail or a mistake that is expensive, and where
+  a script can check it, back it with a hook. Example: the rule against printing
   secrets is backed by `scripts/agent-checks/secret_output_guard.py`.
 - **Keep one source of truth.** Do not restate what a config file or script
-  holds; point to the owner. Example: the branch types in `AGENTS.md` repeat
-  the regex in `scripts/agent-checks/validate-branch-name.sh`, so the two can
-  drift apart.
+  holds; point to the owner. Example: the allowed branch types are written in
+  three places: `AGENTS.md`, `scripts/agent-checks/validate-branch-name.sh` and
+  `.claude/hooks/validate-branch-name.py`. The hook's docstring already leaves
+  out `feature`, so the copies have started to drift apart.
 - **Give every step a completion criterion.** The reader must know when it is
   done. Example: the navigation check is done when
   `agent-os-doc-navigation-check.py` reports every evaluated check passed.

@@ -77,7 +77,7 @@ When a correction or failure repeats, classify it before writing anything.
 
 | Class | Meaning | What to do |
 | --- | --- | --- |
-| Mechanical | A script can check it. | Make it a hook or linter, then shrink the prose to one line that points to the check. |
+| Mechanical | A script can check it, and the mistake is expensive or keeps coming back. | Make it a hook or linter, then shrink the prose to one line that points to the check. A cheap preference stays prose. |
 | Judgment | Only a person can decide it. | Keep it as prose, in the one document that owns it. |
 | Environment | The setup caused it: a missing tool, a wrong path, a stale file. | Fix the setup. Do not add a rule. |
 
