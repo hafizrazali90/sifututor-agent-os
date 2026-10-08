@@ -19,6 +19,35 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 
 ---
 
+## Servers, Zones And Paths
+
+Machine facts that were kept in the global `~/.claude/CLAUDE.md` and now live
+here, so there is one place to correct them. They hold no credentials. Check
+this table and the access lanes below before any production-affecting action;
+Koda (`reference_server_environment_map`, `feedback_staging_environment`) is the
+dated record when the two disagree.
+
+| Alias (`~/.ssh/config`) | Address | Provider | Notes |
+| --- | --- | --- | --- |
+| `production` | `151.246.1.164` (port 19199) | HostArmada Site Carrier | sifu-tutor and nakngaji production |
+| `staging` | `72.62.251.97` | Hostinger KVM8 | shared multi-tenant box: kelasapp, ripple-suite, creative-hub, Koda |
+| `finch` | `187.127.98.182` | Hostinger KVM8 (finch) | sifu-tutor staging since 09/08/2026; also hosts finch-inbox |
+| `webvoyager` | `151.246.1.218` (port 19199) | HostArmada Web Voyager | **Dead since 09/08/2026** (plan unsubscribed). Do not use. |
+
+- `sims-staging.tutorla.tech` (the old Hostinger VPS URL) and `webvoyager` are
+  both decommissioned. When Hafiz says "staging" for sifu-tutor, he means
+  `sifu-staging.tutorla.tech` on the `finch` box, not Web Voyager.
+- Cloudflare zone `tutorla.tech` is `ddcee6be0e754bc30573781940e5b96d`. DNS is
+  DNS-only (not proxied) on the staging domains, because the Cloudflare proxy
+  breaks Laravel session cookies. Cloudflare credentials are in
+  `~/.cloudflare-credentials` and are never printed.
+- Production SIMS app path: `/home/sifututortutorla/public_html` (cPanel/WHM KVM
+  VPS), never `/var/www/sifu-tutor`.
+- Never embed credential values in instruction files. Use the wrappers in
+  `scripts/agent-access/` for database, admin or infrastructure checks.
+
+---
+
 ## Approval Tiers
 
 | Tier | Meaning | Hafiz approval needed? |
@@ -211,7 +240,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Conf file** | `server-ssh.conf` |
 | **Production alias** | `production` → `151.246.1.164:19199` |
 | **Production app dir** | `/home/sifututortutorla/public_html` |
-| **Staging alias** | `webvoyager` → `151.246.1.218:19199` |
+| **Staging alias** | `finch` → `187.127.98.182` (sifu-tutor staging since 09/08/2026; `webvoyager` is dead, see "Servers, Zones And Paths") |
 | **Purpose** | SSH read access: read logs, check config, verify app state, SSL cert inspection |
 | **Tier** | auto-read for non-destructive reads; write-tier for any file modification |
 | **Hafiz approval** | Not required for reads; required for writes, restarts, or any command that changes server state |
