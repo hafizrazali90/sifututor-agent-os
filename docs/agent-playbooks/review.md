@@ -94,6 +94,24 @@ risk justifies it, the main agent may ask for bounded fresh review. The main
 agent still owns synthesis, final checks, and close-out unless Hafiz assigns
 ownership elsewhere.
 
+## Optional Two-Axis Review
+
+For a larger change, the reviewer may review it twice, once along each axis
+(one separate question asked of the whole diff), and keep two separate lists:
+
+- **Standards**: does the change follow the project's rules and conventions?
+- **Spec**: does the change do what the issue asked, nothing more and nothing
+  less?
+
+Report both lists as they are. Do not merge them into one list and do not
+re-rank findings across them, so a spec gap is never hidden under a pile of
+style findings.
+
+This lens is optional. The risk-first review in this playbook stays the
+default.
+
+Adapted from the mattpocock/skills repository (MIT licence).
+
 ## Review And Risk Checkpoint
 
 Review is the agent's second-brain check before work is saved or sent outward.
