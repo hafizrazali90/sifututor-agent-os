@@ -38,6 +38,7 @@ Claude; the Mac reads the result. Machine facts are in
 | Guards | The job refuses to start Claude unless the hook wiring was built from `.claude/settings.template.json`. |
 | Git identity | A job that must commit stops before Claude starts if git has no author identity. |
 | Permissions | Claude never runs with permissions skipped. Anything not on the tool list is denied, because nobody can answer a prompt. |
+| Project repo `repo` | Optional (issue #347). Missing means the Agent OS repo. Allowed values are listed in `PROJECT_REPOS` in `job_brief.py`; today only `ripple-suite`. The repo must already be cloned on the PC under `~/Projects/Sifututor/<repo>`. The job worktree installs packages with `npm ci` from the lockfile, the guards come from the project's own tracked `.claude/settings.json`, and the builder may also run `npx vitest`, `npx tsc`, `npx eslint` and the umbrella commit guard by its full path. `base`, `branch` and `allowed_paths` are read inside that repo. |
 
 ## What the runner checks after Claude finishes
 

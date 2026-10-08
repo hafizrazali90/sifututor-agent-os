@@ -10,7 +10,8 @@ Rules enforced here (issues #272, #273, #274):
 - every job has a finish state; a missing one means `local`;
 - an unattended job can never merge or deploy;
 - a job that pushes a branch and opens a pull request needs a recorded approval;
-- a builder may only change the paths listed in `allowed_paths`.
+- a builder may only change the paths listed in `allowed_paths`;
+- a job may name a project repo (issue #347), only from `PROJECT_REPOS`.
 """
 
 from __future__ import annotations
@@ -27,8 +28,12 @@ REFUSED_FINISH_STATES = ("merged", "deployed")
 
 ALLOWED_KEYS = (
     "title", "role", "base", "branch", "target", "finish", "issue",
-    "approval", "max_usd", "max_turns", "max_minutes", "allowed_paths",
+    "approval", "max_usd", "max_turns", "max_minutes", "allowed_paths", "repo",
 )
+
+# Project repos a job may work in, as folder names under the umbrella checkout
+# on the PC. Missing `repo` means the umbrella (Agent OS) repo itself.
+PROJECT_REPOS = ("ripple-suite",)
 
 DEFAULT_USD, MIN_USD, MAX_USD = 2.0, 0.5, 20.0
 DEFAULT_TURNS, MIN_TURNS, MAX_TURNS = 30, 1, 100
@@ -144,6 +149,11 @@ def validate(parsed: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
     if issue and not issue.isdigit():
         errors.append("issue must be a number")
     normal["issue"] = issue
+
+    repo = fields.get("repo", "")
+    if repo and repo not in PROJECT_REPOS:
+        errors.append(f"repo must be one of {', '.join(PROJECT_REPOS)}, or left out for the Agent OS repo")
+    normal["repo"] = repo
 
     normal["base"] = fields.get("base", "origin/main")
     if not normal["base"].startswith("origin/"):

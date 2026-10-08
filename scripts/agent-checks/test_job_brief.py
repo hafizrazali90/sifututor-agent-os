@@ -146,6 +146,26 @@ class ValidateTest(unittest.TestCase):
         self.assertTrue(any("reviewer" in e and "finish" in e for e in errors), errors)
 
 
+class RepoFieldTest(unittest.TestCase):
+    def check(self, text: str):
+        return job_brief.validate(job_brief.parse(text))
+
+    def test_missing_repo_means_the_agent_os_repo(self) -> None:
+        errors, normal = self.check(brief())
+        self.assertEqual(errors, [])
+        self.assertEqual(normal["repo"], "")
+
+    def test_listed_project_repo_is_accepted(self) -> None:
+        errors, normal = self.check(brief(repo="ripple-suite"))
+        self.assertEqual(errors, [])
+        self.assertEqual(normal["repo"], "ripple-suite")
+
+    def test_unlisted_or_path_like_repo_is_refused(self) -> None:
+        for value in ("sifu-tutor", "../ripple-suite", "/home/hafiz/x"):
+            errors, _ = self.check(brief(repo=value))
+            self.assertTrue(any("repo must be one of" in e for e in errors), (value, errors))
+
+
 class TemplateTest(unittest.TestCase):
     def test_template_file_exists_and_its_example_is_valid(self) -> None:
         self.assertTrue(TEMPLATE.is_file(), "docs/agent-playbooks/templates/job-brief.md is missing")

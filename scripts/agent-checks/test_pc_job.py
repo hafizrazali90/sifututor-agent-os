@@ -252,6 +252,70 @@ class RunnerTest(unittest.TestCase):
         settings = Path(status["worktree"]) / ".claude" / "settings.json"
         self.assertTrue(settings.is_file())
 
+    # ------------------------------------------------------- project repo ----
+
+    def project_layout(self) -> Path:
+        """Put the repo under an umbrella folder as a project, with tracked settings."""
+        root = self.tmp / "umbrella"
+        root.mkdir()
+        git(self.repo, "rm", "-q", "--cached", ".claude/settings.template.json")
+        (self.repo / ".claude" / "settings.template.json").unlink()
+        settings = {"hooks": {"PreToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": "true"}]}]}}
+        (self.repo / ".claude" / "settings.json").write_text(json.dumps(settings))
+        (self.repo / ".gitignore").write_text("")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "project settings")
+        git(self.repo, "push", "-q", "origin", "main")
+        shutil.move(str(self.repo), str(root / "ripple-suite"))
+        self.repo = root / "ripple-suite"
+        return root
+
+    def test_project_repo_job_runs_in_the_named_repo(self) -> None:
+        root = self.project_layout()
+        job_dir = self.job(BRIEF.format(finish="local", extra="repo: ripple-suite\n"), "edit_commit")
+        pc_job.run(job_dir, repo=root, claude=str(self.bin / "claude"), worktrees=self.worktrees, drop_task=False)
+        status = json.loads((job_dir / "status.json").read_text())
+        self.assertEqual(status["state"], "done", status)
+        self.assertEqual(status["repo"], "ripple-suite")
+        self.assertEqual(status["changed_files"], ["docs/a.md"])
+        allowed = self.argv()[self.argv().index("--allowedTools") + 1].split(",")
+        self.assertIn("Bash(npx vitest:*)", allowed)
+        self.assertNotIn("Bash(git push:*)", allowed)
+
+    def test_project_repo_without_tracked_settings_is_refused(self) -> None:
+        root = self.project_layout()
+        git(self.repo, "rm", "-q", ".claude/settings.json")
+        git(self.repo, "commit", "-q", "-m", "drop settings")
+        git(self.repo, "push", "-q", "origin", "main")
+        job_dir = self.job(BRIEF.format(finish="local", extra="repo: ripple-suite\n"), "edit_commit")
+        pc_job.run(job_dir, repo=root, claude=str(self.bin / "claude"), worktrees=self.worktrees, drop_task=False)
+        status = json.loads((job_dir / "status.json").read_text())
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("without guards", status["reason"])
+        self.assertFalse(self.argv_log.exists(), "claude must not start without guards")
+
+    def test_project_repo_not_checked_out_is_blocked(self) -> None:
+        root = self.tmp / "empty-umbrella"
+        root.mkdir()
+        job_dir = self.job(BRIEF.format(finish="local", extra="repo: ripple-suite\n"), "edit_commit")
+        pc_job.run(job_dir, repo=root, claude=str(self.bin / "claude"), worktrees=self.worktrees, drop_task=False)
+        status = json.loads((job_dir / "status.json").read_text())
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("not checked out", status["reason"])
+
+    def test_linux_user_bin_goes_first_on_the_pc(self) -> None:
+        home = self.tmp / "home"
+        (home / ".local" / "bin").mkdir(parents=True)
+        with mock.patch.object(pc_job.sys, "platform", "linux"), \
+                mock.patch.object(pc_job.Path, "home", return_value=home), \
+                mock.patch.dict(os.environ, {"PATH": f"/mnt/c/nvm4w/nodejs:{home}/.local/bin:/usr/bin"}):
+            pc_job.prefer_linux_user_tools()
+            self.assertEqual(os.environ["PATH"].split(os.pathsep), [f"{home}/.local/bin", "/mnt/c/nvm4w/nodejs", "/usr/bin"])
+
+    def test_umbrella_job_does_not_get_project_tools(self) -> None:
+        self.builder()
+        self.assertNotIn("Bash(npx vitest:*)", self.argv()[self.argv().index("--allowedTools") + 1].split(","))
+
     # ----------------------------------------------------------- reviewer ----
 
     def make_review_target(self) -> None:
