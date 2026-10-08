@@ -9,7 +9,7 @@ matcher = ".*"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/codex-pre-tool-dispatch.py'
+command = 'python3 "$(git rev-parse --show-toplevel)"/scripts/agent-checks/codex-pre-tool-dispatch.py'
 timeout = 30
 statusMessage = "Checking Agent OS safety rules"
 
@@ -27,7 +27,7 @@ matcher = ".*"
 
 [[hooks.SessionStart.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py --resume'
+command = 'python3 "$(git rev-parse --show-toplevel)"/scripts/agent-checks/agent-os-approval-guard.py --resume'
 timeout = 10
 statusMessage = "Restoring the current task approval boundary"
 
@@ -45,7 +45,7 @@ matcher = ".*"
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = 'python3 /Users/hafizrazali/Projects/Sifututor/scripts/agent-checks/agent-os-approval-guard.py --identity'
+command = 'python3 "$(git rev-parse --show-toplevel)"/scripts/agent-checks/agent-os-approval-guard.py --identity'
 timeout = 10
 statusMessage = "Reading the current Agent OS session identity"
 
