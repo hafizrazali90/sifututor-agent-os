@@ -93,6 +93,23 @@ else
   WARN=$((WARN+1))
 fi
 
+# Browser QA login for sifu-tutor staging (lane 39). Missing is a warning:
+# Hafiz creates the account and runs setup-sims-browser-qa-lane.sh himself.
+BROWSER_QA_CONF="$CONF_DIR/sims-staging-browser-qa.conf"
+if [[ -f "$BROWSER_QA_CONF" ]]; then
+  MODE=$(stat -f '%Lp' "$BROWSER_QA_CONF" 2>/dev/null || stat -c '%a' "$BROWSER_QA_CONF" 2>/dev/null || echo unknown)
+  if [[ "$MODE" == "600" ]]; then
+    green "conf: sims-staging-browser-qa.conf (mode 600)"
+    PASS=$((PASS+1))
+  else
+    red "conf: sims-staging-browser-qa.conf has unsafe mode $MODE (expected 600)"
+    FAIL=$((FAIL+1))
+  fi
+else
+  warn "conf optional: sims-staging-browser-qa.conf (run scripts/agent-access/setup-sims-browser-qa-lane.sh)"
+  WARN=$((WARN+1))
+fi
+
 # Lokka binary
 if [[ -x "${HOME}/.codex/bin/m365-lokka-from-agent-access.sh" ]]; then
   green "binary: m365-lokka-from-agent-access.sh"
