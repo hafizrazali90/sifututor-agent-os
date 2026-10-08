@@ -212,7 +212,11 @@ fi
 
 # SIMS DB readonly (connection test only)
 if source "$CONF_DIR/database-readonly.conf" 2>/dev/null; then
-  if mysql -h "$SIMS_DB_READONLY_HOST" -P "$SIMS_DB_READONLY_PORT" \
+  # #340: prefer an 8.x client; MySQL 9.x cannot sign in to this account.
+  # shellcheck source=lib/mysql-client.sh
+  source "$(dirname "${BASH_SOURCE[0]}")/lib/mysql-client.sh"
+  SIMS_MYSQL="$(sifu_mysql_client || echo mysql)"
+  if "$SIMS_MYSQL" -h "$SIMS_DB_READONLY_HOST" -P "$SIMS_DB_READONLY_PORT" \
     -u "$SIMS_DB_READONLY_USERNAME" -p"$SIMS_DB_READONLY_PASSWORD" \
     "$SIMS_DB_READONLY_DATABASE" \
     --connect-timeout=8 \
