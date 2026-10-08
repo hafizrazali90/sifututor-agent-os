@@ -191,6 +191,12 @@ HARMLESS = [
     "grep -rn token live/sifu-tutor --exclude='.env*'",
     "grep -rIn token live/sifu-tutor/app --include='*.php'",
     "rg token live/sifu-tutor",
+    # a search PATTERN that contains live/ is not a path in live/
+    "grep -rn \"live/\" .codex scripts",
+    "grep -rln 'live/' docs --include='*.md'",
+    "grep -rn -e live/ docs scripts",
+    "rg \"live/\" docs",
+    "grep -rn live/ scripts/agent-checks",
     "sed -n 1,20p live/sifu-tutor/app/Models/User.php",
     "diff live/sifu-tutor/app/a.php /tmp/a.php",
     "cp live/sifu-tutor/app/a.php /tmp/a.php",
@@ -237,6 +243,11 @@ HARMLESS = [
 ]
 
 DANGEROUS = [
+    # recursive search of live/ stays blocked even when the pattern is also given with -e or contains live/
+    "grep -rn live/ live/sifu-tutor",
+    "grep -rn -e token -e live/ live/sifu-tutor",
+    "grep -rn password live/sifu-tutor live/sifututor_tutor",
+    "grep -r -A 2 token live/sifu-tutor",
     # reading a private lane file or dotenv file to the terminal
     f"cat {LANE}",
     f"head -5 {LANE}",

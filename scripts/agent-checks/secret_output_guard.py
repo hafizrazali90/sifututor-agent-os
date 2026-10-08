@@ -1161,7 +1161,13 @@ def _rule_live_recursive_search(ctx: _Ctx) -> str | None:
     exe, args = ctx.exe, ctx.args
     if exe not in ("grep", "egrep", "fgrep", "rg", "ag", "ack") or _count_only(exe, args):
         return None
-    if not any(_is_live_path(token) for token in args):
+    # The first non-option argument is the search pattern unless -e/-f supplies it, so a
+    # pattern such as "live/" is not a path in live/. Only the path operands matter here.
+    pattern_flags = ("-e", "--regexp", "-f", "--file")
+    operands = _positionals(args, _SEARCH_VALUE_FLAGS | frozenset(pattern_flags))
+    if not any(t in pattern_flags or t.startswith(("--regexp=", "--file=")) for t in args) and operands:
+        operands = operands[1:]
+    if not any(_is_live_path(token) for token in operands):
         return None
     if exe == "rg":
         hidden = any(t in ("--hidden", "-uu", "-uuu", "--no-ignore", "-u") for t in args)
