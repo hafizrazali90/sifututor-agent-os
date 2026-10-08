@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,23 @@ class TemplateTest(unittest.TestCase):
 
     def test_every_script_exists_in_the_repo(self) -> None:
         self.assertEqual(self.mod.validate_template(self.template, ROOT), [])
+
+    def test_template_holds_exactly_the_expected_hook_scripts(self) -> None:
+        # Update this list on purpose when a hook is added or removed.
+        expected = sorted([
+            "scripts/agent-checks/agent-os-approval-guard.py --resume",
+            "scripts/agent-checks/agent-os-approval-guard.py --identity",
+            ".claude/hooks/koda-context-injector.py",
+            "scripts/agent-checks/agent-os-approval-guard.py",
+            "scripts/agent-checks/secret_output_guard.py",
+            "scripts/agent-checks/ask-question-size-guard.py",
+            ".claude/hooks/validate-branch-name.py",
+            ".claude/hooks/conventional-commits.py",
+            ".claude/hooks/test-coverage-gate.py",
+            ".claude/hooks/friction-logger.py",
+        ])
+        found = sorted(cmd.split('"${CLAUDE_PROJECT_DIR}"/', 1)[1] for _e, _m, cmd in self.mod.hook_commands(self.template))
+        self.assertEqual(found, expected)
 
     def test_template_has_only_schema_and_hooks(self) -> None:
         self.assertEqual(sorted(self.template), ["$schema", "hooks"])
@@ -92,8 +110,44 @@ class RenderTest(unittest.TestCase):
             project = self.make_project(Path(raw))
             template_text = TEMPLATE_PATH.read_text()
             rendered = template_text.replace('\\"${CLAUDE_PROJECT_DIR}\\"', str(project))
-            (project / ".claude" / "settings.json").write_text(rendered)
+            self.assertNotEqual(rendered, template_text, "the replace must change something or this test proves nothing")
+            target = project / ".claude" / "settings.json"
+            target.write_text(rendered)
             self.assertEqual(self.mod.run(project, apply=True), 0)
+            self.assertEqual(target.read_text(), rendered, "an existing file with the same hooks must stay byte for byte")
+
+    def test_unreadable_existing_file_is_reported_and_left_alone(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            project = self.make_project(Path(raw))
+            target = project / ".claude" / "settings.json"
+            target.write_text("{ not json")
+            self.assertEqual(self.mod.run(project, apply=True), 1)
+            self.assertEqual(target.read_text(), "{ not json")
+
+    def test_dangling_symlink_is_not_followed_or_filled(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            project = self.make_project(Path(raw))
+            elsewhere = project / "elsewhere.json"
+            link = project / ".claude" / "settings.json"
+            link.symlink_to(elsewhere)
+            self.assertEqual(self.mod.run(project, apply=True), 1)
+            self.assertFalse(elsewhere.exists(), "the script must not create the file the link points to")
+
+    def test_file_that_appears_after_the_check_is_never_overwritten(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            project = self.make_project(Path(raw))
+            target = project / ".claude" / "settings.json"
+            real_exists = Path.exists
+
+            def racing_exists(path: Path) -> bool:
+                result = real_exists(path)
+                if path == target and not result and not real_exists(target):
+                    target.write_text("{\"hooks\": {}}\n")  # another process creates it right after the check
+                return result
+
+            with mock.patch.object(Path, "exists", racing_exists):
+                self.assertEqual(self.mod.run(project, apply=True), 1)
+            self.assertEqual(target.read_text(), "{\"hooks\": {}}\n")
 
     def test_template_without_variable_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

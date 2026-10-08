@@ -74,8 +74,12 @@ def run(project_dir: Path, apply: bool) -> int:
         for problem in problems:
             print(f"ERROR: {problem}", file=sys.stderr)
         return 1
-    if target.exists():
-        existing = json.loads(target.read_text())
+    if target.exists() or target.is_symlink():
+        try:
+            existing = json.loads(target.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"ERROR: {target} exists but cannot be read as JSON ({exc}). It was not changed.", file=sys.stderr)
+            return 1
         notes = compare(template, existing, project_dir)
         if not notes:
             print(f"OK: {target} already has the same hook commands. Nothing changed.")
@@ -88,7 +92,13 @@ def run(project_dir: Path, apply: bool) -> int:
         print(f"DRY RUN: would create {target} from the template. Use --apply.")
         return 0
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(template_path.read_text())
+    try:
+        # Exclusive create: fails if the file appeared since the check above, so it can never overwrite.
+        with target.open("x") as handle:
+            handle.write(template_path.read_text())
+    except FileExistsError:
+        print(f"{target} appeared while the script was running and was not changed.", file=sys.stderr)
+        return 1
     print(f"Created {target} from the template.")
     return 0
 
