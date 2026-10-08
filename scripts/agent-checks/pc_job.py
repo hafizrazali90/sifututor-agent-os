@@ -156,6 +156,8 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
         "job_brief.py": (HERE / "job_brief.py").read_text(),
         "role.txt": role_text(),
         "start.sh": start_sh(job_id),
+        "settings.template.json": (HERE.parents[1] / ".claude" / "settings.template.json").read_text(),
+        "render-claude-settings.py": (HERE / "render-claude-settings.py").read_text(),
     }
     out(f"Job {job_id}: {normal['title']}")
     out(f"  role {normal['role']}, finish {normal['finish']}"
@@ -247,17 +249,43 @@ def prepare_worktree(repo: Path, worktrees: Path, job_id: str, normal: dict) -> 
     return path
 
 
-def wire_guards(worktree: Path) -> str | None:
-    """Return None when hooks are wired, else the reason to refuse."""
-    template = worktree / ".claude" / "settings.template.json"
-    if not template.is_file():
-        return "refusing to run without guards: the base has no .claude/settings.template.json"
-    proc = sh([sys.executable, "scripts/agent-checks/render-claude-settings.py", "--apply"], cwd=worktree)
+def count_hooks(settings: dict) -> int:
+    return sum(len(g.get("hooks", [])) for items in settings.get("hooks", {}).values() for g in items)
+
+
+def wire_guards(worktree: Path, job_dir: Path | None = None) -> str | None:
+    """Return None when hooks are wired, else the reason to refuse.
+
+    Uses the branch's own template when it has one. A branch cut before the
+    template existed uses the copy that travelled with the job, after checking
+    that every hook script it names exists in the worktree.
+    """
     settings = worktree / ".claude" / "settings.json"
-    if proc.returncode != 0 or not settings.is_file():
-        return f"refusing to run without guards: could not build settings.json ({proc.stdout.strip()[:120]})"
+    template = worktree / ".claude" / "settings.template.json"
+    if template.is_file():
+        proc = sh([sys.executable, "scripts/agent-checks/render-claude-settings.py", "--apply"], cwd=worktree)
+        if proc.returncode != 0 or not settings.is_file():
+            return f"refusing to run without guards: could not build settings.json ({proc.stdout.strip()[:120]})"
+    else:
+        shipped = (job_dir / "settings.template.json") if job_dir else None
+        renderer_path = (job_dir / "render-claude-settings.py") if job_dir else None
+        if not (shipped and shipped.is_file() and renderer_path and renderer_path.is_file()):
+            return "refusing to run without guards: neither the branch nor the job carries a settings template"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("shipped_render_claude_settings", renderer_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        problems = module.validate_template(json.loads(shipped.read_text()), worktree)
+        if problems:
+            return "refusing to run without guards: " + "; ".join(problems)[:200]
+        settings.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with settings.open("x") as handle:
+                handle.write(shipped.read_text())
+        except FileExistsError:
+            return "refusing to run without guards: settings.json already exists in the worktree"
     try:
-        wired = sum(len(g.get("hooks", [])) for items in json.loads(settings.read_text()).get("hooks", {}).values() for g in items)
+        wired = count_hooks(json.loads(settings.read_text()))
     except (OSError, json.JSONDecodeError):
         return "refusing to run without guards: settings.json is unreadable"
     return None if wired >= GUARD_HOOK_MIN else "refusing to run without guards: no hooks are wired"
@@ -334,7 +362,7 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         status.update(state="preparing")
         worktree = prepare_worktree(repo, worktrees, job_id, normal)
         status.update(worktree=str(worktree), branch=normal["branch"] or f"(detached {normal['target']})")
-        reason = wire_guards(worktree)
+        reason = wire_guards(worktree, job_dir)
         if reason:
             return finish_job(job_dir, status, normal, {"state": "blocked", "reason": reason})
 

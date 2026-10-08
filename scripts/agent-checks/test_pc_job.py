@@ -194,14 +194,40 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(status["state"], "blocked")
         self.assertIn("cannot merge or deploy", status["reason"])
 
-    def test_missing_guards_stop_the_job_before_claude_starts(self) -> None:
+    def drop_template_from_branch(self) -> str:
+        template = (self.repo / ".claude" / "settings.template.json").read_text()
         git(self.repo, "rm", "-q", ".claude/settings.template.json")
         git(self.repo, "commit", "-q", "-m", "drop template")
         git(self.repo, "push", "-q", "origin", "main")
+        return template
+
+    def test_missing_guards_stop_the_job_before_claude_starts(self) -> None:
+        self.drop_template_from_branch()
         _, status = self.builder()
         self.assertEqual(status["state"], "blocked")
         self.assertIn("without guards", status["reason"])
         self.assertFalse(self.argv_log.exists(), "claude must not start without guards")
+
+    def test_branch_without_a_template_uses_the_copy_that_travelled_with_the_job(self) -> None:
+        template = self.drop_template_from_branch()
+        job_dir = self.job(BRIEF.format(finish="local", extra=""), "edit_commit")
+        (job_dir / "settings.template.json").write_text(template)
+        shutil.copy(REAL_RENDER, job_dir / "render-claude-settings.py")
+        status = self.run_job(job_dir)
+        self.assertEqual(status["state"], "done", status)
+        self.assertTrue((Path(status["worktree"]) / ".claude" / "settings.json").is_file())
+        self.assertEqual(status["changed_files"], ["docs/a.md"], "the shipped template must not show up as a change")
+
+    def test_shipped_template_naming_a_missing_script_is_refused(self) -> None:
+        template = json.loads(self.drop_template_from_branch())
+        template["hooks"]["PreToolUse"][0]["hooks"][0]["command"] = 'python3 "${CLAUDE_PROJECT_DIR}"/scripts/agent-checks/not-there.py'
+        job_dir = self.job(BRIEF.format(finish="local", extra=""), "edit_commit")
+        (job_dir / "settings.template.json").write_text(json.dumps(template))
+        shutil.copy(REAL_RENDER, job_dir / "render-claude-settings.py")
+        status = self.run_job(job_dir)
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("not-there.py", status["reason"])
+        self.assertFalse(self.argv_log.exists(), "claude must not start when a guard script is missing")
 
     def test_missing_git_identity_stops_a_committing_job_before_claude_starts(self) -> None:
         empty = self.tmp / "empty-gitconfig"
@@ -320,7 +346,7 @@ class MacSideTest(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         install_cmd, install_input = calls[0]
         self.assertEqual(install_cmd[-1], "wsl -d Ubuntu -u hafiz -e sh -s")
-        for name in ("brief.md", "pc_job.py", "job_brief.py", "role.txt", "start.sh"):
+        for name in ("brief.md", "pc_job.py", "job_brief.py", "role.txt", "start.sh", "settings.template.json", "render-claude-settings.py"):
             self.assertIn(f'/{name}"', install_input)
         job_id = re.search(r"Job (\S+):", lines[0]).group(1)
         schtasks = calls[1][0][-1]
