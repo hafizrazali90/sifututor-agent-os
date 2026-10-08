@@ -8,7 +8,7 @@ Inspired by ECC's continuous-learning pattern and claude-coach's PostToolUse
 capture, but built in-house with zero third-party dependencies. No network
 calls, no external services, no API costs — pure local observation.
 
-Review with: /friction-review (skill at ~/.claude/skills/friction-review/)
+Review with: /self-improve --last 20 or --top-commands (skill at ~/.claude/skills/self-improve/)
 
 Hard constraints:
 - Silent on success — only logs failures
