@@ -3,9 +3,9 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 35 lanes (33 scoped files under
+Current registry count: 36 lanes (34 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
-the delegated SharePoint read-only lane; lane 40 has no file of its own).
+the delegated SharePoint read-only lane; lanes 40 and 41 have no file of their own).
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
@@ -732,6 +732,19 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Safe verification** | `scripts/agent-access/ripple-prod-sql-readonly.sh "SELECT current_setting('transaction_read_only')"` returns `on` |
 | **Forbidden** | No writes of any kind from this lane. Production data changes keep the private copy, rehearse and apply method with Hafiz's approval for that exact operation. Do not copy personal data into notes, issues or chat beyond what the task needs; aggregate first |
 
+### 41. `lls-server-readonly` - Learnest (LLS) Server, Read-Only
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The route is the existing `lls` ssh alias (Learnest box, `/var/www/learnest`, `-staging`, `-develop`), and every command runs as the `www-data` account the app itself uses, never as root. No password or key is handled by the wrapper |
+| **Wrapper** | `scripts/agent-access/lls-server-readonly.sh <prod\|staging\|develop> artisan <name> [flags]`, `... logs [lines]` (default 200, max 2000), `... pm2` (queue worker names, status and restart count) |
+| **Artisan allow-list** | `about`, `env`, `route:list`, `schedule:list`, `migrate:status`, `queue:failed`; flags `--json --compact --pending --no-ansi --path= --name= --method= --domain=` |
+| **Purpose** | Give agents the same read view of the Learnest server that a human operator has: app state, routes, schedule, pending migrations, failed jobs, application log and queue workers. Database reads stay in lane 5 `lls-database-readonly` |
+| **Related private file** | `lls-staging-admin.conf` (mode 600): `LLS_STAGING_ADMIN_URL`, `LLS_STAGING_ADMIN_EMAIL`, `LLS_STAGING_ADMIN_PASSWORD`, the Learnest staging admin login for QA. Created 08/10/2026 when the old shared value was rotated; staging only |
+| **Tier** | auto-read |
+| **Safe verification** | `scripts/agent-access/lls-server-readonly.sh prod artisan about` |
+| **Forbidden** | No `tinker`, no `config:show`, no cache, queue, migrate or any writing command, no root. Writes (premium, suspend, refund, cancel) need their own scoped write lane and Hafiz's approval for that exact operation. Do not copy personal data from logs into notes or chat beyond what the task needs |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -758,6 +771,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
 | `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
+| `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
@@ -792,6 +806,7 @@ never print secret values.
 | `check-st-admin-cert.sh` | SSL cert for `st.admin.sifututor.my` (expiry, issuer, SANs) |
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
+| `lls-server-readonly.sh <env> artisan\|logs\|pm2` | Learnest server, allow-listed read commands as the app account (lane 41) |
 | `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
