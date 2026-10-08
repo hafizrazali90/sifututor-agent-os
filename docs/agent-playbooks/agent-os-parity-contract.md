@@ -84,6 +84,11 @@ commands, or delegation, and points
 the model at the existing task router, skills, playbooks, Koda helper, and
 pre-commit guard.
 
+This adapter is currently stricter than `AGENTS.md`: `AGENTS.md` now allows
+reading committed env templates (`.env.example`) and code under `live/`, while
+the Kilo permission file still denies `.env*` and `live/` reads. Its permission
+file has not been changed. `AGENTS.md` is the authority for Claude and Codex.
+
 The provider credential remains in Kilo or VS Code's machine-local credential
 storage. It must never be copied into `.kilo/`, repository docs, tests, logs,
 Koda, or Git. Run
