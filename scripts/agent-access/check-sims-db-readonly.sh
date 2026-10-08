@@ -40,20 +40,30 @@ DB_USER="${!USER_VAR}"
 DB_PASS="${!PASS_VAR}"
 DB_NAME="${!DB_VAR}"
 
+# shellcheck source=lib/mysql-client.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/mysql-client.sh"
+MYSQL="$(sifu_mysql_client)" || {
+  echo "✗ No mysql client found. Install one: brew install mysql@8.4"
+  exit 1
+}
+
 echo "Host: ${DB_HOST}:${DB_PORT}  DB: ${DB_NAME}  User: ${DB_USER}"
+echo "Client: ${MYSQL}"
 echo ""
 
 # Connection test
 echo "── Connection test ──"
-if mysql -h "$DB_HOST" -P "$DB_PORT" \
+if CONNECT_ERR="$("$MYSQL" -h "$DB_HOST" -P "$DB_PORT" \
   -u "$DB_USER" -p"$DB_PASS" \
   "$DB_NAME" \
   --connect-timeout=8 \
-  -e "SELECT 1;" > /dev/null 2>&1; then
+  -e "SELECT 1;" 2>&1 >/dev/null)"; then
   printf '\033[32m✓\033[0m Connection: OK\n'
 else
   printf '\033[31m✗\033[0m Connection: FAILED\n'
-  echo "  If running locally, production 3306 may be firewalled by design. Use the approved SSH tunnel path before retrying."
+  # #340: show the client's own first error line, then the matching hint.
+  printf '  %s\n' "$(grep -v 'Using a password' <<<"$CONNECT_ERR" | head -1 | cut -c1-200)"
+  sifu_mysql_failure_hint "$CONNECT_ERR"
   exit 1
 fi
 
@@ -62,7 +72,7 @@ echo ""
 echo "── Spot checks (aggregate counts) ──"
 
 if [[ "$USE_LLS" == "--lls" ]]; then
-  mysql -h "$DB_HOST" -P "$DB_PORT" \
+  "$MYSQL" -h "$DB_HOST" -P "$DB_PORT" \
     -u "$DB_USER" -p"$DB_PASS" \
     "$DB_NAME" \
     --connect-timeout=8 \
@@ -72,7 +82,7 @@ SELECT
    WHERE table_schema = DATABASE()) AS table_count;
 " 2>/dev/null
 else
-  mysql -h "$DB_HOST" -P "$DB_PORT" \
+  "$MYSQL" -h "$DB_HOST" -P "$DB_PORT" \
     -u "$DB_USER" -p"$DB_PASS" \
     "$DB_NAME" \
     --connect-timeout=8 \
@@ -87,7 +97,7 @@ fi
 echo ""
 echo "── Permissions check ──"
 # Verify no write permission (expected to fail)
-WRITE_TEST=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
+WRITE_TEST=$("$MYSQL" -h "$DB_HOST" -P "$DB_PORT" \
   -u "$DB_USER" -p"$DB_PASS" \
   "$DB_NAME" \
   --connect-timeout=8 \
