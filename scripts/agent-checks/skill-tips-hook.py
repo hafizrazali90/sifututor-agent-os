@@ -330,6 +330,7 @@ def run(mode: str, agent: str, payload: dict) -> str | None:
         return None
     directory = state_dir()
     state = load_state(directory, session_id)
+    before = json.loads(json.dumps(state))
     if mode == "tip":
         tool_input = payload.get("tool_input") or {}
         raw = tool_input.get("skill") or tool_input.get("name") or ""
@@ -344,6 +345,8 @@ def run(mode: str, agent: str, payload: dict) -> str | None:
         item = decide_suggestion(prompt, entries, state, asked_question=asked, cwd=payload.get("cwd") or "")
         line = suggestion_line(item) if item else None
         message = f"{line}\n{SHOW_NOTE}" if line else None
+    if state == before:
+        return message
     # Save first. If the state cannot be stored, stay silent: no way to keep the once-only rule.
     if not save_state(directory, session_id, state):
         return None
