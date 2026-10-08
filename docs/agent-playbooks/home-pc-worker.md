@@ -89,3 +89,23 @@ scripts/agent-access/setup-pc-koda.sh
 ```
 
 It asks for the key twice with echo off, saves it in `~/.config/sifututor/koda-key.conf` (mode 600), adds one line to `~/.bashrc` so every shell loads it, creates a Koda-only `.mcp.json` in the repo if none exists, and finishes with Koda's read-only health check, printing only PASS or FAIL. Open a new Ubuntu shell afterwards. An agent must never run this script or see what is typed. Tests: `scripts/agent-checks/test_setup_pc_koda.py`.
+
+## Last verified run on the PC (08/10/2026, #270)
+
+| Item | Result |
+|------|--------|
+| Where | Home PC, Ubuntu on WSL2 (`Linux 6.6.87.2-microsoft-standard-WSL2 x86_64`), Python 3.14.4 |
+| Repo | `main` at `4c37c95` (after PR 337) |
+| Command | `python3 -m unittest discover -s scripts/agent-checks -p "test_*.py"` |
+| Result | 780 tests, OK, 1 skipped, exit code 0, 26 seconds |
+| Doc navigation check | 22 of 22 evaluated checks passed |
+| First run, same day | 44 failures of one new test (`test_every_entry_points_to_a_skill_that_exists`), because the PC had none of the global skills. Fixed by copying `~/.claude/skills` (48 skills, no trash or vendor sync folders) and the global `CLAUDE.md` from the Mac; the rerun passed |
+
+The failing first run is the useful lesson: a test that checks the global skills exists will fail on any machine that lacks them, so a new machine needs the skills and `CLAUDE.md` copied first. Command used to copy (from the Mac):
+
+```bash
+cd ~/.claude && COPYFILE_DISABLE=1 tar --exclude='.trash' --exclude='synced' --exclude='.DS_Store' -cf - skills CLAUDE.md \
+  | ssh homepc "wsl.exe -d Ubuntu -u hafiz -e tar -C /home/hafiz/.claude -xf -"
+```
+
+To rerun the suite on the PC without it being killed when the SSH session ends, start it through Task Scheduler (WSL stops detached processes): write the commands to `~/jobs/pc-tests/start.sh` in Ubuntu, then `schtasks /create /tn "job-pc-tests" /tr "wsl.exe -d Ubuntu -u hafiz -e /home/hafiz/jobs/pc-tests/start.sh" /sc once /st 00:00 /f & schtasks /run /tn "job-pc-tests"`, and read `~/jobs/pc-tests/report.txt`.
