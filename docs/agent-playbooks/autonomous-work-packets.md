@@ -113,7 +113,13 @@ caps, and a checkpoint (a saved record of progress so a stopped run can resume).
 
 A plain loop is cheaper, faster, and easier to stop than an orchestrating agent.
 Use an agent to do the work inside one step, not to decide what the next step
-is. On the home PC, the plain loop is scripts/agent-checks/pc_job.py.
+is.
+
+This is the one exception to the "not yet" rules in this playbook (do not
+install or clone a separate autonomous-loop tool, do not automate the loop
+runner). Hafiz approved a plain loop for the home PC on 08/10/2026: the job
+runner `scripts/agent-checks/pc_job.py` (issue #305, added by the pull request
+that introduces it). Everything else stays under the "not yet" rules.
 
 Adapted from the mattpocock/skills repository (MIT licence).
 

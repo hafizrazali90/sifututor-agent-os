@@ -113,8 +113,12 @@ Write every pull request description in three parts:
   two-way door (a revert undoes it). Then give the blast radius: what could
   break, for whom, and how to roll back.
 
-End with one line stating the release state: local, PR-open, merged, or
-deployed.
+When the pull request answers a staff report or request, also give the reporter
+and source, what they observed, the expected behavior, who uses it, why it
+matters and the author, as `AGENTS.md` requires.
+
+End with one line stating the release state: local, committed, pushed, PR-open,
+merged, deployed, live-checked, or monitored.
 
 This is the shape of the pull request description only. It does not replace or
 duplicate the review page Hafiz reads before a deploy.

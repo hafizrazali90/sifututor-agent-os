@@ -84,7 +84,9 @@ Add two more things to every continuation pack:
 - **References, not copies**: point to existing artifacts by their issue
   number, pull request number, playbook name, or file path. Do not paste their
   contents into the handoff. A pasted copy goes stale; the reference stays
-  current.
+  current. The exception is a delegation packet or job brief, which must pin the
+  requirement text and its meaning inside the brief (see the delegation sections
+  below), because a link can change after the receiver reads it.
 
 Every evidence and approval field above still applies.
 

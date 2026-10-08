@@ -103,9 +103,9 @@ For a larger change, the reviewer may review it twice, once along each axis
 - **Spec**: does the change do what the issue asked, nothing more and nothing
   less?
 
-Report both lists as they are. Do not merge them into one list and do not
-re-rank findings across them, so a spec gap is never hidden under a pile of
-style findings.
+Report both lists as they are, each ordered by severity within itself. Do not
+merge them into one list and do not re-rank findings across them, so a spec gap
+is never hidden under a pile of style findings.
 
 This lens is optional. The risk-first review in this playbook stays the
 default.

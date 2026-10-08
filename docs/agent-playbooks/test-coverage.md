@@ -76,7 +76,9 @@ A seam is the public boundary a test works at, where you can see behavior
 without reaching inside the code: an API endpoint, a service method, a page a
 user clicks through. Before writing tests for new behavior, write down the seams
 under test, with one line each on what that seam catches and what it misses, and
-confirm them. Do not write a test at a seam that was not confirmed.
+confirm them with Hafiz. In an unattended job the brief names the seams; if it
+does not, stop and report instead of choosing them yourself. Do not write a test
+at a seam that was not confirmed.
 
 Tests that reach into internals break when the code is refactored even though
 the behavior did not change.
