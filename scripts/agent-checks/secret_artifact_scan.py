@@ -25,6 +25,10 @@ _PLACEHOLDER = re.compile(
 _CONFIGURED_REFERENCE = re.compile(
     r"([:=]\s*)process\.env\.[A-Z][A-Z0-9_]*(?=\s*[,;}\])!?]|\s*$)"
 )
+# An unquoted PHP static call is executable source, not a literal credential.
+_PHP_STATIC_CALL = re.compile(
+    r"([:=]\s*)\\?[A-Za-z_][A-Za-z0-9_\\]*::[A-Za-z_][A-Za-z0-9_]*(?=\()"
+)
 _FIXTURE_WORDS = re.compile(
     r"([:=]\s*)([\"'])((?:[a-z]+-)*fixture(?:-[a-z]+)*)\2"
 )
@@ -66,6 +70,8 @@ def find_secret_findings(text: str, *, path: str = "") -> list[Finding]:
     for line_number, line in enumerate(text.splitlines(), start=1):
         candidate = _PLACEHOLDER.sub("<placeholder>", line)
         assignment_candidate = _CONFIGURED_REFERENCE.sub(r"\1<configured-reference>", candidate)
+        if path.endswith('.php'):
+            assignment_candidate = _PHP_STATIC_CALL.sub(r"\1<code-reference>", assignment_candidate)
         if is_test_source(path):
             assignment_candidate = _FIXTURE_WORDS.sub(r"\1<fixture-placeholder>", assignment_candidate)
             assignment_candidate = _FIXTURE_ARGUMENT.sub(r"\1\2<fixture-placeholder>\1", assignment_candidate)
