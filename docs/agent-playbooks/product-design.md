@@ -434,15 +434,24 @@ Required when the work touches controller actions, services, cron jobs,
 invoices, payments, class scheduling, commissions, auth, mobile APIs, or data
 repair.
 
+Before writing the contract, read the real code and confirm the current
+behavior: trace the data flow, the status transitions, any cron jobs or
+background processes, and the configuration involved. Do not write the contract
+from memory.
+
 Map each behavior to:
 
 - entry point: route, controller, API endpoint, command, job, or service,
 - data read and write targets,
+- database changes: migrations, new columns or tables, indexes,
 - transaction/locking needs,
 - business guards,
 - side effects: notifications, logs, totals, status changes, cache, exports,
+- affected background jobs and commands,
 - rollback behavior,
 - idempotency and duplicate-prevention rules,
+- edge cases: at least five for risky work, each with how it is handled,
+- request and response samples for every changed endpoint,
 - tests and E2E evidence.
 
 This phase exists to avoid UI-forward specs that miss backend cascade effects.
