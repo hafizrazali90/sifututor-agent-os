@@ -88,7 +88,7 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/friction-logger.py",
             "timeout": 3,
-            "_why": "In-house friction detection \u2014 captures Bash failures to ~/.claude-friction.log for later review via /friction-review. Inspired by ECC continuous-learning pattern, zero third-party deps."
+            "_why": "In-house friction detection \u2014 captures Bash failures to ~/.claude-friction.log for later review via /self-improve. Inspired by ECC continuous-learning pattern, zero third-party deps."
           }
         ]
       }
