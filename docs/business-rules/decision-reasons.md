@@ -458,7 +458,7 @@ Register rationale: preserve exactly which tutor/profile the Parent received.
 
 ## BR-097
 
-No separate rationale captured in this entry. Inspect the cited governing source; do not invent one.
+- mem_748a5abc4b47 (correction, 08/10/2026): the tutor app shows the Special Need before Apply, so an application already is the tutor's acceptance; a separate per-tutor confirmation blocked handovers such as TREQ-895057 for no safety gain.
 
 ## BR-098
 
