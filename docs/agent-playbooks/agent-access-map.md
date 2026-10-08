@@ -3,9 +3,9 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 34 lanes (33 scoped files under
+Current registry count: 35 lanes (33 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
-the delegated SharePoint read-only lane).
+the delegated SharePoint read-only lane; lane 40 has no file of its own).
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
@@ -690,6 +690,19 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Safe verification** | `scripts/agent-access/agent-access-doctor.sh` (reports presence and mode 600, never values) |
 | **Forbidden** | Never use on production; never print, log or commit the email, password, cookies or tokens; never put the values into a test file, a screenshot, a transcript or memory; never run the setup script for Hafiz; never create a new login-capable staff account by writing rows by hand (role assignment publishes an access event to Ripple, so it goes through the SIMS Staff and Users screens) |
 
+### 40. `ripple-prod-sql-readonly` - Ripple Production Database, Read-Only SQL
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The route is `ssh staging` (the KVM8 box) as the `postgres` OS account, so no password or connection string is handled |
+| **Database** | `ripple_suite_prod`, local PostgreSQL on the KVM8 box (source: ripple-suite `docs/deployment/infrastructure.md`) |
+| **Wrapper** | `scripts/agent-access/ripple-prod-sql-readonly.sh "<query>"` (or the query on stdin). Output is CSV by default; `RIPPLE_PROD_SQL_FORMAT=table` for a table |
+| **Purpose** | Give agents the same read visibility of Ripple production data that a human operator has, for diagnosis, integrity investigations and release checks, so work does not stall or go blind |
+| **Tier** | auto-read |
+| **Safety** | The session is forced read-only (`default_transaction_read_only=on`) with a 60 second statement timeout. The wrapper accepts one `select`, `with`, `explain`, `show`, `table` or `values` statement and refuses the ways out of read-only mode and server file reads (`set`, `reset`, `begin`, `commit`, `copy`, `pg_read_file`, `lo_import`, `dblink`, `set_config` and similar). It does not refuse ordinary queries |
+| **Safe verification** | `scripts/agent-access/ripple-prod-sql-readonly.sh "SELECT current_setting('transaction_read_only')"` returns `on` |
+| **Forbidden** | No writes of any kind from this lane. Production data changes keep the private copy, rehearse and apply method with Hafiz's approval for that exact operation. Do not copy personal data into notes, issues or chat beyond what the task needs; aggregate first |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -715,6 +728,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-prod-smoke` | `ripple-prod-smoke*.conf` | auto-read | Never for read-only smoke; new role logins need Hafiz to create the account |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
+| `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
@@ -749,6 +763,7 @@ never print secret values.
 | `check-st-admin-cert.sh` | SSL cert for `st.admin.sifututor.my` (expiry, issuer, SANs) |
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
+| `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
