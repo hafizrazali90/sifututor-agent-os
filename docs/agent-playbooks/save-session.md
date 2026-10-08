@@ -241,10 +241,14 @@ source: user-stated | auto-captured | correction
 Every memory needs at least one project tag:
 
 ```text
-kelas | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
+kelasapp | sifu-tutor | ripple-suite | sifututor_tutor | sifututor_parent |
 lls | lls-frontend | lls-mobile | creative-hub | finch-inbox |
 cx-call-capture-android | sims-owner-analytics | sifututor | codex-parity
 ```
+
+The Kelas project folder is `kelas`, but its Koda project tag is `kelasapp`.
+Koda's July 2026 cleanup merged the two names into `kelasapp`, and no memory
+carries `kelas`.
 
 Never store secrets, raw tokens, credentials, payload bodies, customer private
 messages, `.env` values, or production data.
