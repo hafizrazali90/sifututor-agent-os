@@ -90,7 +90,7 @@ If a new idea fits one of these rows, update that owner first.
 | Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
 | Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md` |
 | Diagnosis, implementation proof, and QA | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, `no-mistakes-lite.md`, `related-impact-audit.md`, `test-coverage.md`, `agent-os-evidence-model.md`, `sims-ui-audit.md` |
-| State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md`, `autonomous-work-packets.md`, `parallel-work-and-worktrees.md` |
+| State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md`, `autonomous-work-packets.md`, `parallel-work-and-worktrees.md`, `home-pc-worker.md`, `unattended-jobs.md` |
 | Memory | `agent-os-memory.md`, `agent-os-memory-architecture.md` |
 | Safety, capability, and access | `agent-os-approval-gates.md`, `agent-os-capability-model.md`, `agent-access-map.md`, `commit.md`, `capabilities.example.json` |
 | GitHub, PR, release, deploy, and incidents | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `release-documentation.md`, `monitor-production-logs.md`, `incident-workflow.md`, `product-push-map.md` |
