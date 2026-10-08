@@ -818,6 +818,7 @@ never print secret values.
 | `check-monitoring.sh` | Sentry unresolved issues count; BetterStack monitor status |
 | `check-microsoft-planner.sh` | Lokka / M365 access availability |
 | `check-backups.sh` | Backup storage object count and latest timestamp |
+| `proc-list-masked.sh [pattern]` | Running processes: pid, user, elapsed time and the full command line with secret-looking values masked (`-p<value>` after mysql/mariadb/mysqldump, `--password=`/`--token=`/`--secret=`/`--api-key=`, `Authorization: Bearer`, `user:pass@` in URLs, long tokens after key-like flags, secret-looking `KEY=value`). Use it instead of `ps -ef`, `ps aux` or `ps -o command`, which the secret guard blocks. The pattern is matched against the masked line. `--mask-stdin` masks lines piped in |
 | `check-jev-shadow.py` | Jev credential/SDK readiness and optional non-sensitive live canary |
 
 ---

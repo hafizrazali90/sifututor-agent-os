@@ -50,8 +50,55 @@ Use these layers together:
    error output are redacted before persistence.
 
 Do not weaken a block by adding an inline pipe such as `grep`, `jq`, or `sed`
-after a raw environment command. The sensitive output already exists inside
-the tool path. Add or update a reviewed wrapper instead.
+that still prints after a raw environment command. The sensitive output already
+exists inside the tool path. Add or update a reviewed wrapper instead. The only
+pipes that stay allowed reduce the output to a count, a yes/no or variable names
+(see "The guard judges the operation" below).
+
+### The guard judges the operation, not the word
+
+The guard parses the command and blocks the dangerous operation: a reader
+(`cat`, `head`, `sed`, `awk`, `grep` that prints, `jq`, a script that prints
+what it read) aimed at a secret file, a bare environment dump (`env`,
+`printenv`, `export -p`, `set`), a full process-argument listing (`ps aux`,
+`ps -ef`, `ps -o args`), an echo of a secret variable, and a language-level
+environment dump (`print(os.environ)`). A trigger word alone is not an
+operation. These stay allowed, because nothing secret reaches the terminal:
+
+- metadata on a secret file (`ls`, `stat`, `wc`, `file`, `open -R`, `test`);
+- counts and yes/no checks (`grep -c`, `grep -q`, `grep -l`) and names only
+  (`grep -o '^NAME='`, `sed 's/=.*/=<redacted>/'`, `awk -F= '{print $1}'`);
+- `ps -o pid,user,comm`, `ps -p PID` and `pgrep -f` (PIDs only). Full command
+  lines come from `scripts/agent-access/proc-list-masked.sh [pattern]`, which
+  masks passwords, tokens, bearer headers and URL credentials; `ps -ef`,
+  `ps aux` and `ps -o command|args` stay blocked;
+- environment listings that show only names or counts: `env | cut -d= -f1`,
+  `printenv | sed 's/=.*//'`, `env | wc -l`, `env | grep -c X`, `compgen -e`,
+  `declare -x | cut -d= -f1`. A listing that prints values, a listing piped
+  into a `grep` that prints, and `export -p` stay blocked;
+- the output of `ps` or a secret-file reader piped into a counting or quiet
+  consumer (`wc`, `grep -q`, `grep -c`);
+- a script that reads a secret file in-process and prints only counts, flags,
+  hashes or the result of an external call (database, HTTP, subprocess);
+- one keyed read of a non-secret variable (`process.env.NODE_ENV`);
+- committed templates such as `.env.example`, `.env.sample`, `.env.dist`;
+- code under `live/` (production snapshots, read only);
+- prose in tools that run no command (agent briefs, messages, questions,
+  memory notes, MCP free text).
+
+Under `live/` the guard still blocks any write, edit or deletion (`rm`, `mv`,
+`touch`, `>` redirects, `sed -i`, `cp` or `rsync` into it), reading its
+dotenv-style files and key files (`*.pem`, `*.key`, `id_*`, secret or credential
+names), and a recursive `grep -r` or `rg --hidden` over it unless
+`--exclude='.env*'` or `--include` is given, because a recursive search would
+print lines from those files.
+
+A command the parser cannot understand falls back
+to the older word rules. The proof lives in
+`scripts/agent-checks/test_secret_guard_operations.py`: a harmless corpus, a
+dangerous corpus, and negative controls (the old rules fail the harmless
+corpus, removing any one rule fails the dangerous corpus, an over-strict copy
+fails the harmless corpus).
 
 If a new dangerous pattern is found, add one failing regression, extend the
 shared guard, prove the safe alternative still works, then update the eval or

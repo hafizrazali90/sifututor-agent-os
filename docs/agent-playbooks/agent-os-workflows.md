@@ -123,7 +123,9 @@ Every workflow should answer these questions before it is called done:
   relevant auto-read lane proactively instead of asking Hafiz to prompt for it.
 - Ask Hafiz to verify only business judgment, subjective acceptance, unsafe
   actions, unavailable access, final risk acceptance, priority, or scope.
-- Never read or modify `.env*`, secrets, raw tokens, or files under `live/`.
+- Never read or modify real `.env*` files, secrets, or raw tokens (committed
+  templates such as `.env.example` are readable). Never modify `live/`; its code
+  is readable, its dotenv-style and key files are not.
 - Never commit, push, merge, open a PR, deploy, or run destructive actions
   without the approval required by [agent-os-approval-gates.md](agent-os-approval-gates.md).
 
