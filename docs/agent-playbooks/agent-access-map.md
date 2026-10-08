@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 36 lanes (33 scoped files under
+Current registry count: 36 lanes (34 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane; lanes 40 and 41 have no file of their own).
 
@@ -711,6 +711,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Wrapper** | `scripts/agent-access/lls-server-readonly.sh <prod\|staging\|develop> artisan <name> [flags]`, `... logs [lines]` (default 200, max 2000), `... pm2` (queue worker names, status and restart count) |
 | **Artisan allow-list** | `about`, `env`, `route:list`, `schedule:list`, `migrate:status`, `queue:failed`; flags `--json --compact --pending --no-ansi --path= --name= --method= --domain=` |
 | **Purpose** | Give agents the same read view of the Learnest server that a human operator has: app state, routes, schedule, pending migrations, failed jobs, application log and queue workers. Database reads stay in lane 5 `lls-database-readonly` |
+| **Related private file** | `lls-staging-admin.conf` (mode 600): `LLS_STAGING_ADMIN_URL`, `LLS_STAGING_ADMIN_EMAIL`, `LLS_STAGING_ADMIN_PASSWORD`, the Learnest staging admin login for QA. Created 08/10/2026 when the old shared value was rotated; staging only |
 | **Tier** | auto-read |
 | **Safe verification** | `scripts/agent-access/lls-server-readonly.sh prod artisan about` |
 | **Forbidden** | No `tinker`, no `config:show`, no cache, queue, migrate or any writing command, no root. Writes (premium, suspend, refund, cancel) need their own scoped write lane and Hafiz's approval for that exact operation. Do not copy personal data from logs into notes or chat beyond what the task needs |
