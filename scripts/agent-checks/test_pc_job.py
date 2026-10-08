@@ -51,7 +51,6 @@ role: builder
 branch: docs/900-change-a
 finish: {finish}
 {extra}allowed_paths: docs/a.md
-max_usd: 2
 ---
 Add one line to docs/a.md as described.
 """
@@ -178,7 +177,7 @@ class RunnerTest(unittest.TestCase):
         _, status = self.builder(mode="garbage")
         self.assertEqual(status["state"], "failed")
 
-    def test_wall_clock_limit_marks_the_job_timeout(self) -> None:
+    def test_test_time_limit_marks_the_job_timeout(self) -> None:
         job_dir = self.job(BRIEF.format(finish="local", extra=""), "hang")
         status = self.run_job(job_dir, timeout_override=1)
         self.assertEqual(status["state"], "timeout")
@@ -344,12 +343,12 @@ class RunnerTest(unittest.TestCase):
     def argv(self) -> list[str]:
         return self.argv_log.read_text().splitlines()
 
-    def test_builder_command_has_caps_and_never_skips_permissions(self) -> None:
+    def test_builder_command_has_no_caps_and_never_skips_permissions(self) -> None:
         self.builder()
         argv = self.argv()
         self.assertNotIn("--dangerously-skip-permissions", argv)
-        self.assertEqual(argv[argv.index("--max-budget-usd") + 1], "2")
-        self.assertEqual(argv[argv.index("--max-turns") + 1], "30")
+        self.assertNotIn("--max-budget-usd", argv)
+        self.assertNotIn("--max-turns", argv)
         self.assertEqual(argv[argv.index("--permission-prompts") + 1], "none")
         self.assertEqual(argv[argv.index("--permission-mode") + 1], "acceptEdits")
         allowed = argv[argv.index("--allowedTools") + 1]

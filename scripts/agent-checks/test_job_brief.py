@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the unattended job brief: parsing, caps and finish states."""
+"""Tests for the unattended job brief: parsing, removed caps and finish states."""
 
 from __future__ import annotations
 
@@ -22,9 +22,6 @@ role: builder
 branch: docs/277-writing-rules
 finish: local
 issue: 277
-max_usd: 2
-max_turns: 30
-max_minutes: 30
 allowed_paths: docs/agent-playbooks/skill-quality-and-pruning.md
 ---
 Add the instruction-writing rules described in issue 277 to the playbook.
@@ -57,8 +54,8 @@ class ParseTest(unittest.TestCase):
         self.assertIn("issue 277", parsed["body"])
 
     def test_comments_after_a_value_are_ignored(self) -> None:
-        parsed = job_brief.parse(brief(max_usd="3   # a small job"))
-        self.assertEqual(parsed["fields"]["max_usd"], "3")
+        parsed = job_brief.parse(brief(issue="277   # the writing rules issue"))
+        self.assertEqual(parsed["fields"]["issue"], "277")
 
     def test_missing_front_matter_is_an_error(self) -> None:
         with self.assertRaises(job_brief.BriefError):
@@ -73,7 +70,6 @@ class ValidateTest(unittest.TestCase):
         errors, normal = self.check(GOOD_BUILDER)
         self.assertEqual(errors, [])
         self.assertEqual(normal["finish"], "local")
-        self.assertEqual(normal["max_usd"], 2.0)
         self.assertEqual(normal["allowed_paths"], ["docs/agent-playbooks/skill-quality-and-pruning.md"])
 
     def test_missing_finish_defaults_to_local_and_is_recorded(self) -> None:
@@ -94,21 +90,13 @@ class ValidateTest(unittest.TestCase):
         errors, _ = self.check(brief(finish="pr-open", approval="Hafiz, chat 08/10/2026: push and open the PR"))
         self.assertEqual(errors, [])
 
-    def test_caps_get_safe_defaults(self) -> None:
-        errors, normal = self.check(brief(max_usd="", max_turns="", max_minutes=""))
-        self.assertEqual(errors, [])
-        self.assertEqual((normal["max_usd"], normal["max_turns"], normal["max_minutes"]), (2.0, 30, 30))
-        self.assertEqual(normal["caps_defaulted"], ["max_usd", "max_turns", "max_minutes"])
-
-    def test_caps_above_the_hard_limit_are_refused(self) -> None:
-        for field, value in (("max_usd", "50"), ("max_turns", "500"), ("max_minutes", "600")):
+    def test_cap_lines_are_refused_because_jobs_have_no_caps(self) -> None:
+        for field in ("max_usd", "max_turns", "max_minutes"):
             with self.subTest(field=field):
-                errors, _ = self.check(brief(**{field: value}))
-                self.assertTrue(any(field in e for e in errors), errors)
-
-    def test_budget_below_half_a_dollar_is_refused(self) -> None:
-        errors, _ = self.check(brief(max_usd="0.1"))
-        self.assertTrue(any("0.5" in e for e in errors), errors)
+                text = GOOD_BUILDER.replace("issue: 277", f"issue: 277\n{field}: 20")
+                errors, normal = self.check(text)
+                self.assertTrue(any(field in e and "no caps" in e for e in errors), errors)
+                self.assertNotIn(field, normal)
 
     def test_builder_needs_a_valid_branch_name(self) -> None:
         for bad in ("main", "feature-x", "feat/Has Space", "badtype/x"):

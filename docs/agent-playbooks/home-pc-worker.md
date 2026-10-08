@@ -59,10 +59,10 @@ yet (issue #271).
 
 ## Rules for a job on the PC
 
-- The rules for briefs, caps, finish states and roles are in
-  [unattended-jobs.md](unattended-jobs.md). In short: every job has a brief, a
-  spend cap, a turn cap and a time limit; a missing finish state means local
-  only; a job never merges or deploys.
+- The rules for briefs, finish states and roles are in
+  [unattended-jobs.md](unattended-jobs.md). In short: every job has a brief and
+  runs until Claude finishes, with no caps, as on the Mac; a missing finish
+  state means local only; a job never merges or deploys.
 
 ## Known gotchas
 

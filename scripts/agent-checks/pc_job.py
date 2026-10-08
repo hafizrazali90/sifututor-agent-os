@@ -169,8 +169,7 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
     out(f"Job {job_id}: {normal['title']}")
     out(f"  role {normal['role']}, finish {normal['finish']}"
         + (" (defaulted)" if normal["finish_defaulted"] else ""))
-    out(f"  caps: ${normal['max_usd']:g}, {normal['max_turns']} turns, {normal['max_minutes']} minutes"
-        + (f" (defaulted: {', '.join(normal['caps_defaulted'])})" if normal["caps_defaulted"] else ""))
+    out("  no caps: runs until Claude finishes, as on the Mac")
     if dry_run:
         out("DRY RUN: nothing was sent to the PC.")
         return 0
@@ -220,7 +219,6 @@ def sh(cmd: list[str], cwd: Path | None = None, timeout: float | None = None) ->
 
 def claude_command(claude: str, role: str, prompt: str, system: str, normal: dict) -> list[str]:
     cmd = [claude, "-p", prompt, "--output-format", "json",
-           "--max-budget-usd", f"{normal['max_usd']:g}", "--max-turns", str(normal["max_turns"]),
            "--permission-prompts", "none", "--append-system-prompt", system]
     if role == job_brief.REVIEWER:
         cmd += ["--permission-mode", "dontAsk", "--disallowedTools", ",".join(REVIEWER_DENIED),
@@ -340,8 +338,7 @@ def finish_job(job_dir: Path, status: Status, normal: dict, outcome: dict) -> in
         f"# Job {d.get('job_id')}: {normal.get('title')}", "",
         f"- **Status:** {state.upper()}" + (f" ({outcome['reason']})" if outcome.get("reason") else ""),
         f"- **Role:** {normal.get('role')}, finish {normal.get('finish')}",
-        f"- **Caps:** ${normal.get('max_usd'):g}, {normal.get('max_turns')} turns, {normal.get('max_minutes')} minutes",
-        f"- **Spent:** ${d.get('cost_usd', 0) or 0:.2f}, {d.get('turns', 0) or 0} turns",
+        f"- **Usage:** {d.get('turns', 0) or 0} turns (list-price equivalent ${d.get('cost_usd', 0) or 0:.2f}, billed to the subscription)",
         f"- **Started:** {d.get('started_at_myt')}  **Ended:** {d.get('ended_at_myt')}",
     ]
     if d.get("branch"):
@@ -370,11 +367,9 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         parsed = job_brief.parse((job_dir / "brief.md").read_text())
         errors, normal = job_brief.validate(parsed)
     except (OSError, job_brief.BriefError) as exc:
-        blank = {"title": "?", "role": "?", "finish": "?", "max_usd": 0.0, "max_turns": 0, "max_minutes": 0}
+        blank = {"title": "?", "role": "?", "finish": "?"}
         return finish_job(job_dir, status, blank, {"state": "blocked", "reason": f"brief unreadable: {exc}"})
-    status.update(title=normal["title"], role=normal["role"], finish=normal["finish"],
-                  caps={"max_usd": normal["max_usd"], "max_turns": normal["max_turns"],
-                        "max_minutes": normal["max_minutes"]})
+    status.update(title=normal["title"], role=normal["role"], finish=normal["finish"])
     if errors:
         return finish_job(job_dir, status, normal, {"state": "blocked", "reason": "brief failed validation: " + "; ".join(errors)})
 
@@ -402,11 +397,11 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
                if normal["role"] == job_brief.BUILDER else f" Review branch {normal['target']} against {normal['base']}."))
         cmd = claude_command(claude, normal["role"], prompt, system, normal)
         status.update(state="running")
-        limit = timeout_override if timeout_override is not None else normal["max_minutes"] * 60
+        # No wall-clock limit on a real job; timeout_override exists only for tests.
         try:
-            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=limit, check=False)
+            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=timeout_override, check=False)
         except subprocess.TimeoutExpired:
-            return finish_job(job_dir, status, normal, {"state": "timeout", "reason": f"wall-clock limit of {normal['max_minutes']} minutes reached"})
+            return finish_job(job_dir, status, normal, {"state": "timeout", "reason": f"test time limit of {timeout_override:g} seconds reached"})
         (job_dir / "claude-output.json").write_text(proc.stdout or "")
         try:
             data = json.loads(proc.stdout)
