@@ -5,9 +5,10 @@ The Mac is where Hafiz discusses and decides. The PC is where a job runs after
 the brief is agreed. This playbook is the owner for how that machine is set up
 and used. It holds no passwords, keys or sign-in codes.
 
-Status on 08/10/2026 (MYT): the machine, the repo and the guards are in place.
-The job runner, the spend caps and the reviewer role are not built yet, so no
-unattended job should run until issues #272 to #275 and #305 are done.
+Status on 08/10/2026 (MYT): the machine, the repo, the guards and the job
+runner are in place. How to run a job is in
+[unattended-jobs.md](unattended-jobs.md). Koda access from the PC is not done
+yet (issue #271).
 
 ## The machine
 
@@ -30,8 +31,9 @@ unattended job should run until issues #272 to #275 and #305 are done.
 - Quoting through SSH, Windows and WSL breaks easily. Send a script on standard
   input instead: `ssh homepc 'wsl -d Ubuntu -u hafiz -e sh -s' < script.sh`.
 - A job started as a plain SSH child process can die when the connection drops.
-  Windows jobs use the Task Scheduler (`schtasks`). Ubuntu jobs will use tmux,
-  once the runner exists.
+  Ubuntu shuts down when no Windows process is attached, which also kills tmux.
+  Every job, Windows or Ubuntu, is started through the Task Scheduler
+  (`schtasks`) so a Windows-side process keeps the machine alive.
 
 ## Accounts
 
@@ -57,11 +59,10 @@ unattended job should run until issues #272 to #275 and #305 are done.
 
 ## Rules for a job on the PC
 
-- Every job has a brief with a finish state: local, committed, PR-open, merged or
-  deployed. A brief without one means local only.
-- Every unattended job has a spend cap, a turn cap and a wall-clock limit.
-- A job never merges or deploys. It stops at the finish state in its brief.
-- The reviewer role reads cold, is read-only, and writes findings to a file.
+- The rules for briefs, caps, finish states and roles are in
+  [unattended-jobs.md](unattended-jobs.md). In short: every job has a brief, a
+  spend cap, a turn cap and a time limit; a missing finish state means local
+  only; a job never merges or deploys.
 
 ## Known gotchas
 

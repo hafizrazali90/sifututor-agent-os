@@ -290,6 +290,8 @@ class MacSideTest(unittest.TestCase):
         moment = dt.datetime(2026, 10, 8, 2, 30, tzinfo=dt.timezone.utc)
         self.assertEqual(pc_job.make_job_id("Add rules: v2!", moment), "20261008-103000-add-rules-v2")
         self.assertRegex(pc_job.make_job_id("###"), r"^\d{8}-\d{6}-job$")
+        long = pc_job.make_job_id("Review hook template pull request 302", moment)
+        self.assertEqual(long, "20261008-103000-review-hook-template-pull")
 
     def test_invalid_brief_is_refused_without_calling_the_pc(self) -> None:
         runner = mock.Mock()

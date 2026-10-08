@@ -76,7 +76,10 @@ def myt(moment: dt.datetime) -> str:
 
 def make_job_id(title: str, moment: dt.datetime | None = None) -> str:
     moment = (moment or now()).astimezone(MYT)
-    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:30].strip("-") or "job"
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    if len(slug) > 30:  # cut at a word boundary, not in the middle of a word
+        slug = slug[:30].rsplit("-", 1)[0] if "-" in slug[:30] else slug[:30]
+    slug = slug.strip("-") or "job"
     return f"{moment:%Y%m%d-%H%M%S}-{slug}"
 
 
