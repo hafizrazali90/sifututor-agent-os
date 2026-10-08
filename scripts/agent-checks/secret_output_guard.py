@@ -705,6 +705,29 @@ def _is_secret_path(token: str) -> bool:
     return any(_secret_path_piece(piece) for piece in pieces)
 
 
+_LIVE_KEY_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".p8", ".ppk")
+_LIVE_SECRET_WORDS = re.compile(r"secret|credential|password|passphrase|private|token")
+
+
+def _is_live_path(path: str) -> bool:
+    """A path inside the production snapshot folder (read-only by the workspace rules)."""
+
+    return path.startswith(("live/", "./live/")) or path in ("live", "./live") or "/Sifututor/live/" in path
+
+
+def _live_secret_name(base: str) -> bool:
+    """Files in live/ whose NAME says they are a key or a secret. Code stays readable."""
+
+    lowered = base.lower()
+    if lowered.endswith(_LIVE_KEY_SUFFIXES):
+        return True
+    if re.match(r"id_(?:rsa|ed25519|ecdsa|dsa)", lowered) and not lowered.endswith(".pub"):
+        return True
+    if lowered.endswith(_DOC_OR_CODE_SUFFIXES):
+        return False
+    return bool(_LIVE_SECRET_WORDS.search(lowered))
+
+
 def _private_config_file(relative: str, path: str) -> bool:
     """Files in ~/.config/sifututor that hold credentials (not data exports or docs)."""
 
@@ -730,7 +753,7 @@ def _secret_path_piece(piece: str) -> bool:
     config_dir = re.search(r"(?:^|/)\.config/sifututor(?:/|$)(.*)", path)
     if config_dir:
         return _private_config_file(config_dir.group(1), path)
-    if path.startswith(("live/", "./live/")) or "/Sifututor/live/" in path:
+    if _is_live_path(path) and _live_secret_name(_base(path.rstrip("/"))):
         return True
     base = _base(path.rstrip("/"))
     if not base:
@@ -886,7 +909,7 @@ def _names_only(exe: str, args: list[str]) -> bool:
 _REDACTING_SED = re.compile(r"^s([/#|,])[^\n]*?=\.\*\$?\1")
 
 
-def _values_removed(exe: str, args: list[str]) -> bool:
+def _values_removed(exe: str, args: list[str], *, lenient: bool = False) -> bool:
     """sed/awk/cut forms that print only the variable names, never the values."""
 
     positional = _positionals(args, frozenset({"-F", "-d", "-f", "-e"}))
@@ -896,7 +919,16 @@ def _values_removed(exe: str, args: list[str]) -> bool:
         has_separator = any(t in ("-F=", "-F", "--field-separator=") or t.startswith("-F=") for t in args)
         return has_separator and bool(re.fullmatch(r"\{\s*print\s+\$1\s*\}", positional[0]))
     if exe == "cut":
-        return "-s" in args and "-d=" in args and "-f1" in args
+        equals_delimiter = "-d=" in args or any(
+            args[i] == "-d" and i + 1 < len(args) and args[i + 1] == "=" for i in range(len(args))
+        )
+        first_field = "-f1" in args or "--fields=1" in args or any(
+            args[i] == "-f" and i + 1 < len(args) and args[i + 1] == "1" for i in range(len(args))
+        )
+        # A value that spans lines puts its continuation lines through a plain cut,
+        # so the strict form (-s) is required for files; a listing of variable names
+        # accepts the plain form.
+        return equals_delimiter and first_field and (lenient or "-s" in args)
     return False
 
 
@@ -1053,30 +1085,104 @@ _PIPE_FILTERS = frozenset(
 )
 
 
-def _output_is_swallowed(ctx: "_Ctx") -> bool:
-    """True when the command's output only feeds a quiet or counting consumer.
+def _output_is_swallowed(ctx: "_Ctx", *, names_ok: bool = False) -> bool:
+    """True when the command's output is reduced to a count, a yes/no or (names_ok) names.
 
-    `ps -u deploy -o args= | grep -q worker` prints nothing; the arguments never
-    reach the terminal. Anything that can print at the end of the pipe keeps the
-    command blocked.
+    `ps -u deploy -o args= | grep -q worker` prints nothing; `env | cut -d= -f1`
+    prints only variable names. Every command after the first must be a plain
+    filter, and at least one of them must do the reducing, so nothing that can
+    print the original lines is left at the end of the pipe.
     """
 
     tail = ctx.cmd.tail
-    if not tail or ctx.cmd.redirs and any(op.startswith(">") for op, _w in ctx.cmd.redirs):
+    if not tail or any(op.startswith(">") for op, _w in ctx.cmd.redirs):
         return False
-    for follower in tail[:-1]:
-        words = [w.text for w in follower.words]
-        if not words or _base(words[0]) not in _PIPE_FILTERS:
+    reduces = False
+    for follower in tail:
+        words = [word.text for word in follower.words]
+        if not words:
             return False
-    words = [word.text for word in tail[-1].words]
-    if not words:
-        return False
-    exe, args = _base(words[0]), words[1:]
-    if tail[-1].redirs and any(op.startswith(">") and not _w.text.startswith("/dev/null") for op, _w in tail[-1].redirs):
-        return False
-    if exe == "wc":
-        return True
-    return _count_only(exe, args)
+        exe, args = _base(words[0]), words[1:]
+        if any(op.startswith(">") and not w.text.startswith("/dev/null") for op, w in follower.redirs):
+            return False
+        if exe == "wc" or _count_only(exe, args) or (names_ok and _values_removed(exe, args, lenient=True)):
+            reduces = True
+        elif exe not in _PIPE_FILTERS:
+            return False
+    return reduces
+
+
+_LIVE_WRITE_REASON = (
+    "Writing, editing or deleting under live/ is blocked; live/ is a read-only production snapshot."
+)
+_WRITES_ANY_ARGUMENT = frozenset(
+    "rm mv touch mkdir rmdir chmod chown chgrp truncate unlink shred tee".split()
+)
+_WRITES_LAST_ARGUMENT = frozenset({"cp", "rsync", "scp", "install", "ln"})
+
+
+def _rule_live_write(ctx: _Ctx) -> str | None:
+    exe, args = ctx.exe, ctx.args
+    for op, word in ctx.cmd.redirs:
+        if op.startswith((">", "&>")) and _is_live_path(_resolve(word.text, ctx.scope)):
+            return _LIVE_WRITE_REASON
+    live_args = [
+        token
+        for token in args
+        if _is_live_path(token) or ("=" in token and _is_live_path(token.split("=", 1)[1]))
+    ]
+    if not live_args:
+        return None
+    if exe in _WRITES_ANY_ARGUMENT:
+        return _LIVE_WRITE_REASON
+    positional = _positionals(args)
+    if exe in _WRITES_LAST_ARGUMENT:
+        target_flag = [
+            token.split("=", 1)[1] if token.startswith("--target-directory=") else args[i + 1]
+            for i, token in enumerate(args)
+            if token.startswith("--target-directory=") or (token == "-t" and i + 1 < len(args))
+        ]
+        destinations = target_flag or positional[-1:]
+        if any(_is_live_path(item) for item in destinations):
+            return _LIVE_WRITE_REASON
+        return None
+    if exe in ("sed", "perl", "ruby", "gsed") and any(
+        token in ("--in-place",) or re.fullmatch(r"-[A-Za-z]*i[^\s]*", token) for token in args
+    ):
+        return _LIVE_WRITE_REASON
+    if exe == "dd" and any(token.startswith("of=") and _is_live_path(token[3:]) for token in args):
+        return _LIVE_WRITE_REASON
+    return None
+
+
+def _rule_live_recursive_search(ctx: _Ctx) -> str | None:
+    """A recursive search over live/ would print lines from its dotenv and key files."""
+
+    exe, args = ctx.exe, ctx.args
+    if exe not in ("grep", "egrep", "fgrep", "rg", "ag", "ack") or _count_only(exe, args):
+        return None
+    if not any(_is_live_path(token) for token in args):
+        return None
+    if exe == "rg":
+        hidden = any(t in ("--hidden", "-uu", "-uuu", "--no-ignore", "-u") for t in args)
+        covered = any(re.match(r"^(?:-g|--glob)(?:=|$)", t) for t in args) or any(
+            t.startswith("!") and ".env" in t for t in args
+        )
+        recursive = hidden
+    else:
+        recursive = any(
+            t in ("--recursive", "--dereference-recursive") or ("r" in _flag_cluster(t).lower())
+            for t in args
+        )
+        covered = any(
+            t.startswith("--exclude") and ".env" in t or t == "--exclude" for t in args
+        ) or any(t.startswith(("--include=", "--include")) for t in args)
+    if recursive and not covered:
+        return (
+            "A recursive search of live/ can print its dotenv and key files; "
+            "add --exclude='.env*' (or --include for the code you want)."
+        )
+    return None
 
 
 def _rule_pm2(ctx: _Ctx) -> str | None:
@@ -1100,6 +1206,9 @@ def _rule_proc_environ(ctx: _Ctx) -> str | None:
 
 def _rule_env_dump(ctx: _Ctx) -> str | None:
     exe, args = ctx.exe, ctx.args
+    if exe != "export" and _output_is_swallowed(ctx, names_ok=True):
+        # `env | wc -l`, `env | cut -d= -f1`: only counts or variable names leave the pipe.
+        return None
     if exe == "env":
         return "Whole-environment output is blocked; use env only to launch a scoped command."
     if exe == "printenv":
@@ -1154,7 +1263,10 @@ _PS_SAFE_COLUMNS = re.compile(r"^(?:comm|ucomm|pid|ppid|user|uid|gid|pgid|sid|tt
 
 def _rule_process_args(ctx: _Ctx) -> str | None:
     exe, args = ctx.exe, ctx.args
-    reason = "Broad process argument output is blocked; request only PID, user, and executable fields."
+    reason = (
+        "Broad process argument output is blocked; request only PID, user, and executable fields, "
+        "or run scripts/agent-access/proc-list-masked.sh [pattern] for masked command lines."
+    )
     if _output_is_swallowed(ctx):
         return None
     if exe == "pgrep":
@@ -1923,6 +2035,8 @@ def _rule_language_secret_file_print(ctx: _Ctx) -> str | None:
 
 
 _RULES: tuple[tuple[str, Any], ...] = (
+    ("live-write", _rule_live_write),
+    ("live-recursive-search", _rule_live_recursive_search),
     ("pm2", _rule_pm2),
     ("proc-environ", _rule_proc_environ),
     ("env-dump", _rule_env_dump),

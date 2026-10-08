@@ -44,8 +44,11 @@ modify.
 - Current user instruction, this contract, and the nearest project contract
   define scope. If they conflict with `CLAUDE.md`, stop before editing and
   explain the conflict.
-- Do not read, print, copy, edit, or commit repository `.env*` contents,
-  production secrets, or files under `live/`. For local development only, an
+- Do not read, print, copy, edit, or commit real repository `.env*` files or
+  production secrets. Committed templates (`.env.example`, `.env.sample`,
+  `.env.dist`) are readable. Code under `live/` is readable but never modified;
+  its dotenv-style files and key files (`*.pem`, `*.key`, `id_*`, credentials)
+  are not readable. For local development only, an
   agent may attach an existing repository `.env*` file to its own active,
   registered worktree through `worktree-lifecycle.py attach-local-env`; that
   helper may inspect path metadata and create the link but must never open or
