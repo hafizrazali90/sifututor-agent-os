@@ -265,6 +265,13 @@ def working_changes(worktree: Path) -> list[str]:
     return sorted(line[3:] for line in sh(["git", "status", "--porcelain"], cwd=worktree).stdout.splitlines() if line.strip())
 
 
+def has_git_identity(worktree: Path) -> bool:
+    """A commit needs an author. Accept git config or the GIT_AUTHOR_* variables."""
+    if os.environ.get("GIT_AUTHOR_NAME") and os.environ.get("GIT_AUTHOR_EMAIL"):
+        return True
+    return all(sh(["git", "config", key], cwd=worktree).stdout.strip() for key in ("user.name", "user.email"))
+
+
 def changed_files(worktree: Path, base: str) -> list[str]:
     names: set[str] = set()
     for cmd in (["git", "diff", "--name-only", f"{base}...HEAD"], ["git", "diff", "--name-only"],
@@ -327,6 +334,9 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         reason = wire_guards(worktree)
         if reason:
             return finish_job(job_dir, status, normal, {"state": "blocked", "reason": reason})
+
+        if normal["role"] == job_brief.BUILDER and normal["finish"] in ("committed", "pr-open") and not has_git_identity(worktree):
+            return finish_job(job_dir, status, normal, {"state": "blocked", "reason": "git identity is not set on this machine (user.name and user.email), so a commit would fail"})
 
         system = (job_dir / "role.txt").read_text() if (job_dir / "role.txt").is_file() else ""
         prompt = parsed["body"] + (

@@ -203,6 +203,24 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("without guards", status["reason"])
         self.assertFalse(self.argv_log.exists(), "claude must not start without guards")
 
+    def test_missing_git_identity_stops_a_committing_job_before_claude_starts(self) -> None:
+        empty = self.tmp / "empty-gitconfig"
+        empty.write_text("")
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(empty), "GIT_CONFIG_SYSTEM": str(empty), "HOME": str(self.tmp)}):
+            for name in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"):
+                os.environ.pop(name, None)
+            _, status = self.builder(finish="committed")
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("git identity", status["reason"])
+        self.assertFalse(self.argv_log.exists(), "claude must not start without a git identity")
+
+    def test_local_job_does_not_need_a_git_identity(self) -> None:
+        empty = self.tmp / "empty-gitconfig"
+        empty.write_text("")
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(empty), "GIT_CONFIG_SYSTEM": str(empty), "HOME": str(self.tmp)}):
+            _, status = self.builder(finish="local", mode="nochange")
+        self.assertEqual(status["state"], "done", status)
+
     def test_guards_are_wired_in_the_job_worktree(self) -> None:
         _, status = self.builder()
         settings = Path(status["worktree"]) / ".claude" / "settings.json"
