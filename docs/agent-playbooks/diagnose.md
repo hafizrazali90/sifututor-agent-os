@@ -16,15 +16,48 @@ Use this for bugs, failing tests, unexpected behavior, or unclear root cause.
   naming the root-cause pattern, the likely audit strength, and obvious related
   surfaces to inspect before or during the fix.
 
+## Feedback Loop Gate
+
+Before any theory about the cause, name one command you have already run that
+goes red (fails the way the user saw the bug fail) on this exact bug, and show
+its output with secrets redacted. The command must be:
+
+- red-capable: it drives the real code path and checks the user's exact
+  symptom. "Runs without errors" does not count.
+- deterministic: same result every run. For a random bug, pin a high repeat rate.
+- fast: it finishes in seconds.
+- agent-runnable: an agent can run it without a person.
+
+Read code to build the command; do not read it to guess the cause. If you catch
+yourself forming a theory about the cause before that command exists, stop. A
+theory without a failing command is the failure this gate prevents.
+
+If you forced the failure by editing code or data, do it in a throwaway copy (a
+separate worktree or a scratch database copy), never in the working tree, and
+compare against a pristine copy to prove the edit really landed before you trust
+the red result. Editing still needs the same approval as any implementation.
+
+For critical lanes (payments, commission, auth, migrations, production data),
+build the loop read-only first: against a copy, a replay of captured input, a
+test, or the approved read-only access wrappers in `agent-access-map.md`. Never
+run a loop that changes production data. Phase A stays read-only.
+
+If no loop can be built, stop and say so. List what you tried and ask for the
+access or captured example you need.
+
+Adapted from the mattpocock/skills repository (MIT licence).
+
 ## Steps
 
 1. Reproduce or inspect the symptom.
 2. Read the nearest project `AGENTS.md` and relevant `CLAUDE.md`.
 3. Search Koda for related past failures.
-4. Trace the smallest path that can explain the symptom.
-5. List hypotheses and evidence.
-6. Recommend the smallest fix and tests.
-7. For bugfix/hotfix work, recommend the related-impact audit strength:
+4. For a bug, pass the Feedback Loop Gate above: run a command that goes red on
+   the exact symptom before tracing any cause.
+5. Trace the smallest path that can explain the symptom.
+6. List hypotheses and evidence.
+7. Recommend the smallest fix and tests.
+8. For bugfix/hotfix work, recommend the related-impact audit strength:
    local related check, same-pattern sweep, or critical impact audit.
 
 ## Output Shape
@@ -34,6 +67,8 @@ DIAGNOSE - <project>
 
 Symptom:
 - <what is wrong>
+
+Command that goes red: <command and its output>
 
 Evidence:
 - <files, commands, traces>

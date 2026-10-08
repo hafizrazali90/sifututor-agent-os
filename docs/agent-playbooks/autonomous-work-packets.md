@@ -104,6 +104,25 @@ Default loop size:
 
 Do not batch so much work that the agent cannot explain what changed.
 
+### Prefer a plain loop for unattended work
+
+For work that runs without a person watching, prefer a plain deterministic loop
+over an agent that orchestrates other agents. A plain loop is a script that
+picks the next step by fixed rules and has a stop condition, spend and time
+caps, and a checkpoint (a saved record of progress so a stopped run can resume).
+
+A plain loop is cheaper, faster, and easier to stop than an orchestrating agent.
+Use an agent to do the work inside one step, not to decide what the next step
+is.
+
+This is the one exception to the "not yet" rules in this playbook (do not
+install or clone a separate autonomous-loop tool, do not automate the loop
+runner). Hafiz approved a plain loop for the home PC on 08/10/2026: the job
+runner `scripts/agent-checks/pc_job.py` (issue #305, added by the pull request
+that introduces it). Everything else stays under the "not yet" rules.
+
+Adapted from the mattpocock/skills repository (MIT licence).
+
 ## Loop Limits
 
 Use these defaults unless Hafiz names a different boundary:

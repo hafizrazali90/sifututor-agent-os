@@ -100,6 +100,31 @@ CI is mechanical evidence, so the agent should automate it when jobs can run:
    either running CI results or the documented manual evidence path support
    the claimed state.
 
+## Pull Request Body Shape
+
+Write every pull request description in three parts:
+
+- **Summary**: what changed and why, in plain words, 3 to 5 lines. Add a
+  screenshot for any visible change.
+- **Evidence**: what was run, with before and after results where they apply,
+  and a short "Not proven" list for anything that was not checked.
+- **Merge danger**: say whether the change is a one-way door (hard or
+  impossible to undo, such as deleting data or running a migration) or a
+  two-way door (a revert undoes it). Then give the blast radius: what could
+  break, for whom, and how to roll back.
+
+When the pull request answers a staff report or request, also give the reporter
+and source, what they observed, the expected behavior, who uses it, why it
+matters and the author, as `AGENTS.md` requires.
+
+End with one line stating the release state: local, committed, pushed, PR-open,
+merged, deployed, live-checked, or monitored.
+
+This is the shape of the pull request description only. It does not replace or
+duplicate the review page Hafiz reads before a deploy.
+
+Adapted from the mattpocock/skills repository (MIT licence).
+
 ## Before Merge
 
 Before merging, the agent must confirm:
