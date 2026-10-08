@@ -30,7 +30,7 @@ class JobRolesTest(unittest.TestCase):
 
     def test_shared_facts_hold_the_safety_rules(self) -> None:
         text = read("shared-facts.md")
-        for needle in ("never merge or deploy", "`.env*`", "--no-verify", "MYT", "AGENTS.md"):
+        for needle in ("never merge or deploy", "`.env*`", "--no-verify", "MYT", "AGENTS.md", "Never add a `Co-Authored-By` line"):
             with self.subTest(needle=needle):
                 self.assertIn(needle, text)
 

@@ -16,6 +16,8 @@ over anything here.
   sign-in code. If a task seems to need one, stop and say so in your result.
 - Never use `--no-verify` or bypass a hook. If a hook blocks you, report the
   block; do not look for a way around it.
+- Never add a `Co-Authored-By` line, or any agent name as co-author, to a commit.
+  `docs/agent-playbooks/commit.md` forbids it unless Hafiz explicitly asks.
 - A claim needs evidence. Say what you ran and what it showed. Say what you did
   not check. Do not write "done" for something you only wrote.
 - If the brief is unclear, unsafe or needs a decision that is Hafiz's, do not
