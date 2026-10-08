@@ -127,6 +127,7 @@ in the current agent instead of recreating a Sifututor-specific generator.
 | Deliverable | Preferred capability | Required evidence |
 | --- | --- | --- |
 | Word/DOCX or Google Docs-targeted document | Installed document skill or connected Google Docs skill | Source/fact review, privacy check, rendered-page inspection, and final-file openability. |
+| Presented slide deck (claude.ai Slides artifact or rendered HTML slides) | [deck-craft.md](deck-craft.md) on top of the installed Slides capability | Storyboard with one graphic per slide, clean geometry lint, four-lens review with no BLOCKER or MAJOR, and rendered-slide inspection. |
 | PowerPoint or Google Slides deck | Installed presentation skill or connected Google Slides skill | Source/fact review, template/brand check, editable content where required, rendered-slide inspection, and export/openability. |
 | Product identity, visual direction, or interface system | `product-design.md`; use installed image/design tools only for the assets they own | Confirmed audience and brand direction, project design-system fit, source/licence record for external assets, and visual review. |
 | Security validation | Normal `verify.md`, `qa.md`, and `review.md` for task-scoped checks | Exact scope, non-destructive evidence, findings by severity, and honest residual risk. A penetration test is a separate explicitly scoped engagement. |
@@ -172,12 +173,13 @@ repository, so they are not recoverable active sources of truth.
 | Proposal | Disposition | Reason and current owner |
 | --- | --- | --- |
 | CP-17 governed document production | **Replace** | Maintained installed document tooling already owns DOCX/Google Docs-targeted creation and render verification. This playbook owns Sifututor source, privacy, provenance, accessibility, and evidence rules. Do not recreate the missing custom skill or templates. |
-| CP-18 HTML presentation workflow | **Replace** | Maintained presentation tooling owns editable decks and render/export checks. HTML may be a review view when useful, but it is not a second source of truth or the default deck format. Do not recreate the missing slide skill. |
+| CP-18 HTML presentation workflow | **Replace, then Adapt (08/10/2026, #343)** | Maintained presentation tooling still owns editable decks and render/export checks, and the old CP-18 generator is not recreated. Real use then exposed a gap: two TNB ILSAS decks built with the installed Slides capability were rejected as "a wall of text in boxes". [deck-craft.md](deck-craft.md) now adds the visual standard, a geometry lint and a four-lens review loop on top of that capability. It is not a second source of truth for content. |
 | CP-19 identity design | **Adapt** | `product-design.md` owns identity decisions; installed image/design capabilities own asset creation or sourcing; project design systems and visual QA own implementation proof. A future dedicated skill needs repeated use and independent pilot evidence first. |
 | CP-20 security testing research | **Retire as a workflow** | Routine secure-development checks belong in verify, QA, review, secret guards, and project rules. OWASP WSTG may inform an explicitly scoped web security assessment, but a broad penetration test must not be implied by ordinary QA. The old research package had no reconciled scope or accepted pilot. |
 | CP-24 design autopilot | **Retire as a universal workflow; absorb proven parts** | Keep evidence-first design, surface/state inventory, deterministic preflight, rendered visual review, and learning from false positives. Reject fixed five-round loops, “never stop” behavior, universal quality claims, and tool-specific assumptions. `product-design.md`, `sims-ui-audit.md`, `qa.md`, and `review.md` own the live route. |
 
-No follow-up skill is required by this review. Open a new issue only when real
+No follow-up skill was required by this review. CP-18 later met that condition
+(issue #343). Open a new issue only when real
 use exposes a specific capability gap that the installed tools and current
 owner playbooks cannot cover.
 

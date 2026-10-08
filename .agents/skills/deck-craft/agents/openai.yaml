@@ -1,0 +1,2 @@
+name: deck-craft
+default_prompt: "Use $deck-craft to build this deck to the approved visual standard: storyboard, one real graphic per slide, lint clean, four reviewers before Hafiz sees it."

@@ -50,7 +50,7 @@ Agent OS playbooks.
 | Safety and approvals | What needs approval or must never happen. | `agent-os-approval-gates.md`, `agent-access-map.md`, `agent-os-capability-model.md`, `commit.md` |
 | Workflow improvement and governance | How the Agent OS changes itself safely. | `agent-os-improvement-loop.md`, `agent-os-governance.md`, `agent-os-enforcement-drift.md`, `agent-os-evals.md`, `agent-os-eval-coverage-map.md`, `agent-os-evaluation-harness.md`, `agent-os-scenario-lab.md` |
 | Multi-agent and adapters | How Claude, Codex, Kilo, and future LLMs use the same core. | `agent-os-parity-contract.md`, `agent-os-skill-registry.md`, `agent-os-adapter-readiness.md`, `agent-os-hook-dispatcher.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `codex-hook-trust.md` |
-| Planning, governed artifacts, and product design | How vague ideas become understandable build work, and how documents, presentations, identity work, and artifact evidence are routed. | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md` |
+| Planning, governed artifacts, and product design | How vague ideas become understandable build work, and how documents, presentations, identity work, and artifact evidence are routed. | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `deck-craft.md` |
 | Delivery and release | How PR, CI, merge, deploy, smoke, monitoring, and incidents work. | `push-pr-ci-automation.md`, `release-deploy-live-monitoring.md`, `monitor-production-logs.md`, `incident-workflow.md` |
 | Project adoption and rollout | How repos and developer staff adopt the Agent OS. | `project-adoption.md`, `agent-os-rollout-readiness.md`, `agent-os-installation.md`, `agent-os-staff-quick-start.md`, project profiles |
 | Bigger goals and future work | What is useful but not execution-ready. | `mission-ledger.md`, `mission-ledger/*`, `workflow-efficiency-audit.md` |
@@ -88,7 +88,7 @@ If a new idea fits one of these rows, update that owner first.
 | Routing and workflow weight | `task-router.md`, `agent-os-routing-model.md`, `agent-os-workflow-lanes.md`, `doc-routing-and-context-loading.md`, `doc-owner-route-index.md`, `agent-os-runtime-reliability.md` |
 | Skill and adapter system | `agent-os-skill-registry.md`, `skill-quality-and-pruning.md`, `agent-os-parity-contract.md`, `agent-os-adapter-readiness.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `agent-os-hook-dispatcher.md`, `codex-hook-trust.md` |
 | Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
-| Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md` |
+| Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md`, `deck-craft.md` |
 | Diagnosis, implementation proof, and QA | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, `no-mistakes-lite.md`, `related-impact-audit.md`, `test-coverage.md`, `agent-os-evidence-model.md`, `sims-ui-audit.md` |
 | State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md`, `autonomous-work-packets.md`, `parallel-work-and-worktrees.md`, `home-pc-worker.md`, `unattended-jobs.md` |
 | Memory | `agent-os-memory.md`, `agent-os-memory-architecture.md` |
