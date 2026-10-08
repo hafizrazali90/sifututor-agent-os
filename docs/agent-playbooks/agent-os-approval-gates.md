@@ -65,7 +65,7 @@ the action is non-destructive and inside the current request:
 
 | Action | Conditions |
 | --- | --- |
-| Read normal docs and code | Do not read `.env*` contents, production secrets, or modify `live/`. |
+| Read normal docs and code | Do not read real `.env*` files (committed templates such as `.env.example` are readable) or production secrets, and never modify `live/`. Code under `live/` is readable; its dotenv-style and key files are not. |
 | Attach existing local development configuration to an owned worktree | Use only `worktree-lifecycle.py attach-local-env`; the source must already exist inside the same repository, the target worktree must have an active current-session lease, and the helper must not read, copy, replace, or print file contents. |
 | Search files, git status, and git diff | Keep it scoped to the current repo/task. |
 | Run safe local checks | Commands must be non-destructive and not require production access. |
@@ -198,7 +198,7 @@ Standing access approval is not blanket access. The agent must still:
 - use the narrowest relevant access file or tool
 - explain the evidence source used when it affects the recommendation
 - keep secrets out of chat, docs, screenshots, logs, commits, and Koda
-- avoid repository `.env*` contents and `live/`; the governed local-worktree
+- avoid real repository `.env*` contents, secrets, and the dotenv-style and key files under `live/`; the governed local-worktree
   attachment helper is the only metadata-only exception
 - avoid unrelated credentials or systems
 - avoid broad evidence gathering outside the active task
@@ -263,7 +263,7 @@ These actions must not be hidden inside a larger bundle:
 | Auth/payment/invoice/commission/migration/mobile API implementation | Critical-lane changes need diagnosis first and approval before implementation. |
 | Destructive cleanup | File/data loss risk. |
 | Force push, reset, rebase, or history rewrite | Can destroy or confuse shared work. |
-| `.env*`, secrets, credentials, raw tokens | Forbidden to read, expose, or commit. |
+| Real `.env*` files (not committed templates), secrets, credentials, raw tokens | Forbidden to read, expose, or commit. |
 | Modify `live/` | `live/` is read-only reference. |
 | Use or change Plane | Plane is not part of the default Agent OS path; use it only if Hafiz explicitly asks in the current session. |
 
