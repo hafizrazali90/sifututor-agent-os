@@ -42,7 +42,7 @@ Use this ladder when deciding what to trust first.
 
 | Rank | Authority | Practical Meaning |
 | --- | --- | --- |
-| 1 | Forbidden boundaries | `.env*`, secrets, `live/`, destructive git history changes, and hook bypasses are not normal context decisions; they are safety boundaries. |
+| 1 | Forbidden boundaries | real `.env*` files, secrets, writes to `live/` (and its dotenv-style and key files), destructive git history changes, and hook bypasses are not normal context decisions; they are safety boundaries. |
 | 2 | Hafiz decision | Hafiz owns product direction, business rules, risk tolerance, and scope changes. |
 | 3 | Current verified evidence | Current code, tests, logs, command output, screenshots, browser evidence, and production-safe evidence prove what is happening now. |
 | 4 | Approved docs | `AGENTS.md`, project `AGENTS.md`, `CLAUDE.md`, and playbooks define workflow rules. |
