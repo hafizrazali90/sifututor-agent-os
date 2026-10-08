@@ -3,7 +3,7 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 33 lanes (31 scoped files under
+Current registry count: 34 lanes (33 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
 the delegated SharePoint read-only lane).
 
@@ -676,6 +676,20 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **State (04/10/2026)** | `ALERTS_MODE = "dry-run"`: the page decides and logs, nothing is sent. Hafiz decided "web first, automation later"; going live needs his approval |
 | **Forbidden** | Never print the token; never send a message with it by hand except a test Hafiz asked for; never change `ALERTS_MODE` without his approval |
 
+### 39. `sims-staging-browser-qa` - SIMS Staging Browser QA Login
+
+| Field | Value |
+|-------|-------|
+| **Conf files** | `sims-staging-browser-qa.conf` (mode 600): the QA login. `sims-staging-e2e.conf` (mode 600): `E2E_ADMIN_PASSWORD`, the one password shared by the 12 other seeded staging test accounts, read by the e2e fixtures and the seed commands |
+| **Variable names** | `SIMS_BROWSER_QA_BASE_URL`, `SIMS_BROWSER_QA_EMAIL`, `SIMS_BROWSER_QA_PASSWORD` |
+| **Base URL** | `https://sifu-staging.tutorla.tech` |
+| **Credential** | The seeded staging admin (SIMS user 1, roles `admin` and `super-admin`), not a new account. On 08/10/2026, on Hafiz's instruction ("create all for me"), Claude replaced the weak shared default on the 13 staging accounts that still accepted it with random passwords written straight into these two files and never shown. The same new value was written into `staging-smoke.conf` and `ripple-staging-smoke.conf`, because Ripple staging signs in against the SIMS users table. `scripts/agent-access/setup-sims-browser-qa-lane.sh` is how Hafiz re-sets the QA login himself |
+| **Purpose** | Lets the `browser-test` skill log in to SIMS staging and run the cases in `sifu-tutor/.claude/browser-test.yaml`. That file names this lane (`conf`, `email_var`, `password_var`) and holds no credential |
+| **Tier** | write on staging only. This is the difference from `staging-smoke` (lane 2), which is GET and HEAD only |
+| **Hafiz approval** | Required before any case that creates, edits or deletes staging data; read-only login and page checks may be reused once the task boundary is approved |
+| **Safe verification** | `scripts/agent-access/agent-access-doctor.sh` (reports presence and mode 600, never values) |
+| **Forbidden** | Never use on production; never print, log or commit the email, password, cookies or tokens; never put the values into a test file, a screenshot, a transcript or memory; never run the setup script for Hafiz; never create a new login-capable staff account by writing rows by hand (role assignment publishes an access event to Ripple, so it goes through the SIMS Staff and Users screens) |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -700,6 +714,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `typesafe-jev-shadow` | `typesafe-jev.conf` | write | One-time owner activation; automatic bounded shadow calls afterward |
 | `ripple-prod-smoke` | `ripple-prod-smoke*.conf` | auto-read | Never for read-only smoke; new role logins need Hafiz to create the account |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
+| `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
