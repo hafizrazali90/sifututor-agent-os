@@ -9,7 +9,7 @@ This means HEREDOC-style commit messages like:
 will NOT be parsed correctly -- the hook sees '$(cat <<' as the message.
 
 Always use direct -m flags:
-  git commit -m "emoji type(scope): title" -m "Body." -m "Co-Authored-By: ..."
+  git commit -m "emoji type(scope): title" -m "Body."
 
 Also avoid emojis with variation selectors (U+FE0F) as they can cause regex issues.
 Stick to simple emojis without modifiers.
@@ -30,6 +30,27 @@ command = tool_input.get("command", "")
 
 # Only validate git commit commands
 if tool_name != "Bash" or "git commit" not in command:
+    sys.exit(0)
+
+# commit.md: "Do not add an agent name as a commit co-author unless Hafiz explicitly asks."
+# Checked before the --no-verify skip so that flag cannot bypass it. A human co-author is fine.
+# One-off override when Hafiz explicitly asks: start the command with SIFUTUTOR_ALLOW_AGENT_COAUTHOR=1
+AGENT_COAUTHOR = re.compile(
+    r"co-authored-by:[^\n\"']*?(claude|anthropic|codex|openai|chatgpt|gpt-?\d|copilot|gemini|cursor|kilo|\bai\b)",
+    re.IGNORECASE,
+)
+if AGENT_COAUTHOR.search(command) and "SIFUTUTOR_ALLOW_AGENT_COAUTHOR=1" not in command:
+    reason = """Agent co-author line refused.
+
+docs/agent-playbooks/commit.md says: "Do not add an agent name as a commit
+co-author unless Hafiz explicitly asks."
+
+Remove the Co-Authored-By line from the commit message and commit again.
+A human co-author is allowed. If Hafiz explicitly asked for the agent line,
+start the command with SIFUTUTOR_ALLOW_AGENT_COAUTHOR=1."""
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
+                                              "permissionDecision": "deny",
+                                              "permissionDecisionReason": reason}}))
     sys.exit(0)
 
 # Skip if --no-verify is passed
@@ -94,7 +115,7 @@ With emoji:
 IMPORTANT:
   - Use -m flags directly, not HEREDOC
   - Use multiple -m flags for multi-line commits:
-    git commit -m "✨ feat: title" -m "Body text." -m "Co-Authored-By: ..."
+    git commit -m "✨ feat: title" -m "Body text."
   - Avoid emojis with variation selectors (like the lightning bolt with modifier)"""
 
     output = {

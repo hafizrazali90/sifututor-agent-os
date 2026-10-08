@@ -11,7 +11,7 @@ ok()   { emit "$1" "PASS${2:+ $2}"; }
 bad()  { emit "$1" "FAIL${2:+ $2}"; FAILURES=$((FAILURES + 1)); }
 
 [ -f "$CONF" ] || { emit conf_present "FAIL missing"; exit 1; }
-perms=$(stat -f '%Lp' "$CONF" 2>/dev/null || stat -c '%a' "$CONF")
+perms=$(stat -c '%a' "$CONF" 2>/dev/null || stat -f '%Lp' "$CONF")
 [ "$perms" = "600" ] && ok conf_mode 0600 || bad conf_mode "$perms"
 
 # shellcheck disable=SC1090

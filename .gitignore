@@ -7,6 +7,11 @@
 !README.md
 !AGENTS.md
 !CLAUDE.md
+!GLOSSARY.md
+
+# Track the rejected-ideas ledger (ideas we looked at and decided against).
+!.out-of-scope/
+!.out-of-scope/**
 
 # Track workspace documents (playbooks, product/QA references, staff guides,
 # analytics packets, partnership decks) so the team can refer to them.

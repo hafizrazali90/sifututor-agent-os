@@ -71,6 +71,29 @@ Classify the problem before editing.
 | Claude/Codex parity | Claude and Codex expose different behavior for the same workflow. | `agent-os-parity-contract.md`, skill registry, adapter docs |
 | Workflow weight | The system is too heavy, too loose, or too annoying. | `agent-os-workflow-lanes.md`, workflow docs, Hafiz working model |
 
+## Classify A Repeated Finding
+
+When a correction or failure repeats, classify it before writing anything.
+
+| Class | Meaning | What to do |
+| --- | --- | --- |
+| Mechanical | A script can check it, and the mistake is expensive or keeps coming back. | Make it a hook or linter, then shrink the prose to one line that points to the check. A cheap preference stays prose. |
+| Judgment | Only a person can decide it. | Keep it as prose, in the one document that owns it. |
+| Environment | The setup caused it: a missing tool, a wrong path, a stale file. | Fix the setup. Do not add a rule. |
+
+Worked examples from this repository:
+
+- **Mechanical:** decision boxes were too long to read (#248). The limits in
+  "Decision Questions" in `agent-os-communication.md` are now enforced by
+  `scripts/agent-checks/ask-question-size-guard.py`, a `PreToolUse` hook in
+  `.claude/settings.json` that denies an over-long box.
+- **Judgment:** whether a step needs a new approval or sits inside an existing
+  boundary. No script can tell, so it stays prose in
+  `agent-os-approval-gates.md`.
+- **Environment:** an isolated worktree could not start because its local
+  development configuration file was absent (eval AO-212). The fix was the
+  `worktree-lifecycle.py attach-local-env` helper, not a new rule.
+
 ## Owner Decision
 
 Use the lightest reliable home:

@@ -3,9 +3,9 @@
 Single source of truth for all approved Sifututor agent access lanes.
 Covers Claude Code, Codex, and future agents.
 
-Current registry count: 34 lanes (33 scoped files under
+Current registry count: 36 lanes (34 scoped files under
 `~/.config/sifututor/agent-access/`, the Microsoft 365 Planner env lane, and
-the delegated SharePoint read-only lane).
+the delegated SharePoint read-only lane; lanes 40 and 41 have no file of their own).
 
 **Rule for agents**: Before declaring access unavailable, consult this map and run
 the relevant wrapper script in `scripts/agent-access/`. Access that appears in this
@@ -16,6 +16,35 @@ monitoring, release checks, and safe current-state evidence gathering.
 
 Credential files live in `~/.config/sifututor/agent-access/`.
 Do NOT read, echo, print, log, or commit secret values from any lane.
+
+---
+
+## Servers, Zones And Paths
+
+Machine facts that were kept in the global `~/.claude/CLAUDE.md` and now live
+here, so there is one place to correct them. They hold no credentials. Check
+this table and the access lanes below before any production-affecting action;
+Koda (`reference_server_environment_map`, `feedback_staging_environment`) is the
+dated record when the two disagree.
+
+| Alias (`~/.ssh/config`) | Address | Provider | Notes |
+| --- | --- | --- | --- |
+| `production` | `151.246.1.164` (port 19199) | HostArmada Site Carrier | sifu-tutor and nakngaji production |
+| `staging` | `72.62.251.97` | Hostinger KVM8 | shared multi-tenant box: kelasapp, ripple-suite, creative-hub, Koda |
+| `finch` | `187.127.98.182` | Hostinger KVM8 (finch) | sifu-tutor staging since 09/08/2026; also hosts finch-inbox |
+| `webvoyager` | `151.246.1.218` (port 19199) | HostArmada Web Voyager | **Dead since 09/08/2026** (plan unsubscribed). Do not use. |
+
+- `sims-staging.tutorla.tech` (the old Hostinger VPS URL) and `webvoyager` are
+  both decommissioned. When Hafiz says "staging" for sifu-tutor, he means
+  `sifu-staging.tutorla.tech` on the `finch` box, not Web Voyager.
+- Cloudflare zone `tutorla.tech` is `ddcee6be0e754bc30573781940e5b96d`. DNS is
+  DNS-only (not proxied) on the staging domains, because the Cloudflare proxy
+  breaks Laravel session cookies. Cloudflare credentials are in
+  `~/.cloudflare-credentials` and are never printed.
+- Production SIMS app path: `/home/sifututortutorla/public_html` (cPanel/WHM KVM
+  VPS), never `/var/www/sifu-tutor`.
+- Never embed credential values in instruction files. Use the wrappers in
+  `scripts/agent-access/` for database, admin or infrastructure checks.
 
 ---
 
@@ -211,7 +240,7 @@ Do NOT read, echo, print, log, or commit secret values from any lane.
 | **Conf file** | `server-ssh.conf` |
 | **Production alias** | `production` → `151.246.1.164:19199` |
 | **Production app dir** | `/home/sifututortutorla/public_html` |
-| **Staging alias** | `webvoyager` → `151.246.1.218:19199` |
+| **Staging alias** | `finch` → `187.127.98.182` (sifu-tutor staging since 09/08/2026; `webvoyager` is dead, see "Servers, Zones And Paths") |
 | **Purpose** | SSH read access: read logs, check config, verify app state, SSL cert inspection |
 | **Tier** | auto-read for non-destructive reads; write-tier for any file modification |
 | **Hafiz approval** | Not required for reads; required for writes, restarts, or any command that changes server state |
@@ -690,6 +719,32 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Safe verification** | `scripts/agent-access/agent-access-doctor.sh` (reports presence and mode 600, never values) |
 | **Forbidden** | Never use on production; never print, log or commit the email, password, cookies or tokens; never put the values into a test file, a screenshot, a transcript or memory; never run the setup script for Hafiz; never create a new login-capable staff account by writing rows by hand (role assignment publishes an access event to Ripple, so it goes through the SIMS Staff and Users screens) |
 
+### 40. `ripple-prod-sql-readonly` - Ripple Production Database, Read-Only SQL
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The route is `ssh staging` (the KVM8 box) as the `postgres` OS account, so no password or connection string is handled |
+| **Database** | `ripple_suite_prod`, local PostgreSQL on the KVM8 box (source: ripple-suite `docs/deployment/infrastructure.md`) |
+| **Wrapper** | `scripts/agent-access/ripple-prod-sql-readonly.sh "<query>"` (or the query on stdin). Output is CSV by default; `RIPPLE_PROD_SQL_FORMAT=table` for a table |
+| **Purpose** | Give agents the same read visibility of Ripple production data that a human operator has, for diagnosis, integrity investigations and release checks, so work does not stall or go blind |
+| **Tier** | auto-read |
+| **Safety** | The session is forced read-only (`default_transaction_read_only=on`) with a 60 second statement timeout. The wrapper accepts one `select`, `with`, `explain`, `show`, `table` or `values` statement and refuses the ways out of read-only mode and server file reads (`set`, `reset`, `begin`, `commit`, `copy`, `pg_read_file`, `lo_import`, `dblink`, `set_config` and similar). It does not refuse ordinary queries |
+| **Safe verification** | `scripts/agent-access/ripple-prod-sql-readonly.sh "SELECT current_setting('transaction_read_only')"` returns `on` |
+| **Forbidden** | No writes of any kind from this lane. Production data changes keep the private copy, rehearse and apply method with Hafiz's approval for that exact operation. Do not copy personal data into notes, issues or chat beyond what the task needs; aggregate first |
+
+### 41. `lls-server-readonly` - Learnest (LLS) Server, Read-Only
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The route is the existing `lls` ssh alias (Learnest box, `/var/www/learnest`, `-staging`, `-develop`), and every command runs as the `www-data` account the app itself uses, never as root. No password or key is handled by the wrapper |
+| **Wrapper** | `scripts/agent-access/lls-server-readonly.sh <prod\|staging\|develop> artisan <name> [flags]`, `... logs [lines]` (default 200, max 2000), `... pm2` (queue worker names, status and restart count) |
+| **Artisan allow-list** | `about`, `env`, `route:list`, `schedule:list`, `migrate:status`, `queue:failed`; flags `--json --compact --pending --no-ansi --path= --name= --method= --domain=` |
+| **Purpose** | Give agents the same read view of the Learnest server that a human operator has: app state, routes, schedule, pending migrations, failed jobs, application log and queue workers. Database reads stay in lane 5 `lls-database-readonly` |
+| **Related private file** | `lls-staging-admin.conf` (mode 600): `LLS_STAGING_ADMIN_URL`, `LLS_STAGING_ADMIN_EMAIL`, `LLS_STAGING_ADMIN_PASSWORD`, the Learnest staging admin login for QA. Created 08/10/2026 when the old shared value was rotated; staging only |
+| **Tier** | auto-read |
+| **Safe verification** | `scripts/agent-access/lls-server-readonly.sh prod artisan about` |
+| **Forbidden** | No `tinker`, no `config:show`, no cache, queue, migrate or any writing command, no root. Writes (premium, suspend, refund, cancel) need their own scoped write lane and Hafiz's approval for that exact operation. Do not copy personal data from logs into notes or chat beyond what the task needs |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -715,6 +770,8 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-prod-smoke` | `ripple-prod-smoke*.conf` | auto-read | Never for read-only smoke; new role logins need Hafiz to create the account |
 | `ripple-staging-smoke` | `ripple-staging-smoke.conf` | write (staging only) | Yes — authenticated mutation scope |
 | `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
+| `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
+| `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
@@ -749,6 +806,8 @@ never print secret values.
 | `check-st-admin-cert.sh` | SSL cert for `st.admin.sifututor.my` (expiry, issuer, SANs) |
 | `check-ripple-prod.sh` | Ripple Suite production: PM2 status, HTTP login check, SIMS API reachability |
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
+| `lls-server-readonly.sh <env> artisan\|logs\|pm2` | Learnest server, allow-listed read commands as the app account (lane 41) |
+| `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
