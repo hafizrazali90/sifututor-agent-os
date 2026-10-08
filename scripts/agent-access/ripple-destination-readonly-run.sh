@@ -5,7 +5,7 @@ set -euo pipefail
 
 CONF="$HOME/.config/sifututor/agent-access/ripple-destination-readonly.conf"
 [ -f "$CONF" ] || { echo "lane_conf_missing" >&2; exit 1; }
-[ "$(stat -f '%Lp' "$CONF" 2>/dev/null || stat -c '%a' "$CONF")" = "600" ] \
+[ "$(stat -c '%a' "$CONF" 2>/dev/null || stat -f '%Lp' "$CONF")" = "600" ] \
   || { echo "lane_conf_mode_unsafe" >&2; exit 1; }
 [ "${1:-}" = "--" ] || { echo "usage: ... -- <command> [args...]" >&2; exit 2; }
 shift
