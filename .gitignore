@@ -65,6 +65,7 @@ plugins/*
 .claude/
 !.claude/
 .claude/*
+!.claude/settings.template.json
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/monitor-production-logs.md
