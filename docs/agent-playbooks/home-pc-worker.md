@@ -79,3 +79,13 @@ yet (issue #271).
 - [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md)
 - [autonomous-work-packets.md](autonomous-work-packets.md)
 - [agent-access-map.md](agent-access-map.md)
+
+## Koda on the PC (one step only Hafiz can do)
+
+Claude on the PC needs the Koda key, which Hafiz owns. In an Ubuntu terminal on the PC, in the repo folder, run:
+
+```bash
+scripts/agent-access/setup-pc-koda.sh
+```
+
+It asks for the key twice with echo off, saves it in `~/.config/sifututor/koda-key.conf` (mode 600), adds one line to `~/.bashrc` so every shell loads it, creates a Koda-only `.mcp.json` in the repo if none exists, and finishes with Koda's read-only health check, printing only PASS or FAIL. Open a new Ubuntu shell afterwards. An agent must never run this script or see what is typed. Tests: `scripts/agent-checks/test_setup_pc_koda.py`.
