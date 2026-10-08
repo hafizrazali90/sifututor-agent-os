@@ -44,7 +44,7 @@ The hook should never silently perform expensive state changes.
 | Event | When it runs | What it does |
 | --- | --- | --- |
 | `SessionStart` | Startup, resume, clear, or compact session start. | Loads Sifututor context and verifies Koda read/write health once for the session. |
-| `UserPromptSubmit` | Every Hafiz prompt. | Emits one compact route hint when a workflow skill is genuinely useful. |
+| `UserPromptSubmit` | Every Hafiz prompt. | Emits one compact route hint when a workflow skill is genuinely useful, and at most one quiet skill suggestion (see Skill Tips And Suggestions). |
 | `PreToolUse` | Before tools run. | Blocks secret-bearing command output and visual capture while a provider credential-reveal boundary is active; Bash-specific guardrails still run only for shell/exec commands. Claude also runs `ask-question-size-guard.py` on `AskUserQuestion` and denies boxes over the Decision Questions limits. |
 | `PostToolUse` | After shell/exec commands. | Records metadata-only failed-command diagnostics without command arguments or raw output. |
 | `PreCompact` | Before context compaction. | Reminds Codex to snapshot or save meaningful context. |
@@ -217,6 +217,42 @@ Use this mental model:
 | Session map, mindmap, progress board, return path | `$session-map` |
 | Push, deploy, merge, PR | `$review` first, then explicit approval |
 | Brainstorm, PRD, UX spec, build prompts, major redesign | `$product-design` |
+
+## Skill Tips And Suggestions
+
+Hafiz cannot remember every skill, so two quiet hooks teach them while he works
+(issue #331, part of #312). Owner script: `scripts/agent-checks/skill-tips-hook.py`.
+Owner data: `docs/agent-playbooks/skill-tips.json` (one plain sentence per skill,
+trigger phrases, which agent can run it). The `/skills` command prints the same
+tips grouped by job (`.claude/commands/skills.md`).
+
+| Hook | Event | What it prints |
+| --- | --- | --- |
+| `--tip` | Claude `PostToolUse`, matcher `Skill` | `Tip: /name: <sentence>`, once per skill per session |
+| `--suggest` | Claude and Codex `UserPromptSubmit` | `Suggestion: /name could help here: <reason>` when the prompt matches that skill's triggers |
+
+Codex has no Skill tool, so it gets only the suggestion hook (`--agent codex`).
+
+Quiet rules, all enforced by `test_skill_tips_hook.py`:
+
+- at most one suggestion per prompt and three per session; never the same skill
+  twice; never for a skill already used in the session,
+- nothing for prompts under 25 characters or 5 words, prompts that already name
+  a skill (`/name`, `$name`, or a hyphenated name), injected text (starts with
+  `<`, `[`, `/`, `$`, `!`), or replies to a question (the last assistant message
+  ends with `?`, or the prompt starts with yes, ok, option 2 and similar),
+- project skills (for example `mobile-pre-push-qa`) only when the working
+  directory or prompt names that project,
+- fail-open: any error, a broken tips file or an unwritable state folder prints
+  nothing and exits 0; no network; the only extra file read is the tail of the
+  session's own transcript,
+- state lives in `~/.local/state/sifututor-agent-os/skill-tips/<session>.json`
+  and files older than 14 days are removed; `SIFUTUTOR_SKILL_TIPS=0` turns both
+  hooks off.
+
+When a skill is added, retired or renamed, change `skill-tips.json` and
+`.claude/commands/skills.md` together; the tests fail if they drift apart or if
+an umbrella skill has no tip.
 
 ## Claude Project Hook Resolution
 

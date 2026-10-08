@@ -74,6 +74,7 @@ plugins/*
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/monitor-production-logs.md
+!.claude/commands/skills.md
 !.claude/hooks/
 .claude/hooks/*
 !.claude/hooks/*.py

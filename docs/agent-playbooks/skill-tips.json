@@ -1,0 +1,486 @@
+{
+  "version": 1,
+  "about": "One entry per skill Hafiz can use. Read by scripts/agent-checks/skill-tips-hook.py (tip after a skill is used, suggestion when a prompt matches) and by the /skills command. Facts come from each skill's own description; keep tips to one plain sentence.",
+  "fields": {
+    "name": "the skill name, typed as /name in Claude or $name in Codex",
+    "group": "start | build | test | review | commit | ops | design | help",
+    "tip": "one plain sentence: what it is and when to use it",
+    "reason": "short phrase shown in a suggestion: why it fits the prompt",
+    "triggers": "2 to 6 phrases Hafiz would really say; matched as whole words, lower case",
+    "agents": "which agent can run it: claude, codex or both",
+    "where": "where the skill lives: global (~/.claude/skills), agents (.agents/skills), repo-claude (.claude/skills), commands (.claude/commands)",
+    "project": "only when the skill applies to one project"
+  },
+  "skills": [
+    {
+      "name": "task-router",
+      "group": "start",
+      "tip": "Picks the right way to do a job (bug fix, new feature, small change, docs) before any work starts, so no step is skipped.",
+      "reason": "this looks like the start of a new job, and it picks the right steps first.",
+      "triggers": ["new task", "where do i start", "how should we start", "let's start on", "which route"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "triage",
+      "group": "start",
+      "tip": "Goes through open GitHub issues one by one, labels them and marks which ones are ready to build.",
+      "reason": "it walks through the issue backlog one issue at a time.",
+      "triggers": ["triage", "go through the issues", "review the issues", "issue backlog", "label the issues"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "to-issues",
+      "group": "start",
+      "tip": "Turns an agreed plan into separate GitHub issues, each small enough to build and check on its own.",
+      "reason": "it splits an agreed plan into issues that can each be built alone.",
+      "triggers": ["break this into issues", "turn this into issues", "create issues from", "split into issues", "make tickets"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "research",
+      "group": "start",
+      "tip": "Sends a background helper to read the real sources about a question and writes the findings as a note with links.",
+      "reason": "it reads the real sources in the background and writes a cited note.",
+      "triggers": ["research this", "research it", "do some research", "read the documentation", "look up the docs"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "grill-me",
+      "group": "start",
+      "tip": "Asks you hard questions about a plan, one at a time, until the weak spots are found.",
+      "reason": "it tests the plan with one hard question at a time.",
+      "triggers": ["grill me", "stress test this plan", "challenge this plan", "poke holes in", "what could go wrong with this plan"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "domain-modeling",
+      "group": "start",
+      "tip": "Checks the words we use against the project glossary and proposes one precise word when two things share a name.",
+      "reason": "it settles what a term should be called and records the decision.",
+      "triggers": ["what should we call", "the glossary", "terminology", "which term should", "naming of this"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "repo-onboard",
+      "group": "start",
+      "tip": "Scans a project and its database once to build a starting knowledge pack: summary, memories and a review checklist.",
+      "reason": "it scans a new project once and builds the starting knowledge.",
+      "triggers": ["onboard this repo", "scan this codebase", "bootstrap knowledge", "learn this project from scratch"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "next",
+      "group": "start",
+      "tip": "Shows the next build prompt that is ready to start and how far the overall build has got.",
+      "reason": "it shows the next unblocked build prompt and the progress so far.",
+      "triggers": ["next build prompt", "next unblocked prompt", "build prompts progress", "progress of the build prompts"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "quick-check",
+      "group": "start",
+      "tip": "Checks that the Claude and Codex workflow system is healthy and wired correctly before you start.",
+      "reason": "it checks the workflow system is healthy before work begins.",
+      "triggers": ["workflow healthy", "is the workflow working", "workflow doctor", "is the setup ready", "health check the workflow"],
+      "agents": ["codex"],
+      "where": ["agents"]
+    },
+    {
+      "name": "implement",
+      "group": "build",
+      "tip": "Builds one agreed piece of work from its ticket: test first, reviewed, and committed on its own branch.",
+      "reason": "it builds one agreed ticket test first and commits it on its own branch.",
+      "triggers": ["implement issue", "implement this ticket", "build this issue", "go build issue", "do this issue"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "tdd",
+      "group": "build",
+      "tip": "Builds a feature test first: write one failing check, make it pass, then repeat in small steps.",
+      "reason": "it builds the work test first, one small step at a time.",
+      "triggers": ["test first", "tdd", "red green refactor", "write tests for", "add test coverage"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "diagnose",
+      "group": "build",
+      "tip": "Finds the real cause of a bug step by step before anything is changed.",
+      "reason": "it finds the real cause of a bug before any fix is tried.",
+      "triggers": ["root cause", "why is it failing", "why does it fail", "isn't working", "keeps failing", "throwing an error"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "zoom-out",
+      "group": "help",
+      "tip": "Steps back and explains how an unfamiliar part of the code fits into the whole system.",
+      "reason": "it explains how this part of the code fits into the bigger system.",
+      "triggers": ["zoom out", "big picture", "how does this fit into", "i am lost in this code", "how does this module fit"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "graphify",
+      "group": "build",
+      "tip": "Turns code, documents or images into a map of connected ideas that you can ask questions about.",
+      "reason": "it maps how the pieces connect so questions can be answered from the map.",
+      "triggers": ["knowledge graph", "graphify", "map of the codebase", "map this codebase", "how are these connected"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "write-a-skill",
+      "group": "build",
+      "tip": "Creates a new skill with the right structure and description so it gets picked up later.",
+      "reason": "it creates a new skill with the right structure.",
+      "triggers": ["write a skill", "create a skill", "new skill for", "make a skill"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "qa",
+      "group": "test",
+      "tip": "Runs the project's quality checks and smoke tests and tells you whether the work meets the standard.",
+      "reason": "it runs the quality checks and smoke tests for this project.",
+      "triggers": ["run qa", "smoke test", "run the tests", "are the tests passing", "regression test", "qa check"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "verify",
+      "group": "test",
+      "tip": "Proves with evidence that the work really does what was asked, before QA, review or commit.",
+      "reason": "it proves the work does what was asked before it moves on.",
+      "triggers": ["verify this", "verify the fix", "prove it works", "is it done", "does it really work", "gate 2a"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "browser-test",
+      "group": "test",
+      "tip": "Opens a real browser, clicks through the pages like a person, takes screenshots and judges them.",
+      "reason": "it clicks through the real pages in a browser and judges the screenshots.",
+      "triggers": ["browser test", "visual qa", "test staging", "qa staging", "click through the pages"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "qa-audit",
+      "group": "test",
+      "tip": "Finds which parts of a project have no tests, ranks the risks and fills the biggest gaps first.",
+      "reason": "it finds the untested parts of a project and ranks the risk.",
+      "triggers": ["audit my tests", "what tests are missing", "build a test plan", "test plan for"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "test-coverage-audit",
+      "group": "test",
+      "tip": "Checks whether the files you just changed have tests listed in the project's TESTING.md.",
+      "reason": "it checks that the changed files are covered by tests in TESTING.md.",
+      "triggers": ["check coverage", "coverage audit", "are my changes tested", "testing.md"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "testcases",
+      "group": "test",
+      "tip": "Writes manual test cases that a first-time tester can run without knowing the system.",
+      "reason": "it writes manual test cases a first-time tester can follow.",
+      "triggers": ["test cases", "write test case", "qa sheet", "test steps for", "tester can't"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "mobile-pre-push-qa",
+      "group": "test",
+      "tip": "Reads a backend change and lists what could break in the mobile app that is already live.",
+      "reason": "it lists what a backend change could break in the live mobile app.",
+      "triggers": ["what breaks the live app", "mobile pre-push", "will this break the app", "break the mobile app", "mobile regression"],
+      "agents": ["claude"],
+      "where": ["global"],
+      "project": "sifu-tutor"
+    },
+    {
+      "name": "review",
+      "group": "review",
+      "tip": "Gives finished work an independent risk check before commit, push, merge or deploy.",
+      "reason": "it gives the finished work an independent risk check.",
+      "triggers": ["review this", "review the pr", "adversarial review", "code review", "pre-commit review", "check it for risks"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "sims-ui-audit",
+      "group": "review",
+      "tip": "Checks a SIMS screen for spacing, tables, filters and disabled states, with screenshots as proof.",
+      "reason": "it audits the look of a SIMS screen against the design rules.",
+      "triggers": ["ui audit", "audit the ui", "review the screenshot", "spacing looks", "ux review of"],
+      "agents": ["claude", "codex"],
+      "where": ["agents"],
+      "project": "sifu-tutor"
+    },
+    {
+      "name": "commit",
+      "group": "commit",
+      "tip": "Prepares a commit with the exact file list, the safety checks and the right message format.",
+      "reason": "it checks the exact files and writes the commit in the right format.",
+      "triggers": ["commit this", "commit it", "commit the changes", "write a commit message", "stage and commit"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "save-session",
+      "group": "commit",
+      "tip": "Saves what we learned today into memory and updates the project notes so the next chat starts informed.",
+      "reason": "it saves what was learned so the next chat starts informed.",
+      "triggers": ["save session", "save the session", "wrap up", "end the session", "we're done for today"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "snapshot",
+      "group": "commit",
+      "tip": "Saves the goal, next steps and key files before the chat is compacted, so work can resume without losing the thread.",
+      "reason": "it saves the thread before the context is compacted.",
+      "triggers": ["snapshot", "before compact", "context is getting full", "save context before", "before we compact"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "handoff",
+      "group": "commit",
+      "tip": "Packs the current work into a note that another Claude, Codex or person can pick up without asking you again.",
+      "reason": "it packs the work so someone else can continue without asking again.",
+      "triggers": ["hand off", "handoff", "hand over to", "pass this to codex", "continue in another chat"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "session-summary",
+      "group": "commit",
+      "tip": "Writes the full story of a session: what was reported, found, corrected and finally done.",
+      "reason": "it writes the full story of this session.",
+      "triggers": ["summarise the session", "summarize the session", "session summary", "recap everything", "full summary of this"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "session-map",
+      "group": "commit",
+      "tip": "Keeps a map of several goals in one session so you can always see what is open and how to return.",
+      "reason": "it keeps a map of the open goals so the way back is clear.",
+      "triggers": ["session map", "mind map", "progress board", "where were we", "return path"],
+      "agents": ["codex"],
+      "where": ["agents"]
+    },
+    {
+      "name": "weekly-report",
+      "group": "ops",
+      "tip": "Summarises what shipped this week and what is blocked as a short team report.",
+      "reason": "it summarises what shipped this week and what is blocked.",
+      "triggers": ["weekly report", "what shipped this week", "what is blocked", "delivery summary", "weekly summary"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "weekly-delivery",
+      "group": "ops",
+      "tip": "Summarises what shipped this week and what is blocked as a short team report.",
+      "reason": "it summarises what shipped this week and what is blocked.",
+      "triggers": ["weekly report", "what shipped this week", "what is blocked", "delivery summary", "weekly summary"],
+      "agents": ["codex"],
+      "where": ["agents"]
+    },
+    {
+      "name": "prod-audit",
+      "group": "ops",
+      "tip": "Audits a live system for health, security, code quality and deployment habits and ranks the problems found.",
+      "reason": "it audits the live system and ranks the problems.",
+      "triggers": ["audit production", "prod audit", "what is wrong with prod", "production health check", "audit the deployment"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "monitor-production-logs",
+      "group": "ops",
+      "tip": "After a release, watches Sentry and BetterStack for new errors, especially in payments and the mobile API.",
+      "reason": "it checks Sentry and BetterStack for new errors after a release.",
+      "triggers": ["monitor production", "check sentry", "check betterstack", "after the deploy check", "watch the logs"],
+      "agents": ["claude", "codex"],
+      "where": ["commands", "agents"]
+    },
+    {
+      "name": "koda-audit",
+      "group": "ops",
+      "tip": "Checks the health of the shared memory (Koda), finds stale, duplicate or misplaced entries and proposes a cleanup.",
+      "reason": "it checks the shared memory for stale and duplicate entries.",
+      "triggers": ["koda audit", "memory health", "audit memories", "clean up memories", "audit koda"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "self-improve",
+      "group": "ops",
+      "tip": "Looks at repeated failures and past corrections and proposes which ones should become permanent rules, one by one for your approval.",
+      "reason": "it turns repeated failures into rules, one by one for your approval.",
+      "triggers": ["self improve", "what's been failing", "repeated mistakes", "promote patterns", "show friction"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "workflow-improvement",
+      "group": "ops",
+      "tip": "Fixes the working system itself (skills, hooks, playbooks) when an agent keeps making the same mistake.",
+      "reason": "it fixes the agent workflow itself so the mistake does not repeat.",
+      "triggers": ["improve the workflow", "why did this happen again", "make future agents", "agents keep", "behaving differently"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
+      "name": "wizard",
+      "group": "help",
+      "tip": "Builds a step-by-step script that walks you through things only a human can do, like setting up accounts or secrets.",
+      "reason": "it builds a guided script for the steps only a human can do.",
+      "triggers": ["walk me through setting up", "step by step setup", "set up the account", "cutover steps"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "brainstorm",
+      "group": "design",
+      "tip": "Explores what you really want and the real options before any code is written, then agrees a design.",
+      "reason": "it explores the options and agrees a design before any code is written.",
+      "triggers": ["brainstorm", "i have an idea", "how should we design", "what's the best way to build", "let's design"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "product-design",
+      "group": "design",
+      "tip": "Takes a feature from idea to requirements, UX and build prompts before anything is built.",
+      "reason": "it takes the feature from idea to requirements and build prompts before building.",
+      "triggers": ["brainstorm", "i have an idea", "how should we design", "write a prd", "ux spec", "build prompts"],
+      "agents": ["codex"],
+      "where": ["agents"]
+    },
+    {
+      "name": "lite-prd",
+      "group": "design",
+      "tip": "Turns an idea into a ten-section product requirements document and reviews the user stories with you.",
+      "reason": "it turns the idea into a short product requirements document.",
+      "triggers": ["write a prd", "create a prd", "prd for", "product requirements"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "prd-clarifier",
+      "group": "design",
+      "tip": "Asks 5 to 35 structured questions to remove the unclear parts of a PRD before screens are designed.",
+      "reason": "it asks structured questions to remove the unclear parts of the PRD.",
+      "triggers": ["clarify the prd", "prd is unclear", "questions about the prd", "gaps in the prd"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "prd-to-ux",
+      "group": "design",
+      "tip": "Turns a PRD into a UX specification by looking at it through six designer mindsets.",
+      "reason": "it turns the PRD into a UX specification.",
+      "triggers": ["prd to ux", "ux spec", "ux specification", "turn the prd into"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "ux-to-prompts",
+      "group": "design",
+      "tip": "Turns a UX spec into ordered build prompts, showing how hard each is and what depends on what.",
+      "reason": "it turns the UX spec into ordered build prompts.",
+      "triggers": ["build prompts", "ux to prompts", "implementation prompts", "order of building"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "prototype",
+      "group": "design",
+      "tip": "Builds a quick throwaway version to answer one question, such as whether a flow feels right.",
+      "reason": "it builds a quick throwaway version to answer one design question.",
+      "triggers": ["quick prototype", "build a prototype", "quick mockup", "see what it could look like", "does this flow feel right"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "autopilot",
+      "group": "design",
+      "tip": "Designs a whole app flow end to end: research, every screen in Figma, two reviewers, fixes and one review pack.",
+      "reason": "it designs the whole flow end to end and hands back one review pack.",
+      "triggers": ["design the flow", "autopilot", "design autopilot", "redesign the flow"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "doc-design",
+      "group": "design",
+      "tip": "Gives proposals, reports and one-pagers the Learnest Lab look, starting from a storyboard.",
+      "reason": "it gives the document the Learnest Lab house style.",
+      "triggers": ["proposal document", "pitch document", "one-pager", "position paper", "infographic"],
+      "agents": ["claude"],
+      "where": ["repo-claude"]
+    },
+    {
+      "name": "identity-design",
+      "group": "design",
+      "tip": "Designs a logo or brand identity properly: brief, options, checks, review and trademark search.",
+      "reason": "it designs the logo or brand identity with proper checks.",
+      "triggers": ["design a logo", "new logo", "brand identity", "logo for"],
+      "agents": ["claude"],
+      "where": ["repo-claude"]
+    },
+    {
+      "name": "fal-illustration",
+      "group": "design",
+      "tip": "Generates flat vector illustrations in the app's style for banners and empty states.",
+      "reason": "it generates on-brand illustrations for banners and empty states.",
+      "triggers": ["illustration for", "empty state illustration", "generate an illustration", "banner art"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "wait-what",
+      "group": "help",
+      "tip": "Use it when the last message did not land: it says the same thing again in plain terms.",
+      "reason": "it says the last message again in plain terms.",
+      "triggers": ["i don't understand", "say that again", "in plain terms", "explain that simply", "what do you mean"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "teach",
+      "group": "help",
+      "tip": "Teaches you a new skill or concept, using this workspace as the example.",
+      "reason": "it teaches the concept using this workspace as the example.",
+      "triggers": ["teach me", "i want to learn", "help me understand", "explain how this works"],
+      "agents": ["claude"],
+      "where": ["global"]
+    },
+    {
+      "name": "to-questionnaire",
+      "group": "help",
+      "tip": "Turns a decision you cannot make alone into questions for one other person, such as Finance or a developer.",
+      "reason": "it turns the open decision into questions for the right person.",
+      "triggers": ["questions for finance", "ask finance", "questions for the developer", "questions for the vendor", "questionnaire"],
+      "agents": ["claude"],
+      "where": ["global"]
+    }
+  ]
+}

@@ -26,6 +26,12 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/koda-context-injector.py",
             "timeout": 3
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/scripts/agent-checks/skill-tips-hook.py --suggest",
+            "timeout": 3,
+            "_why": "Skill suggestion for Hafiz (#331): one quiet line when a skill could help. Fail-open, no network, at most 3 per session."
           }
         ]
       }
@@ -81,6 +87,17 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/scripts/agent-checks/skill-tips-hook.py --tip",
+            "timeout": 3,
+            "_why": "Skill tip for Hafiz (#331): one plain sentence the first time a skill is used in a session. Fail-open."
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
