@@ -16,7 +16,7 @@ Use these names consistently:
 
 ## Workspace
 
-Open `/Users/hafizrazali/Projects/Sifututor` for cross-project work. For a
+Open `~/Projects/Sifututor` for cross-project work. For a
 single project, state intent first (`sifu-tutor work - ...`, `ripple-suite work
 - ...`).
 
