@@ -53,6 +53,38 @@ Do not weaken a block by adding an inline pipe such as `grep`, `jq`, or `sed`
 after a raw environment command. The sensitive output already exists inside
 the tool path. Add or update a reviewed wrapper instead.
 
+### The guard judges the operation, not the word
+
+The guard parses the command and blocks the dangerous operation: a reader
+(`cat`, `head`, `sed`, `awk`, `grep` that prints, `jq`, a script that prints
+what it read) aimed at a secret file, a bare environment dump (`env`,
+`printenv`, `export -p`, `set`), a full process-argument listing (`ps aux`,
+`ps -ef`, `ps -o args`), an echo of a secret variable, and a language-level
+environment dump (`print(os.environ)`). A trigger word alone is not an
+operation. These stay allowed, because nothing secret reaches the terminal:
+
+- metadata on a secret file (`ls`, `stat`, `wc`, `file`, `open -R`, `test`);
+- counts and yes/no checks (`grep -c`, `grep -q`, `grep -l`) and names only
+  (`grep -o '^NAME='`, `sed 's/=.*/=<redacted>/'`, `awk -F= '{print $1}'`);
+- `ps -o pid,user,comm`, `ps -p PID` and `pgrep -f` (PIDs only);
+- the output of `ps` or a secret-file reader piped into a counting or quiet
+  consumer (`wc`, `grep -q`, `grep -c`). This is the only pipe exception; a
+  pipe after a bare environment dump is still blocked;
+- a script that reads a secret file in-process and prints only counts, flags,
+  hashes or the result of an external call (database, HTTP, subprocess);
+- one keyed read of a non-secret variable (`process.env.NODE_ENV`);
+- committed templates such as `.env.example`;
+- prose in tools that run no command (agent briefs, messages, questions,
+  memory notes, MCP free text).
+
+Reading files under `live/` with a reader command is also blocked, matching the
+`live/` rule in `AGENTS.md`. A command the parser cannot understand falls back
+to the older word rules. The proof lives in
+`scripts/agent-checks/test_secret_guard_operations.py`: a harmless corpus, a
+dangerous corpus, and negative controls (the old rules fail the harmless
+corpus, removing any one rule fails the dangerous corpus, an over-strict copy
+fails the harmless corpus).
+
 If a new dangerous pattern is found, add one failing regression, extend the
 shared guard, prove the safe alternative still works, then update the eval or
 playbook only when agent judgment is also involved.
