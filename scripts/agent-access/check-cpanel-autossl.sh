@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Check cPanel AutoSSL status on the production server
+# Check certificate renewal status.
+#   default   : cPanel AutoSSL on the SIMS production server
+#   --staging : certbot on the Finch box, which hosts SIMS staging (sifu-staging.tutorla.tech).
+#               Finch has no cPanel; the old WebVoyager host this flag used to target is decommissioned.
 # Sources: server-ssh.conf (SSH alias)
-# Safe: reads log files only; no secrets printed
+# Safe: reads certificate dates and log lines only; no secrets printed
 # Usage: ./scripts/agent-access/check-cpanel-autossl.sh [--staging]
 
 set -euo pipefail
@@ -12,8 +15,8 @@ echo "=== cPanel AutoSSL Status Check ==="
 
 TARGET="${1:-}"
 if [[ "$TARGET" == "--staging" ]]; then
-  SSH_ALIAS="webvoyager"
-  SERVER_LABEL="WebVoyager staging (151.246.1.218)"
+  SSH_ALIAS="${STAGING_CERT_SSH_ALIAS:-finch}"
+  SERVER_LABEL="Finch staging (SIMS staging, certbot)"
 else
   SSH_ALIAS="production"
   SERVER_LABEL="Production (151.246.1.164)"
@@ -33,6 +36,25 @@ fi
 
 printf '\033[32m✓\033[0m SSH: connected\n'
 echo ""
+
+if [[ "$TARGET" == "--staging" ]]; then
+  echo "── certbot certificates (names and expiry only) ──"
+  ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_ALIAS" '
+    certbot certificates 2>/dev/null | grep -E "Certificate Name|Domains:|Expiry Date" | sed "s/^ *//"
+    echo ""
+    echo "── renewal timer ──"
+    systemctl is-active certbot.timer 2>/dev/null || echo "certbot.timer: not active (check cron)"
+    systemctl list-timers certbot.timer --no-pager 2>/dev/null | sed -n "1,2p" | cut -c1-120
+    echo ""
+    echo "── last renewal log lines ──"
+    tail -n 6 /var/log/letsencrypt/letsencrypt.log 2>/dev/null | cut -c1-140 || echo "  (no log)"
+  ' 2>/dev/null
+  echo ""
+  echo "── certificate as served on the public URL ──"
+  echo | openssl s_client -connect sifu-staging.tutorla.tech:443 -servername sifu-staging.tutorla.tech 2>/dev/null \
+    | openssl x509 -noout -subject -issuer -dates 2>/dev/null || echo "  (could not read the served certificate)"
+  exit 0
+fi
 
 echo "── Latest AutoSSL run ──"
 ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_ALIAS" "
