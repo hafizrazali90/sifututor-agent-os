@@ -11,7 +11,7 @@ Claude; the Mac reads the result. Machine facts are in
 2. `python3 scripts/agent-checks/pc_job.py submit brief.md` checks the brief,
    copies it and the runner to the PC, and starts the job.
 3. The PC re-checks the brief, makes its own git worktree, builds the hook
-   wiring, runs Claude with the caps, then checks what Claude did.
+   wiring, runs Claude until it finishes, then checks what Claude did.
 4. `status JOB_ID`, `result JOB_ID` and `list` read the files the job writes.
    Close the laptop in between; the job does not need the Mac.
 
@@ -29,15 +29,14 @@ Claude; the Mac reads the result. Machine facts are in
 
 | Rule | What happens |
 | --- | --- |
-| Spend cap `max_usd` | Default 2, allowed 0.5 to 20. Passed to Claude as `--max-budget-usd`. |
-| Turn cap `max_turns` | Default 30, allowed 1 to 100. |
-| Time limit `max_minutes` | Default 30, allowed 1 to 180. The runner stops the job. |
+| No caps | Jobs run on Hafiz's Claude subscription exactly as a session on the Mac does: no spend, turn or time cap (Hafiz, 09/10/2026: "never cap"). A brief with a `max_usd`, `max_turns` or `max_minutes` line is refused so the line gets deleted. |
 | Finish state | `local`, `committed` or `pr-open`. Missing means `local`. |
 | `merged`, `deployed` | Refused. An unattended job cannot merge or deploy. |
 | `pr-open` | Needs an `approval` line. The runner, not Claude, pushes and opens the pull request, and only after its checks pass. |
 | Guards | The job refuses to start Claude unless the hook wiring was built from `.claude/settings.template.json`. |
 | Git identity | A job that must commit stops before Claude starts if git has no author identity. |
 | Permissions | Claude never runs with permissions skipped. Anything not on the tool list is denied, because nobody can answer a prompt. |
+| Project repo `repo` | Optional (issue #347). Missing means the Agent OS repo. Allowed values are listed in `PROJECT_REPOS` in `job_brief.py`; today only `ripple-suite`. The repo must already be cloned on the PC under `~/Projects/Sifututor/<repo>`. The job worktree installs packages with `npm ci` from the lockfile, the guards come from the project's own tracked `.claude/settings.json`, and the builder may also run `npx vitest`, `npx tsc`, `npx eslint` and the umbrella commit guard by its full path. `base`, `branch` and `allowed_paths` are read inside that repo. |
 
 ## What the runner checks after Claude finishes
 
@@ -45,7 +44,7 @@ Claude; the Mac reads the result. Machine facts are in
   and nothing is pushed.
 - A job that must commit made a commit and left a clean tree.
 - A reviewer changed no file.
-- A failed, capped or timed-out job says so in `status.json` and `result.md`.
+- A failed or blocked job says so in `status.json` and `result.md`.
 
 ## Files a job leaves, in `~/jobs/JOB_ID/` on the PC
 
@@ -58,10 +57,8 @@ of done, failed, blocked or timeout. Times are shown in MYT.
 - The Ubuntu machine shuts down when no Windows process is attached, and that
   kills tmux. A job started through Task Scheduler with `wsl.exe` keeps it alive.
   This is why the runner uses Task Scheduler.
-- `--max-turns` and `--max-budget-usd` both stop a job. The budget is checked
-  between turns, so one turn can overshoot. Each turn costs about $0.12 or more
-  because the entry files and hooks load every time. Do not set `max_usd` below
-  about $1.
+- Caps were tried first and removed on 09/10/2026: the jobs run on the
+  subscription, so a cap only stops real work half way.
 - First real jobs: a builder changed one file and committed it in 21 seconds
   for $0.22 (10 turns); a reviewer read the hook template branch cold in 78
   seconds for $0.48 and found real test weaknesses. The first attempt was

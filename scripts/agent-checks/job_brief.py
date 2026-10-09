@@ -10,7 +10,8 @@ Rules enforced here (issues #272, #273, #274):
 - every job has a finish state; a missing one means `local`;
 - an unattended job can never merge or deploy;
 - a job that pushes a branch and opens a pull request needs a recorded approval;
-- a builder may only change the paths listed in `allowed_paths`.
+- a builder may only change the paths listed in `allowed_paths`;
+- a job may name a project repo (issue #347), only from `PROJECT_REPOS`.
 """
 
 from __future__ import annotations
@@ -27,12 +28,17 @@ REFUSED_FINISH_STATES = ("merged", "deployed")
 
 ALLOWED_KEYS = (
     "title", "role", "base", "branch", "target", "finish", "issue",
-    "approval", "max_usd", "max_turns", "max_minutes", "allowed_paths",
+    "approval", "allowed_paths", "repo",
 )
 
-DEFAULT_USD, MIN_USD, MAX_USD = 2.0, 0.5, 20.0
-DEFAULT_TURNS, MIN_TURNS, MAX_TURNS = 30, 1, 100
-DEFAULT_MINUTES, MIN_MINUTES, MAX_MINUTES = 30, 1, 180
+# Jobs run on Hafiz's Claude subscription exactly as a session on the Mac does,
+# so there is no spend, turn or time cap (Hafiz, 09/10/2026: "never cap"). A
+# brief that still carries a cap line is refused so the line gets deleted.
+REMOVED_CAP_KEYS = ("max_usd", "max_turns", "max_minutes")
+
+# Project repos a job may work in, as folder names under the umbrella checkout
+# on the PC. Missing `repo` means the umbrella (Agent OS) repo itself.
+PROJECT_REPOS = ("ripple-suite",)
 
 BRANCH_TYPES = ("feat", "feature", "fix", "refactor", "hotfix", "chore", "docs", "perf", "test", "ci")
 BRANCH_RE = re.compile(r"^(%s)/[a-z0-9][a-z0-9-]*$" % "|".join(BRANCH_TYPES))
@@ -63,20 +69,6 @@ def parse(text: str) -> dict[str, Any]:
     return {"fields": fields, "body": "\n".join(lines[end + 1:]).strip()}
 
 
-def _number(value: str, kind: type, name: str, low: float, high: float, errors: list[str]):
-    try:
-        number = kind(value)
-    except ValueError:
-        errors.append(f"{name} must be a number, got {value!r}")
-        return None
-    if number < low:
-        errors.append(f"{name} must be at least {low:g}"
-                      + (" (below that a single turn can exceed the cap)" if name == "max_usd" else ""))
-    elif number > high:
-        errors.append(f"{name} must be at most {high:g} for an unattended job")
-    return number
-
-
 def _paths(value: str, errors: list[str]) -> list[str]:
     paths = [p.strip() for p in value.split(",") if p.strip()]
     if not paths:
@@ -94,7 +86,9 @@ def validate(parsed: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
     normal: dict[str, Any] = {"body": parsed["body"]}
 
     for key in fields:
-        if key not in ALLOWED_KEYS:
+        if key in REMOVED_CAP_KEYS:
+            errors.append(f"{key} was removed: jobs have no caps (Hafiz, 09/10/2026), so delete this line")
+        elif key not in ALLOWED_KEYS:
             errors.append(f"unknown key {key!r}")
 
     title = fields.get("title", "")
@@ -125,25 +119,15 @@ def validate(parsed: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
     if role == REVIEWER and finish != "local":
         errors.append("a reviewer is read-only, so its finish must be local")
 
-    defaulted: list[str] = []
-    for name, kind, default, low, high in (
-        ("max_usd", float, DEFAULT_USD, MIN_USD, MAX_USD),
-        ("max_turns", int, DEFAULT_TURNS, MIN_TURNS, MAX_TURNS),
-        ("max_minutes", int, DEFAULT_MINUTES, MIN_MINUTES, MAX_MINUTES),
-    ):
-        raw = fields.get(name, "")
-        if raw == "":
-            normal[name] = default
-            defaulted.append(name)
-        else:
-            value = _number(raw, kind, name, low, high, errors)
-            normal[name] = value if value is not None else default
-    normal["caps_defaulted"] = defaulted
-
     issue = fields.get("issue", "")
     if issue and not issue.isdigit():
         errors.append("issue must be a number")
     normal["issue"] = issue
+
+    repo = fields.get("repo", "")
+    if repo and repo not in PROJECT_REPOS:
+        errors.append(f"repo must be one of {', '.join(PROJECT_REPOS)}, or left out for the Agent OS repo")
+    normal["repo"] = repo
 
     normal["base"] = fields.get("base", "origin/main")
     if not normal["base"].startswith("origin/"):

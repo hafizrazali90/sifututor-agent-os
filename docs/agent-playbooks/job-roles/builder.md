@@ -9,7 +9,8 @@ You build exactly what the brief asks, on your own branch, and prove it works.
   the end.
 - Commit on your branch with a conventional commit message that names the
   issue, for example `docs(agent-os): add writing rules (#277)`. Run
-  `bash scripts/agent-checks/pre-commit-guard.sh` before you commit.
+  `bash scripts/agent-checks/pre-commit-guard.sh` before you commit. In a
+  project repo job, use the full path the job facts give you.
 - Do not push. Do not open a pull request. The runner does that when the finish
   state allows it.
 - If you cannot meet the brief, stop with a blocked result. Do not widen the

@@ -6,11 +6,9 @@ base: origin/main             # the branch the work starts from
 finish: local                 # local | committed | pr-open. Missing means local. merged and deployed are refused
 # approval: Hafiz, chat 08/10/2026: push and open the PR   (required when finish is pr-open)
 issue: 0                      # GitHub issue number, if there is one
-max_usd: 2                    # spend cap per job, 0.5 to 20. Missing means 2
-max_turns: 30                 # turn cap, 1 to 100. Missing means 30
-max_minutes: 30               # wall-clock limit, 1 to 180. Missing means 30
 allowed_paths: docs/agent-playbooks/example.md   # builder only: files or folders it may change, comma separated
 # target: feat/265-hook-wiring-template          # reviewer only: the branch on origin to review
+# repo: ripple-suite                             # optional: a project repo from PROJECT_REPOS; missing means the Agent OS repo
 ---
 # Goal
 

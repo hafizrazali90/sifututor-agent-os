@@ -56,6 +56,13 @@ BUILDER_TOOLS = (
     "Bash(bash scripts/agent-checks/pre-commit-guard.sh:*)",
     "Bash(python3 scripts/agent-checks/agent-os-doc-navigation-check.py:*)",
 )
+# Extra checks a builder may run inside a Node project repo (issue #347).
+PROJECT_BUILDER_TOOLS = (
+    "Bash(npx vitest:*)", "Bash(npm run test:unit:*)", "Bash(npx tsc:*)",
+    "Bash(npx eslint:*)", "Bash(npm run lint:*)",
+    f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
+)
+NPM_CI_TIMEOUT = 1200
 REVIEWER_TOOLS = (
     "Read", "Grep", "Glob",
     "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git status:*)", "Bash(ls:*)",
@@ -162,8 +169,7 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
     out(f"Job {job_id}: {normal['title']}")
     out(f"  role {normal['role']}, finish {normal['finish']}"
         + (" (defaulted)" if normal["finish_defaulted"] else ""))
-    out(f"  caps: ${normal['max_usd']:g}, {normal['max_turns']} turns, {normal['max_minutes']} minutes"
-        + (f" (defaulted: {', '.join(normal['caps_defaulted'])})" if normal["caps_defaulted"] else ""))
+    out("  no caps: runs until Claude finishes, as on the Mac")
     if dry_run:
         out("DRY RUN: nothing was sent to the PC.")
         return 0
@@ -213,13 +219,13 @@ def sh(cmd: list[str], cwd: Path | None = None, timeout: float | None = None) ->
 
 def claude_command(claude: str, role: str, prompt: str, system: str, normal: dict) -> list[str]:
     cmd = [claude, "-p", prompt, "--output-format", "json",
-           "--max-budget-usd", f"{normal['max_usd']:g}", "--max-turns", str(normal["max_turns"]),
            "--permission-prompts", "none", "--append-system-prompt", system]
     if role == job_brief.REVIEWER:
         cmd += ["--permission-mode", "dontAsk", "--disallowedTools", ",".join(REVIEWER_DENIED),
                 "--allowedTools", ",".join(REVIEWER_TOOLS)]
     else:
-        cmd += ["--permission-mode", "acceptEdits", "--allowedTools", ",".join(BUILDER_TOOLS)]
+        tools = BUILDER_TOOLS + (PROJECT_BUILDER_TOOLS if normal.get("repo") else ())
+        cmd += ["--permission-mode", "acceptEdits", "--allowedTools", ",".join(tools)]
     return cmd
 
 
@@ -246,6 +252,12 @@ def prepare_worktree(repo: Path, worktrees: Path, job_id: str, normal: dict) -> 
         proc = sh(["git", "worktree", "add", "-q", "--detach", str(path), ref], cwd=repo)
     if proc.returncode != 0:
         raise RuntimeError(f"could not create the worktree: {proc.stderr.strip()[:200]}")
+    if normal.get("repo") and normal["role"] == job_brief.BUILDER and (path / "package-lock.json").is_file():
+        # A fresh worktree has no node_modules; install from the lockfile so the
+        # builder can run the project's tests. Never link another checkout's copy.
+        install = sh(["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"], cwd=path, timeout=NPM_CI_TIMEOUT)
+        if install.returncode != 0:
+            raise RuntimeError(f"npm ci failed in the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
     return path
 
 
@@ -253,16 +265,21 @@ def count_hooks(settings: dict) -> int:
     return sum(len(g.get("hooks", [])) for items in settings.get("hooks", {}).values() for g in items)
 
 
-def wire_guards(worktree: Path, job_dir: Path | None = None) -> str | None:
+def wire_guards(worktree: Path, job_dir: Path | None = None, project: bool = False) -> str | None:
     """Return None when hooks are wired, else the reason to refuse.
 
     Uses the branch's own template when it has one. A branch cut before the
     template existed uses the copy that travelled with the job, after checking
-    that every hook script it names exists in the worktree.
+    that every hook script it names exists in the worktree. A project repo
+    (issue #347) carries its own tracked settings.json, which must wire hooks.
     """
     settings = worktree / ".claude" / "settings.json"
     template = worktree / ".claude" / "settings.template.json"
-    if template.is_file():
+    if project and not template.is_file():
+        tracked = sh(["git", "ls-files", "--error-unmatch", ".claude/settings.json"], cwd=worktree).returncode == 0
+        if not tracked:
+            return "refusing to run without guards: the project repo does not track .claude/settings.json"
+    elif template.is_file():
         proc = sh([sys.executable, "scripts/agent-checks/render-claude-settings.py", "--apply"], cwd=worktree)
         if proc.returncode != 0 or not settings.is_file():
             return f"refusing to run without guards: could not build settings.json ({proc.stdout.strip()[:120]})"
@@ -321,8 +338,7 @@ def finish_job(job_dir: Path, status: Status, normal: dict, outcome: dict) -> in
         f"# Job {d.get('job_id')}: {normal.get('title')}", "",
         f"- **Status:** {state.upper()}" + (f" ({outcome['reason']})" if outcome.get("reason") else ""),
         f"- **Role:** {normal.get('role')}, finish {normal.get('finish')}",
-        f"- **Caps:** ${normal.get('max_usd'):g}, {normal.get('max_turns')} turns, {normal.get('max_minutes')} minutes",
-        f"- **Spent:** ${d.get('cost_usd', 0) or 0:.2f}, {d.get('turns', 0) or 0} turns",
+        f"- **Usage:** {d.get('turns', 0) or 0} turns (list-price equivalent ${d.get('cost_usd', 0) or 0:.2f}, billed to the subscription)",
         f"- **Started:** {d.get('started_at_myt')}  **Ended:** {d.get('ended_at_myt')}",
     ]
     if d.get("branch"):
@@ -341,7 +357,8 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         worktrees: Path | None = None, timeout_override: float | None = None, drop_task: bool = True) -> int:
     job_dir = Path(job_dir)
     job_id = job_dir.name
-    repo = Path(repo or PC_REPO)
+    prefer_linux_user_tools()
+    root = Path(repo or PC_REPO)
     claude = claude or PC_CLAUDE
     worktrees = Path(worktrees or Path.home() / ".local" / "state" / "sifututor-agent-os" / "worktrees")
     status = Status(job_dir)
@@ -350,19 +367,21 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         parsed = job_brief.parse((job_dir / "brief.md").read_text())
         errors, normal = job_brief.validate(parsed)
     except (OSError, job_brief.BriefError) as exc:
-        blank = {"title": "?", "role": "?", "finish": "?", "max_usd": 0.0, "max_turns": 0, "max_minutes": 0}
+        blank = {"title": "?", "role": "?", "finish": "?"}
         return finish_job(job_dir, status, blank, {"state": "blocked", "reason": f"brief unreadable: {exc}"})
-    status.update(title=normal["title"], role=normal["role"], finish=normal["finish"],
-                  caps={"max_usd": normal["max_usd"], "max_turns": normal["max_turns"],
-                        "max_minutes": normal["max_minutes"]})
+    status.update(title=normal["title"], role=normal["role"], finish=normal["finish"])
     if errors:
         return finish_job(job_dir, status, normal, {"state": "blocked", "reason": "brief failed validation: " + "; ".join(errors)})
 
+    repo = root / normal["repo"] if normal["repo"] else root
+    status.update(repo=normal["repo"] or "agent-os")
     try:
         status.update(state="preparing")
+        if not (repo / ".git").exists():
+            raise RuntimeError(f"repo {normal['repo'] or 'agent-os'} is not checked out on this machine at {repo}")
         worktree = prepare_worktree(repo, worktrees, job_id, normal)
         status.update(worktree=str(worktree), branch=normal["branch"] or f"(detached {normal['target']})")
-        reason = wire_guards(worktree, job_dir)
+        reason = wire_guards(worktree, job_dir, project=bool(normal["repo"]))
         if reason:
             return finish_job(job_dir, status, normal, {"state": "blocked", "reason": reason})
 
@@ -372,15 +391,17 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         system = (job_dir / "role.txt").read_text() if (job_dir / "role.txt").is_file() else ""
         prompt = parsed["body"] + (
             f"\n\n---\nJob facts: finish state {normal['finish']}."
+            + (f" Repo: {normal['repo']} (run the commit guard as bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh)."
+               if normal["repo"] else "")
             + (f" Work on branch {normal['branch']}. Allowed paths: {', '.join(normal['allowed_paths'])}."
                if normal["role"] == job_brief.BUILDER else f" Review branch {normal['target']} against {normal['base']}."))
         cmd = claude_command(claude, normal["role"], prompt, system, normal)
         status.update(state="running")
-        limit = timeout_override if timeout_override is not None else normal["max_minutes"] * 60
+        # No wall-clock limit on a real job; timeout_override exists only for tests.
         try:
-            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=limit, check=False)
+            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=timeout_override, check=False)
         except subprocess.TimeoutExpired:
-            return finish_job(job_dir, status, normal, {"state": "timeout", "reason": f"wall-clock limit of {normal['max_minutes']} minutes reached"})
+            return finish_job(job_dir, status, normal, {"state": "timeout", "reason": f"test time limit of {timeout_override:g} seconds reached"})
         (job_dir / "claude-output.json").write_text(proc.stdout or "")
         try:
             data = json.loads(proc.stdout)
@@ -437,6 +458,19 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         if drop_task and _has("schtasks.exe"):
             subprocess.run(["schtasks.exe", "/delete", "/tn", f"job-{job_id}", "/f"],
                            capture_output=True, check=False)
+
+
+def prefer_linux_user_tools() -> None:
+    """On the PC, put ~/.local/bin first so npm and npx are the Linux copies.
+
+    Task Scheduler starts the job with a PATH that also holds the Windows
+    Node install under /mnt/c, and Windows npm cannot build a Linux worktree
+    (found 09/10/2026, issue #347).
+    """
+    local_bin = Path.home() / ".local" / "bin"
+    if sys.platform.startswith("linux") and local_bin.is_dir():
+        parts = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p and p != str(local_bin)]
+        os.environ["PATH"] = os.pathsep.join([str(local_bin), *parts])
 
 
 def _has(name: str) -> bool:
