@@ -42,7 +42,7 @@ class FakeSsh:
 def readiness_file(tmp: Path, **override) -> Path:
     args = dict(release="Ripple CX audit", repo="agent-os", branch="feat/1-demo", base="origin/main", pr_numbers_=[5], issue="1",
                 serving_commit="", approval="Hafiz, test", github_repo=None, suite_commands=None, e2e_commands=[],
-                e2e_exception="not user-facing: demo", fix_paths=None, na={})
+                e2e_exception="not user-facing: demo", fix_paths=None, na={}, route="direct-prod")
     args.update(override)
     path = tmp / "readiness.json"
     rr.save(path, rr.build_from_template(TEMPLATE, **args))
@@ -89,6 +89,58 @@ class PcReleaseTest(unittest.TestCase):
         self.assertIn("python3 release_loop.py run readiness.json --clear-stop", files["start.sh"])
         self.assertIn("--drop-task", files["start.sh"])
         self.assertEqual(json.loads(files["readiness.json"])["release"], "Ripple CX audit")
+
+    def test_start_stamps_the_release_id_into_both_copies_so_gate_and_route_can_find_the_release(self) -> None:
+        ssh = FakeSsh()
+        path = readiness_file(self.tmp)
+        pc_release.start(path, runner=ssh, out=self.out.append)
+        sent = json.loads(self.installed_files(ssh)["readiness.json"])
+        started = re.search(r"Started (\S+) on the PC", "\n".join(self.out)).group(1)
+        self.assertEqual(sent["release_id"], started)
+        self.assertEqual(rr.load(path)["release_id"], started)
+        self.assertIn("route direct-prod", "\n".join(self.out))
+        self.assertIn("Prod readiness", "\n".join(self.out))
+
+    def test_dry_run_does_not_stamp_the_local_file(self) -> None:
+        path = readiness_file(self.tmp)
+        pc_release.start(path, dry_run=True, runner=FakeSsh(), out=self.out.append)
+        self.assertNotIn("release_id", rr.load(path))
+
+    def test_gate_runs_the_gate_command_in_the_release_folder_on_the_pc(self) -> None:
+        ssh = FakeSsh(stdout="Gate S2: queued")
+        text = pc_release.gate("20261009-120000-ripple-cx-audit", "S2", "staging deployed", by="Hafiz", sha="a" * 40, simulated=True,
+                               runner=ssh)
+        script = ssh.calls[0]["input"]
+        self.assertEqual(text, "Gate S2: queued")
+        self.assertIn('cd "$HOME/releases/20261009-120000-ripple-cx-audit"', script)
+        self.assertIn("python3 release_readiness.py gate readiness.json S2 --evidence 'staging deployed' --by Hafiz --sha " + "a" * 40
+                      + " --simulated", script)
+
+    def test_gate_evidence_is_shell_quoted(self) -> None:
+        ssh = FakeSsh()
+        pc_release.gate("20261009-120000-ripple-cx-audit", "G1", "ok'; rm -rf / #", runner=ssh)
+        self.assertIn("'ok'\"'\"'; rm -rf / #'", ssh.calls[0]["input"])
+        self.assertNotIn("--evidence ok'; rm", ssh.calls[0]["input"])
+
+    def test_gate_and_route_find_the_release_from_the_local_readiness_file(self) -> None:
+        path = readiness_file(self.tmp)
+        with self.assertRaises(ValueError):
+            pc_release.gate(str(path), "G1", "ok", runner=FakeSsh())  # never started: no id yet
+        pc_release.start(path, runner=FakeSsh(), out=self.out.append)
+        release_id = rr.load(path)["release_id"]
+        ssh = FakeSsh()
+        pc_release.gate(str(path), "G1", "ok", runner=ssh)
+        pc_release.route(str(path), "staging-first", by="Hafiz", runner=ssh)
+        self.assertIn(release_id, ssh.calls[0]["input"])
+        self.assertIn("release_readiness.py route readiness.json staging-first --by Hafiz", ssh.calls[1]["input"])
+
+    def test_an_unknown_route_or_id_is_refused_before_anything_is_sent(self) -> None:
+        ssh = FakeSsh()
+        with self.assertRaises(ValueError):
+            pc_release.route("20261009-120000-ripple-cx-audit", "sideways", runner=ssh)
+        with self.assertRaises(ValueError):
+            pc_release.gate("../../etc", "G1", "x", runner=ssh)
+        self.assertEqual(ssh.calls, [])
 
     def test_start_refuses_a_broken_readiness_file(self) -> None:
         path = readiness_file(self.tmp)

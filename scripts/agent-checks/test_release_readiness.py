@@ -33,7 +33,7 @@ def item(iid: str, owner: str = "pc", status: str = "open", **extra) -> dict:
 
 def readiness(items: list[dict], **extra) -> dict:
     data = {"release": "demo", "repo": "agent-os", "github_repo": "o/r", "branch": "docs/1-demo",
-            "base": "origin/main", "items": items, "loop": {}}
+            "base": "origin/main", "route": "direct-prod", "items": items, "loop": {}}
     data.update(extra)
     return data
 
@@ -79,6 +79,18 @@ def assert_gates_never_count(score_fn) -> None:
     assert score_fn(done)["ready"] is True, "open gates must not stop PC readiness reaching 100"
 
 
+def assert_prod_readiness_never_counts_items_after_the_go(score_fn) -> None:
+    data = readiness([item("1", status="green"), item("G1", owner="hafiz", status="green", action="none"),
+                      item("G4", owner="hafiz", status="open", action="none", after_go=True),
+                      item("G5", owner="mac", status="open", action="none", after_go=True)])
+    before = score_fn(data)
+    assert before["prod_ready"] is True, "an open deploy go or production smoke must not hold Prod readiness below 100"
+    assert before["prod_total"] == 2, f"after-go items were counted: {before['prod_total']}"
+    for gate in data["items"][2:]:
+        gate["status"] = "green"
+    assert score_fn(data)["prod_percent"] == before["prod_percent"], "closing after-go items changed Prod readiness"
+
+
 def assert_failing_command_is_never_green(check_fn, tmp: Path) -> None:
     shell = FakeShell([(lambda argv: argv[:1] == ["falsy"], (3, "tests failed"))])
     check = {"type": "commands_exit_zero", "commands": ["truthy ok", "falsy"]}
@@ -103,6 +115,28 @@ class ScoringTest(unittest.TestCase):
                     "ready": len(green) == total}
         with self.assertRaises(AssertionError):
             assert_gates_never_count(counts_gates)
+
+    def test_prod_readiness_counts_pc_items_and_the_gates_before_the_go(self) -> None:
+        data = readiness([item("1", status="green"), item("2"), item("G1", owner="hafiz", status="green", action="none"),
+                          item("G2", owner="mac", status="open", action="none"),
+                          item("G4", owner="hafiz", status="open", action="none", after_go=True)])
+        s = rr.score(data)
+        self.assertEqual((s["prod_green"], s["prod_total"], s["prod_percent"]), (2, 4, 50.0))
+        self.assertEqual(s["percent"], 50.0)
+        self.assertEqual(s["waiting_for"], ["G2"])
+        self.assertFalse(s["prod_ready"])
+
+    def test_prod_readiness_never_counts_items_after_the_go(self) -> None:
+        assert_prod_readiness_never_counts_items_after_the_go(rr.score)
+
+    def test_negative_control_a_scorer_that_counts_post_go_items_is_caught(self) -> None:
+        def counts_everything(data):
+            items = [i for i in data["items"] if rr.is_applicable(i)]
+            green = [i for i in items if i["status"] == "green"]
+            return {"prod_ready": len(green) == len(items), "prod_total": len(items),
+                    "prod_percent": round(100.0 * len(green) / len(items), 1)}
+        with self.assertRaises(AssertionError):
+            assert_prod_readiness_never_counts_items_after_the_go(counts_everything)
 
     def test_percent_open_blocked_and_ready(self) -> None:
         data = readiness([item("1", status="green"), item("2"), item("3", status="blocked"), item("4", status="green"),
@@ -160,6 +194,12 @@ class ValidateTest(unittest.TestCase):
 
     def test_an_action_that_names_a_forbidden_step_is_valid_so_the_loop_can_hand_it_over(self) -> None:
         self.assertEqual(rr.validate(readiness([item("1", action="merge"), item("2", action="deploy")])), [])
+
+    def test_route_is_required_and_must_be_known(self) -> None:
+        self.assertIn("route must be", " ".join(rr.validate(readiness([item("1")], route="maybe"))))
+        data = readiness([item("1")])
+        del data["route"]
+        self.assertIn("route must be", " ".join(rr.validate(data)))
 
     def test_cycle_is_an_error(self) -> None:
         data = readiness([item("1", depends_on=["2"]), item("2", depends_on=["1"])])
@@ -512,22 +552,23 @@ class ForbiddenTest(unittest.TestCase):
 def init_args(repo: str, **override) -> dict:
     args = dict(release="Demo release", repo=repo, branch="feat/1-demo", base="origin/main", pr_numbers_=[5], issue="1",
                 serving_commit="", approval="Hafiz, test", github_repo=None, suite_commands=None, e2e_commands=[],
-                e2e_exception="not user-facing: test", fix_paths=None, na={})
+                e2e_exception="not user-facing: test", fix_paths=None, na={}, route="direct-prod")
     args.update(override)
     return args
 
 
 class TemplateInitTest(unittest.TestCase):
-    def test_both_repos_build_a_valid_file_with_all_twelve_items_and_seven_gates(self) -> None:
+    def test_both_repos_build_a_valid_file_with_the_checklist_the_staging_items_and_the_gates(self) -> None:
         for repo in rr.REPOS:
             data = rr.build_from_template(TEMPLATE, **init_args(repo))
             self.assertEqual(rr.validate(data), [])
             pc = [i for i in data["items"] if i["owner"] == "pc"]
             gates = [i for i in data["items"] if i["owner"] in rr.GATE_OWNERS]
-            self.assertEqual((len(pc), len(gates)), (12, 7))
-            self.assertEqual(sorted(g["owner"] for g in gates), ["hafiz"] * 5 + ["mac"] * 2)
+            self.assertEqual((len(pc), len(gates)), (13, 11))  # 12 checklist items + S4; G0 to G7 + S1 to S3
+            self.assertEqual(sorted(g["owner"] for g in gates), ["hafiz"] * 6 + ["mac"] * 5)
+            self.assertEqual({g["id"] for g in gates if g.get("after_go")}, {"G4", "G5", "G6", "G7"})
             self.assertNotIn("<<", json.dumps(data))
-            self.assertNotIn('"@', json.dumps(data))
+            self.assertNotIn('"@', json.dumps(data).replace('"@staging_sha"', ""))  # that one is resolved when the check runs
 
     def test_repo_defaults_differ(self) -> None:
         agent = rr.build_from_template(TEMPLATE, **init_args("agent-os"))
@@ -573,6 +614,151 @@ class TemplateInitTest(unittest.TestCase):
             self.assertNotIn(word, text)
 
 
+class RouteTest(unittest.TestCase):
+    def build(self, route: str) -> dict:
+        return rr.build_from_template(TEMPLATE, **init_args("agent-os", route=route))
+
+    def test_direct_prod_marks_the_staging_items_not_applicable_with_hafizs_reason(self) -> None:
+        data = self.build("direct-prod")
+        for iid in ("S1", "S2", "S3", "S4"):
+            it_ = rr.item_map(data)[iid]
+            self.assertEqual((it_["status"], it_["na_reason"]), ("na", "Hafiz chose direct to production"), iid)
+        s = rr.score(data)
+        self.assertEqual((s["pc_total"], s["prod_total"]), (12 - 1, 11 + 4))  # item 6 is na too: 11 PC, plus G0 to G3
+
+    def test_staging_first_makes_the_four_staging_items_apply_and_three_are_mac_gates(self) -> None:
+        data = self.build("staging-first")
+        by = rr.item_map(data)
+        self.assertEqual([by[i]["owner"] for i in ("S1", "S2", "S3", "S4")], ["mac", "mac", "mac", "pc"])
+        self.assertTrue(all(rr.is_applicable(by[i]) for i in ("S1", "S2", "S3", "S4")))
+        self.assertEqual(by["S4"]["depends_on"], ["S3"])
+        self.assertEqual(rr.score(data)["waiting_for"], ["S1", "S2", "S3", "G1", "G2", "G3"])
+
+    def test_the_route_is_recorded_with_who_and_when_and_g0_is_green(self) -> None:
+        data = rr.build_from_template(TEMPLATE, **init_args("agent-os", route="staging-first", route_by="Hafiz, chat"))
+        g0 = rr.item_map(data)["G0"]
+        self.assertEqual(g0["status"], "green")
+        self.assertIn("staging-first chosen by Hafiz, chat", g0["evidence"][0]["note"])
+        self.assertEqual(data["route_history"][0]["by"], "Hafiz, chat")
+        self.assertIn("MYT", data["route_history"][0]["at"])
+
+    def test_init_requires_a_route(self) -> None:
+        with self.assertRaises(SystemExit):
+            rr.main(["init", "--release", "x", "--repo", "agent-os", "--branch", "feat/1-x", "--out", "/tmp/never.json"], out=lambda m: None)
+
+    def test_switching_the_route_recomputes_applicability_and_records_the_change(self) -> None:
+        data = self.build("direct-prod")
+        before = rr.score(data)
+        rr.record_route(data, "staging-first", "Hafiz, changed his mind")
+        by = rr.item_map(data)
+        self.assertTrue(all(rr.is_applicable(by[i]) and by[i]["status"] == "open" for i in ("S1", "S2", "S3", "S4")))
+        self.assertGreater(rr.score(data)["prod_total"], before["prod_total"])
+        self.assertEqual(rr.score(data)["pc_total"], before["pc_total"] + 1)
+        self.assertEqual([h["route"] for h in data["route_history"]], ["direct-prod", "staging-first"])
+        self.assertEqual(data["route_history"][1]["by"], "Hafiz, changed his mind")
+        rr.record_route(data, "direct-prod", "Hafiz")
+        self.assertTrue(all(by[i]["status"] == "na" for i in ("S1", "S2", "S3", "S4")))
+        self.assertEqual(rr.score(data)["prod_total"], before["prod_total"])
+
+    def test_a_closed_staging_gate_survives_a_round_trip_through_the_other_route(self) -> None:
+        data = self.build("staging-first")
+        rr.close_gate_in_data(data, "S1", "merged into sifu-staging, PR 5", by="Hafiz")
+        rr.record_route(data, "direct-prod", "Hafiz")
+        rr.record_route(data, "staging-first", "Hafiz")
+        self.assertEqual(rr.item_map(data)["S1"]["status"], "green")
+
+
+class GateTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.path = self.tmp / "readiness.json"
+        rr.save(self.path, rr.build_from_template(TEMPLATE, **init_args("agent-os", route="staging-first")))
+
+    def test_a_gate_closes_with_evidence_and_records_who(self) -> None:
+        data = rr.load(self.path)
+        rr.close_gate_in_data(data, "G1", "review page confirmed in chat 09/10/2026", by="Hafiz")
+        gate = rr.item_map(data)["G1"]
+        self.assertEqual(gate["status"], "green")
+        self.assertEqual(gate["evidence"][0]["by"], "Hafiz")
+        self.assertIn("MYT", gate["evidence"][0]["at"])
+
+    def test_a_pc_item_can_never_be_closed_by_a_gate(self) -> None:
+        with self.assertRaises(rr.ReadinessError) as caught:
+            rr.close_gate_in_data(rr.load(self.path), "5", "trust me")
+        self.assertIn("PC item", str(caught.exception))
+
+    def test_a_gate_needs_evidence_and_must_apply(self) -> None:
+        data = rr.load(self.path)
+        with self.assertRaises(rr.ReadinessError):
+            rr.close_gate_in_data(data, "G1", "   ")
+        with self.assertRaises(rr.ReadinessError):
+            rr.close_gate_in_data(data, "nope", "x")
+        rr.record_route(data, "direct-prod", "Hafiz")
+        with self.assertRaises(rr.ReadinessError):
+            rr.close_gate_in_data(data, "S1", "x")  # not applicable on this route
+
+    def test_simulated_evidence_is_marked_in_the_note_and_the_score(self) -> None:
+        data = rr.load(self.path)
+        rr.close_gate_in_data(data, "S2", "proof run, no real staging", simulated=True, sha="a" * 40)
+        gate = rr.item_map(data)["S2"]
+        self.assertTrue(gate["evidence"][0]["note"].startswith("SIMULATED: "))
+        self.assertTrue(next(g for g in rr.score(data)["gates"] if g["id"] == "S2")["simulated"])
+        self.assertEqual(data["staging_sha"], "a" * 40)
+        self.assertIn("(SIMULATED)", rr.render_score(data))
+
+    def test_with_no_loop_running_a_request_is_applied_to_the_checkpoint_at_once(self) -> None:
+        self.assertEqual(rr.request(self.path, {"op": "gate", "item": "G1", "evidence": "ok", "by": "Hafiz"}), "applied")
+        self.assertEqual(rr.item_map(rr.load(self.path))["G1"]["status"], "green")
+        self.assertEqual(rr.pending_ops(self.tmp), [])
+
+    def test_while_a_loop_owns_the_checkpoint_a_request_is_queued_and_the_file_is_untouched(self) -> None:
+        lock = rr.acquire_lock(self.tmp)
+        self.addCleanup(lock.close)
+        before = self.path.read_text()
+        self.assertEqual(rr.request(self.path, {"op": "gate", "item": "G1", "evidence": "ok", "by": "Hafiz"}), "queued")
+        self.assertEqual(self.path.read_text(), before, "a queued request must not write into the loop's checkpoint")
+        self.assertEqual(len(rr.pending_ops(self.tmp)), 1)
+        data = rr.load(self.path)
+        applied, problems = rr.drain_inbox(self.tmp, data)
+        self.assertEqual((len(applied), problems), (1, []))
+        self.assertEqual(rr.item_map(data)["G1"]["status"], "green")
+
+    def test_a_bad_request_is_refused_up_front_even_when_a_loop_is_running(self) -> None:
+        lock = rr.acquire_lock(self.tmp)
+        self.addCleanup(lock.close)
+        with self.assertRaises(rr.ReadinessError):
+            rr.request(self.path, {"op": "gate", "item": "5", "evidence": "x"})
+        self.assertEqual(rr.pending_ops(self.tmp), [])
+
+    def test_a_request_that_turns_bad_later_goes_to_rejected_not_lost(self) -> None:
+        rr.submit_op(self.tmp, {"op": "gate", "item": "5", "evidence": "x"})
+        applied, problems = rr.drain_inbox(self.tmp, rr.load(self.path))
+        self.assertEqual(applied, [])
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(list((self.tmp / "inbox" / "rejected").glob("*.json")))
+
+    def test_the_lock_is_exclusive(self) -> None:
+        first = rr.acquire_lock(self.tmp)
+        self.assertIsNotNone(first)
+        self.assertIsNone(rr.acquire_lock(self.tmp))
+        first.close()
+        again = rr.acquire_lock(self.tmp)
+        self.assertIsNotNone(again)
+        again.close()
+
+    def test_commit_in_branch_reads_the_staging_sha_recorded_by_the_gate(self) -> None:
+        shell = FakeShell([(lambda argv: "merge-base" in argv, (0, ""))])
+        data = rr.load(self.path)
+        ctx = context(data, self.tmp, shell)
+        check = {"type": "commit_in_branch", "sha": "@staging_sha"}
+        self.assertFalse(rr.check_commit_in_branch(check, ctx)["ok"])
+        self.assertEqual(shell.calls, [])
+        data["staging_sha"] = "abc1234"
+        self.assertTrue(rr.check_commit_in_branch(check, context(data, self.tmp, shell))["ok"])
+        self.assertIn("abc1234", " ".join(shell.calls[0][0]))
+
+
 class CliTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
@@ -585,34 +771,56 @@ class CliTest(unittest.TestCase):
     def init(self) -> Path:
         path = self.tmp / "r.json"
         code = self.run_cli("init", "--release", "Demo", "--repo", "agent-os", "--branch", "feat/1-demo", "--pr", "5",
-                            "--issue", "1", "--e2e-exception", "not user-facing: demo", "--na", "4=docs only", "--out", str(path))
+                            "--issue", "1", "--route", "direct-prod", "--e2e-exception", "not user-facing: demo", "--na", "4=docs only", "--out", str(path))
         self.assertEqual(code, 0, self.out)
         return path
 
     def test_init_refuses_to_overwrite_without_force(self) -> None:
         path = self.init()
         self.out.clear()
-        self.assertEqual(self.run_cli("init", "--release", "Demo", "--repo", "agent-os", "--branch", "feat/1-demo", "--out", str(path)), 2)
+        self.assertEqual(self.run_cli("init", "--release", "Demo", "--repo", "agent-os", "--branch", "feat/1-demo", "--route", "direct-prod", "--out", str(path)), 2)
         self.assertIn("exists", "\n".join(self.out))
 
-    def test_score_says_ready_only_at_one_hundred_percent(self) -> None:
+    def test_score_says_ready_for_your_go_only_when_prod_readiness_is_one_hundred_percent(self) -> None:
         path = self.init()
         self.out.clear()
         self.run_cli("score", str(path))
-        self.assertNotIn("READY FOR YOUR GO", "\n".join(self.out))
-        self.assertIn("Your gates", "\n".join(self.out))
+        text = "\n".join(self.out)
+        self.assertNotIn("READY FOR YOUR GO", text)
+        self.assertIn("Route: direct-prod", text)
+        self.assertIn("Gates before your go", text)
+        self.assertIn("After your go (listed, never counted)", text)
         data = rr.load(path)
-        for it in data["items"]:
-            if it["owner"] == "pc" and it["status"] == "open":
-                it["status"] = "green"
-                it["evidence"].append({"note": "test"})
+        for it_ in data["items"]:
+            if it_["owner"] == "pc" and it_["status"] == "open":
+                it_["status"] = "green"
+                it_["evidence"].append({"note": "test"})
         rr.save(path, data)
         self.out.clear()
         self.run_cli("score", str(path))
         text = "\n".join(self.out)
         self.assertIn("PC readiness: 100.0%", text)
+        self.assertIn("PC checks are all green; waiting for the gates above", text)
+        self.assertIn("waiting_for_gate: G1, G2, G3", text)
+        self.assertNotIn("READY FOR YOUR GO", text)
+        self.assertIn("G4 Production deploy go (always Hafiz's) [hafiz] open", text)
+        for gate_id in ("G1", "G2", "G3"):
+            self.assertEqual(self.run_cli("gate", str(path), gate_id, "--evidence", "done", "--by", "Hafiz"), 0)
+        self.out.clear()
+        self.run_cli("score", str(path))
+        text = "\n".join(self.out)
+        self.assertIn("Prod readiness: 100.0%", text)
         self.assertIn("READY FOR YOUR GO", text)
-        self.assertIn("G4 Production deploy go [hafiz] open", text)
+
+    def test_gate_and_route_commands(self) -> None:
+        path = self.init()
+        self.out.clear()
+        self.assertEqual(self.run_cli("gate", str(path), "5", "--evidence", "x"), 2)
+        self.assertIn("PC item", "\n".join(self.out))
+        self.out.clear()
+        self.assertEqual(self.run_cli("route", str(path), "staging-first", "--by", "Hafiz"), 0)
+        self.assertIn("Route staging-first: applied", "\n".join(self.out))
+        self.assertEqual(rr.load(path)["route"], "staging-first")
 
     def test_mark_needs_evidence_for_green_and_next_follows_dependencies(self) -> None:
         path = self.init()

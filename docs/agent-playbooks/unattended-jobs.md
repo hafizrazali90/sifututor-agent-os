@@ -86,21 +86,50 @@ of done, failed, blocked or timeout. Times are shown in MYT.
 ## Release readiness loop (issue #350)
 
 A single job does one task and stops. The release readiness loop chains the
-jobs for one release by itself, on the PC, and stops only when everything that
-comes before the final production go is done and proven. Then it tells Hafiz
-"ready for your go" with a plain report. Hafiz's request (09/10/2026): "i want
-the pc can be able to proceed until prod release readiness is 100%".
+jobs for one release by itself, on the PC, and keeps going until the release can
+be deployed to production right now, with nothing left that comes before the
+deploy. Then it tells Hafiz "ready for your go" with a plain report. Hafiz's
+words (09/10/2026): "i want the pc can be able to proceed until prod release
+readiness is 100%", then "prod readiness means it can deploy to prod, it
+depends if i want go to staging or prod directly".
 
-### What 100% means
+### The two routes
 
-Two numbers for every release, kept apart on purpose:
+Hafiz chooses the route per release when the readiness file is created
+(`init --route`). The choice is recorded with who and the date (item G0) and the
+loop will not start without it.
 
-- **PC readiness:** green items divided by applicable items whose owner is
-  `pc`. At 100 percent the loop stops with status `ready`.
-- **Your gates:** items owned by `hafiz` or `mac`. They are listed, never
-  counted into PC readiness, and the PC never does them: review page confirmed,
-  migration or data approval (when item 8 lists any), merge, production deploy
-  go, production smoke, production monitoring window, accepted and closed.
+- **direct-prod:** straight to production. The four staging items are marked not
+  applicable with the reason "Hafiz chose direct to production". Example: the
+  Ripple #1630 release was built with no staging by his decision.
+- **staging-first:** staging, then production. Four more items apply:
+  - S1 the release change is merged into `sifu-staging` (or the project's staging branch),
+  - S2 staging is deployed, with the commit SHA as evidence,
+  - S3 staging smoke is checked (normal smoke plus the change smoke per changed workflow),
+  - S4 a promotion PR or release branch exists for production and holds the exact commit that was tested on staging.
+
+  S1, S2 and S3 are gates owned by `mac` because an unattended PC job cannot
+  merge or deploy. S4 is a PC item that waits for S3.
+
+Hafiz can change his mind before the run is ready with
+`pc_release.py route READINESS direct-prod|staging-first`: the loop recomputes
+which items apply and records who changed it and when.
+
+### The two measures
+
+- **PC readiness:** green items among the applicable items owned by `pc`.
+- **Prod readiness:** green items among every applicable item that must close
+  before the production deploy go: the PC items plus the gates of the chosen
+  route (route recorded, review page confirmed by Hafiz, migration or data
+  approval when item 8 lists any, merge, and S1 to S3 on the staging route).
+
+**Prod readiness 100 percent means: the release can be deployed to production
+right now.** The loop then stops with status `ready_for_prod_go` and writes
+`release-report.md`, `ready.flag` and the exact deploy commands the plan lists.
+The production deploy go itself, the production smoke, the monitoring window and
+"accepted and closed" are listed as "after your go" and are never counted in
+either measure. The production deploy go is always Hafiz's, and the PC never
+merges or deploys.
 
 An item that does not apply is marked `na` with a reason (for example item 4
 "failing-first evidence" for a docs-only release). It leaves the denominator.
@@ -126,6 +155,7 @@ and [release-documentation.md](release-documentation.md).
 | 10 | Smoke and monitoring plan | builder drafts it |
 | 11 | Review page draft, business and technical side by side | builder drafts it |
 | 12 | Release notes draft | builder drafts it |
+| S4 | Promotion PR holds the staging-tested commit (staging-first only) | script (`gh pr view`, `git merge-base` with the SHA recorded when S2 was closed) |
 
 Drafts land in `release-pack/` next to the checkpoint. Screenshots of UI changes
 are listed as "still needed" because the PC cannot take them.
@@ -135,12 +165,15 @@ are listed as "still needed" because the PC cannot take them.
 - Merge, deploy, run a migration, or write production data. An item whose check
   or instruction would do any of these (`gh pr merge`, `git push` to main,
   `artisan migrate`, a deploy script, `ssh`, a database client, a write call)
-  is not run: the loop moves it to your gates and carries on.
+  is not run: the loop moves it to your gates and carries on. The deploy
+  commands in the plan are written down, never run.
 - Push anywhere except a fast-forward of fix commits to the release branch, and
   only when the readiness file has an `approval` line. Without one, a fix stays
   on the PC and the item blocks.
 - Read an environment file or a key file, or print a secret. Command output is
   masked before it is stored.
+- Open decision, NOT built: Hafiz may later let the PC deploy STAGING only (for
+  the `staging-first` route). Until he decides, S1 and S2 stay Mac gates.
 
 ### How the loop works
 
@@ -154,41 +187,62 @@ restart resumes exactly and re-runs only the action that was cut off. A pushed
 fix changes the release commit, so proof taken on the old commit (script and
 review items) is reset and checked again on the new one.
 
+**Waiting for gates.** When every open item is a gate owned by `mac` or
+`hafiz` (or waits only on one), the loop does not stop. Its status is `waiting`
+and it shows `waiting_for_gate: S1, S2, S3`. It sleeps, re-reads the checkpoint
+every 60 seconds, and carries on by itself the moment a gate gets evidence, so a
+staging-first release continues on its own once staging is merged, deployed and
+smoke checked. The stuck rule cannot fire while waiting (waiting is not a
+round). A `STOP` file still stops it.
+
 There is no spend, turn or time cap anywhere. The only things that end a run
 are stop conditions:
 
 | Status | When | What you do |
 | --- | --- | --- |
-| `ready` | PC readiness is 100 percent | Read `release-report.md` and the review page draft, then decide on the gates |
-| `blocked` | the same item failed or was blocked twice; or nothing can run (an item waits on a gate or is blocked); or fixes keep resetting the same item three times | Read the reason in the report. Fix the cause (or do the item by hand with `release_readiness.py mark`), then `mark ... --status open --reset-failures` and `resume` |
+| `ready_for_prod_go` | Prod readiness is 100 percent | Read `release-report.md` and the review page draft, then say go and run the deploy commands yourself |
+| `waiting` (not an end) | only gates are left | Close them with `pc_release.py gate`; the loop continues by itself |
+| `blocked` | the same item failed or was blocked twice; or nothing can run (a PC item is blocked); or fixes keep resetting the same item three times | Read the reason in the report. Fix the cause (or do the item by hand with `release_readiness.py mark`), then `mark ... --status open --reset-failures` and `resume` |
 | `stuck` | two rounds in a row with no change in score and no new evidence | Look at the last events in `readiness.json` (`loop.events`); the job is probably changing nothing. Change the item or mark it by hand, then `resume` |
 | `stopped` | a `STOP` file next to the checkpoint | `resume` when ready; the stop takes effect after the current action, or at once for a running command |
 
-### Start, read and stop it (from the Mac)
+### Start, read, close gates and stop it (from the Mac)
 
 ```bash
-# 1. write the readiness file (--na ITEM=reason for items that do not apply)
+# 1. write the readiness file (--route is required; --na ITEM=reason for items that do not apply)
 python3 scripts/agent-checks/release_readiness.py init --release "Ripple CX audit" \
   --repo ripple-suite --branch release/1630-cx-audit --pr 1630 --issue 1630 \
+  --route direct-prod --route-by "Hafiz, chat DD/MM/YYYY" \
   --serving-commit <sha from .serving-prod.json> \
   --approval "Hafiz, chat DD/MM/YYYY: push fixes to the release branch" \
   --e2e-exception "tooling unavailable: no app on the PC" --out readiness.json
-# 2. check it, then start it
+# 2. check it, then start it (start stamps the release id into readiness.json)
 python3 scripts/agent-checks/pc_release.py start readiness.json --dry-run
 python3 scripts/agent-checks/pc_release.py start readiness.json
 # 3. read it (RELEASE_ID is printed by start)
 python3 scripts/agent-checks/pc_release.py status RELEASE_ID
 python3 scripts/agent-checks/pc_release.py report RELEASE_ID
 python3 scripts/agent-checks/pc_release.py file RELEASE_ID release-pack/11-review-page.md
-# 4. stop or continue
+# 4. close a gate you or a Mac session did (evidence is text or a path; --sha for S2)
+python3 scripts/agent-checks/pc_release.py gate readiness.json G1 --evidence "review page confirmed, chat DD/MM/YYYY"
+python3 scripts/agent-checks/pc_release.py gate readiness.json S2 --evidence "staging deployed" --sha <commit>
+# 5. change the route, stop or continue
+python3 scripts/agent-checks/pc_release.py route readiness.json staging-first
 python3 scripts/agent-checks/pc_release.py stop RELEASE_ID
 python3 scripts/agent-checks/pc_release.py resume RELEASE_ID
 ```
 
+`gate` only closes items owned by `hafiz` or `mac`; it refuses a PC item, so a
+person cannot mark the PC's proof green. When the loop is running, a gate or
+route request is queued in `inbox/` and the loop applies it before its next
+action (it never overwrites the checkpoint behind the loop's back). `--simulated`
+is for proof runs only: the evidence and every report say SIMULATED so no one
+mistakes it for a real merge, deploy or approval.
+
 The loop is started through Task Scheduler exactly like a job (WSL kills
 detached processes). Files live in `~/releases/RELEASE_ID/` on the PC:
 `readiness.json` (the checkpoint), `release-report.md`, `ready.flag`,
-`release-pack/`, `jobs/` (one folder per Claude job), `loop.log`.
+`release-pack/`, `jobs/` (one folder per Claude job), `inbox/`, `loop.log`.
 
 ### Limits to know
 

@@ -16,11 +16,15 @@ finish state of local or committed only. A failed test check becomes a builder
 fix job given the failure output. CHANGES NEEDED becomes a builder fix job given
 the findings, then a fresh reviewer job.
 
-It stops at: ready (PC readiness is 100 percent), blocked (an item failed or was
-blocked twice, or nothing can run), stuck (two rounds in a row with no change in
-score and no new evidence), stopped (a STOP file next to the checkpoint), and
-when an item's fixes keep undoing each other. These are stop conditions, not
-caps: there is no spend, turn or time cap anywhere, and none may be added.
+It stops at: ready_for_prod_go (Prod readiness is 100 percent: nothing before
+the production deploy go is open), blocked (an item failed or was blocked twice,
+or nothing can run), stuck (two rounds in a row with no change in score and no
+new evidence), stopped (a STOP file next to the checkpoint), and when an item's
+fixes keep undoing each other. When every open item is a gate owned by a person
+it does not stop: it goes to `waiting` (waiting_for_gate), re-reads the
+checkpoint every 60 seconds and carries on the moment a gate gets evidence. The
+stuck rule cannot fire while waiting. These are stop conditions, not caps: there
+is no spend, turn or time cap anywhere, and none may be added.
 
 The loop never merges, deploys, runs a migration or writes production data.
 An item that would is handed to Hafiz as a gate and the loop carries on.
@@ -32,12 +36,12 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import fcntl
 import json
 import os
 from pathlib import Path
 import re
 import sys
+import time
 from typing import Any, Callable
 
 HERE = Path(__file__).resolve().parent
@@ -99,7 +103,8 @@ class PcJobRunner:
 class Loop:
     def __init__(self, readiness_path: Path | str, jobs: Any, shell: Any, *, repo_root: Path | str | None = None,
                  worktrees: Path | str | None = None, clear_stop: bool = False,
-                 log: Callable[[str], None] | None = None) -> None:
+                 log: Callable[[str], None] | None = None, wait_seconds: int = 60, poll_seconds: int = 2,
+                 sleep: Callable[[float], None] = time.sleep) -> None:
         self.path = Path(readiness_path)
         self.dir = self.path.parent
         self.pack = self.dir / "release-pack"
@@ -109,6 +114,7 @@ class Loop:
         self.repo_root = Path(repo_root) if repo_root else Path.home() / "Projects" / "Sifututor"
         self.worktrees = Path(worktrees) if worktrees else Path.home() / ".local" / "state" / "sifututor-agent-os" / "worktrees"
         self.clear_stop = clear_stop
+        self.wait_seconds, self.poll_seconds, self.sleep = wait_seconds, poll_seconds, sleep
         self.log = log or (lambda message: print(f"[{rr.myt_text()}] {message}", flush=True))
         self.data: dict[str, Any] = {}
 
@@ -142,6 +148,12 @@ class Loop:
     def next_seq(self) -> int:
         self.loop["job_seq"] = int(self.loop.get("job_seq", 0)) + 1
         return self.loop["job_seq"]
+
+    def branch_token(self) -> str:
+        """A per-release token, so job branch names never collide with an earlier release's jobs in the same repo."""
+        if not self.loop.get("token"):
+            self.loop["token"] = rr.now_utc().strftime("%m%d%H%M%S")
+        return self.loop["token"]
 
     def sha(self) -> str:
         return str(self.loop.get("release_sha", ""))
@@ -292,14 +304,15 @@ class Loop:
             self.release_facts(),
             f"You are drafting one document for the release readiness pack. You change no file. Task: {item['title']}.",
             item.get("instruction", ""),
-            f"The release branch is checked out. See what it changes with: git diff {self.data['base']}...HEAD",
+            f"The release commit is checked out on a scratch branch the runner named; ignore that name, the release branch is "
+            f"{self.data['branch']}. See what the release changes with: git diff {self.data['base']}...HEAD",
             ("Use these level-2 headings exactly: " + "; ".join(f"## {h}" for h in headings)) if headings else "Plain Markdown.",
             "Your final message must be the finished document and nothing else: start with a level-1 heading, then the "
             "sections. No preface, no result block. This overrides the result format in your role text. " + self.SAFETY,
         ])
         brief = self.build_brief({
             "title": f"Draft {item['id']}: {item['title']}"[:80], "role": "builder",
-            "branch": f"docs/release-draft-{item['id']}-{seq}", "base": f"origin/{self.data['branch']}",
+            "branch": f"docs/release-draft-{self.branch_token()}-{item['id']}-{seq}", "base": f"origin/{self.data['branch']}",
             "finish": "local", "allowed_paths": ".release-loop-scratch"}, body)
         res = self.jobs.run(brief, f"Draft {item['id']} {item['title']}"[:60])
         self.record_job(item, "builder", res)
@@ -376,7 +389,7 @@ class Loop:
         ])
         brief = self.build_brief({
             "title": f"Fix {item['id']}: {item['title']}"[:80], "role": "builder",
-            "branch": f"fix/release-fix-{item['id']}-{seq}", "base": f"origin/{self.data['branch']}",
+            "branch": f"fix/release-fix-{self.branch_token()}-{item['id']}-{seq}", "base": f"origin/{self.data['branch']}",
             "finish": "committed", "allowed_paths": ", ".join(paths)}, body)
         res = self.jobs.run(brief, f"Fix {item['id']} {item['title']}"[:60])
         self.record_job(item, "builder", res)
@@ -461,10 +474,29 @@ class Loop:
                     pieces.append(f"item {item['id']} waits on {', '.join(waiting) or 'nothing it can run'}")
         return "nothing can run: " + "; ".join(pieces)
 
+    def merge_inbox(self) -> None:
+        """Apply gate and route requests that people queued while the loop owned the checkpoint."""
+        applied, problems = rr.drain_inbox(self.dir, self.data)
+        for problem in problems:
+            self.event(f"request refused: {problem}")
+        if applied or problems:
+            for path in applied:
+                self.event(f"applied request {path.name}")
+            self.checkpoint()
+            for path in applied:
+                path.unlink(missing_ok=True)
+
+    def waiting_names(self) -> list[str]:
+        """Gates the loop is waiting on. Only when nothing else can run and nothing is blocked."""
+        if any(i.get("status") == "blocked" for i in self.data["items"] if rr.is_pc_item(i) and rr.is_applicable(i)):
+            return []
+        return rr.waiting_gates(self.data)
+
     def step(self) -> tuple[str, str] | None:
+        self.merge_inbox()
         self.hand_forbidden_to_hafiz()
-        if rr.score(self.data)["ready"]:
-            return "ready", ""
+        if rr.score(self.data)["prod_ready"]:
+            return "ready_for_prod_go", ""
         reason = self.blocked_reason()
         if reason:
             return "blocked", reason
@@ -472,7 +504,13 @@ class Loop:
             return "stopped", "a STOP file appeared"
         item = rr.next_item(self.data)
         if item is None:
+            names = self.waiting_names()
+            if names:
+                return "waiting", ", ".join(names)
             return "blocked", self.nothing_runnable_reason()
+        if self.loop.get("status") != "running":
+            self.loop.update(status="running", reason="")
+            self.loop.pop("waiting_for", None)
         self.loop["current"] = {"item": item["id"], "action": "fix" if item.get("pending_fix") else item.get("action"),
                                 "started_at": rr.myt_text()}
         self.checkpoint()
@@ -491,8 +529,8 @@ class Loop:
         fps = self.loop.setdefault("fingerprints", [])
         fps.append(self.fingerprint())
         self.checkpoint()
-        if rr.score(self.data)["ready"]:
-            return "ready", ""
+        if rr.score(self.data)["prod_ready"]:
+            return "ready_for_prod_go", ""
         reason = self.blocked_reason()
         if reason:
             return "blocked", reason
@@ -500,6 +538,26 @@ class Loop:
         if reason:
             return "stuck", reason
         return None
+
+    def wait_for_gates(self, names: str) -> None:
+        """Not stuck and not blocked: every open item is a gate owned by a person. Sleep, re-read the checkpoint, carry on."""
+        listed = [n.strip() for n in names.split(",")]
+        if self.loop.get("status") != "waiting" or self.loop.get("waiting_for") != listed:
+            self.loop.update(status="waiting", reason="", waiting_for=listed, waiting_since=rr.myt_text(), current=None)
+            self.loop["fingerprints"] = [self.fingerprint()]  # waiting is not a round: the stuck rule starts again afterwards
+            self.event(f"waiting_for_gate: {names}")
+            self.write_report()
+            self.checkpoint()
+        for _ in range(max(1, self.wait_seconds // max(1, self.poll_seconds))):
+            if self.stop_requested() or rr.pending_ops(self.dir):
+                break
+            self.sleep(self.poll_seconds)
+        self.data = rr.load(self.path)  # re-read the checkpoint: a person may have changed it
+        try:
+            self.ensure_worktree()  # a new commit on the release branch resets the proof taken on the old one
+            self.checkpoint()
+        except LoopError as exc:
+            self.log(f"could not refresh the release worktree while waiting: {exc}")
 
     def run(self) -> str:
         self.data = rr.load(self.path)
@@ -510,6 +568,7 @@ class Loop:
         loop = self.loop
         previous = loop.get("current")
         loop.update(status="running", reason="")
+        loop.pop("waiting_for", None)
         loop.setdefault("rounds", 0)
         loop.setdefault("job_seq", 0)
         loop.setdefault("jobs", [])
@@ -523,13 +582,21 @@ class Loop:
         if self.clear_stop:
             self.stop_path.unlink(missing_ok=True)
         try:
+            route_item = self.items().get("G0")
+            if route_item is not None and route_item.get("status") != "green":
+                raise LoopError("the route is not recorded (item G0): create the readiness file with init --route")
             if not self.stop_requested():
                 self.ensure_worktree()
             loop["fingerprints"] = [self.fingerprint()]
             self.checkpoint()
             outcome: tuple[str, str] | None = None
-            while outcome is None:
+            while True:
                 outcome = self.step()
+                if outcome is None:
+                    continue
+                if outcome[0] != "waiting":
+                    break
+                self.wait_for_gates(outcome[1])
         except rr.StopRequested:
             outcome = ("stopped", "a STOP file appeared")
         except LoopError as exc:
@@ -537,79 +604,127 @@ class Loop:
         return self.conclude(*outcome)
 
     def conclude(self, status: str, reason: str) -> str:
+        self.merge_inbox()
+        self.loop.pop("waiting_for", None)
         self.loop.update(status=status, reason=reason, current=None, ended_at=rr.myt_text(), ended_at_utc=rr.now_utc().isoformat())
         self.event(f"loop {status}" + (f": {reason}" if reason else ""))
         self.write_report()
-        if status == "ready":
-            (self.dir / "ready.flag").write_text(f"READY FOR YOUR GO\n{rr.myt_text()}\nrelease commit {self.sha()}\n")
+        if status == "ready_for_prod_go":
+            (self.dir / "ready.flag").write_text(f"READY FOR YOUR GO (production deploy)\n{rr.myt_text()}\nroute {self.data.get('route')}\n"
+                                                 f"release commit {self.sha()}\n")
         self.checkpoint()
         return status
 
     # ---- the report ----
 
-    def section_lines(self, doc_path: str, heading: str, limit: int = 8) -> list[str]:
+    def section_lines(self, doc_path: str, heading: str, limit: int = 8, keep_blank: bool = False) -> list[str]:
         try:
             text = (self.dir / doc_path).read_text()
         except OSError:
             return []
         found = re.search(rf"(?ms)^##\s*{re.escape(heading)}\s*\n(.*?)(?=^##\s|\Z)", text)
-        return [ln for ln in (found.group(1).strip().splitlines() if found else []) if ln.strip()][:limit]
+        return [ln for ln in (found.group(1).strip().splitlines() if found else []) if keep_blank or ln.strip()][:limit]
+
+    def gate_state(self, gate: dict[str, Any]) -> str:
+        if gate["applicable"] is False:
+            return f"not applicable, {gate['na_reason']}"
+        return gate["status"] + (" (SIMULATED proof run, not a real approval, merge or deploy)" if gate["simulated"] else "")
 
     def write_report(self) -> None:
         s = rr.score(self.data)
         loop = self.loop
         status = loop["status"]
-        title = {"ready": "READY FOR YOUR GO", "blocked": "BLOCKED", "stuck": "STUCK", "stopped": "STOPPED"}.get(status, status.upper())
-        items = self.data["items"]
+        title = {"ready_for_prod_go": "READY FOR YOUR PRODUCTION GO", "waiting": "WAITING FOR YOUR GATES", "blocked": "BLOCKED",
+                 "stuck": "STUCK", "stopped": "STOPPED"}.get(status, status.upper())
+        items = self.items()
         prs = ", ".join(f"#{n}" for n in self.data.get("pr_numbers", [])) or "branch only"
+        route = self.data.get("route", "")
+        staging = [items[i] for i in ("S1", "S2", "S3") if i in items and rr.is_applicable(items[i])]
+        staged = bool(staging) and all(g.get("status") == "green" for g in staging)
+        simulated = [g for g in s["gates"] if g["simulated"]]
+        if route == "staging-first" and staged:
+            proven = "staging deployed and staging smoke checked (evidence on gates S1 to S3); not merged to main, not deployed to production"
+        else:
+            proven = "not merged, not deployed"
+        before_open = [g for g in s["gates"] if g["applicable"] and not g["after_go"] and g["status"] != "green"]
+        after_go = [g for g in s["gates"] if g["applicable"] and g["after_go"]]
         lines = [f"# Release report: {self.data['release']}", "",
-                 f"**{title}** at {loop.get('ended_at', rr.myt_text())}"
-                 + (f" ({loop['reason']})" if loop.get("reason") else ""), "",
-                 "## Release state", "",
-                 f"- Source: branch {self.data['branch']} ({prs}) on {self.data['github_repo']}, commit {self.sha() or 'unknown'}.",
-                 "- Highest proven state: not merged, not deployed. "
-                 + ("Every PC check is done on that commit." if s["ready"] else f"PC checks are {s['percent']}% done."),
-                 "- What proves it: the evidence per item below, and the files in release-pack/.",
-                 "- Normal smoke: not run. Production smoke is your gate (G5).",
-                 "- Change smoke: planned in release-pack/10-smoke-monitoring.md, not run. It is your gate (G5).",
-                 "- What is not proven yet: "
-                 + ("; ".join(f"{g['id']} {g['title']}" for g in s["gates"] if g["applicable"] and g["status"] != "green") or "none")
-                 + (f"; PC items not done: {', '.join(s['open_pc'] + s['blocked_pc'])}" if not s["ready"] else "") + ".",
-                 ]
+                 f"**{title}** at {loop.get('ended_at') or rr.myt_text()}" + (f" ({loop['reason']})" if loop.get("reason") else ""),
+                 f"Route: {route}. PC readiness {s['percent']}%. Prod readiness {s['prod_percent']}%.", ""]
+        if status == "waiting":
+            lines += [f"waiting_for_gate: {', '.join(loop.get('waiting_for', []))}. The loop keeps running and continues by itself "
+                      "the moment a gate gets evidence (pc_release.py gate).", ""]
+        if simulated:
+            lines += ["**SIMULATED gates in this report: " + ", ".join(g["id"] for g in simulated)
+                      + ". They were closed for a proof run. Nothing was really merged, deployed or approved.**", ""]
+        lines += ["## Release state", "",
+                  f"- Source: branch {self.data['branch']} ({prs}) on {self.data['github_repo']}, commit {self.sha() or 'unknown'}.",
+                  f"- Highest proven state: {proven}. "
+                  + ("Every item before your production go is closed on that commit." if s["prod_ready"]
+                     else f"{s['pc_green']} of {s['pc_total']} PC items are green."),
+                  "- What proves it: the evidence per item below, and the files in release-pack/.",
+                  "- Normal smoke: " + ("on staging, see gate S3; production smoke is after your go." if route == "staging-first"
+                                        else "not run. Production smoke is after your go (G5)."),
+                  "- Change smoke: planned in release-pack/10-smoke-monitoring.md. "
+                  + ("Staging run is gate S3; the production run is after your go (G5)." if route == "staging-first"
+                     else "It runs after your go (G5)."),
+                  "- What is not proven yet: "
+                  + ("; ".join(f"{g['id']} {g['title']}" for g in before_open + after_go if g["status"] != "green") or "none")
+                  + (f"; PC items not done: {', '.join(s['open_pc'] + s['blocked_pc'])}" if s["open_pc"] or s["blocked_pc"] else "") + ".",
+                  ]
         impact = self.section_lines("release-pack/01-scope.md", "Who is affected")
-        lines.append("- User impact: " + (" ".join(impact) if impact else "see release-pack/01-scope.md (not drafted)"))
-        seven = self.items().get("7")
+        cleaned = [re.sub(r"^\s*[-*]\s*", "", ln).strip() for ln in impact]
+        lines.append("- User impact: " + ("; ".join(cleaned) if cleaned else "see release-pack/01-scope.md (not drafted)"))
+        seven = items.get("7")
         if seven and seven.get("status") == "na":
             lines.append(f"- Staff documentation: not relevant, {seven.get('na_reason')}")
         elif seven:
             lines.append(f"- Staff documentation: {seven.get('status')} (item 7); the decision is in the release's own ledger.")
-        lines += ["- Recommended next: " + ("read release-pack/11-review-page.md, then decide on the merge and the production deploy go."
-                                          if s["ready"] else "fix what the loop could not, then start it again (it resumes)."),
-                  "- Decision needed: " + ("yes. Confirm the review page (G1), then say whether to merge and deploy."
-                                           if s["ready"] else "yes. See the reason at the top."), "",
-                 "## PC readiness", "", f"{s['percent']}% ({s['pc_green']} of {s['pc_total']} applicable PC items green)", "",
-                 "| Item | Status | Evidence |", "| --- | --- | --- |"]
-        for item in items:
+        lines += ["- Recommended next: " + (
+                      "read release-pack/11-review-page.md, then say go and run the deploy commands below yourself."
+                      if s["prod_ready"] else
+                      "close the gates listed above (pc_release.py gate); the loop continues by itself." if status == "waiting" else
+                      "fix what the loop could not, then start it again (it resumes)."),
+                  "- Decision needed: " + ("yes. The production deploy go is yours." if s["prod_ready"]
+                                           else "yes. See the top of this report."), "",
+                  "## PC readiness", "", f"{s['percent']}% ({s['pc_green']} of {s['pc_total']} applicable PC items green)", "",
+                  "| Item | Status | Evidence |", "| --- | --- | --- |"]
+        for item in self.data["items"]:
             if not rr.is_pc_item(item) and not item.get("original_owner"):
                 continue
             if item.get("status") == "na" or item.get("applicable") is False:
                 lines.append(f"| {item['id']} {item['title']} | not applicable | {item.get('na_reason', '')} |")
                 continue
-            ev = [e for e in item.get("evidence", []) if e.get("note", "").startswith("green:")] or item.get("evidence", [])[-1:]
-            what = "; ".join(self.describe(e) for e in ev[-1:]) or "none"
+            evidence = item.get("evidence", [])
+            greens = [e for e in evidence if e.get("note", "").startswith("green:")]
+            summary = greens[-1]["note"].removeprefix("green: ") if greens else (self.describe(evidence[-1]) if evidence else "")
+            proof = [self.describe(e) for e in evidence if not e.get("note")][-2:]
+            what = "; ".join([summary.replace("|", "/")] + proof) if (summary or proof) else "none"
             owner = " (handed to Hafiz)" if item.get("original_owner") else ""
             lines.append(f"| {item['id']} {item['title']}{owner} | {item.get('status')} | {what} |")
-        lines += ["", "## Your gates (the PC never does these)", ""]
+        lines += ["", "## Prod readiness", "",
+                  f"{s['prod_percent']}% ({s['prod_green']} of {s['prod_total']} items before your production go are green): "
+                  "the PC items plus the gates of this route. The deploy go, production smoke, monitoring and acceptance are never counted.", "",
+                  "## Gates before your go (counted in Prod readiness; the PC never does these)", ""]
         for g in s["gates"]:
-            state = g["status"] if g["applicable"] else f"not applicable, {g['na_reason']}"
-            lines.append(f"- {g['id']} {g['title']} [{g['owner']}]: {state}")
+            if not g["after_go"]:
+                lines.append(f"- {g['id']} {g['title']} [{g['owner']}]: {self.gate_state(g)}")
+        lines += ["", "## After your go (listed, never counted)", ""]
+        for g in s["gates"]:
+            if g["after_go"]:
+                lines.append(f"- {g['id']} {g['title']} [{g['owner']}]: {self.gate_state(g)}")
+        commands = self.section_lines("release-pack/09-deploy-plan.md", "Commands in order", limit=80, keep_blank=True)
+        if commands:
+            lines += ["", "## Exact deploy commands the plan lists (the PC never runs them; the go is yours)", ""] + commands
         jobs = loop.get("jobs", [])
         elapsed = ""
-        if loop.get("started_at_utc") and loop.get("ended_at_utc"):
-            secs = (dt.datetime.fromisoformat(loop["ended_at_utc"]) - dt.datetime.fromisoformat(loop["started_at_utc"])).total_seconds()
+        if loop.get("started_at_utc"):
+            end = loop.get("ended_at_utc") or rr.now_utc().isoformat()
+            secs = (dt.datetime.fromisoformat(end) - dt.datetime.fromisoformat(loop["started_at_utc"])).total_seconds()
             elapsed = f"{int(secs // 60)} min {int(secs % 60)} s"
         lines += ["", "## What the loop did", "",
-                  f"- Started {loop.get('started_at')}, ended {loop.get('ended_at')}" + (f", {elapsed}." if elapsed else "."),
+                  f"- Started {loop.get('started_at')}" + (f", ended {loop['ended_at']}" if loop.get("ended_at") else "")
+                  + (f", {elapsed}." if elapsed else "."),
                   f"- {loop.get('rounds', 0)} rounds, {len(jobs)} Claude jobs, "
                   f"{sum(int(j.get('turns') or 0) for j in jobs)} turns, list-price equivalent "
                   f"${sum(float(j.get('cost_usd') or 0) for j in jobs):.2f} (billed to the subscription, no cap).",
@@ -630,13 +745,7 @@ class Loop:
 # -------------------------------------------------------------------- CLI --
 
 def acquire_lock(path: Path):
-    handle = open(path.parent / "loop.lock", "w")
-    try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        handle.close()
-        return None
-    return handle
+    return rr.acquire_lock(Path(path).parent)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -656,9 +765,13 @@ def main(argv: list[str] | None = None) -> int:
         runner = PcJobRunner(args.readiness.parent, repo_root=args.repo, claude=args.claude, worktrees=args.worktrees)
         loop = Loop(args.readiness, runner, rr.RealShell(), repo_root=args.repo, worktrees=args.worktrees,
                     clear_stop=args.clear_stop)
-        status = loop.run()
+        try:
+            status = loop.run()
+        except rr.ReadinessError as exc:
+            print(f"REFUSED: {exc}")
+            return 2
         print(f"Loop finished: {status}")
-        return 0 if status == "ready" else 1
+        return 0 if status == "ready_for_prod_go" else 1
     finally:
         if args.drop_task:
             from shutil import which

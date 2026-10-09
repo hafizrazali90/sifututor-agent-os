@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import copy
 import datetime as dt
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -44,7 +45,9 @@ GATE_OWNERS = ("hafiz", "mac")
 STATUSES = ("open", "green", "blocked", "na")
 ACTIONS = ("script", "builder", "reviewer", "none")
 REPOS = ("agent-os", "ripple-suite")
-LOOP_STATUSES = ("new", "running", "ready", "blocked", "stuck", "stopped")
+LOOP_STATUSES = ("new", "running", "waiting", "ready_for_prod_go", "blocked", "stuck", "stopped")
+ROUTES = ("staging-first", "direct-prod")
+DIRECT_PROD_REASON = "Hafiz chose direct to production"
 PROTECTED_BRANCHES = ("main", "master", "production", "prod", "staging")
 
 # AGENTS.md names these exceptions for a missing browser or E2E run.
@@ -158,6 +161,8 @@ def validate(data: dict[str, Any]) -> list[str]:
             errors.append(f"missing {key}")
     if data.get("repo") and data["repo"] not in REPOS:
         errors.append(f"repo must be one of {', '.join(REPOS)}")
+    if data.get("route") not in ROUTES:
+        errors.append(f"route must be one of {', '.join(ROUTES)}")
     branch = data.get("branch", "")
     if branch in PROTECTED_BRANCHES or branch == str(data.get("base", "")).removeprefix("origin/"):
         errors.append("the release branch must not be the base or a protected branch")
@@ -175,6 +180,8 @@ def validate(data: dict[str, Any]) -> list[str]:
         if item.get("status") not in STATUSES:
             errors.append(f"item {iid}: status must be one of {', '.join(STATUSES)}")
         # an action that names a forbidden step is allowed here so the loop can hand it to Hafiz
+        if item.get("route_only") not in (None, *ROUTES):
+            errors.append(f"item {iid}: route_only must be one of {', '.join(ROUTES)}")
         if is_pc_item(item) and item.get("action") not in ACTIONS + FORBIDDEN_ACTION_WORDS:
             errors.append(f"item {iid}: action must be one of {', '.join(ACTIONS)}")
         if (item.get("applicable") is False or item.get("status") == "na") and not item.get("na_reason"):
@@ -205,24 +212,56 @@ def validate(data: dict[str, Any]) -> list[str]:
 
 # ------------------------------------------------------------ scoring ------
 
+def is_gate(item: dict[str, Any]) -> bool:
+    return item.get("owner") in GATE_OWNERS
+
+
+def is_after_go(item: dict[str, Any]) -> bool:
+    """The production deploy go, production smoke, monitoring and acceptance come after Hafiz's go."""
+    return item.get("after_go") is True
+
+
 def score(data: dict[str, Any]) -> dict[str, Any]:
-    """PC readiness counts only applicable items owned by `pc`. Gates never count."""
+    """Two measures.
+
+    PC readiness: green items among applicable items owned by `pc`.
+    Prod readiness: green items among ALL applicable items that must close BEFORE
+    the production deploy go: the PC items plus the gates of the chosen route.
+    Items after the go (deploy go, production smoke, monitoring, acceptance) are
+    listed and never counted in either measure.
+    """
     pc = [i for i in data["items"] if is_pc_item(i) and is_applicable(i)]
     green = [i for i in pc if i.get("status") == "green"]
-    gates = [i for i in data["items"] if i.get("owner") in GATE_OWNERS]
+    gates = [i for i in data["items"] if is_gate(i)]
+    before = [i for i in data["items"] if is_applicable(i) and not is_after_go(i) and (is_pc_item(i) or is_gate(i))]
+    before_green = [i for i in before if i.get("status") == "green"]
     total = len(pc)
     percent = 100.0 if total == 0 else round(100.0 * len(green) / total, 1)
+    prod_total = len(before)
     return {
+        "route": data.get("route", ""),
         "pc_total": total,
         "pc_green": len(green),
         "percent": percent,
         "ready": len(green) == total,
+        "prod_total": prod_total,
+        "prod_green": len(before_green),
+        "prod_percent": 100.0 if prod_total == 0 else round(100.0 * len(before_green) / prod_total, 1),
+        "prod_ready": len(before_green) == prod_total,
         "open_pc": [i["id"] for i in pc if i.get("status") == "open"],
         "blocked_pc": [i["id"] for i in pc if i.get("status") == "blocked"],
+        "waiting_for": waiting_gates(data),
         "gates": [{"id": g["id"], "title": g.get("title", ""), "owner": g["owner"],
                    "status": g.get("status", "open"), "applicable": is_applicable(g),
-                   "na_reason": g.get("na_reason", "")} for g in gates],
+                   "na_reason": g.get("na_reason", ""), "after_go": is_after_go(g),
+                   "simulated": any(e.get("simulated") for e in g.get("evidence", []))} for g in gates],
     }
+
+
+def waiting_gates(data: dict[str, Any]) -> list[str]:
+    """Open gates that must close before the production go."""
+    return [i["id"] for i in data["items"] if is_gate(i) and is_applicable(i) and not is_after_go(i)
+            and i.get("status") == "open"]
 
 
 def next_item(data: dict[str, Any]) -> dict[str, Any] | None:
@@ -266,6 +305,137 @@ def set_status(item: dict[str, Any], status: str, **evidence: Any) -> None:
     if evidence:
         add_evidence(item, **evidence)
     item["status"] = status
+
+
+# ------------------------------------------- route, gates and the inbox ------
+
+def apply_route(data: dict[str, Any], route: str) -> None:
+    """Recompute which route-only items apply. direct-prod marks the staging items not applicable."""
+    if route not in ROUTES:
+        raise ReadinessError(f"route must be one of {', '.join(ROUTES)}")
+    data["route"] = route
+    for item in data["items"]:
+        only = item.get("route_only")
+        if not only:
+            continue
+        if only == route:
+            if item.get("na_by_route"):
+                item["applicable"] = True
+                item["status"] = item.pop("status_before_route_na", "open")
+                item.pop("na_reason", None)
+                item.pop("na_by_route", None)
+        elif not item.get("na_by_route"):
+            item["status_before_route_na"] = item.get("status", "open")
+            item.update(status="na", applicable=False, na_by_route=True,
+                        na_reason=DIRECT_PROD_REASON if route == "direct-prod" else f"the route is {route}")
+
+
+def record_route(data: dict[str, Any], route: str, by: str) -> None:
+    """Set the route, recompute applicability, and record who chose it and when (item G0)."""
+    apply_route(data, route)
+    history = data.setdefault("route_history", [])
+    history.append({"route": route, "by": by or "unspecified", "at": myt_text()})
+    gate = item_map(data).get("G0")
+    if gate is not None:
+        add_evidence(gate, note=f"route {route} chosen by {by or 'unspecified'} (record {len(history)})", by=by or "unspecified")
+        gate["status"] = "green"
+
+
+def close_gate_in_data(data: dict[str, Any], item_id: str, evidence: str, *, by: str = "", sha: str = "",
+                       simulated: bool = False) -> None:
+    """A person closes a gate by giving evidence. The PC's own items can never be closed this way."""
+    item = item_map(data).get(item_id)
+    if item is None:
+        raise ReadinessError(f"no item {item_id}")
+    if not is_gate(item):
+        raise ReadinessError(f"item {item_id} is a PC item: the PC proves it, a person cannot close it with a gate")
+    if not is_applicable(item):
+        raise ReadinessError(f"item {item_id} is not applicable ({item.get('na_reason', '')})")
+    if not evidence.strip():
+        raise ReadinessError("a gate needs evidence: text or a path")
+    fields: dict[str, Any] = {"note": ("SIMULATED: " if simulated else "") + evidence.strip(), "by": by or "unspecified"}
+    if simulated:
+        fields["simulated"] = True
+    if sha:
+        fields["sha"] = sha
+    add_evidence(item, **fields)
+    item["status"] = "green"
+    if sha and item.get("records"):
+        data[item["records"]] = sha
+
+
+def apply_op(data: dict[str, Any], op: dict[str, Any]) -> None:
+    kind = op.get("op")
+    if kind == "gate":
+        close_gate_in_data(data, str(op.get("item", "")), str(op.get("evidence", "")), by=str(op.get("by", "")),
+                           sha=str(op.get("sha", "")), simulated=bool(op.get("simulated")))
+    elif kind == "route":
+        record_route(data, str(op.get("route", "")), str(op.get("by", "")))
+    else:
+        raise ReadinessError(f"unknown request {kind!r}")
+
+
+def acquire_lock(directory: Path | str):
+    """The loop's lock. Whoever holds it owns the checkpoint; everyone else queues a request in the inbox."""
+    handle = open(Path(directory) / "loop.lock", "w")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        return None
+    return handle
+
+
+def submit_op(directory: Path | str, op: dict[str, Any]) -> Path:
+    inbox = Path(directory) / "inbox"
+    inbox.mkdir(exist_ok=True)
+    name = f"{now_utc().strftime('%Y%m%dT%H%M%S%f')}-{os.getpid()}.json"
+    tmp = inbox / (name + ".tmp")
+    tmp.write_text(json.dumps({**op, "submitted_at": myt_text()}))
+    final = inbox / name
+    os.replace(tmp, final)
+    return final
+
+
+def pending_ops(directory: Path | str) -> list[Path]:
+    inbox = Path(directory) / "inbox"
+    return sorted(inbox.glob("*.json")) if inbox.is_dir() else []
+
+
+def drain_inbox(directory: Path | str, data: dict[str, Any]) -> tuple[list[Path], list[str]]:
+    """Apply queued requests to `data`. The caller saves, then removes the returned files."""
+    applied: list[Path] = []
+    problems: list[str] = []
+    for path in pending_ops(directory):
+        try:
+            apply_op(data, json.loads(path.read_text()))
+            applied.append(path)
+        except (ReadinessError, json.JSONDecodeError, OSError) as exc:
+            problems.append(f"{path.name}: {exc}")
+            rejected = path.parent / "rejected"
+            rejected.mkdir(exist_ok=True)
+            os.replace(path, rejected / path.name)
+    return applied, problems
+
+
+def request(readiness_path: Path | str, op: dict[str, Any]) -> str:
+    """Apply a gate or route request now when no loop is running, otherwise queue it for the loop."""
+    path = Path(readiness_path)
+    if not path.is_file():
+        raise ReadinessError(f"cannot read {path}")
+    lock = acquire_lock(path.parent)
+    if lock is None:
+        probe = load(path)  # reject a bad request at once instead of silently queueing it
+        apply_op(probe, op)
+        submit_op(path.parent, op)
+        return "queued"
+    try:
+        data = load(path)
+        apply_op(data, op)
+        save(path, data)
+        return "applied"
+    finally:
+        lock.close()
 
 
 # ------------------------------------------------- forbidden actions -------
@@ -483,6 +653,10 @@ def check_pr_exists(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
 
 def check_commit_in_branch(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
     sha = str(check.get("sha", "")).strip()
+    if sha.startswith("@"):
+        sha = str(ctx.data.get(sha[1:], "")).strip()
+        if not sha:
+            return result(False, "no commit has been recorded for this check yet (close the staging deploy gate with --sha)")
     if not re.fullmatch(r"[0-9a-f]{7,40}", sha):
         return result(False, f"{sha!r} is not a commit SHA")
     branch = ctx.data.get("branch", "")
@@ -623,14 +797,14 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
                         pr_numbers_: list[int], issue: str, serving_commit: str, approval: str,
                         github_repo: str | None, suite_commands: list[str] | None, e2e_commands: list[str],
                         e2e_exception: str, fix_paths: list[str] | None, na: dict[str, str],
-                        ) -> dict[str, Any]:
+                        route: str = "direct-prod", route_by: str = "Hafiz") -> dict[str, Any]:
     defaults = template["defaults"][repo]
     values = {
         "release": release, "repo": repo, "branch": branch, "base": base, "issue": issue or "0",
         "github_repo": github_repo or defaults["github_repo"], "serving_commit": serving_commit,
         "pr_numbers": list(pr_numbers_), "suite_commands": suite_commands or defaults["suite_commands"],
         "fix_allowed_paths": fix_paths or defaults["fix_allowed_paths"], "e2e_commands": e2e_commands,
-        "umbrella_script_dir": defaults.get("umbrella_script_dir", "scripts/agent-checks"),
+        "umbrella_script_dir": defaults.get("umbrella_script_dir", "scripts/agent-checks"), "route": route,
         "failing_first_command": defaults["failing_first_command"],
         "failing_first_install": defaults["failing_first_install"],
     }
@@ -661,9 +835,14 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
         "schema": SCHEMA, "release": release, "repo": repo, "github_repo": values["github_repo"],
         "branch": branch, "base": base, "pr_numbers": list(pr_numbers_), "issue": issue or "0",
         "serving_commit": serving_commit, "approval": approval, "fix_allowed_paths": values["fix_allowed_paths"],
-        "created_at": myt_text(), "items": items,
+        "route": route, "created_at": myt_text(), "items": items,
         "loop": {"status": "new", "reason": "", "rounds": 0, "job_seq": 0, "fingerprints": [], "jobs": []},
     }
+    if route not in ROUTES:
+        raise ReadinessError(f"route must be one of {', '.join(ROUTES)}")
+    record_route(data, route, route_by)
+    for iid, reason in na.items():  # explicit --na wins over the route
+        by_id[iid].update(applicable=False, status="na", na_reason=reason)
     errors = validate(data)
     if errors:
         raise ReadinessError("; ".join(errors))
@@ -672,22 +851,37 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
 
 # ------------------------------------------------------------- CLI ---------
 
-def render_score(data: dict[str, Any]) -> str:
+def render_score(data: dict[str, Any], directory: Path | str | None = None) -> str:
     s = score(data)
-    lines = [f"PC readiness: {s['percent']}% ({s['pc_green']} of {s['pc_total']} applicable PC items green)",
+    loop = data.get("loop", {})
+    lines = [f"Route: {s['route'] or 'not set'}",
+             f"PC readiness: {s['percent']}% ({s['pc_green']} of {s['pc_total']} applicable PC items green)",
+             f"Prod readiness: {s['prod_percent']}% ({s['prod_green']} of {s['prod_total']} items before your production go are green)",
              "Open PC items: " + (", ".join(s["open_pc"]) or "none")]
     if s["blocked_pc"]:
         lines.append("Blocked PC items: " + ", ".join(s["blocked_pc"]))
-    lines.append("Your gates (never counted, the PC never does them):")
-    for g in s["gates"]:
+    if s["waiting_for"]:
+        lines.append("waiting_for_gate: " + ", ".join(s["waiting_for"]))
+    before = [g for g in s["gates"] if not g["after_go"]]
+    after = [g for g in s["gates"] if g["after_go"]]
+
+    def gate_line(g: dict[str, Any]) -> str:
         state = g["status"] if g["applicable"] else f"not applicable ({g['na_reason']})"
-        lines.append(f"  - {g['id']} {g['title']} [{g['owner']}] {state}")
-    loop = data.get("loop", {})
+        return f"  - {g['id']} {g['title']} [{g['owner']}] {state}" + (" (SIMULATED)" if g["simulated"] else "")
+
+    lines.append("Gates before your go (counted in Prod readiness, the PC never does them):")
+    lines += [gate_line(g) for g in before]
+    lines.append("After your go (listed, never counted):")
+    lines += [gate_line(g) for g in after]
+    pending = len(pending_ops(directory)) if directory else 0
     lines.append(f"Loop: {loop.get('status', 'new')}"
                  + (f" ({loop['reason']})" if loop.get("reason") else "")
-                 + f", {loop.get('rounds', 0)} rounds, {len(loop.get('jobs', []))} jobs")
-    if s["ready"]:
-        lines.append("READY FOR YOUR GO")
+                 + f", {loop.get('rounds', 0)} rounds, {len(loop.get('jobs', []))} jobs"
+                 + (f", {pending} request(s) queued" if pending else ""))
+    if s["prod_ready"]:
+        lines.append("READY FOR YOUR GO: Prod readiness is 100%, nothing before the production deploy is open")
+    elif s["ready"]:
+        lines.append("PC checks are all green; waiting for the gates above")
     return "\n".join(lines)
 
 
@@ -707,6 +901,9 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
     p.add_argument("--release", required=True); p.add_argument("--repo", required=True, choices=REPOS)
     p.add_argument("--branch", required=True); p.add_argument("--base", default="origin/main")
     p.add_argument("--pr", type=int, action="append", default=[]); p.add_argument("--issue", default="")
+    p.add_argument("--route", required=True, choices=ROUTES,
+                   help="staging-first (staging, then production) or direct-prod (straight to production)")
+    p.add_argument("--route-by", default="Hafiz", help="who chose the route; recorded with the date")
     p.add_argument("--serving-commit", default=""); p.add_argument("--approval", default="")
     p.add_argument("--github-repo"); p.add_argument("--suite-command", action="append")
     p.add_argument("--e2e-command", action="append", default=[]); p.add_argument("--e2e-exception", default="")
@@ -716,6 +913,12 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
     p.add_argument("--out", type=Path, required=True); p.add_argument("--force", action="store_true")
     for name in ("show", "score", "next"):
         p = sub.add_parser(name); p.add_argument("file", type=Path)
+    p = sub.add_parser("gate", help="close a gate (an item owned by hafiz or mac) with evidence")
+    p.add_argument("file", type=Path); p.add_argument("item"); p.add_argument("--evidence", required=True)
+    p.add_argument("--by", default=""); p.add_argument("--sha", default="")
+    p.add_argument("--simulated", action="store_true", help="a proof run: marks the evidence SIMULATED in every report")
+    p = sub.add_parser("route", help="change the route before the release is ready")
+    p.add_argument("file", type=Path); p.add_argument("new_route", choices=ROUTES); p.add_argument("--by", default="Hafiz")
     p = sub.add_parser("mark"); p.add_argument("file", type=Path); p.add_argument("item")
     p.add_argument("--status", required=True, choices=STATUSES)
     p.add_argument("--note"); p.add_argument("--path"); p.add_argument("--command")
@@ -736,16 +939,27 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
                 json.loads(args.template.read_text()), release=args.release, repo=args.repo, branch=args.branch,
                 base=args.base, pr_numbers_=args.pr, issue=args.issue, serving_commit=args.serving_commit,
                 approval=args.approval, github_repo=args.github_repo, suite_commands=args.suite_command,
-                e2e_commands=args.e2e_command, e2e_exception=args.e2e_exception, fix_paths=args.fix_path, na=na)
+                e2e_commands=args.e2e_command, e2e_exception=args.e2e_exception, fix_paths=args.fix_path, na=na,
+                route=args.route, route_by=args.route_by)
             save(args.out, data)
             out(f"Wrote {args.out}")
             out(render_score(data))
+            return 0
+        if args.cmd == "gate":
+            how = request(args.file, {"op": "gate", "item": args.item, "evidence": args.evidence, "by": args.by,
+                                      "sha": args.sha, "simulated": args.simulated})
+            out(f"Gate {args.item}: {how}" + (" (the loop applies it before its next action)" if how == "queued" else ""))
+            return 0
+        if args.cmd == "route":
+            how = request(args.file, {"op": "route", "route": args.new_route, "by": args.by})
+            out(f"Route {args.new_route}: {how}" + (" (the loop applies it before its next action)" if how == "queued"
+                                                    else ". Start or resume the loop to continue."))
             return 0
         data = load(args.file)
         if args.cmd == "show":
             out(render_show(data))
         elif args.cmd == "score":
-            out(render_score(data))
+            out(render_score(data, args.file.parent))
         elif args.cmd == "next":
             item = next_item(data)
             out(f"{item['id']}: {item['title']} (action {item.get('action')})" if item else "none")
@@ -762,7 +976,7 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
                 items[args.item].pop("pending_fix", None)
                 items[args.item].pop("blocked_reason", None)
             save(args.file, data)
-            out(render_score(data))
+            out(render_score(data, args.file.parent))
         return 0
     except ReadinessError as exc:
         out(f"REFUSED: {exc}")
