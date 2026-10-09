@@ -108,8 +108,16 @@ loop will not start without it.
   - S3 staging smoke is checked (normal smoke plus the change smoke per changed workflow),
   - S4 a promotion PR or release branch exists for production and holds the exact commit that was tested on staging.
 
-  S1, S2 and S3 are gates owned by `mac` because an unattended PC job cannot
-  merge or deploy. S4 is a PC item that waits for S3.
+  By default S1, S2 and S3 are gates owned by `mac` because an unattended PC job
+  cannot merge or deploy. S4 is a PC item that waits for S3.
+
+  **PC staging deploy (issue #356).** When the readiness file is created with
+  `--staging-deploy ripple|sims`, S1, S2 and S3 become PC items: the loop checks the
+  candidate, deploys STAGING through a plain script (never Claude), reads the
+  deployed commit back from the server, and runs the staging smoke itself. It
+  never deploys production and never touches main. The rules, the commands for
+  each route and what it refuses are in
+  [staging-deploy-from-pc.md](staging-deploy-from-pc.md).
 
 Hafiz can change his mind before the run is ready with
 `pc_release.py route READINESS direct-prod|staging-first`: the loop recomputes
@@ -155,7 +163,10 @@ and [release-documentation.md](release-documentation.md).
 | 10 | Smoke and monitoring plan | builder drafts it |
 | 11 | Review page draft, business and technical side by side | builder drafts it |
 | 12 | Release notes draft | builder drafts it |
-| S4 | Promotion PR holds the staging-tested commit (staging-first only) | script (`gh pr view`, `git merge-base` with the SHA recorded when S2 was closed) |
+| S1 | Staging candidate identified (only with `--staging-deploy`) | script: branch tip on GitHub, then every staging rule on the box (`staging_deploy.py check`) |
+| S2 | Staging deployed, commit read back (only with `--staging-deploy`) | script: `check`, `start`, poll `status`, `verify` against PM2 or HEAD, the deploy log and the login page |
+| S3 | Staging smoke (only with `--staging-deploy`) | script: staging still serves the commit, scripted login on the staging lane, each change smoke command with Playwright |
+| S4 | Promotion PR holds the staging-tested commit (staging-first only) | script (`gh pr view`, then Ripple: `git merge-base` with the SHA recorded by S2; SIMS: same changed lines on a different base) |
 
 Item 6 is never a builder's word: `init` requires either `--e2e-command` (the loop
 runs it) or `--e2e-exception` (a named exception from `AGENTS.md`).
@@ -165,18 +176,21 @@ are listed as "still needed" because the PC cannot take them.
 
 ### What the PC will never do
 
-- Merge, deploy, run a migration, or write production data. An item whose check
+- Merge, deploy production, run a production migration, or write production data. An item whose check
   or instruction would do any of these (`gh pr merge`, `git push` to main,
   `artisan migrate`, a deploy script, `ssh`, a database client, a write call)
   is not run: the loop moves it to your gates and carries on. The deploy
-  commands in the plan are written down, never run.
+  commands in the plan are written down, never run. The one exception is the
+  built-in staging deploy of a release created with `--staging-deploy`: it reaches
+  the two staging boxes only, through `staging_deploy.py`, and nothing else.
 - Push anywhere except a fast-forward of fix commits to the release branch, and
   only when the readiness file has an `approval` line. Without one, a fix stays
   on the PC and the item blocks.
 - Read an environment file or a key file, or print a secret. Command output is
   masked before it is stored.
-- Open decision, NOT built: Hafiz may later let the PC deploy STAGING only (for
-  the `staging-first` route). Until he decides, S1 and S2 stay Mac gates.
+- Deploy staging only when the release asks for it (`--staging-deploy`, with an
+  approval line from Hafiz). Decided and built on 09/10/2026 (issue #356); without
+  the flag S1 to S3 stay Mac gates.
 
 ### How the loop works
 
@@ -232,6 +246,8 @@ python3 scripts/agent-checks/pc_release.py file RELEASE_ID release-pack/11-revie
 # 4. close a gate you or a Mac session did (evidence is text or a path; --sha for S2)
 python3 scripts/agent-checks/pc_release.py gate readiness.json G1 --evidence "review page confirmed, chat DD/MM/YYYY"
 python3 scripts/agent-checks/pc_release.py gate readiness.json S2 --evidence "staging deployed" --sha <commit>
+#    (only when S1 to S3 are Mac gates; with --staging-deploy they are PC items and gate refuses them.
+#     deploy-status shows them: pc_release.py deploy-status RELEASE_ID)
 # 5. change the route, stop or continue
 python3 scripts/agent-checks/pc_release.py route readiness.json staging-first
 python3 scripts/agent-checks/pc_release.py stop RELEASE_ID
@@ -287,6 +303,7 @@ Live proof on the home PC with a throwaway docs-only release (one sentence in
 ## Related
 
 - [home-pc-worker.md](home-pc-worker.md)
+- [staging-deploy-from-pc.md](staging-deploy-from-pc.md)
 - [autonomous-work-packets.md](autonomous-work-packets.md)
 - [release-deploy-live-monitoring.md](release-deploy-live-monitoring.md)
 - [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md)

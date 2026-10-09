@@ -13,6 +13,9 @@
     pc_release.py resume RELEASE_ID                  start a stopped, blocked or stuck release again
     pc_release.py clean RELEASE_ID                   remove the finished release's Task Scheduler task (the folder stays)
     pc_release.py list                               releases on the PC and their loop state
+    pc_release.py deploy-status RELEASE_ID           the staging gates S1 to S4 of a release and the live state of its staging deploy
+    pc_release.py staging-switch ripple|sims on|off|show
+                                                     the STOP switch on a staging box (off = unattended deploys refused)
 
 The loop runs on the PC (release_loop.py). It is started through Windows Task
 Scheduler exactly as pc_job.py starts a job, because WSL kills detached
@@ -37,7 +40,8 @@ import release_readiness as rr  # noqa: E402
 
 FOLDER = "releases"
 TASK_PREFIX = "release"
-CODE_FILES = ("release_loop.py", "release_readiness.py", "pc_job.py", "job_brief.py", "render-claude-settings.py")
+CODE_FILES = ("release_loop.py", "release_readiness.py", "pc_job.py", "job_brief.py", "render-claude-settings.py",
+              "staging_deploy.py", "staging_remote.py")
 ID_RE = re.compile(r"[0-9]{8}-[0-9]{6}-[a-z0-9-]+")
 SAFE_PATH_RE = re.compile(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*")
 
@@ -86,7 +90,12 @@ def start(readiness_path: Path, *, dry_run: bool = False, runner=subprocess.run,
         f"Prod readiness {s['prod_percent']}% ({s['prod_green']} of {s['prod_total']} items before your production go)")
     out(f"  {len([g for g in s['gates'] if g['applicable'] and not g['after_go'] and g['status'] != 'green'])} gates before your go are yours to close "
         "(pc_release.py gate); the loop waits for them and carries on by itself")
-    out("  the loop never merges, deploys, migrates or writes production data")
+    if data.get("staging"):
+        cfg = data["staging"]
+        out(f"  the loop never merges, never deploys production, never migrates or writes production data; it deploys STAGING only "
+            f"({cfg.get('target')}, mode {cfg.get('mode', 'normal')}) through staging_deploy.py: {cfg.get('approval', '')}")
+    else:
+        out("  the loop never merges, deploys, migrates or writes production data")
     out("  no caps: it runs until ready, blocked, stuck or stopped")
     for item in data["items"]:
         reason = rr.forbidden_in_item(item) if rr.is_pc_item(item) else None
@@ -180,6 +189,23 @@ def clean(release_id: str, *, runner=subprocess.run) -> str:
     return out.strip() or "done"
 
 
+def deploy_status(release_id: str, *, runner=subprocess.run) -> str:
+    """The staging gates of a release (S1 to S4), what was deployed, and what the box says now."""
+    check_id(release_id)
+    return pc_job.run_ssh(f'cd "$HOME/{FOLDER}/{release_id}" || exit 1\npython3 staging_deploy.py report readiness.json\n', runner=runner)
+
+
+def staging_switch(target: str, action: str, *, shell=None) -> str:
+    """The STOP switch on a staging box, from the Mac (its own ssh aliases). `off` makes the box refuse unattended deploys."""
+    import staging_deploy
+    if target not in staging_deploy.sr.TARGETS:
+        raise ValueError("target must be one of " + ", ".join(staging_deploy.sr.TARGETS))
+    try:
+        return staging_deploy.Deployer(target, shell or rr.RealShell(), actor="mac-switch").switch(action)
+    except staging_deploy.DeployError as exc:
+        raise ValueError(str(exc)) from exc
+
+
 def list_releases(*, runner=subprocess.run) -> str:
     script = (
         f'for d in "$HOME"/{FOLDER}/*/; do [ -f "$d/readiness.json" ] || continue; '
@@ -197,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name); p.add_argument("release_id")
     p = sub.add_parser("file"); p.add_argument("release_id"); p.add_argument("path")
     sub.add_parser("list")
+    p = sub.add_parser("deploy-status"); p.add_argument("release_id")
+    p = sub.add_parser("staging-switch"); p.add_argument("target", choices=("ripple", "sims")); p.add_argument("action", choices=("on", "off", "show"))
     p = sub.add_parser("clean"); p.add_argument("release_id")
     p = sub.add_parser("gate"); p.add_argument("target"); p.add_argument("item"); p.add_argument("--evidence", required=True)
     p.add_argument("--by", default="Hafiz"); p.add_argument("--sha", default=""); p.add_argument("--simulated", action="store_true")
@@ -216,6 +244,10 @@ def main(argv: list[str] | None = None) -> int:
         return resume(args.release_id)
     elif args.cmd == "list":
         print(list_releases())
+    elif args.cmd == "deploy-status":
+        print(deploy_status(args.release_id))
+    elif args.cmd == "staging-switch":
+        print(staging_switch(args.target, args.action))
     elif args.cmd == "clean":
         print(clean(args.release_id))
     elif args.cmd == "gate":

@@ -26,8 +26,12 @@ checkpoint every 60 seconds and carries on the moment a gate gets evidence. The
 stuck rule cannot fire while waiting. These are stop conditions, not caps: there
 is no spend, turn or time cap anywhere, and none may be added.
 
-The loop never merges, deploys, runs a migration or writes production data.
+The loop never merges, deploys production, runs a production migration or writes production data.
 An item that would is handed to Hafiz as a gate and the loop carries on.
+One built-in exception (issue #356): a release created with `--staging-deploy`
+has a `staging` section, and its items S1, S2 and S3 are PC items that call
+staging_deploy.py (a plain script, not Claude) to check, deploy and smoke test
+STAGING for Ripple or SIMS. That code names the two staging boxes only.
 The only push the loop makes is a fast-forward of fix commits to the release
 branch, and only when the readiness file carries an approval line.
 """
@@ -104,7 +108,7 @@ class Loop:
     def __init__(self, readiness_path: Path | str, jobs: Any, shell: Any, *, repo_root: Path | str | None = None,
                  worktrees: Path | str | None = None, clear_stop: bool = False,
                  log: Callable[[str], None] | None = None, wait_seconds: int = 60, poll_seconds: int = 2,
-                 sleep: Callable[[float], None] = time.sleep) -> None:
+                 sleep: Callable[[float], None] = time.sleep, http: Any = None, deploy_poll_seconds: float | None = None) -> None:
         self.path = Path(readiness_path)
         self.dir = self.path.parent
         self.pack = self.dir / "release-pack"
@@ -115,6 +119,7 @@ class Loop:
         self.worktrees = Path(worktrees) if worktrees else Path.home() / ".local" / "state" / "sifututor-agent-os" / "worktrees"
         self.clear_stop = clear_stop
         self.wait_seconds, self.poll_seconds, self.sleep = wait_seconds, poll_seconds, sleep
+        self.http, self.deploy_poll_seconds = http, deploy_poll_seconds
         self.log = log or (lambda message: print(f"[{rr.myt_text()}] {message}", flush=True))
         self.data: dict[str, Any] = {}
 
@@ -161,7 +166,10 @@ class Loop:
 
     def check_context(self) -> rr.CheckContext:
         wt = self.loop.get("worktree")
-        return rr.CheckContext(self.data, self.pack, Path(wt) if wt else None, self.repo_dir, self.shell, self.stop_requested)
+        ctx = rr.CheckContext(self.data, self.pack, Path(wt) if wt else None, self.repo_dir, self.shell, self.stop_requested,
+                              checkpoint=self.checkpoint)
+        ctx.http, ctx.sleep, ctx.poll_seconds = self.http, self.sleep, self.deploy_poll_seconds  # the staging checks poll and call sites
+        return ctx
 
     # ---- release worktree ----
 
@@ -198,6 +206,32 @@ class Loop:
         self.loop["release_sha"] = sha
         if old and sha and old != sha:
             self.reset_sensitive(sha)
+
+    def staging_candidate_moved(self) -> bool:
+        """The staging candidate branch moved on GitHub: what was checked, deployed and smoke tested is not the new tip.
+
+        S1 to S3 (and S4) go back to open so staging is redeployed on the new commit. Without a staging section this does nothing."""
+        cfg = self.data.get("staging")
+        if not cfg or not cfg.get("candidate_sha"):
+            return False
+        import staging_deploy
+        ref = staging_deploy.candidate_ref(self.data, cfg)
+        tip, why = staging_deploy.local_tip(self.shell, self.repo_dir, ref, self.stop_requested)
+        if why or tip == cfg["candidate_sha"]:
+            return False  # cannot tell, or unchanged: keep what is proven
+        old = cfg["candidate_sha"]
+        for gate_id in ("S1", "S2", "S3", "S4"):
+            item = self.items().get(gate_id)
+            if item is not None and rr.is_pc_item(item) and item.get("status") == "green":
+                item["status"] = "open"
+                item["resets"] = int(item.get("resets", 0)) + 1
+                rr.add_evidence(item, note=f"proof reset: the staging candidate moved from {old[:10]} to {tip[:10]}, so staging is checked again")
+        cfg.pop("candidate_sha", None)
+        cfg.pop("candidate_ref", None)
+        cfg["deploy"] = None
+        self.data.pop("staging_sha", None)
+        self.event(f"staging candidate {ref} moved to {tip[:10]}: S1 to S4 are checked again")
+        return True
 
     def reset_sensitive(self, sha: str) -> None:
         """The release changed: proof taken on the old commit no longer proves the new one."""
@@ -506,7 +540,8 @@ class Loop:
             self.ensure_worktree()
         except LoopError:
             return False
-        return self.sha() != old
+        moved = self.sha() != old
+        return self.staging_candidate_moved() or moved
 
     def step(self) -> tuple[str, str] | None:
         self.merge_inbox()
@@ -575,6 +610,7 @@ class Loop:
         self.data = rr.load(self.path)  # re-read the checkpoint: a person may have changed it
         try:
             self.ensure_worktree()  # a new commit on the release branch resets the proof taken on the old one
+            self.staging_candidate_moved()
             self.checkpoint()
         except LoopError as exc:
             self.log(f"could not refresh the release worktree while waiting: {exc}")
@@ -748,7 +784,10 @@ class Loop:
                   f"- {loop.get('rounds', 0)} rounds, {len(jobs)} Claude jobs, "
                   f"{sum(int(j.get('turns') or 0) for j in jobs)} turns, list-price equivalent "
                   f"${sum(float(j.get('cost_usd') or 0) for j in jobs):.2f} (billed to the subscription, no cap).",
-                  "- Nothing was merged, deployed, migrated or written to production by the loop."]
+                  ("- The loop deployed STAGING only, through the staging deploy script (target "
+                   f"{self.data['staging'].get('target')}, evidence on S1 to S3). Nothing was merged, deployed to production, or written to production."
+                   if self.data.get("staging") else
+                   "- Nothing was merged, deployed, migrated or written to production by the loop.")]
         for j in jobs:
             lines.append(f"  - {j['job_id']} ({j['role']}, item {j['item']}): {j['state']}"
                          + (f", verdict {j['verdict']}" if j.get("verdict") else ""))

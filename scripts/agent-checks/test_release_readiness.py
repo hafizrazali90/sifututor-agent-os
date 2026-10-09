@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import copy
 import io
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -713,6 +715,106 @@ class TemplateInitTest(unittest.TestCase):
         text = rr.TEMPLATE_PATH.read_text()
         for word in ("max_usd", "max_turns", "max_minutes"):
             self.assertNotIn(word, text)
+
+
+class StagingInitTest(unittest.TestCase):
+    """init --staging-deploy turns S1 to S3 into PC items that deploy STAGING only (issue #356)."""
+
+    STAGING = {"target": "ripple", "mode": "normal", "approval": "Hafiz, chat 09/10/2026: PC may deploy STAGING only",
+               "smoke_commands": ["npm run test:staging-luna-auth-smoke"]}
+
+    def build(self, repo: str = "ripple-suite", route: str = "staging-first", branch: str = "release/1700-proof", **staging) -> dict:
+        cfg = {**self.STAGING, **staging}
+        if repo == "sifu-tutor":
+            cfg["target"] = "sims"
+        return rr.build_from_template(TEMPLATE, **init_args(repo, route=route, branch=branch, na={"4": "x"}), staging=cfg)
+
+    def test_s1_s2_s3_become_pc_items_with_the_staging_checks_in_order(self) -> None:
+        data = self.build()
+        items = {i["id"]: i for i in data["items"]}
+        self.assertEqual([(items[i]["owner"], items[i]["check"]["type"]) for i in ("S1", "S2", "S3")],
+                         [("pc", "staging_candidate"), ("pc", "staging_deployed"), ("pc", "staging_smoke")])
+        self.assertEqual(items["S2"]["depends_on"], ["S1"])
+        self.assertEqual(items["S3"]["depends_on"], ["S2"])
+        self.assertEqual(items["S1"]["depends_on"], ["2", "3", "4", "5", "7", "8"])
+        self.assertEqual(rr.validate(data), [])
+        self.assertEqual(data["staging"]["target"], "ripple")
+
+    def test_ripple_keeps_the_commit_ancestor_s4_and_sims_gets_patch_equivalence(self) -> None:
+        ripple = {i["id"]: i for i in self.build()["items"]}["S4"]
+        self.assertEqual([c["type"] for c in ripple["check"]["checks"]], ["pr_exists", "commit_in_branch"])
+        sims = {i["id"]: i for i in self.build("sifu-tutor")["items"]}["S4"]
+        self.assertEqual([c["type"] for c in sims["check"]["checks"]], ["pr_exists", "patch_equivalent"])
+
+    def test_staging_items_are_never_forbidden_for_the_pc(self) -> None:
+        for repo in ("ripple-suite", "sifu-tutor"):
+            for item in self.build(repo)["items"]:
+                self.assertIsNone(rr.forbidden_in_item(item), item["id"])
+
+    def test_without_the_flag_nothing_changes(self) -> None:
+        data = rr.build_from_template(TEMPLATE, **init_args("ripple-suite", route="staging-first", branch="release/1700-proof"))
+        self.assertNotIn("staging", data)
+        self.assertEqual({i["id"]: i["owner"] for i in data["items"] if i["id"] in ("S1", "S2", "S3")}, {"S1": "mac", "S2": "mac", "S3": "mac"})
+
+    def test_direct_prod_cannot_carry_a_staging_deploy(self) -> None:
+        with self.assertRaises(rr.ReadinessError):
+            self.build(route="direct-prod")
+
+    def test_a_production_key_makes_the_file_invalid(self) -> None:
+        data = self.build()
+        for key in ("env", "environment", "host", "alias", "ssh"):
+            broken = json.loads(json.dumps(data))
+            broken["staging"][key] = "prod"
+            self.assertTrue(rr.validate(broken), key)
+
+    def test_a_ref_that_is_not_a_staging_branch_is_refused(self) -> None:
+        with self.assertRaises(rr.ReadinessError):
+            self.build(branch="docs/350-demo")
+        data = self.build(branch="docs/350-demo", ref="release/1581-request-timeline-r6") if False else None
+        ok = rr.build_from_template(TEMPLATE, **init_args("ripple-suite", route="staging-first", branch="docs/350-demo", na={"4": "x"}),
+                                    staging={**self.STAGING, "ref": "release/1581-request-timeline-r6"})
+        self.assertEqual(rr.validate(ok), [])
+
+    def test_init_cli_needs_an_approval_and_a_change_smoke(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        out: list[str] = []
+        base = ["init", "--release", "Demo", "--repo", "ripple-suite", "--branch", "release/1700-proof", "--route", "staging-first",
+                "--e2e-exception", "not user-facing: demo", "--na", "4=docs only", "--staging-deploy", "ripple", "--out", str(tmp / "r.json")]
+        self.assertEqual(rr.main(base, out=out.append), 2)
+        self.assertIn("--staging-approval", "\n".join(out))
+        out.clear()
+        self.assertEqual(rr.main(base + ["--staging-approval", "Hafiz, chat 09/10/2026"], out=out.append), 2)
+        self.assertIn("--staging-smoke-command", "\n".join(out))
+        out.clear()
+        self.assertEqual(rr.main(base + ["--staging-approval", "Hafiz, chat 09/10/2026", "--staging-smoke-command",
+                                         "npm run test:staging-luna-auth-smoke"], out=out.append), 0, out)
+        data = rr.load(tmp / "r.json")
+        self.assertEqual(data["staging"]["target"], "ripple")
+        self.assertEqual(data["staging"]["smoke_commands"], ["npm run test:staging-luna-auth-smoke"])
+        out.clear()
+        bad = base[:-2] + ["--out", str(tmp / "bad.json"), "--staging-approval", "x", "--staging-smoke-command", "ssh root@host"]
+        self.assertEqual(rr.main(bad, out=out.append), 2)
+        self.assertFalse((tmp / "bad.json").exists())
+        for forbidden in ("prod", "production"):
+            with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+                rr.main(["init", "--release", "x", "--repo", "ripple-suite", "--branch", "release/1-x", "--route", "staging-first",
+                         "--staging-deploy", forbidden, "--out", str(tmp / "p.json")], out=lambda m: None)
+
+
+class RealShellOptionsTest(unittest.TestCase):
+    def test_input_env_and_timeout(self) -> None:
+        shell = rr.RealShell()
+        code, out = shell.run(["cat"], input_text="hello from stdin")
+        self.assertEqual((code, out), (0, "hello from stdin"))
+        code, out = shell.run(["sh", "-c", "echo $SHELL_TEST_VALUE"], env={"PATH": os.environ["PATH"], "SHELL_TEST_VALUE": "seen"})
+        self.assertEqual((code, out.strip()), (0, "seen"))
+        code, out = shell.run(["sleep", "30"], timeout=1)
+        self.assertEqual(code, 124)
+        self.assertIn("timed out", out)
+
+    def test_old_call_shape_still_works(self) -> None:
+        self.assertEqual(rr.RealShell().run(["echo", "hi"], cwd=None, stop_check=None), (0, "hi\n"))
 
 
 class RouteTest(unittest.TestCase):

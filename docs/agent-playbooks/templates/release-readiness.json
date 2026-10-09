@@ -6,7 +6,8 @@
     "route is chosen per release at init: staging-first (items with route_only staging-first apply) or direct-prod (they are marked not applicable: Hafiz chose direct to production).",
     "Tokens: <<name>> inside text and a whole-string @name are replaced at init (release, repo, branch, base, issue, github_repo, serving_commit, route, pr_numbers, suite_commands, e2e_commands, umbrella_script_dir). A whole-string @staging_sha is resolved when the check runs.",
     "Items that do not apply are set to na with a reason at init (--na ITEM=reason, --e2e-exception).",
-    "Rules live in docs/agent-playbooks/release-deploy-live-monitoring.md and AGENTS.md 'Build, Evidence, And Release'."
+    "Rules live in docs/agent-playbooks/release-deploy-live-monitoring.md and AGENTS.md 'Build, Evidence, And Release'.",
+    "staging_pc_items: when init is given --staging-deploy, S1, S2 and S3 (and S4 for SIMS) are replaced by these PC items. The PC then deploys STAGING only, through scripts/agent-checks/staging_deploy.py (never production, never main). Without the flag S1 to S3 stay Mac gates."
   ],
   "defaults": {
     "agent-os": {
@@ -43,6 +44,26 @@
         "TESTING.md",
         "RELEASE-DOCS.md",
         "CHANGELOG.md"
+      ],
+      "umbrella_script_dir": "/home/hafiz/Projects/Sifututor/scripts/agent-checks"
+    },
+    "sifu-tutor": {
+      "github_repo": "Sifututor/sifu-tutor",
+      "suite_commands": [
+        "npm run typecheck"
+      ],
+      "failing_first_command": "npx vitest run {files}",
+      "failing_first_install": [
+        "npm ci --no-audit --no-fund --prefer-offline"
+      ],
+      "fix_allowed_paths": [
+        "app",
+        "resources",
+        "routes",
+        "tests",
+        "database",
+        "docs",
+        "config"
       ],
       "umbrella_script_dir": "/home/hafiz/Projects/Sifututor/scripts/agent-checks"
     }
@@ -403,5 +424,79 @@
       "title": "Accepted and closed",
       "after_go": true
     }
-  ]
+  ],
+  "staging_pc_items": {
+    "S1": {
+      "id": "S1",
+      "group": "Staging (staging-first only)",
+      "owner": "pc",
+      "action": "script",
+      "route_only": "staging-first",
+      "depends_on": [
+        "2",
+        "3",
+        "4",
+        "5",
+        "7",
+        "8"
+      ],
+      "sha_sensitive": false,
+      "title": "Staging candidate identified: the exact branch and commit pass every staging rule, checked on the staging box",
+      "check": {
+        "type": "staging_candidate"
+      }
+    },
+    "S2": {
+      "id": "S2",
+      "group": "Staging (staging-first only)",
+      "owner": "pc",
+      "action": "script",
+      "route_only": "staging-first",
+      "depends_on": [
+        "S1"
+      ],
+      "sha_sensitive": false,
+      "title": "Staging deployed by the PC deploy script, with the commit read back from the server as evidence",
+      "check": {
+        "type": "staging_deployed"
+      }
+    },
+    "S3": {
+      "id": "S3",
+      "group": "Staging (staging-first only)",
+      "owner": "pc",
+      "action": "script",
+      "route_only": "staging-first",
+      "depends_on": [
+        "S2"
+      ],
+      "sha_sensitive": false,
+      "title": "Staging smoke by the PC: normal smoke plus the change smoke per changed workflow",
+      "check": {
+        "type": "staging_smoke"
+      }
+    },
+    "S4_sims": {
+      "id": "S4",
+      "group": "Staging (staging-first only)",
+      "owner": "pc",
+      "action": "script",
+      "route_only": "staging-first",
+      "depends_on": [
+        "S3"
+      ],
+      "title": "A promotion PR for production holds the change tested on staging (same changed lines, commit ids may differ)",
+      "check": {
+        "type": "all_of",
+        "checks": [
+          {
+            "type": "pr_exists"
+          },
+          {
+            "type": "patch_equivalent"
+          }
+        ]
+      }
+    }
+  }
 }

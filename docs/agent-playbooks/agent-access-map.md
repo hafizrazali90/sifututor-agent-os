@@ -746,6 +746,19 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Safe verification** | `scripts/agent-access/lls-server-readonly.sh prod artisan about` |
 | **Forbidden** | No `tinker`, no `config:show`, no cache, queue, migrate or any writing command, no root. Writes (premium, suspend, refund, cancel) need their own scoped write lane and Hafiz's approval for that exact operation. Do not copy personal data from logs into notes or chat beyond what the task needs |
 
+### 42. `pc-staging-deploy` - Home PC deploys Ripple and SIMS staging
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None for the deploy. The route is the PC's own key `~/.ssh/id_ed25519_pc_agent` with the aliases `staging` (Ripple staging box) and `finch` (SIMS staging box), the same logins the Mac has. The smoke reads the existing staging lanes (`ripple-staging-smoke.conf`, `staging-smoke.conf`, `sims-staging-browser-qa.conf`, `sims-staging-e2e.conf`, `staging-lifecycle-qa.conf`) copied to the PC, mode 600 |
+| **Wrapper** | `scripts/agent-checks/staging_deploy.py check\|deploy\|status\|verify\|switch ripple\|sims`; the release loop uses the same code for gates S1 to S3. The box-side program `staging_remote.py` is sent over ssh and re-checks every rule |
+| **Purpose** | Let the PC release loop deploy staging for a release by itself and close the staging gates with real evidence (issue #356) |
+| **Tier** | write on staging only. Hafiz's approval line is recorded in each readiness file (`--staging-approval`); no further approval per run |
+| **Allowed operations** | `check`, `deploy`, `status`, `verify` and the STOP `switch` for the two targets `ripple` and `sims`; Ripple through the sealed controller `deploy-ripple-suite staging --release-ref --commit`; SIMS through the staging runbook steps as `www-data`, with the scanned migration lane |
+| **Safe verification** | `staging_deploy.py status ripple`, `staging_deploy.py verify ripple <sha>`, `staging_deploy.py check ...` (changes nothing) |
+| **Revoke** | Remove the single `homepc-agent 09/10/2026` line from `/root/.ssh/authorized_keys` on both boxes; or `pc_release.py staging-switch ripple\|sims off` to refuse new deploys at once |
+| **Forbidden** | Never production, never main, never a Ripple migration or confirm phrase, never a rollback, never a production credential on the PC. Rules and refusals: [staging-deploy-from-pc.md](staging-deploy-from-pc.md) |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -773,6 +786,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
 | `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
 | `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
+| `pc-staging-deploy` | none (PC key, aliases `staging` and `finch`) | write (staging only) | Approval line in each readiness file (`--staging-approval`) |
 | `betterstack-write` | `betterstack-write.conf` | write | Yes: state source, query and alert |
 | `sentry-write` | `sentry-write.conf` | write | Yes: state alert |
 | `sentry-issues-write` | `sentry-issues-write.conf` | write | Yes: list the exact short IDs |
@@ -820,6 +834,7 @@ never print secret values.
 | `check-microsoft-planner.sh` | Lokka / M365 access availability |
 | `check-backups.sh` | Backup storage object count and latest timestamp |
 | `proc-list-masked.sh [pattern]` | Running processes: pid, user, elapsed time and the full command line with secret-looking values masked (`-p<value>` after mysql/mariadb/mysqldump, `--password=`/`--token=`/`--secret=`/`--api-key=`, `Authorization: Bearer`, `user:pass@` in URLs, long tokens after key-like flags, secret-looking `KEY=value`). Use it instead of `ps -ef`, `ps aux` or `ps -o command`, which the secret guard blocks. The pattern is matched against the masked line. `--mask-stdin` masks lines piped in |
+| `../agent-checks/staging_deploy.py` | Staging deploy for Ripple and SIMS from the PC or the Mac (lane 42): `check` changes nothing, `deploy` runs the rules, the deploy and the read-back, `status`, `verify`, `switch` |
 | `check-jev-shadow.py` | Jev credential/SDK readiness and optional non-sensitive live canary |
 
 ---
