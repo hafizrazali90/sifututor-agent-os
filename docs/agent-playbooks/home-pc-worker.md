@@ -21,6 +21,7 @@ yet (issue #271).
 - Ubuntu has Python 3, git, Node.js 22 (the Claude hook dispatcher is a Node
   script), the GitHub CLI and Claude Code. npm is not installed.
 - The repo is cloned at `~/Projects/Sifututor` inside Ubuntu.
+- Checked on 09/10/2026 (MYT): Ubuntu has Python 3.14.4 and Node.js v22.22.1, and the GitHub CLI is signed in as `hafizrazali90`.
 
 ## Reaching it from the Mac
 
