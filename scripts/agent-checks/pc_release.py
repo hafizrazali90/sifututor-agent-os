@@ -83,7 +83,7 @@ def start(readiness_path: Path, *, dry_run: bool = False, runner=subprocess.run,
     out(f"  route {data.get('route')}")
     out(f"  PC readiness now {s['percent']}% ({s['pc_green']} of {s['pc_total']} PC items), "
         f"Prod readiness {s['prod_percent']}% ({s['prod_green']} of {s['prod_total']} items before your production go)")
-    out(f"  {len([g for g in s['gates'] if g['applicable'] and not g['after_go']])} gates before your go are yours to close "
+    out(f"  {len([g for g in s['gates'] if g['applicable'] and not g['after_go'] and g['status'] != 'green'])} gates before your go are yours to close "
         "(pc_release.py gate); the loop waits for them and carries on by itself")
     out("  the loop never merges, deploys, migrates or writes production data")
     out("  no caps: it runs until ready, blocked, stuck or stopped")

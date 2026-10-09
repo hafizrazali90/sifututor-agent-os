@@ -664,8 +664,8 @@ def check_commit_in_branch(check: dict[str, Any], ctx: CheckContext) -> dict[str
                                  cwd=ctx.repo_dir, stop_check=ctx.stop_check)
     evidence = [{"command": f"git merge-base --is-ancestor {sha[:10]} origin/{branch}", "exit_code": code}]
     if code == 0:
-        return result(True, f"the release contains the serving commit {sha[:10]}", evidence)
-    return result(False, f"the release does not contain the serving commit {sha[:10]} (exit {code})", evidence, tail(output, 10))
+        return result(True, f"the release contains commit {sha[:10]}", evidence)
+    return result(False, f"the release does not contain commit {sha[:10]} (exit {code})", evidence, tail(output, 10))
 
 
 TEST_FILE_RE = re.compile(r"(\.test\.|\.spec\.|/__tests__/|(^|/)test_[^/]*\.py$)")
