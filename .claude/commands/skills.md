@@ -81,6 +81,7 @@ If he adds a word after the command (for example `/skills test`), show only the 
 - `/doc-design` (Claude only): Gives proposals, reports and one-pagers the Learnest Lab look, starting from a storyboard.
 - `/identity-design` (Claude only): Designs a logo or brand identity properly: brief, options, checks, review and trademark search.
 - `/fal-illustration` (Claude only): Generates flat vector illustrations in the app's style for banners and empty states.
+- `/deck-craft`: Builds or repairs a slide deck so every slide is a real graphic, then lints the layout and runs four reviewers.
 
 ## Ask for help
 

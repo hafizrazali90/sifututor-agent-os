@@ -456,6 +456,15 @@
       "where": ["global"]
     },
     {
+      "name": "deck-craft",
+      "group": "design",
+      "tip": "Builds or repairs a slide deck so every slide is a real graphic, then lints the layout and runs four reviewers.",
+      "reason": "it builds the deck as real graphics and checks it with four reviewers.",
+      "triggers": ["make a deck", "build a deck", "slide deck", "pitch deck", "briefing deck", "make slides"],
+      "agents": ["claude", "codex"],
+      "where": ["global", "agents"]
+    },
+    {
       "name": "wait-what",
       "group": "help",
       "tip": "Use it when the last message did not land: it says the same thing again in plain terms.",

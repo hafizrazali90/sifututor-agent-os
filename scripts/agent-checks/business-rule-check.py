@@ -72,9 +72,9 @@ def validate_repository(root: Path) -> None:
     base = root / "docs/business-rules"
     register = (base / "register.md").read_text()
     ids = re.findall(r"^## (BR-\d{3})$", register, re.M)
-    expected = [f"BR-{n:03d}" for n in range(1, 105)]
+    expected = [f"BR-{n:03d}" for n in range(1, 106)]
     if sorted(ids) != expected:
-        raise ValueError("register must retain 104 unique, consecutive rule IDs")
+        raise ValueError("register must retain 105 unique, consecutive rule IDs")
     source_data = json.loads((base / "sources.json").read_text())
     sources = source_data["sources"]
     if len(sources) != 149 or len({s["path"] for s in sources}) != 149:
@@ -86,7 +86,7 @@ def validate_repository(root: Path) -> None:
             raise ValueError("source reading depth and authority must be explicit")
     reasons = (base / "decision-reasons.md").read_text()
     if sorted(re.findall(r"^## (BR-\d{3})$", reasons, re.M)) != expected:
-        raise ValueError("recorded reasons must cover the same 104 rule IDs")
+        raise ValueError("recorded reasons must cover the same 105 rule IDs")
     for name in ("README.md", "register.md", "open-decisions.md", "memory-audit.md", "decision-reasons.md", "reconciliation.md", "review.md"):
         text = (base / name).read_text()
         for target in re.findall(r"\]\(([^)]+)\)", text):
