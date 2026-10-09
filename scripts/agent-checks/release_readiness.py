@@ -31,6 +31,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
@@ -44,7 +45,7 @@ OWNERS = ("pc", "hafiz", "mac")
 GATE_OWNERS = ("hafiz", "mac")
 STATUSES = ("open", "green", "blocked", "na")
 ACTIONS = ("script", "builder", "reviewer", "none")
-REPOS = ("agent-os", "ripple-suite")
+REPOS = ("agent-os", "ripple-suite", "sifu-tutor")
 LOOP_STATUSES = ("new", "running", "waiting", "ready_for_prod_go", "blocked", "stuck", "stopped")
 ROUTES = ("staging-first", "direct-prod")
 DIRECT_PROD_REASON = "Hafiz chose direct to production"
@@ -197,6 +198,8 @@ def validate(data: dict[str, Any]) -> list[str]:
         for dep in item.get("depends_on", []):
             if dep not in seen:
                 errors.append(f"item {iid}: depends_on {dep!r} does not exist")
+    import staging_deploy  # lazy: staging_deploy imports this module
+    errors += staging_deploy.validate_staging(data)
     # a dependency cycle would make the loop wait forever
     graph = {i["id"]: i.get("depends_on", []) for i in items if "id" in i}
     visiting: set[str] = set()
@@ -486,18 +489,27 @@ class RealShell:
     """Runs a command without a shell. The real exit code always comes back."""
 
     def run(self, argv: list[str], cwd: Path | str | None = None,
-            stop_check: Callable[[], bool] | None = None) -> tuple[int, str]:
+            stop_check: Callable[[], bool] | None = None, input_text: str | None = None,
+            env: dict[str, str] | None = None, timeout: float | None = None) -> tuple[int, str]:
         try:
-            proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         except FileNotFoundError:
             return 127, f"command not found: {argv[0]}"
         except OSError as exc:
             return 126, f"could not start {argv[0]}: {exc}"
+        deadline = None if timeout is None else time.monotonic() + timeout
+        pending = input_text
         while True:
             try:
-                out, _ = proc.communicate(timeout=2)
+                out, _ = proc.communicate(input=pending, timeout=2)
                 return proc.returncode, out or ""
             except subprocess.TimeoutExpired:
+                pending = None  # the input has been handed over; keep waiting for the output
+                if deadline is not None and time.monotonic() > deadline:
+                    proc.kill()
+                    out, _ = proc.communicate()
+                    return 124, (out or "") + f"\ntimed out after {int(timeout or 0)} seconds"
                 if stop_check and stop_check():
                     proc.terminate()
                     try:
@@ -512,8 +524,9 @@ class RealShell:
 
 class CheckContext:
     def __init__(self, data: dict[str, Any], pack_dir: Path, worktree: Path | None, repo_dir: Path | None,
-                 shell: Any, stop_check: Callable[[], bool] | None = None) -> None:
+                 shell: Any, stop_check: Callable[[], bool] | None = None, checkpoint: Callable[[], None] | None = None) -> None:
         self.data = data
+        self.checkpoint = checkpoint
         self.pack_dir = Path(pack_dir)
         self.worktree = Path(worktree) if worktree else None
         self.repo_dir = Path(repo_dir) if repo_dir else None
@@ -789,7 +802,19 @@ def check_all_of(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
     return result(ok, "; ".join(summaries), evidence, "\n\n".join(details))
 
 
+def _staging_check(name: str) -> Callable[[dict[str, Any], CheckContext], dict[str, Any]]:
+    """The staging checks live in staging_deploy.py (loaded when one runs, so reading a readiness file needs nothing else)."""
+    def run(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
+        import staging_deploy
+        return getattr(staging_deploy, name)(check, ctx)
+    return run
+
+
 CHECKS: dict[str, Callable[[dict[str, Any], CheckContext], dict[str, Any]]] = {
+    "staging_candidate": _staging_check("check_candidate"),
+    "staging_deployed": _staging_check("check_deployed"),
+    "staging_smoke": _staging_check("check_smoke"),
+    "patch_equivalent": _staging_check("check_patch_equivalent"),
     "file_contains": check_file_contains,
     "verdict_file": check_verdict_file,
     "commands_exit_zero": check_commands_exit_zero,
@@ -839,7 +864,8 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
                         pr_numbers_: list[int], issue: str, serving_commit: str, approval: str,
                         github_repo: str | None, suite_commands: list[str] | None, e2e_commands: list[str],
                         e2e_exception: str, fix_paths: list[str] | None, na: dict[str, str],
-                        route: str = "direct-prod", route_by: str = "Hafiz") -> dict[str, Any]:
+                        route: str = "direct-prod", route_by: str = "Hafiz",
+                        staging: dict[str, Any] | None = None) -> dict[str, Any]:
     defaults = template["defaults"][repo]
     values = {
         "release": release, "repo": repo, "branch": branch, "base": base, "issue": issue or "0",
@@ -851,6 +877,14 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
         "failing_first_install": defaults["failing_first_install"],
     }
     items = substitute(template["items"], values)
+    if staging:
+        if route != "staging-first":
+            raise ReadinessError("--staging-deploy needs --route staging-first (the staging items do not apply to direct-prod)")
+        replacements = copy.deepcopy(template["staging_pc_items"])
+        if staging["target"] == "sims":
+            replacements["S4"] = replacements.pop("S4_sims")
+        replacements.pop("S4_sims", None)
+        items = [replacements.get(i["id"], i) for i in items]
     for item in items:
         item.setdefault("evidence", [])
         item.setdefault("depends_on", [])
@@ -885,6 +919,8 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
         "route": route, "created_at": myt_text(), "items": items,
         "loop": {"status": "new", "reason": "", "rounds": 0, "job_seq": 0, "fingerprints": [], "jobs": []},
     }
+    if staging:
+        data["staging"] = copy.deepcopy(staging)
     if route not in ROUTES:
         raise ReadinessError(f"route must be one of {', '.join(ROUTES)}")
     record_route(data, route, route_by)
@@ -956,6 +992,15 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
     p.add_argument("--e2e-command", action="append", default=[]); p.add_argument("--e2e-exception", default="")
     p.add_argument("--fix-path", action="append"); p.add_argument("--na", action="append", default=[],
                                                                   help="ITEM=reason, mark an item not applicable")
+    p.add_argument("--staging-deploy", choices=("ripple", "sims"),
+                   help="let the PC deploy STAGING for this release (never production): S1 to S3 become PC items")
+    p.add_argument("--staging-ref", default="", help="the staging candidate branch (default: the release branch)")
+    p.add_argument("--staging-mode", default="normal", choices=("normal", "redeploy-served"))
+    p.add_argument("--staging-commit", default="", help="pin the candidate commit (needed for redeploy-served)")
+    p.add_argument("--staging-approval", default="", help='who allowed it and when, e.g. "Hafiz, chat DD/MM/YYYY: PC may deploy STAGING only"')
+    p.add_argument("--staging-smoke-command", action="append", default=[],
+                   help="a change-smoke command (npx playwright test ..., npm run test:..., bash scripts/qa/..., builtin:login)")
+    p.add_argument("--staging-smoke-exception", default="")
     p.add_argument("--template", type=Path, default=TEMPLATE_PATH)
     p.add_argument("--out", type=Path, required=True); p.add_argument("--force", action="store_true")
     for name in ("show", "score", "next"):
@@ -982,12 +1027,24 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
                 if not reason.strip():
                     raise ReadinessError(f"--na {key}: give a reason after =")
                 na[key.strip()] = reason.strip()
+            staging = None
+            if args.staging_deploy:
+                if not args.staging_approval.strip():
+                    raise ReadinessError("--staging-deploy needs --staging-approval (who allowed the PC to deploy staging, and when)")
+                if not args.staging_smoke_command and not args.staging_smoke_exception:
+                    raise ReadinessError("--staging-deploy needs --staging-smoke-command (the change smoke) or --staging-smoke-exception")
+                staging = {"target": args.staging_deploy, "mode": args.staging_mode, "approval": args.staging_approval.strip(),
+                           "smoke_commands": list(args.staging_smoke_command)}
+                for key, value in (("ref", args.staging_ref), ("commit", args.staging_commit),
+                                   ("smoke_exception", args.staging_smoke_exception)):
+                    if value:
+                        staging[key] = value
             data = build_from_template(
                 json.loads(args.template.read_text()), release=args.release, repo=args.repo, branch=args.branch,
                 base=args.base, pr_numbers_=args.pr, issue=args.issue, serving_commit=args.serving_commit,
                 approval=args.approval, github_repo=args.github_repo, suite_commands=args.suite_command,
                 e2e_commands=args.e2e_command, e2e_exception=args.e2e_exception, fix_paths=args.fix_path, na=na,
-                route=args.route, route_by=args.route_by)
+                route=args.route, route_by=args.route_by, staging=staging)
             save(args.out, data)
             out(f"Wrote {args.out}")
             out(render_score(data))

@@ -37,7 +37,8 @@ import release_readiness as rr  # noqa: E402
 
 FOLDER = "releases"
 TASK_PREFIX = "release"
-CODE_FILES = ("release_loop.py", "release_readiness.py", "pc_job.py", "job_brief.py", "render-claude-settings.py")
+CODE_FILES = ("release_loop.py", "release_readiness.py", "pc_job.py", "job_brief.py", "render-claude-settings.py",
+              "staging_deploy.py", "staging_remote.py")
 ID_RE = re.compile(r"[0-9]{8}-[0-9]{6}-[a-z0-9-]+")
 SAFE_PATH_RE = re.compile(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*")
 
