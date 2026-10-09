@@ -77,9 +77,9 @@ class StagingLoopCase(trl.LoopCase):
         from unittest import mock
         self.lanes = Path(tempfile.mkdtemp(prefix="lanes-"))
         self.addCleanup(__import__("shutil").rmtree, self.lanes, True)
-        (self.lanes / "ripple-staging-smoke.conf").write_text(
-            f"RIPPLE_STAGING_SUPERADMIN_EMAIL={tsd.SEKRET_MAIL}\nRIPPLE_STAGING_SUPERADMIN_PASSWORD={tsd.SEKRET_PASS}\n")
-        (self.lanes / "ripple-staging-smoke.conf").chmod(0o600)
+        (self.lanes / "staging-lifecycle-qa.conf").write_text(
+            f"STAGING_LIFECYCLE_QA_EMAIL={tsd.SEKRET_MAIL}\nSTAGING_LIFECYCLE_QA_PASSWORD={tsd.SEKRET_PASS}\n")
+        (self.lanes / "staging-lifecycle-qa.conf").chmod(0o600)
         patcher = mock.patch.dict(os.environ, {sd.LANE_DIR_ENV: str(self.lanes), sd.PC_STOP_ENV: str(self.tmp / "no-stop")})
         patcher.start()
         self.addCleanup(patcher.stop)

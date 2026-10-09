@@ -487,9 +487,8 @@ class FakeHttp:
 
 class LoginSmokeTests(Quiet):
     def lanes(self) -> None:
-        write_lane(self.tmp, "ripple-staging-smoke.conf",
-                   f"RIPPLE_STAGING_SUPERADMIN_EMAIL={SEKRET_MAIL}\nRIPPLE_STAGING_SUPERADMIN_PASSWORD={SEKRET_PASS}\n")
-        write_lane(self.tmp, "staging-smoke.conf", f"SIMS_SMOKE_EMAIL={SEKRET_MAIL}\nSIMS_SMOKE_PASSWORD={SEKRET_PASS}\n")
+        write_lane(self.tmp, "staging-lifecycle-qa.conf",
+                   f"STAGING_LIFECYCLE_QA_EMAIL={SEKRET_MAIL}\nSTAGING_LIFECYCLE_QA_PASSWORD={SEKRET_PASS}\n")
 
     def test_ripple_login_then_session_then_a_page(self) -> None:
         self.lanes()
@@ -515,8 +514,8 @@ class LoginSmokeTests(Quiet):
     def test_sims_login_reads_the_csrf_token_and_checks_a_page(self) -> None:
         self.lanes()
         http = FakeHttp({("GET", "/login"): (200, {}, '<meta name="csrf-token" content="tok123">'),
-                         ("POST", "/login"): (302, {"location": "https://sifu-staging.tutorla.tech/"}, ""),
-                         ("GET", "sifu-staging.tutorla.tech/"): (200, {}, '{"component":"Dashboard"}')})
+                         ("POST", "/login"): (302, {"location": "https://sifu-staging.tutorla.tech"}, ""),
+                         ("GET", "sifu-staging.tutorla.tech/"): (200, {}, "<html>app</html>")})
         ok, lines, _ = sd.login_smoke(http, "sims")
         self.assertTrue(ok, lines)
         post = [c for c in http.calls if c[0] == "POST"][0]
@@ -528,6 +527,10 @@ class LoginSmokeTests(Quiet):
         http = FakeHttp({("GET", "/login"): (200, {}, '<meta name="csrf-token" content="t">'),
                          ("POST", "/login"): (302, {"location": "https://sifu-staging.tutorla.tech/login"}, "")})
         self.assertFalse(sd.login_smoke(http, "sims")[0])
+        http = FakeHttp({("GET", "/login"): (200, {}, '<meta name="csrf-token" content="t">'),
+                         ("POST", "/login"): (302, {"location": "https://sifu-staging.tutorla.tech"}, ""),
+                         ("GET", "sifu-staging.tutorla.tech/"): (302, {"location": "https://sifu-staging.tutorla.tech/login"}, "")})
+        self.assertFalse(sd.login_smoke(http, "sims")[0], "a page that bounces back to login is not a logged-in page")
         http = FakeHttp({("GET", "/login"): (200, {}, "no token here")})
         self.assertFalse(sd.login_smoke(http, "sims")[0])
 
@@ -570,8 +573,8 @@ def staging_data(**staging) -> dict:
 
 class ChecksTests(Quiet):
     def lanes(self) -> None:
-        write_lane(self.tmp, "ripple-staging-smoke.conf",
-                   f"RIPPLE_STAGING_SUPERADMIN_EMAIL={SEKRET_MAIL}\nRIPPLE_STAGING_SUPERADMIN_PASSWORD={SEKRET_PASS}\n")
+        write_lane(self.tmp, "staging-lifecycle-qa.conf",
+                   f"STAGING_LIFECYCLE_QA_EMAIL={SEKRET_MAIL}\nSTAGING_LIFECYCLE_QA_PASSWORD={SEKRET_PASS}\n")
 
     def box_with_tip(self, sha: str = SHA_A, ref: str = REF) -> FakeBox:
         box = good_box()
@@ -689,7 +692,17 @@ class ChecksTests(Quiet):
         self.assertEqual(run["env"]["PLAYWRIGHT_HOST_PLATFORM_OVERRIDE"], "ubuntu24.04-x64")
         self.assertIn("chromium-libs/root/usr/lib/x86_64-linux-gnu", run["env"]["LD_LIBRARY_PATH"])
         self.assertEqual(run["env"]["PLAYWRIGHT_BASE_URL"], "https://ripple-staging.tutorla.tech")
+        self.assertEqual(run["env"]["TEST_USER_PASSWORD"], SEKRET_PASS)
+        self.assertTrue(run["env"]["PLAYWRIGHT_AUTH_STATE_PATH"].startswith(str(self.tmp / "lanes" / "runtime")))
+        self.assertEqual(oct((self.tmp / "lanes" / "runtime").stat().st_mode & 0o777), "0o700")
         self.assertEqual(run["cwd"], ctx.worktree)
+
+    def test_the_linux_copy_of_npx_is_found_first_when_it_exists(self) -> None:
+        self.lanes()
+        (self.tmp / "home" / ".local" / "bin").mkdir(parents=True)
+        with mock_env({"HOME": str(self.tmp / "home"), "PATH": "/mnt/c/nvm4w/nodejs:/usr/bin"}):
+            env, _ = sd.playwright_env("ripple")
+        self.assertTrue(env["PATH"].startswith(str(self.tmp / "home" / ".local" / "bin") + os.pathsep + "/mnt/c/nvm4w/nodejs"))
 
     def test_a_failing_change_smoke_fails_s3_and_its_output_is_scrubbed(self) -> None:
         self.lanes()

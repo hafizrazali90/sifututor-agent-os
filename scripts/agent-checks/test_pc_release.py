@@ -42,7 +42,7 @@ class FakeSsh:
 def readiness_file(tmp: Path, **override) -> Path:
     args = dict(release="Ripple CX audit", repo="agent-os", branch="feat/1-demo", base="origin/main", pr_numbers_=[5], issue="1",
                 serving_commit="", approval="Hafiz, test", github_repo=None, suite_commands=None, e2e_commands=[],
-                e2e_exception="not user-facing: demo", fix_paths=None, na={}, route="direct-prod")
+                e2e_exception="not user-facing: demo", fix_paths=None, na={}, route="direct-prod", staging=None)
     args.update(override)
     path = tmp / "readiness.json"
     rr.save(path, rr.build_from_template(TEMPLATE, **args))
@@ -89,6 +89,45 @@ class PcReleaseTest(unittest.TestCase):
         self.assertIn("python3 release_loop.py run readiness.json --clear-stop", files["start.sh"])
         self.assertIn("--drop-task", files["start.sh"])
         self.assertEqual(json.loads(files["readiness.json"])["release"], "Ripple CX audit")
+
+    def test_start_ships_the_staging_deploy_script_and_the_box_program(self) -> None:
+        ssh = FakeSsh()
+        pc_release.start(readiness_file(self.tmp), runner=ssh, out=self.out.append)
+        files = self.installed_files(ssh)
+        self.assertEqual(files["staging_remote.py"], (HERE / "staging_remote.py").read_text())
+        self.assertEqual(files["staging_deploy.py"], (HERE / "staging_deploy.py").read_text())
+
+    def test_start_says_plainly_that_the_pc_will_deploy_staging_only_when_the_release_asks_for_it(self) -> None:
+        path = readiness_file(self.tmp, repo="ripple-suite", branch="release/1700-proof", route="staging-first", na={"4": "docs only"},
+                              staging={"target": "ripple", "mode": "normal", "approval": "Hafiz, test",
+                                       "smoke_commands": ["npm run test:staging-luna-auth-smoke"]})
+        pc_release.start(path, dry_run=True, runner=FakeSsh(), out=self.out.append)
+        text = "\n".join(self.out)
+        self.assertIn("deploys STAGING only", text)
+        self.assertIn("never deploys production", text)
+        self.assertNotIn("the loop never merges, deploys, migrates", text)
+
+    def test_deploy_status_reads_the_staging_gates_on_the_pc(self) -> None:
+        ssh = FakeSsh(stdout="Release x: PC staging deploy to ripple")
+        text = pc_release.deploy_status("20261009-120000-ripple-cx-audit", runner=ssh)
+        self.assertIn("PC staging deploy", text)
+        self.assertIn("python3 staging_deploy.py report readiness.json", ssh.calls[0]["input"])
+        with self.assertRaises(ValueError):
+            pc_release.deploy_status("../x", runner=ssh)
+
+    def test_staging_switch_uses_the_fixed_alias_and_only_on_off_show(self) -> None:
+        calls = []
+
+        class Shell:
+            def run(self, argv, **kw):
+                calls.append(argv)
+                return 0, "STOP switch is ON"
+
+        self.assertIn("ON", pc_release.staging_switch("ripple", "off", shell=Shell()))
+        self.assertEqual(calls[0][-2], "staging")
+        for bad in (("prod", "off"), ("ripple", "rm")):
+            with self.assertRaises((ValueError, SystemExit)):
+                pc_release.staging_switch(*bad, shell=Shell())
 
     def test_start_stamps_the_release_id_into_both_copies_so_gate_and_route_can_find_the_release(self) -> None:
         ssh = FakeSsh()

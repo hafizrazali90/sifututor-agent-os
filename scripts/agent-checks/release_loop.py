@@ -26,8 +26,12 @@ checkpoint every 60 seconds and carries on the moment a gate gets evidence. The
 stuck rule cannot fire while waiting. These are stop conditions, not caps: there
 is no spend, turn or time cap anywhere, and none may be added.
 
-The loop never merges, deploys, runs a migration or writes production data.
+The loop never merges, deploys production, runs a production migration or writes production data.
 An item that would is handed to Hafiz as a gate and the loop carries on.
+One built-in exception (issue #356): a release created with `--staging-deploy`
+has a `staging` section, and its items S1, S2 and S3 are PC items that call
+staging_deploy.py (a plain script, not Claude) to check, deploy and smoke test
+STAGING for Ripple or SIMS. That code names the two staging boxes only.
 The only push the loop makes is a fast-forward of fix commits to the release
 branch, and only when the readiness file carries an approval line.
 """

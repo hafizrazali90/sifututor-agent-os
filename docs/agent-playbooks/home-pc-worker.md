@@ -46,6 +46,34 @@ yet (issue #271).
   controls what Claude may do.
 - Sign-in codes never go into chat. Hafiz pastes them into a terminal on the PC.
 
+## Access to the staging boxes (09/10/2026, issue #356)
+
+The PC has its own key and the same staging logins the Mac has. This is access
+parity: whatever the Mac can do on the two staging boxes, the PC can do under
+the same guards.
+
+- Key `~/.ssh/id_ed25519_pc_agent` (Ubuntu user `hafiz`). Aliases in the PC's
+  `~/.ssh/config`: `staging` (KVM8, Ripple staging, root) and `finch` (SIMS
+  staging, root). Both logins were proven on 09/10/2026.
+- Staging only. Production credentials are not on the PC and must not be copied
+  there. No server user, sudo rule or sshd setting was added.
+- To revoke: on both boxes remove the single line ending `homepc-agent 09/10/2026`
+  from `/root/.ssh/authorized_keys`. The PC's copy of the staging lane files
+  (`ripple-staging-smoke.conf`, `sims-staging-browser-qa.conf`,
+  `sims-staging-e2e.conf`, `staging-smoke.conf`, `staging-lifecycle-qa.conf` in
+  `~/.config/sifututor/agent-access/`, mode 600) is removed with `rm`.
+- The deploy itself is the script `scripts/agent-checks/staging_deploy.py`; read
+  [staging-deploy-from-pc.md](staging-deploy-from-pc.md) before using it.
+- Headless Chromium for Playwright works without sudo. Set
+  `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` and
+  `LD_LIBRARY_PATH=$HOME/.local/chromium-libs/root/usr/lib:$HOME/.local/chromium-libs/root/usr/lib/x86_64-linux-gnu`
+  (the staging smoke sets both for you).
+- SIMS releases need a `sifu-tutor` clone on the PC:
+  `gh repo clone Sifututor/sifu-tutor ~/Projects/Sifututor/sifu-tutor` (no sudo;
+  about 1,166 remote branches, a partial clone is fine). The PC has no PHP,
+  Composer or MySQL and will not get them for this: SIMS tests run on the finch
+  box or the Mac.
+
 ## Hooks on the PC
 
 - Claude's hook wiring is not in git. Build it from the tracked template with
@@ -84,6 +112,7 @@ yet (issue #271).
 - [parallel-work-and-worktrees.md](parallel-work-and-worktrees.md)
 - [autonomous-work-packets.md](autonomous-work-packets.md)
 - [agent-access-map.md](agent-access-map.md)
+- [staging-deploy-from-pc.md](staging-deploy-from-pc.md)
 
 ## Koda on the PC (one step only Hafiz can do)
 

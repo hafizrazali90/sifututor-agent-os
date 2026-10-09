@@ -332,6 +332,8 @@ def ripple_box(sha: str = SHA_A, ref: str = REF, served: str = SERVED, **kw) -> 
     s.when("status", "--porcelain", out="")
     s.when("diff", "--no-renames", out="src/app/page.tsx\ndocs/a.md\n")
     s.when("curl", out="200")
+    s.when("id", "-u", "deploy", out="1001\n")
+    s.dirs.update({"/var/www/staging/ripple-suite/node_modules", "/var/www/staging/ripple-suite/.next"})
     return s
 
 
@@ -342,6 +344,7 @@ class RippleCheckTests(Quiet):
     def assertRefused(self, s: FakeSys, text: str = "", **kw) -> None:
         with self.assertRaises(sr.Refused) as ctx:
             self.check(s, **kw)
+        self.last_refusal = str(ctx.exception)
         self.assertIn(text, str(ctx.exception))
         self.assertTrue(any("REFUSED" in line for line in s.logged))
 
@@ -439,6 +442,20 @@ class RippleCheckTests(Quiet):
         s = ripple_box()
         s.free = 1024
         self.assertRefused(s, "20 GiB")
+
+    def test_foreign_owned_files_in_the_build_tree_are_found_before_a_run_is_started(self) -> None:
+        """The controller refuses after about 3 seconds when root left files in node_modules; say so at check time instead."""
+        for tree in ("node_modules", ".next"):
+            s = ripple_box()
+            s.when("find", "-uid", fn=lambda argv, tree=tree: (0, f"/var/www/staging/ripple-suite/{tree}/.vite/x\n"
+                                                                  if f"/var/www/staging/ripple-suite/{tree}" in argv else ""))
+            self.assertRefused(s, "foreign-owned files")
+            self.assertIn(tree, str(self.last_refusal))
+
+    def test_a_clean_build_tree_passes_the_ownership_check(self) -> None:
+        s = ripple_box()
+        self.assertIn("CHECK OK", self.check(s)[0])
+        self.assertTrue(s.ran("find", "-uid"))
 
     def test_pm2_secrets_never_reach_the_log_or_output(self) -> None:
         s = ripple_box()
@@ -1058,6 +1075,213 @@ class SimsRunTests(Quiet):
         self.assertTrue(ok, text)
         s.when("migrate:status --pending", out="  2026_12_12_000001_x ..... Pending\n")
         self.assertFalse(sr.SimsRemote(s).verify(CUR)[0])
+
+
+# ------------------------------------------------- scratch fixture (real git) ----
+
+import getpass  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+import tempfile  # noqa: E402
+from unittest import mock  # noqa: E402
+
+FAKE_ARTISAN = r"""#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+app = Path(__file__).resolve().parent
+state = app / ".fixture-state"
+state.mkdir(exist_ok=True)
+ran_path, log = state / "ran.json", state / "calls.log"
+ran = json.loads(ran_path.read_text()) if ran_path.exists() else ["2026_01_01_000001_old"]
+files = sorted(p.stem for p in (app / "database" / "migrations").glob("*.php"))
+pending = [f for f in files if f not in ran]
+args = sys.argv[1:]
+with open(log, "a") as fh:
+    fh.write(" ".join(args) + "\n")
+cmd = args[0] if args else ""
+if cmd == "env":
+    print("   INFO  The application environment is [staging].")
+elif cmd == "tinker":
+    print(json.dumps(ran))
+elif cmd == "migrate:status":
+    print("\n   INFO  No pending migrations.  " if not pending else "\n".join(f"  {n} ........ [1] Pending" for n in pending))
+elif cmd == "migrate" and "--pretend" in args:
+    for n in pending:
+        print((state / "pretend.txt").read_text() if (state / "pretend.txt").exists() else f"create table `t_{n[-6:]}` (`id` int)")
+elif cmd == "migrate":
+    fail = (state / "fail_migrate").exists()
+    for n in pending:
+        ran.append(n)
+        ran_path.write_text(json.dumps(ran))
+        if fail:
+            print("SQLSTATE: boom"); sys.exit(1)
+    ran_path.write_text(json.dumps(ran))
+    print("DONE")
+elif cmd == "migrate:rollback":
+    step = int(next(a for a in args if a.startswith("--step=")).split("=")[1])
+    base = ["2026_01_01_000001_old"]
+    keep = ran[:-step] if step else ran
+    ran_path.write_text(json.dumps(keep or base))
+    print("rolled back")
+elif cmd == "db:backup":
+    (state / "backup.done").write_text("x")
+    print("backup ok")
+else:
+    print("ok " + cmd)
+"""
+
+CLEAN_FIXTURE_MIGRATION = MigrationScannerTests.CREATE
+
+
+class FixtureSys(sr.RealSys):
+    def hostname(self):
+        return sr.EXPECT_HOST["sims"]
+
+
+class SimsScratchFixtureTests(Quiet):
+    """The SIMS lane against a real git repository, a real scanner and real subprocesses, with fake artisan and runuser."""
+
+    def git(self, cwd: Path, *args: str) -> str:
+        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@e", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@e",
+               "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
+        return subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True, text=True, check=True).stdout.strip()
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.tmp = Path(tempfile.mkdtemp(prefix="sims-fixture-"))
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        bin_dir = self.tmp / "bin"
+        bin_dir.mkdir()
+        for name, body in (("runuser", '#!/bin/sh\nshift 3\nexec "$@"\n'), ("php", '#!/bin/sh\nexec python3 "$@"\n'),
+                           ("curl", '#!/bin/sh\necho 200\n'), ("systemctl", '#!/bin/sh\necho active\n')):
+            (bin_dir / name).write_text(body)
+            (bin_dir / name).chmod(0o755)
+        patcher = mock.patch.dict(os.environ, {"PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "GIT_CONFIG_GLOBAL": "/dev/null",
+                                               "GIT_CONFIG_SYSTEM": "/dev/null", "GIT_TERMINAL_PROMPT": "0"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        origin = self.tmp / "origin.git"
+        self.app = self.tmp / "app"
+        self.git(self.tmp, "init", "-q", "--bare", "-b", "main", str(origin))
+        self.git(self.tmp, "clone", "-q", str(origin), str(self.app))
+        (self.app / "database" / "migrations").mkdir(parents=True)
+        (self.app / "scripts" / "deployment").mkdir(parents=True)
+        (self.app / "database" / "migrations" / "2026_01_01_000001_old.php").write_text(CLEAN_FIXTURE_MIGRATION)
+        for script in ("check-checkout-ownership.sh", "install-and-optimize-protected-runtime.sh", "check-runtime-writable.sh"):
+            path = self.app / "scripts" / "deployment" / script
+            path.write_text('#!/bin/sh\necho "$0 $@" >> "$(dirname "$0")/../../.fixture-state/scripts.log"\nexit 0\n')
+            path.chmod(0o755)
+        (self.app / "artisan").write_text(FAKE_ARTISAN)
+        (self.app / "artisan").chmod(0o755)
+        (self.app / ".fixture-state").mkdir()
+        (self.app / ".gitignore").write_text(".fixture-state/\n")
+        self.git(self.app, "add", "-A")
+        self.git(self.app, "commit", "-qm", "base")
+        self.git(self.app, "push", "-q", "origin", "main")
+        self.base = self.git(self.app, "rev-parse", "HEAD")
+
+    def candidate(self, name: str, files: dict[str, str]) -> str:
+        branch = f"test/9{name}-staging-candidate"
+        self.git(self.app, "checkout", "-q", "-b", branch, "main")
+        for rel, text in files.items():
+            (self.app / "database" / "migrations" / rel).write_text(text)
+        self.git(self.app, "add", "-A")
+        self.git(self.app, "commit", "-qm", f"candidate {name}")
+        sha = self.git(self.app, "rev-parse", "HEAD")
+        self.git(self.app, "push", "-q", "origin", branch)
+        self.git(self.app, "checkout", "-q", "--detach", self.base)  # staging serves the base
+        self.git(self.app, "branch", "-q", "-D", branch)
+        return branch
+
+    def box(self) -> sr.SimsRemote:
+        tmp = self.tmp
+
+        class Fixture(sr.SimsRemote):
+            app = str(tmp / "app")
+            owner = getpass.getuser()
+            remote_url = str(tmp / "origin.git")
+            own_lock = str(tmp / "sims.lock")
+            log_path = str(tmp / "deploy.log")
+            busy_words = ()
+
+            def www(self, *argv):
+                return ["runuser", "-u", "www-data", "--", *argv]
+
+        for target, value in (("STATE_DIR", str(tmp / "state")), ("SWITCH_FILE", str(tmp / "STOP"))):
+            patcher = mock.patch.object(sr, target, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        return Fixture(FixtureSys(), "tester", "rel-1")
+
+    def deploy(self, branch: str, box: sr.SimsRemote | None = None) -> dict:
+        box = box or self.box()
+        sha = self.git(self.app, "ls-remote", "origin", f"refs/heads/{branch}").split()[0]
+        fd = box.s.take_lock(box.own_lock)
+        self.assertIsNotNone(fd)
+        self.addCleanup(os.close, fd)
+        box.preflight(branch, sha, "normal", "", own_lock_counts=False)
+        box.s.mkdir(box.run_dir("20261009T053000Z-aaaaaaaa"))
+        box.write_state("20261009T053000Z-aaaaaaaa", run="x")
+        box.run_body("20261009T053000Z-aaaaaaaa", branch, sha, "normal", "", fd)
+        return json.loads((Path(box.run_dir("20261009T053000Z-aaaaaaaa")) / "state.json").read_text()) | {"sha": sha}
+
+    def state_file(self, name: str) -> str:
+        path = self.app / ".fixture-state" / name
+        return path.read_text() if path.exists() else ""
+
+    def test_a_clean_migration_is_scanned_backed_up_then_migrated_and_the_head_moves(self) -> None:
+        branch = self.candidate("1", {"2026_10_09_000001_create_widgets.php": CLEAN_FIXTURE_MIGRATION})
+        state = self.deploy(branch)
+        self.assertEqual(state["status"], "ok", state)
+        self.assertEqual(self.git(self.app, "rev-parse", "HEAD"), state["sha"])
+        self.assertIn("2026_10_09_000001_create_widgets", json.loads(self.state_file("ran.json")))
+        calls = self.state_file("calls.log").splitlines()
+        order = [c.split(" ")[0] + (" pretend" if "--pretend" in c else "") for c in calls if c.split(" ")[0] in ("migrate", "db:backup")]
+        self.assertEqual(order, ["migrate pretend", "db:backup", "migrate"])
+        self.assertTrue(self.state_file("backup.done"))
+        self.assertIn("--uncached-staging", self.state_file("scripts.log"))
+        self.assertIn("--owner=", self.state_file("scripts.log"))
+
+    def test_a_dropping_migration_is_refused_at_check_time_from_the_real_git_object(self) -> None:
+        branch = self.candidate("2", {"2026_10_09_000002_drop_things.php": MigrationScannerTests().wrap("Schema::dropIfExists('widgets');")})
+        box = self.box()
+        sha = self.git(self.app, "ls-remote", "origin", f"refs/heads/{branch}").split()[0]
+        with self.assertRaises(sr.Refused) as ctx:
+            box.check(branch, sha, "normal", "")
+        self.assertIn("drop_things", str(ctx.exception))
+        self.assertEqual(self.git(self.app, "rev-parse", "HEAD"), self.base, "nothing was checked out")
+        self.assertNotIn("migrate", self.state_file("calls.log").replace("migrate:status", ""))
+
+    def test_a_pretend_output_with_a_drop_stops_before_backup_and_restores_the_code(self) -> None:
+        branch = self.candidate("3", {"2026_10_09_000003_alter.php": CLEAN_FIXTURE_MIGRATION})
+        (self.app / ".fixture-state" / "pretend.txt").write_text("alter table `x` drop column `y`")
+        state = self.deploy(branch)
+        self.assertEqual(state["status"], "failed")
+        self.assertFalse(self.state_file("backup.done"))
+        self.assertEqual(self.git(self.app, "rev-parse", "HEAD"), self.base)
+
+    def test_a_failure_halfway_rolls_back_only_what_ran_and_restores_the_previous_code(self) -> None:
+        branch = self.candidate("4", {"2026_10_09_000004_a.php": CLEAN_FIXTURE_MIGRATION, "2026_10_09_000005_b.php": CLEAN_FIXTURE_MIGRATION})
+        (self.app / ".fixture-state" / "fail_migrate").write_text("x")
+        state = self.deploy(branch)
+        self.assertEqual(state["status"], "failed")
+        calls = self.state_file("calls.log")
+        self.assertIn("migrate:rollback --step=1 --force", calls)
+        self.assertNotIn("--step=2", calls)
+        self.assertEqual(json.loads(self.state_file("ran.json")), ["2026_01_01_000001_old"])
+        self.assertEqual(self.git(self.app, "rev-parse", "HEAD"), self.base)
+        self.assertTrue(self.state_file("backup.done"), "the backup was taken before the migration")
+
+    def test_the_real_system_lock_probe_sees_a_held_lock_and_a_free_one(self) -> None:
+        s = FixtureSys()
+        lock = str(self.tmp / "probe.lock")
+        self.assertFalse(s.lock_held(lock))
+        fd = s.take_lock(lock)
+        self.assertTrue(s.lock_held(lock))
+        self.assertIsNone(s.take_lock(lock), "a second holder is refused")
+        os.close(fd)
+        self.assertFalse(s.lock_held(lock))
 
 
 if __name__ == "__main__":

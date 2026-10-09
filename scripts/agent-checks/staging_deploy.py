@@ -429,12 +429,14 @@ def public_get(http_: Any, target: str, path: str) -> tuple[bool, str]:
     return status in (200, 302, 307, 308), f"GET {path} -> HTTP {status}"
 
 
+LOGIN_LANE = ("staging-lifecycle-qa.conf", "STAGING_LIFECYCLE_QA_EMAIL", "STAGING_LIFECYCLE_QA_PASSWORD")
+
+
 def lane_for(target: str) -> tuple[str, dict[str, str], str, str]:
-    """(lane file, values, email key, password key)."""
-    if target == "ripple":
-        return ("ripple-staging-smoke.conf", load_lane("ripple-staging-smoke.conf"), "RIPPLE_STAGING_SUPERADMIN_EMAIL",
-                "RIPPLE_STAGING_SUPERADMIN_PASSWORD")
-    return ("staging-smoke.conf", load_lane("staging-smoke.conf"), "SIMS_SMOKE_EMAIL", "SIMS_SMOKE_PASSWORD")
+    """(lane file, values, email key, password key) for the scripted login. The staging lifecycle QA account is a non-admin
+    account that works on both staging sites (on 09/10/2026 the admin logins in the other lane files were rejected)."""
+    name, email_key, password_key = LOGIN_LANE
+    return name, load_lane(name), email_key, password_key
 
 
 def login_smoke(http_: Any, target: str, page_paths: list[str] | None = None) -> tuple[bool, list[str], list[str]]:
@@ -442,7 +444,7 @@ def login_smoke(http_: Any, target: str, page_paths: list[str] | None = None) ->
     _, lane, email_key, password_key = lane_for(target)
     email, password = lane.get(email_key, ""), lane.get(password_key, "")
     if not email or not password:
-        return False, [f"the {target} staging lane has no {email_key}/{password_key}"], []
+        return False, [f"the staging login lane has no {email_key}/{password_key}"], []
     secrets = [email, password]
     base = BASE_URLS[target]
     lines: list[str] = []
@@ -457,64 +459,62 @@ def login_smoke(http_: Any, target: str, page_paths: list[str] | None = None) ->
         if status != 200:
             return False, lines, secrets
         paths = page_paths if page_paths is not None else ["/requests"]
-        for path in paths:
-            status, headers, _ = http_.request("GET", base + path)
-            bounced = "/login" in headers.get("location", "")
-            lines.append(f"GET {path} -> HTTP {status}" + (" (sent back to login)" if bounced else ""))
-            if status != 200 or bounced:
-                return False, lines, secrets
-        return True, lines, secrets
-    status, _, page = http_.request("GET", base + "/login")
-    token = re.search(r'name="csrf-token" content="([^"]+)"', page)
-    lines.append(f"GET /login -> HTTP {status}")
-    if status != 200 or not token:
-        return False, lines + ["no CSRF token on the login page"], secrets
-    headers = {"Content-Type": "application/json", "X-CSRF-TOKEN": token.group(1), "X-Requested-With": "XMLHttpRequest",
-               "Accept": "text/html, application/xhtml+xml", "X-Inertia": "true"}
-    status, resp_headers, _ = http_.request("POST", base + "/login", headers, json.dumps({"email": email, "password": password}).encode())
-    lines.append(f"POST /login -> HTTP {status}")
-    if status not in (200, 204, 302, 303, 409):
-        return False, lines, secrets
-    location = resp_headers.get("location", "") + resp_headers.get("x-inertia-location", "")
-    if "/login" in location:
-        return False, lines + ["login sent the user back to /login"], secrets
-    for path in (page_paths if page_paths is not None else ["/"]):
-        status, resp_headers, body = http_.request("GET", base + path, {"X-Inertia": "true", "X-Requested-With": "XMLHttpRequest",
-                                                                        "Accept": "text/html, application/xhtml+xml"})
-        bounced = "/login" in resp_headers.get("location", "") or "/login" in resp_headers.get("x-inertia-location", "")
-        component = re.search(r'"component":"([^"]+)"', body)
-        on_login = bool(component and component.group(1).lower().startswith("auth/login"))
-        lines.append(f"GET {path} -> HTTP {status}" + (" (sent back to login)" if bounced or on_login else ""))
-        if status not in (200, 302) or bounced or on_login:
+    else:
+        status, _, page = http_.request("GET", base + "/login")
+        token = re.search(r'name="csrf-token" content="([^"]+)"', page)
+        lines.append(f"GET /login -> HTTP {status}")
+        if status != 200 or not token:
+            return False, lines + ["no CSRF token on the login page"], secrets
+        headers = {"Content-Type": "application/json", "X-CSRF-TOKEN": token.group(1), "X-Requested-With": "XMLHttpRequest",
+                   "Accept": "text/html"}
+        status, resp_headers, _ = http_.request("POST", base + "/login", headers,
+                                                json.dumps({"email": email, "password": password}).encode())
+        lines.append(f"POST /login -> HTTP {status}")
+        if status not in (200, 204, 302, 303):
+            return False, lines, secrets
+        if resp_headers.get("location", "").rstrip("/").endswith("/login"):
+            return False, lines + ["login sent the user back to /login (credentials refused)"], secrets
+        paths = page_paths if page_paths is not None else ["/"]
+    for path in paths:
+        status, headers, _ = http_.request("GET", base + path)
+        bounced = headers.get("location", "").rstrip("/").endswith("/login")
+        lines.append(f"GET {path} -> HTTP {status}" + (" (sent back to login)" if bounced else ""))
+        if status != 200 or bounced:
             return False, lines, secrets
     return True, lines, secrets
 
 
 def playwright_env(target: str) -> tuple[dict[str, str], list[str]]:
-    """Environment for a change-smoke command: the headless Chromium that works on the PC without sudo, and the staging lane
-    values the test harnesses read. Returns (env, secret values to scrub from output)."""
+    """Environment for a change-smoke command: the headless Chromium that works on the PC without sudo, and the staging login
+    the test harnesses read. Returns (env, secret values to scrub from output)."""
     home = Path.home()
     libs = f"{home}/.local/chromium-libs/root/usr/lib:{home}/.local/chromium-libs/root/usr/lib/x86_64-linux-gnu"
     env = dict(os.environ)
     env["PLAYWRIGHT_HOST_PLATFORM_OVERRIDE"] = PLAYWRIGHT_HOST
     env["LD_LIBRARY_PATH"] = libs + (":" + env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
+    env["PLAYWRIGHT_BASE_URL"] = BASE_URLS[target]
+    local_bin = home / ".local" / "bin"  # the Linux npm and npx; the Windows copies under /mnt/c cannot build here
+    if local_bin.is_dir():
+        env["PATH"] = str(local_bin) + os.pathsep + os.pathsep.join(p for p in env.get("PATH", "").split(os.pathsep) if p != str(local_bin))
     secrets: list[str] = []
-    if target == "ripple":
-        lane = load_lane("ripple-staging-smoke.conf")
-        env.update(lane)
-        env["PLAYWRIGHT_BASE_URL"] = BASE_URLS["ripple"]
-        env["TEST_USER_EMAIL"] = lane.get("RIPPLE_STAGING_SUPERADMIN_EMAIL", "")
-        env["TEST_USER_PASSWORD"] = lane.get("RIPPLE_STAGING_SUPERADMIN_PASSWORD", "")
+    _, qa, email_key, password_key = lane_for(target)
+    env["TEST_USER_EMAIL"], env["TEST_USER_PASSWORD"] = qa.get(email_key, ""), qa.get(password_key, "")
+    secrets += [qa.get(email_key, ""), qa.get(password_key, "")]
+    runtime = lane_dir() / "runtime"
+    runtime.mkdir(mode=0o700, exist_ok=True)
+    env["PLAYWRIGHT_AUTH_STATE_PATH"] = str(runtime / f"pc-deploy-{target}-qa.json")
+    env.setdefault("PLAYWRIGHT_AUTH_VERIFY_PATH", "/requests" if target == "ripple" else "/")
+    env["PLAYWRIGHT_REUSE_REMOTE_AUTH_STATE"] = "1"
+    env["PLAYWRIGHT_AUTH_STATE_MAX_AGE_SECONDS"] = "900"
+    names = ("ripple-staging-smoke.conf",) if target == "ripple" else ("staging-smoke.conf", "sims-staging-browser-qa.conf",
+                                                                       "sims-staging-e2e.conf")
+    for name in names:
+        try:
+            lane = load_lane(name)
+        except DeployError:
+            continue
+        env.update({k: v for k, v in lane.items() if k not in env or k.startswith(("RIPPLE_", "SIMS_", "E2E_"))})
         secrets += [v for k, v in lane.items() if "PASSWORD" in k or "EMAIL" in k]
-    else:
-        for name in ("staging-smoke.conf", "sims-staging-browser-qa.conf", "sims-staging-e2e.conf"):
-            try:
-                lane = load_lane(name)
-            except DeployError:
-                continue
-            env.update(lane)
-            secrets += [v for k, v in lane.items() if "PASSWORD" in k or "EMAIL" in k]
-        env["PLAYWRIGHT_BASE_URL"] = BASE_URLS["sims"]
     return env, [s for s in secrets if s]
 
 

@@ -543,6 +543,7 @@ class RippleRemote(Base):
     base_dir = "/opt/deploy/ripple-suite"
     own_lock = base_dir + "/.pc-staging-release.lock"
     repo = base_dir + "/repo-staging"
+    app_dir = "/var/www/staging/ripple-suite"
     controller = "/usr/local/bin/deploy-ripple-suite"
     serving_prod = base_dir + "/.serving-prod.json"
     staging_log = "/var/log/apps/ripple-suite-staging-deploy.log"
@@ -632,6 +633,16 @@ class RippleRemote(Base):
         if code != 0 or code2 != 0 or head.strip() != served or dirty.strip():
             self.refuse("the staging checkout is not clean on the serving commit (a hand step may be open, or the last deploy "
                         "failed); a person looks first")
+        # The controller refuses (after about 3 seconds) when root left files in the build tree; say so before a run is started.
+        code, uid = self.s.run(["id", "-u", "deploy"], timeout=30)
+        if code != 0 or not uid.strip().isdigit():
+            self.refuse("cannot read the deploy user id")
+        for tree in (self.app_dir + "/node_modules", self.app_dir + "/.next"):
+            if self.s.exists(tree):
+                code, found = self.s.run(["find", tree, "-xdev", "!", "-uid", uid.strip(), "-print", "-quit"], timeout=120)
+                if code != 0 or found.strip():
+                    self.refuse(f"foreign-owned files exist in the application build tree {tree} ({found.strip()[:100] or 'find failed'}); "
+                                "a person repairs that staging build tree as root first")
         code, names = self.dgit("diff", "--no-renames", "--name-only", served, sha)
         if code != 0:
             self.refuse("could not compare the release with what staging serves")
