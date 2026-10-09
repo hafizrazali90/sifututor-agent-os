@@ -189,6 +189,23 @@ python3 scripts/agent-checks/pc_release.py staging-switch ripple on
 | A deploy while a lock is held, a person is mid-procedure, or STOP is on | one deploy at a time on a shared box | wait, then retry |
 | Production, main, or anything outside the two staging boxes | not in the script | Hafiz |
 
+## What was measured on 09/10/2026 (MYT)
+
+Live proof from the home PC, on the shared staging boxes, only by redeploying the
+commit each box already served. Nothing was deployed that was not already there.
+
+| What | Result |
+| --- | --- |
+| Ripple, first try, 13:32 | the controller refused in 3 seconds: root had left 4 files in `node_modules/.vite` at 11:34 (a root-run test in the staging app folder). The script now finds this at check time. Repair: `chown -R deploy:deploy node_modules/.vite`, logged. |
+| Ripple redeploy of `release/1581-request-timeline-r6` at `7df552e8` | run `20261009T053426Z-7df552e8`, started 13:34:26, controller 989 s (16 min 29 s), whole PC command 1,025 s; read back `VERIFY OK`: PM2 `online` at the commit, `repo-staging` HEAD, the deploy log line and the login page agree |
+| SIMS redeploy of `test/3373-staging-candidate` at `30b75cb1a` | run `20261009T054138Z-30b75cb1`, 13:41:38 to 13:43:23, 105 s (133 s for the whole PC command); migrations to run: 0, so no backup and no migrate; read back `VERIFY OK`. A Mac session moved SIMS staging to `13d276f50` at 13:43:59, 36 s later |
+| STOP switch on the SIMS box | `switch sims off`: the next check answered `REFUSED: the STOP switch is on`; `switch sims on` cleared it |
+| Normal smoke from the PC | Ripple and SIMS: public `/login` 200, scripted login on the `staging-lifecycle-qa` lane 200 and a page behind the login 200 |
+| Change smoke from the PC | Ripple: `tests/e2e/smoke/crm-worklist-staging.spec.ts` with Playwright, 2 passed in 4.3 s (headless Chromium, no sudo). SIMS: the scripted login and a logged-in page |
+| Scanner on real migrations | all 436 files of sifu-tutor `origin/main`: 390 clean, 46 refused; the 46 files carry 49 findings (15 `->drop...`, 15 `MODIFY` or `CHANGE` column rewrites, 14 `->change()`, 3 `->rename...`, 2 `DROP` statements); none was unreadable |
+| Mutation check | 34 wrong implementations (production target accepted, any ref accepted, commit not at the tip accepted, DROP accepted, lock ignored, STOP ignored, backup after migrate, rollback of too many steps, and more) each made a named test fail |
+| `sifu-tutor` clone on the PC | `gh repo clone --filter=blob:none`: 14 s, 100 MB, 1,167 remote branches |
+
 ## Known limits
 
 - Claude jobs on the PC have no `ssh` or deploy command on their allow list and
@@ -207,6 +224,14 @@ python3 scripts/agent-checks/pc_release.py staging-switch ripple on
   password"; SIMS sent the login back to `/login`). The scripted smoke therefore
   uses the non-admin `staging-lifecycle-qa.conf` login, which works on both
   sites. Hafiz re-sets the admin lane with `setup-sims-browser-qa-lane.sh`.
+- S4 for SIMS needs the promotion branch to carry every changed line the candidate
+  had on staging. A stacked candidate is refused with the count: on 09/10/2026
+  `test/3378-staging-candidate` carried 1,844 changed lines (the #3373 import, the
+  #3363 push fix and the #3378 fix) against 51 lines in the #3378 production
+  rebuild. The same check passes on a real single change: #3369 as commit
+  `388176fc4` on staging and `d9e9e9e0d` on main (different ids) has 389 changed
+  lines each, 0 missing, 0 extra. Test one change at a time, or keep S4 a Mac gate
+  for a stacked candidate.
 - STOP does not kill a deploy that is already running; only the box finishes it.
 - A manual deploy by a person on the SIMS box takes no lock the PC can see; the
   process guard and the clean-checkout rule catch most overlaps, not all.

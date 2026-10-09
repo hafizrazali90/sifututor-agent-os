@@ -1063,6 +1063,13 @@ class SimsRunTests(Quiet):
         self.assertFalse(s.ran("migrate --force"))
         self.assertFalse(s.ran("db:backup"))
 
+    def test_a_runner_that_cannot_read_the_current_commit_changes_nothing(self) -> None:
+        s = SimsBox()
+        s.when("rev-parse HEAD", rc=128, out="fatal")
+        state = self.run_deploy(s)
+        self.assertEqual(state["status"], "failed")
+        self.assertFalse(s.ran("checkout --detach"))
+
     def test_sims_start_spawns_a_detached_runner(self) -> None:
         s = SimsBox()
         lines = sr.SimsRemote(s, "pc-loop", "rel-1").start(SIMS_REF, SHA_A, "normal", "")

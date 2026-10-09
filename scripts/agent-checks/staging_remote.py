@@ -922,6 +922,8 @@ class SimsRemote(Base):
             return self.finish(runid, status, code, started, ref, sha, f" reason={step}: {why}")
 
         self.write_state(runid, state="running")
+        if not prev:
+            return fail("start", 1, "cannot read the commit staging serves now, so the previous code could not be restored")
         plan = self.migration_plan(prev, sha)
         if plan["error"] or plan["findings"]:
             return fail("migration-plan", 70, plan["error"] or "; ".join(plan["findings"][:3]), "refused")
