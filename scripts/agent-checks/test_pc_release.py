@@ -170,6 +170,13 @@ class PcReleaseTest(unittest.TestCase):
         self.assertIn("release_loop.py", files)
         self.assertIn("schtasks /run", ssh.calls[1]["argv"][-1])
 
+    def test_clean_removes_only_the_scheduler_task(self) -> None:
+        ssh = FakeSsh(stdout="SUCCESS: deleted")
+        self.assertEqual(pc_release.clean("20261009-120000-ripple-cx-audit", runner=ssh), "SUCCESS: deleted")
+        self.assertEqual(ssh.calls[0]["argv"][-1], 'schtasks /delete /tn "release-20261009-120000-ripple-cx-audit" /f')
+        with self.assertRaises(ValueError):
+            pc_release.clean("bad", runner=ssh)
+
     def test_stop_creates_the_stop_file_next_to_the_checkpoint(self) -> None:
         ssh = FakeSsh()
         text = pc_release.stop("20261009-120000-ripple-cx-audit", runner=ssh)

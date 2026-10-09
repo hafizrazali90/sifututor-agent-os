@@ -11,6 +11,7 @@
                                                      change the route; applicability is recomputed
     pc_release.py stop RELEASE_ID                    ask the loop to stop after its current action
     pc_release.py resume RELEASE_ID                  start a stopped, blocked or stuck release again
+    pc_release.py clean RELEASE_ID                   remove the finished release's Task Scheduler task (the folder stays)
     pc_release.py list                               releases on the PC and their loop state
 
 The loop runs on the PC (release_loop.py). It is started through Windows Task
@@ -172,6 +173,13 @@ def route(target: str, new_route: str, *, by: str = "Hafiz", runner=subprocess.r
     return remote_readiness(resolve_id(target), "route", [new_route, "--by", by], runner=runner)
 
 
+def clean(release_id: str, *, runner=subprocess.run) -> str:
+    """Remove the Task Scheduler task of a finished release. A task cannot reliably delete itself from inside WSL."""
+    check_id(release_id)
+    out = pc_job.run_ssh(None, command=f'schtasks /delete /tn "{TASK_PREFIX}-{release_id}" /f', runner=runner)
+    return out.strip() or "done"
+
+
 def list_releases(*, runner=subprocess.run) -> str:
     script = (
         f'for d in "$HOME"/{FOLDER}/*/; do [ -f "$d/readiness.json" ] || continue; '
@@ -189,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name); p.add_argument("release_id")
     p = sub.add_parser("file"); p.add_argument("release_id"); p.add_argument("path")
     sub.add_parser("list")
+    p = sub.add_parser("clean"); p.add_argument("release_id")
     p = sub.add_parser("gate"); p.add_argument("target"); p.add_argument("item"); p.add_argument("--evidence", required=True)
     p.add_argument("--by", default="Hafiz"); p.add_argument("--sha", default=""); p.add_argument("--simulated", action="store_true")
     p = sub.add_parser("route"); p.add_argument("target"); p.add_argument("new_route", choices=rr.ROUTES); p.add_argument("--by", default="Hafiz")
@@ -207,6 +216,8 @@ def main(argv: list[str] | None = None) -> int:
         return resume(args.release_id)
     elif args.cmd == "list":
         print(list_releases())
+    elif args.cmd == "clean":
+        print(clean(args.release_id))
     elif args.cmd == "gate":
         print(gate(args.target, args.item, args.evidence, by=args.by, sha=args.sha, simulated=args.simulated))
     elif args.cmd == "route":

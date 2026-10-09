@@ -230,6 +230,8 @@ python3 scripts/agent-checks/pc_release.py gate readiness.json S2 --evidence "st
 python3 scripts/agent-checks/pc_release.py route readiness.json staging-first
 python3 scripts/agent-checks/pc_release.py stop RELEASE_ID
 python3 scripts/agent-checks/pc_release.py resume RELEASE_ID
+# 6. after the release is finished: remove its Task Scheduler task (the folder and reports stay)
+python3 scripts/agent-checks/pc_release.py clean RELEASE_ID
 ```
 
 `gate` only closes items owned by `hafiz` or `mac`; it refuses a PC item, so a
