@@ -253,6 +253,26 @@ detached processes). Files live in `~/releases/RELEASE_ID/` on the PC:
 `readiness.json` (the checkpoint), `release-report.md`, `ready.flag`,
 `release-pack/`, `jobs/` (one folder per Claude job), `inbox/`, `loop.log`.
 
+### What was measured on 09/10/2026 (MYT)
+
+Live proof on the home PC with a throwaway docs-only release (one sentence in
+`home-pc-worker.md`, release PR closed unmerged afterwards), real Claude jobs, both routes:
+
+- `staging-first`: PC items done in about 4 min 30 s (7 Claude jobs: 6 drafts and one cold review, list-price
+  equivalent $2.33, billed to the subscription), then `waiting_for_gate: S1, S2, S3, G1, G3`. After
+  the five gates were closed with `pc_release.py gate`, S4 ran and Prod readiness went from 87.5 to
+  100 percent within 6 seconds.
+- `direct-prod`: PC items done in about 4 min 30 s (7 jobs, $2.21), waited about 28 minutes for G1
+  and G3 without stopping or going stuck (the wait was the proof harness, not the loop), then
+  `ready_for_prod_go` 6 seconds after the gates were closed.
+- A `STOP` file stopped a waiting loop in 9 seconds and `resume` carried on from the checkpoint.
+- Nothing was merged or deployed by the loop; the proof PR stayed OPEN and was closed by hand.
+- A cold review of the code found 12 issues (a forbidden-command bypass, empty checks counting as
+  green, stale drafts after a fix, and others). Ten are fixed, each with a test. Two are left as
+  documented limits: a request queued in the very moment the loop ends waits for the next `resume`,
+  and `npm ci` inside a project-repo job still has the 20 minute timeout from issue #347 (not changed
+  here).
+
 ### Limits to know
 
 - One loop per release folder (a lock refuses a second one). Do not run two
