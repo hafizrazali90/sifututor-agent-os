@@ -105,7 +105,7 @@ class Wiring(unittest.TestCase):
             (root / "AGENTS.md").write_text(agents)
             register = root / "docs/business-rules/register.md"
             register.write_text(register.read_text() + "\n## BR-001\n")
-            with self.assertRaisesRegex(ValueError, "104 unique"):
+            with self.assertRaisesRegex(ValueError, "105 unique"):
                 RULES.validate_repository(root)
 
 

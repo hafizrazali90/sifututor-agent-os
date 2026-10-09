@@ -11,7 +11,7 @@ is one shared scheduled class with all participants. Author: Codex. Issue:
 | --- | --- |
 | Agents read intended rules before interpreting implementation | Shared AGENTS and context-authority route to the business-rule index |
 | One lesson with three students stays one shared class | Declared-example validator rejects student multiplication, missing participants and code-only authority |
-| Old memories and drafts cannot silently become policy | 104-rule register preserves status; 74-record full-memory audit; unresolved decisions collected |
+| Old memories and drafts cannot silently become policy | 105-rule register preserves status; 74-record full-memory audit; unresolved decisions collected |
 | Existing product owners remain authoritative | Central index points to domain sources, rather than replacing every product rulebook |
 | Both agents use the same route | Existing Claude AGENTS import and Codex shared entry tested by navigation fixtures |
 

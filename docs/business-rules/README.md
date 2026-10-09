@@ -1,7 +1,7 @@
 # Business rules: authority and agent loading
 
 This is the shared entry point for Sifututor business intent. It connects a
-sourced [104-rule compilation](register.md) to the existing domain owners.
+sourced [105-rule compilation](register.md) to the existing domain owners.
 Hafiz owns business decisions. This compilation does not approve drafts,
 promote historical memory, authorize a financial change, or prove deployment.
 
@@ -20,7 +20,7 @@ missing sibling folder means the business rule does not exist.
 | --- | --- | --- |
 | Request, students, shared classes, attendance and credits | BR-001–011; BR-063; BR-070 | Current Hafiz correction for BR-001; SIMS lifecycle/billing approved addenda and linked issues |
 | Matching, identity, CRM ownership and acquisition | BR-012–020; BR-073; BR-080–084; BR-092–099 | Ripple CRM approved matching, Dual CX and identity packs; exact SIMS authority |
-| Fees, refunds, bonuses, staff/tutor payments | BR-021–028; BR-030–035; BR-085–091 | SIMS/Ripple fee, payout and commission approved source docs; preserve critical-lane boundaries |
+| Fees, refunds, bonuses, staff/tutor payments | BR-021–028; BR-030–035; BR-085–091; BR-105 | SIMS/Ripple fee, payout and commission approved source docs; preserve critical-lane boundaries |
 | Notifications | BR-029; BR-042–045 | Notification policy review plus action-specific delivery code; outreach approved pack |
 | Nakngaji | BR-036–041; BR-074–079; BR-100–104 | Nakngaji business-rule change register and corrective pack, reconciled by dated decisions |
 | Other products and proposals | BR-046–062; BR-064–069; BR-071–072 | Exact named Kelas, Learnest, Finch, mobile or proposal source; do not import SIMS policy by analogy |
