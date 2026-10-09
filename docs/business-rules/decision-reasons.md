@@ -498,6 +498,10 @@ No separate rationale captured in this entry. Inspect the cited governing source
 On 3 October Hafiz reconfirmed BR-025 (one month) and BR-091 (collection Done with open service follow-up). Historical memory metadata above remains an audit snapshot, not a veto over these current decisions. No additional rationale was supplied in the two short confirmations.
 
 
+## BR-105
+
+- Hafiz, chat 09/10/2026 (RIP-068, ripple-suite #1629): keep fee first; staff agree the date any time and confirm the first class once the fee is paid or waived. The code already enforced it; only the Help and form wording said otherwise.
+
 ## Current user confirmations on 3 October 2026
 
 Hafiz confirmed BR-025: one-month resignation notice; BR-063: settle the whole shared-class payout together, with no separate student-component deferral; BR-091: collection Done when fully paid, with a separate service follow-up open while classes remain held. These direct confirmations supersede earlier unresolved wording and historical memory confidence for these specific decisions. No additional rationale was supplied; do not invent one. Historical source/audit entries above remain dated evidence.
