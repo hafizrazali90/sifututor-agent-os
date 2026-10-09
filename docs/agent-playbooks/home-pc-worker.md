@@ -63,6 +63,11 @@ yet (issue #271).
   [unattended-jobs.md](unattended-jobs.md). In short: every job has a brief and
   runs until Claude finishes, with no caps, as on the Mac; a missing finish
   state means local only; a job never merges or deploys.
+- To chain the jobs of one release until everything before the production go is
+  done, use the release readiness loop (`pc_release.py`). It follows the same
+  rules, waits for gates instead of stopping, ends at `ready_for_prod_go`, `blocked`,
+  `stuck` or `stopped`, and leaves the merge, deploy and production checks to Hafiz. See "Release readiness loop" in
+  [unattended-jobs.md](unattended-jobs.md).
 
 ## Known gotchas
 

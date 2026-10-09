@@ -119,9 +119,9 @@ def b64(text: str) -> str:
     return base64.b64encode(text.encode()).decode()
 
 
-def install_script(job_id: str, files: dict[str, str]) -> str:
-    """Shell script (run in Ubuntu) that writes the job folder."""
-    jobdir = f"$HOME/jobs/{job_id}"
+def install_script(job_id: str, files: dict[str, str], folder: str = "jobs") -> str:
+    """Shell script (run in Ubuntu) that writes the job folder (or a release folder, issue #350)."""
+    jobdir = f"$HOME/{folder}/{job_id}"
     lines = ["set -e", f'mkdir -p "{jobdir}"']
     for name, content in files.items():
         lines.append(f"printf '%s' '{b64(content)}' | base64 -d > \"{jobdir}/{name}\"")
@@ -138,9 +138,9 @@ def start_sh(job_id: str) -> str:
     )
 
 
-def schtasks_create(job_id: str) -> str:
-    target = f"wsl.exe -d Ubuntu -u {PC_USER} -e {PC_HOME}/jobs/{job_id}/start.sh"
-    return f'schtasks /create /tn "job-{job_id}" /tr "{target}" /sc once /st 00:00 /f & schtasks /run /tn "job-{job_id}"'
+def schtasks_create(job_id: str, folder: str = "jobs", prefix: str = "job") -> str:
+    target = f"wsl.exe -d Ubuntu -u {PC_USER} -e {PC_HOME}/{folder}/{job_id}/start.sh"
+    return f'schtasks /create /tn "{prefix}-{job_id}" /tr "{target}" /sc once /st 00:00 /f & schtasks /run /tn "{prefix}-{job_id}"'
 
 
 def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, out=print) -> int:
@@ -179,10 +179,10 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
     return 0
 
 
-def remote_cat(job_id: str, name: str, runner=subprocess.run) -> str:
+def remote_cat(job_id: str, name: str, runner=subprocess.run, folder: str = "jobs") -> str:
     if not re.fullmatch(r"[0-9]{8}-[0-9]{6}-[a-z0-9-]+", job_id):
         raise ValueError("job id looks wrong")
-    return run_ssh(f'cat "$HOME/jobs/{job_id}/{name}" 2>&1\n', runner=runner)
+    return run_ssh(f'cat "$HOME/{folder}/{job_id}/{name}" 2>&1\n', runner=runner)
 
 
 def list_jobs(runner=subprocess.run) -> str:
