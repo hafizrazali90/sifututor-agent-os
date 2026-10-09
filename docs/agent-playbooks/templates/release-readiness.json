@@ -1,0 +1,115 @@
+{
+  "_comment": [
+    "Template for release_readiness.py init (issue #350). Do not put secrets in a readiness file.",
+    "Owner pc = the home PC loop does it. Owner hafiz or mac = Hafiz's gate: listed, never counted, never done by the PC.",
+    "Tokens: <<name>> inside text and a whole-string @name are replaced at init (release, repo, branch, base, issue, github_repo, serving_commit, pr_numbers, suite_commands, e2e_commands, umbrella_script_dir).",
+    "Items that do not apply are set to na with a reason at init (--na ITEM=reason, --e2e-exception).",
+    "Rules live in docs/agent-playbooks/release-deploy-live-monitoring.md and AGENTS.md 'Build, Evidence, And Release'."
+  ],
+  "defaults": {
+    "agent-os": {
+      "github_repo": "hafizrazali90/sifututor-agent-os",
+      "suite_commands": [
+        "python3 scripts/agent-checks/agent-os-doc-navigation-check.py",
+        "python3 -m unittest discover -s scripts/agent-checks -p \"test_*.py\""
+      ],
+      "failing_first_command": "python3 -m unittest discover -s scripts/agent-checks -p \"test_*.py\"",
+      "failing_first_install": [],
+      "fix_allowed_paths": ["docs", "scripts", "README.md"],
+      "umbrella_script_dir": "scripts/agent-checks"
+    },
+    "ripple-suite": {
+      "github_repo": "Sifututor/ripple-suite",
+      "suite_commands": ["npm run lint", "npx tsc --noEmit", "npm run test:unit"],
+      "failing_first_command": "npx vitest run {files}",
+      "failing_first_install": ["npm ci --no-audit --no-fund --prefer-offline"],
+      "fix_allowed_paths": ["src", "tests", "docs", "public", "TESTING.md", "RELEASE-DOCS.md", "CHANGELOG.md"],
+      "umbrella_script_dir": "/home/hafiz/Projects/Sifututor/scripts/agent-checks"
+    }
+  },
+  "items": [
+    {
+      "id": "1", "group": "Plan", "owner": "pc", "action": "builder", "depends_on": ["2"],
+      "title": "Scope: what changes, who is affected, business-rule IDs, an acceptance example",
+      "instruction": "Read the release diff, issue <<issue>> and, when the repo has a docs/business-rules folder, the rules the change touches. Name the applicable business-rule IDs with their one-line meaning and give one concrete acceptance example in the form: given this real situation, when this happens, then this result. If no rule applies, write 'none found' and say where you looked.",
+      "doc": {"path": "release-pack/01-scope.md", "headings": ["What changes", "Who is affected", "Business rule IDs", "Acceptance example"]}
+    },
+    {
+      "id": "2", "group": "Plan", "owner": "pc", "action": "script",
+      "title": "Release source: an open PR names the exact commit; built on the serving production commit when one is given",
+      "check": {"type": "all_of", "checks": [{"type": "pr_exists"}, {"type": "commit_in_branch", "sha": "@serving_commit"}]}
+    },
+    {
+      "id": "3", "group": "Build proof", "owner": "pc", "action": "reviewer", "depends_on": ["2", "5"],
+      "title": "Cold review: an independent reviewer read the branch cold and said ACCEPT",
+      "instruction": "Review the release branch against its base as a release candidate. Check the scope in release-pack/01-scope.md if it exists, a test that cannot fail, a rule broken, a claim without evidence, a file outside scope, anything that could expose a secret or act without approval, and (when the repo has them) the TESTING.md row and the RELEASE-DOCS.md decision for the changed behaviour.",
+      "check": {"type": "verdict_file", "base": "pack", "path": "release-pack/review-3.md"}
+    },
+    {
+      "id": "4", "group": "Build proof", "owner": "pc", "action": "script", "depends_on": ["2"],
+      "title": "Failing-first evidence: every new test fails on the base and passes on the release",
+      "fix_on_failure": true,
+      "instruction": "A new or changed test must fail on the release base (with the release's test files copied onto it) and pass on the release. Strengthen the test so it fails without the change.",
+      "check": {"type": "failing_first", "test_command": "<<failing_first_command>>", "install": "@failing_first_install"}
+    },
+    {
+      "id": "5", "group": "Build proof", "owner": "pc", "action": "script", "depends_on": ["2"],
+      "title": "Suite: the project's own lint, type-check and unit tests pass on the PC",
+      "fix_on_failure": true,
+      "instruction": "Make the failing commands pass without loosening a test or skipping a check.",
+      "check": {"type": "commands_exit_zero", "commands": "@suite_commands"}
+    },
+    {
+      "id": "6", "group": "Build proof", "owner": "pc", "action": "builder", "depends_on": ["5"],
+      "title": "Browser or E2E: specs updated and run where an app is available, otherwise a named exception",
+      "instruction": "State which E2E or browser specs cover the changed behaviour and the exact command and exit code of the last run, or name one exception from AGENTS.md: missing credential, no safe representative data, destructive workflow, tooling unavailable, or not user-facing, with the reason. Do not claim a run you did not do.",
+      "doc": {"path": "release-pack/06-e2e.md", "headings": []},
+      "check": {"type": "file_contains", "base": "pack", "path": "release-pack/06-e2e.md",
+                "any_of": ["missing credential", "no safe representative data", "destructive workflow", "tooling unavailable", "not user-facing", "exit code 0"]}
+    },
+    {
+      "id": "7", "group": "Release pack", "owner": "pc", "action": "script", "depends_on": ["2"],
+      "title": "Coverage and docs: the staff documentation decision is present (and the TESTING.md row when the project has one)",
+      "fix_on_failure": true,
+      "instruction": "Add the release-documentation decision the check asks for, using the project's own RELEASE-DOCS.md format, or a concrete 'not relevant' reason.",
+      "check": {"type": "commands_exit_zero", "commands": ["python3 <<umbrella_script_dir>>/release_documentation.py --project . --mode blocking --base <<base>>"]}
+    },
+    {
+      "id": "8", "group": "Release pack", "owner": "pc", "action": "builder", "depends_on": ["2"],
+      "title": "Migration and rollback: migrations with rollback, or 'none'; flags and data changes; rollback steps",
+      "instruction": "List every migration in the release diff with how to roll it back, or write 'Migrations: none'. List flags and data changes (or 'none'). Write rollback steps in order. Never run a migration.",
+      "doc": {"path": "release-pack/08-migration-rollback.md", "headings": ["Migrations", "Flags and data changes", "Rollback steps"]}
+    },
+    {
+      "id": "9", "group": "Release pack", "owner": "pc", "action": "builder", "depends_on": ["8"],
+      "title": "Deploy plan: the exact commands per the project's deployment playbook, who runs each, in order",
+      "instruction": "Read the project's deployment playbook and write the exact deploy commands in order and who runs each (Hafiz or the Mac session). Do not run any of them. For Ripple, base the plan on the serving commit in the deploy target's own record, and note the live-commit check from docs/agent-playbooks/release-deploy-live-monitoring.md.",
+      "doc": {"path": "release-pack/09-deploy-plan.md", "headings": ["Commands in order", "Who runs each step"]}
+    },
+    {
+      "id": "10", "group": "Release pack", "owner": "pc", "action": "builder", "depends_on": ["9"],
+      "title": "Smoke and monitoring plan: normal smoke, a change smoke per changed workflow, the monitoring window",
+      "instruction": "Write the normal smoke, then a change smoke for every changed workflow with the role and login that will check it (never submit real data), then the monitoring window from the playbook table in docs/agent-playbooks/release-deploy-live-monitoring.md.",
+      "doc": {"path": "release-pack/10-smoke-monitoring.md", "headings": ["Normal smoke", "Change smoke", "Monitoring window"]}
+    },
+    {
+      "id": "11", "group": "Release pack", "owner": "pc", "action": "builder", "depends_on": ["1", "3", "5", "6", "7", "8", "9", "10"],
+      "title": "Review page draft: business and technical explanation side by side, risks, evidence, required approvals",
+      "instruction": "Draft the review page Hafiz confirms before any deploy. Business explanation and technical explanation side by side (two columns in a Markdown table). List the screenshots a person must still take (you cannot take them), the decisions, the risks, the evidence (commands with exit codes, PR numbers, job results in the release folder) and the approvals still required.",
+      "doc": {"path": "release-pack/11-review-page.md", "headings": ["Business explanation", "Technical explanation", "Screenshots needed", "Decisions", "Risks", "Evidence", "Required approvals"]}
+    },
+    {
+      "id": "12", "group": "Release pack", "owner": "pc", "action": "builder", "depends_on": ["1"],
+      "title": "Release notes draft",
+      "instruction": "Write short release notes in plain language for the people the change affects, in the project's existing release-note style if it has one.",
+      "doc": {"path": "release-pack/12-release-notes.md", "headings": ["Release notes"]}
+    },
+    {"id": "G1", "group": "Your gates", "owner": "hafiz", "status": "open", "title": "Review page confirmed by Hafiz"},
+    {"id": "G2", "group": "Your gates", "owner": "hafiz", "status": "open", "title": "Migration or data approval (only when item 8 lists any)"},
+    {"id": "G3", "group": "Your gates", "owner": "hafiz", "status": "open", "title": "Merge"},
+    {"id": "G4", "group": "Your gates", "owner": "hafiz", "status": "open", "title": "Production deploy go"},
+    {"id": "G5", "group": "Your gates", "owner": "mac", "status": "open", "title": "Production smoke: normal smoke and change smoke"},
+    {"id": "G6", "group": "Your gates", "owner": "mac", "status": "open", "title": "Production monitoring window checked"},
+    {"id": "G7", "group": "Your gates", "owner": "hafiz", "status": "open", "title": "Accepted and closed"}
+  ]
+}
