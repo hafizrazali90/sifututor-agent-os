@@ -267,7 +267,10 @@
           "Evidence",
           "Required approvals"
         ]
-      }
+      },
+      "reopens_gates_on_reset": [
+        "G1"
+      ]
     },
     {
       "id": "12",

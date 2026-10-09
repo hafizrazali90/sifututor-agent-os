@@ -330,6 +330,80 @@ class CommandsCheckTest(unittest.TestCase):
         self.assertIn("ok line", text)
 
 
+class EmptyAndBaselineChecksTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+
+    def test_a_check_with_no_command_proves_nothing(self) -> None:
+        for commands in ([], [""], ["   "]):
+            res = rr.check_commands_exit_zero({"commands": commands}, context(readiness([]), self.tmp, FakeShell()))
+            self.assertFalse(res["ok"], commands)
+        self.assertFalse(rr.check_all_of({"checks": []}, context(readiness([]), self.tmp, FakeShell()))["ok"])
+
+    def test_init_refuses_an_empty_suite_command(self) -> None:
+        with self.assertRaises(rr.ReadinessError):
+            rr.build_from_template(TEMPLATE, **init_args("agent-os", suite_commands=[""]))
+
+    def test_a_check_where_every_command_is_a_baseline_failure_is_not_green(self) -> None:
+        shell = FakeShell([(lambda argv: True, (1, "bad"))])
+        check = {"commands": [{"run": "lint", "baseline_reason": "known"}]}
+        res = rr.check_commands_exit_zero(check, context(readiness([]), self.tmp, shell))
+        self.assertFalse(res["ok"])
+        self.assertIn("at least one command must pass", res["summary"])
+
+    def test_the_summary_counts_real_passes_only(self) -> None:
+        shell = FakeShell([(lambda argv: argv[0] == "lint", (1, "bad"))])
+        check = {"commands": [{"run": "lint", "baseline_reason": "known"}, "tests"]}
+        res = rr.check_commands_exit_zero(check, context(readiness([]), self.tmp, shell))
+        self.assertTrue(res["ok"])
+        self.assertTrue(res["summary"].startswith("1 of 2 commands passed"))
+
+    def test_item_six_is_never_a_builders_word_init_needs_a_command_or_a_named_exception(self) -> None:
+        with self.assertRaises(rr.ReadinessError) as caught:
+            rr.build_from_template(TEMPLATE, **init_args("agent-os", e2e_exception="", e2e_commands=[]))
+        self.assertIn("--e2e-command", str(caught.exception))
+
+
+class VerdictTest(unittest.TestCase):
+    def test_only_a_line_that_starts_with_the_verdict_counts(self) -> None:
+        self.assertEqual(rr.parse_verdict("Verdict: ACCEPT\nfine"), "ACCEPT")
+        self.assertEqual(rr.parse_verdict("1. **Verdict:** CHANGES NEEDED\nx"), "CHANGES NEEDED")
+        self.assertEqual(rr.parse_verdict("no verdict at all"), "none")
+
+    def test_accepted_with_concerns_is_not_accept(self) -> None:
+        self.assertEqual(rr.parse_verdict("Verdict: ACCEPTED WITH CONCERNS"), "none")
+
+    def test_a_quoted_verdict_cannot_hide_the_real_one(self) -> None:
+        text = "Verdict: ACCEPT\n\nEarlier draft said:\nVerdict: CHANGES NEEDED\n"
+        self.assertEqual(rr.parse_verdict(text), "CHANGES NEEDED")
+        self.assertEqual(rr.parse_verdict("Verdict: ACCEPT\n**Verdict:** BLOCKED"), "BLOCKED")
+        self.assertEqual(rr.parse_verdict("The reviewer wrote 'Verdict: ACCEPT' in the middle of a sentence"), "none")
+
+
+class SecretNamesTest(unittest.TestCase):
+    def test_environment_and_key_file_names_are_never_read(self) -> None:
+        for name in (".env", ".env.local", "prod.env", "app.env.production", "credentials.json", "credentials", "server.p12",
+                     "store.pfx", "release.jks", "id_rsa", "key.pem", "tls.key"):
+            self.assertTrue(rr.is_secret_name(name), name)
+        for name in (".env.example", ".env.sample", ".env.dist", "TESTING.md", "environment.md", "keyboard.md", "RELEASE-DOCS.md"):
+            self.assertFalse(rr.is_secret_name(name), name)
+
+    def test_a_link_inside_the_folder_cannot_reach_a_file_outside_it(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        outside = tmp / "outside.txt"
+        outside.write_text("SECRET")
+        (tmp / "inside").mkdir()
+        (tmp / "inside" / "link.md").symlink_to(outside)
+        (tmp / "inside" / "to-env.md").symlink_to(tmp / ".env")
+        (tmp / ".env").write_text("TOKEN=1")
+        ctx = context(readiness([]), tmp / "inside", FakeShell(), worktree=tmp / "inside")
+        for name in ("link.md", "to-env.md"):
+            res = rr.check_file_contains({"path": name, "needle": "SECRET"}, ctx)
+            self.assertFalse(res["ok"], name)
+
+
 class FileChecksTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
@@ -497,6 +571,21 @@ class FailingFirstTest(unittest.TestCase):
         self.assertFalse(res["ok"])
         self.assertIn("fail on the release", res["summary"])
 
+    def test_a_base_run_that_could_not_start_the_tests_proves_nothing(self) -> None:
+        check = {"type": "failing_first", "test_command": "definitely-not-a-test-runner {files}", "install": []}
+        res = rr.check_failing_first(check, self.release(change_feature=True, test_value=2))
+        self.assertFalse(res["ok"])
+        self.assertIn("did not really run the tests", res["summary"])
+
+    def test_a_forbidden_install_command_is_refused_and_never_run(self) -> None:
+        marker = self.tmp / "ran.txt"
+        check = {"type": "failing_first", "test_command": f"{sys.executable} -m unittest {{files}}",
+                 "install": [f"ssh evil touch {marker}"]}
+        res = rr.check_failing_first(check, self.release(change_feature=True, test_value=2))
+        self.assertFalse(res["ok"])
+        self.assertIn("refused", res["summary"])
+        self.assertFalse(marker.exists())
+
     def test_no_test_file_in_the_release_is_red(self) -> None:
         (self.repo / "notes.txt").write_text("x")
         git(self.repo, "add", "-A")
@@ -517,12 +606,18 @@ class ForbiddenTest(unittest.TestCase):
         "npm run deploy", "./deploy.sh prod", "bash deploy-ripple.sh", "ssh root@server ls", "scp a b:/x",
         "mysql -e 'select 1'", "psql -c x", 'DELETE FROM invoices WHERE id=1', "curl -X POST https://x/api",
         "pm2 restart ripple", "set-runtime-flag foo on", "kubectl apply -f x",
+        # found by the cold review: flags and options between the program and its verb
+        "gh -R Sifututor/ripple-suite pr merge 1630", "gh --repo o/r pr merge 5", "git -C . push origin main", "git -C x merge dev",
+        "npx prisma db push", "npm run migrate", "node scripts/migrate.js", "php artisan db:seed --force",
+        "gh workflow run deploy.yml", "gh release create v1", "npm publish", "curl -d x https://p", "wget --post-data=a http://x",
+        "gh api -X POST repos/o/r/dispatches", "git push origin +HEAD:rel", "git push --mirror", "git push origin :old",
     ]
     ALLOWED = [
         "npm run lint", "npx tsc --noEmit", "npm run test:unit", "python3 -m unittest discover -s scripts/agent-checks",
         "git push origin HEAD:refs/heads/feat/350-demo", "gh pr view 12 --json state", "git diff origin/main...HEAD",
         "python3 scripts/agent-checks/agent-os-doc-navigation-check.py", "npx vitest run src/a.test.ts",
         "curl https://example.com/health", "update the file set up", "write the deploy plan",
+        "git merge-base --is-ancestor abc origin/feat/x", "Never run a migration.", "Migrations: none", "gh pr view 5 --json state",
     ]
 
     def test_forbidden_commands_are_detected(self) -> None:
@@ -541,6 +636,12 @@ class ForbiddenTest(unittest.TestCase):
         self.assertIn("deploy", rr.forbidden_in_item(item("1", action="deploy")))
         self.assertIn("merge", rr.forbidden_in_item(item("1", action="builder", instruction="then run gh pr merge 4")))
         self.assertIsNone(rr.forbidden_in_item(item("1", check={"type": "commands_exit_zero", "commands": ["npm run lint"]})))
+
+    def test_a_failing_first_check_is_screened_for_its_test_command_and_its_install_commands(self) -> None:
+        bad_install = item("1", check={"type": "failing_first", "test_command": "npx vitest run", "install": ["ssh a b"]})
+        bad_test = item("1", check={"type": "failing_first", "test_command": "php artisan migrate", "install": []})
+        self.assertIn("deploy", rr.forbidden_in_item(bad_install))
+        self.assertIn("migrate", rr.forbidden_in_item(bad_test))
 
     def test_no_template_item_is_forbidden(self) -> None:
         for repo in rr.REPOS:
@@ -757,6 +858,22 @@ class GateTest(unittest.TestCase):
         data["staging_sha"] = "abc1234"
         self.assertTrue(rr.check_commit_in_branch(check, context(data, self.tmp, shell))["ok"])
         self.assertIn("abc1234", " ".join(shell.calls[0][0]))
+
+
+class MarkLockTest(unittest.TestCase):
+    def test_mark_is_refused_while_a_loop_owns_the_checkpoint(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        path = tmp / "r.json"
+        rr.save(path, rr.build_from_template(TEMPLATE, **init_args("agent-os")))
+        lock = rr.acquire_lock(tmp)
+        out: list[str] = []
+        code = rr.main(["mark", str(path), "2", "--status", "green", "--note", "x"], out=out.append)
+        self.assertEqual(code, 2)
+        self.assertIn("a loop is running", "\n".join(out))
+        self.assertEqual(rr.item_map(rr.load(path))["2"]["status"], "open")
+        lock.close()
+        self.assertEqual(rr.main(["mark", str(path), "2", "--status", "green", "--note", "x"], out=out.append), 0)
 
 
 class CliTest(unittest.TestCase):

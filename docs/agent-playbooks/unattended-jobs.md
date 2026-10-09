@@ -157,6 +157,9 @@ and [release-documentation.md](release-documentation.md).
 | 12 | Release notes draft | builder drafts it |
 | S4 | Promotion PR holds the staging-tested commit (staging-first only) | script (`gh pr view`, `git merge-base` with the SHA recorded when S2 was closed) |
 
+Item 6 is never a builder's word: `init` requires either `--e2e-command` (the loop
+runs it) or `--e2e-exception` (a named exception from `AGENTS.md`).
+
 Drafts land in `release-pack/` next to the checkpoint. Screenshots of UI changes
 are listed as "still needed" because the PC cannot take them.
 
@@ -185,7 +188,10 @@ finish state `local` or `committed` only. Every action ends with an atomic save
 of `readiness.json`, and the in-flight action is written before it starts, so a
 restart resumes exactly and re-runs only the action that was cut off. A pushed
 fix changes the release commit, so proof taken on the old commit (script and
-review items) is reset and checked again on the new one.
+review items, and the drafts, which are written again) is reset and checked again on the new one. If a
+reset redrafts the review page after Hafiz confirmed it, gate G1 reopens. Before declaring
+`ready_for_prod_go` the loop re-reads the release branch tip once more, so a push that
+landed meanwhile is never missed.
 
 **Waiting for gates.** When every open item is a gate owned by `mac` or
 `hafiz` (or waits only on one), the loop does not stop. Its status is `waiting`
@@ -202,7 +208,7 @@ are stop conditions:
 | --- | --- | --- |
 | `ready_for_prod_go` | Prod readiness is 100 percent | Read `release-report.md` and the review page draft, then say go and run the deploy commands yourself |
 | `waiting` (not an end) | only gates are left | Close them with `pc_release.py gate`; the loop continues by itself |
-| `blocked` | the same item failed or was blocked twice; or nothing can run (a PC item is blocked); or fixes keep resetting the same item three times | Read the reason in the report. Fix the cause (or do the item by hand with `release_readiness.py mark`), then `mark ... --status open --reset-failures` and `resume` |
+| `blocked` | the same item failed or was blocked twice; or nothing can run (a PC item is blocked); or fixes have reset the same item five times (they keep undoing each other) | Read the reason in the report. Fix the cause (or do the item by hand with `release_readiness.py mark`), then `mark ... --status open --reset-failures` and `resume` |
 | `stuck` | two rounds in a row with no change in score and no new evidence | Look at the last events in `readiness.json` (`loop.events`); the job is probably changing nothing. Change the item or mark it by hand, then `resume` |
 | `stopped` | a `STOP` file next to the checkpoint | `resume` when ready; the stop takes effect after the current action, or at once for a running command |
 
@@ -237,7 +243,8 @@ python3 scripts/agent-checks/pc_release.py clean RELEASE_ID
 `gate` only closes items owned by `hafiz` or `mac`; it refuses a PC item, so a
 person cannot mark the PC's proof green. When the loop is running, a gate or
 route request is queued in `inbox/` and the loop applies it before its next
-action (it never overwrites the checkpoint behind the loop's back). `--simulated`
+action (it never overwrites the checkpoint behind the loop's back; a request queued in the very
+moment the loop ends waits in `inbox/` until the next `resume`, and `status` shows it). `--simulated`
 is for proof runs only: the evidence and every report say SIMULATED so no one
 mistakes it for a real merge, deploy or approval.
 

@@ -436,6 +436,64 @@ class StopRulesTest(LoopCase):
         self.assertIn("keep undoing each other", self.saved()["loop"]["reason"])
 
 
+class StaleProofTest(LoopCase):
+    def moving_shell(self, state: dict):
+        def rev(argv):
+            return 0, state["sha"] + "\n"
+        return FakeShell([*pr_rules()[:1], (lambda argv: argv[:2] == ["git", "rev-parse"], rev)])
+
+    def test_a_moved_release_redrafts_the_pack_reopens_the_review_page_gate_and_checks_again(self) -> None:
+        state = {"sha": SHA_1}
+        loop = self.make(full_data(), shell=self.moving_shell(state))
+        self.assertEqual(loop.run(), "ready_for_prod_go")
+        first_jobs = len(self.jobs.calls)
+        self.assertEqual(rr.item_map(self.saved())["G1"]["status"], "green")
+        state["sha"] = SHA_2  # somebody pushed to the release branch after it was ready
+        self.on_sleep = lambda n: self.close_gate("G1", "confirmed again after the redraft")
+        again = rl.Loop(self.path, self.jobs, self.shell, repo_root=self.tmp / "repo", worktrees=self.tmp / "wts",
+                        log=lambda message: None, wait_seconds=2, poll_seconds=1, sleep=self.fake_sleep)
+        self.assertEqual(again.run(), "ready_for_prod_go")
+        final = self.saved()
+        self.assertEqual(len(self.jobs.calls) - first_jobs, 7, "the six drafts and the cold review run again on the new commit")
+        by = rr.item_map(final)
+        self.assertTrue(all(by[i]["verified_sha"] == SHA_2 for i in ("1", "2", "3", "5", "8", "9", "10", "11", "12")))
+        self.assertTrue(any("reopened" in e.get("note", "") for e in by["G1"]["evidence"]))
+        self.assertGreaterEqual(self.sleeps, 1, "it had to wait for the review page to be confirmed again")
+
+    def test_a_push_that_lands_while_it_declares_ready_is_noticed(self) -> None:
+        state = {"sha": SHA_1}
+        shell = self.moving_shell(state)
+        loop = self.make(full_data(), shell=shell)
+        calls = {"n": 0}
+        real_run = shell.run
+
+        def run(argv, cwd=None, stop_check=None):
+            if argv[:2] == ["git", "rev-parse"]:
+                calls["n"] += 1
+                if calls["n"] >= 2:
+                    state["sha"] = SHA_2
+            return real_run(argv, cwd=cwd, stop_check=stop_check)
+
+        shell.run = run
+        self.on_sleep = lambda n: self.close_gate("G1", "again")
+        loop.run()
+        self.assertEqual(self.saved()["loop"]["release_sha"], SHA_2, "the loop must end on the branch tip it can see")
+        self.assertEqual(rr.item_map(self.saved())["12"]["verified_sha"], SHA_2)
+
+
+class JobSequenceTest(LoopCase):
+    def test_the_job_number_is_on_disk_before_the_job_starts(self) -> None:
+        loop = self.make(full_data(), jobs=FakeJobs(kill_at=1))
+        with self.assertRaises(Killed):
+            loop.run()
+        self.assertEqual(self.saved()["loop"]["job_seq"], 1, "a restart must not reuse the number, or the branch name collides")
+        again = rl.Loop(self.path, FakeJobs(), FakeShell(pr_rules()), repo_root=self.tmp / "repo", worktrees=self.tmp / "wts",
+                        log=lambda message: None, wait_seconds=2, poll_seconds=1, sleep=self.fake_sleep)
+        self.assertEqual(again.run(), "ready_for_prod_go")
+        first_branch = {c["fields"]["branch"] for c in again.jobs.calls if "branch" in c["fields"]}
+        self.assertNotIn("docs/release-draft-%s-1-1" % self.saved()["loop"]["token"], first_branch)
+
+
 class ForbiddenTest(LoopCase):
     def test_a_merge_item_becomes_a_hafiz_gate_and_the_loop_keeps_going(self) -> None:
         items = [it("1", **cmd("fine one")), it("2", **cmd("gh pr merge 5 --merge")), it("3", depends_on=["1"], **cmd("fine three"))]

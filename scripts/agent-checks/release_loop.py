@@ -52,7 +52,7 @@ import release_readiness as rr  # noqa: E402
 
 STOP_NAME = "STOP"
 FIX_TEXT_LIMIT = 6000
-MAX_RESETS = 3  # a fix that keeps undoing another item's proof is a loop, not progress
+MAX_RESETS = 5  # a fix that keeps undoing another item's proof is a loop, not progress
 
 
 class LoopError(RuntimeError):
@@ -147,6 +147,7 @@ class Loop:
 
     def next_seq(self) -> int:
         self.loop["job_seq"] = int(self.loop.get("job_seq", 0)) + 1
+        self.checkpoint()  # a restart after a power cut must not hand the next job the same branch name
         return self.loop["job_seq"]
 
     def branch_token(self) -> str:
@@ -201,13 +202,19 @@ class Loop:
     def reset_sensitive(self, sha: str) -> None:
         """The release changed: proof taken on the old commit no longer proves the new one."""
         for item in self.data["items"]:
-            sensitive = item.get("sha_sensitive", item.get("action") in ("script", "reviewer"))
+            sensitive = item.get("sha_sensitive", item.get("action") in ("script", "reviewer") or bool(item.get("doc")))
             if (rr.is_pc_item(item) and item.get("status") == "green" and sensitive
                     and item.get("verified_sha") and item["verified_sha"] != sha):
                 item["status"] = "open"
                 item["resets"] = int(item.get("resets", 0)) + 1
                 rr.add_evidence(item, note=f"proof reset: the release moved to {sha[:10]}, so this is checked again")
                 self.event(f"item {item['id']} reset because the release moved to {sha[:10]}")
+                for gate_id in item.get("reopens_gates_on_reset", []):
+                    gate = self.items().get(gate_id)
+                    if gate is not None and gate.get("status") == "green":
+                        gate["status"] = "open"
+                        rr.add_evidence(gate, note=f"reopened: item {item['id']} was redrafted for {sha[:10]}, so the earlier confirmation no longer covers it")
+                        self.event(f"gate {gate_id} reopened because item {item['id']} is redrafted")
 
     # ---- recording ----
 
@@ -492,10 +499,22 @@ class Loop:
             return []
         return rr.waiting_gates(self.data)
 
+    def release_moved(self) -> bool:
+        """Re-read the release branch tip. If it moved, the proof on the old commit is reset (ensure_worktree does that)."""
+        old = self.sha()
+        try:
+            self.ensure_worktree()
+        except LoopError:
+            return False
+        return self.sha() != old
+
     def step(self) -> tuple[str, str] | None:
         self.merge_inbox()
         self.hand_forbidden_to_hafiz()
         if rr.score(self.data)["prod_ready"]:
+            if self.release_moved():
+                self.checkpoint()
+                return None  # somebody pushed to the release branch: check it again before declaring it ready
             return "ready_for_prod_go", ""
         reason = self.blocked_reason()
         if reason:
@@ -529,8 +548,9 @@ class Loop:
         fps = self.loop.setdefault("fingerprints", [])
         fps.append(self.fingerprint())
         self.checkpoint()
-        if rr.score(self.data)["prod_ready"]:
+        if rr.score(self.data)["prod_ready"] and not self.release_moved():
             return "ready_for_prod_go", ""
+        self.checkpoint()
         reason = self.blocked_reason()
         if reason:
             return "blocked", reason
@@ -755,7 +775,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--clear-stop", action="store_true"); p.add_argument("--drop-task")
     p.add_argument("--repo", type=Path); p.add_argument("--claude"); p.add_argument("--worktrees", type=Path)
     args = parser.parse_args(argv)
-    lock = acquire_lock(args.readiness)
+    lock = None
+    for _ in range(6):  # a gate request holds the lock for a moment; wait it out before saying a loop is already running
+        lock = acquire_lock(args.readiness)
+        if lock is not None:
+            break
+        time.sleep(1)
     if lock is None:
         print("Another loop is already running on this readiness file.")
         return 3

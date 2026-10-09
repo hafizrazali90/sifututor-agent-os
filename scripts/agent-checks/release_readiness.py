@@ -54,28 +54,36 @@ PROTECTED_BRANCHES = ("main", "master", "production", "prod", "staging")
 E2E_EXCEPTIONS = ("missing credential", "no safe representative data", "destructive workflow",
                   "tooling unavailable", "not user-facing")
 
-VERDICT_RE = re.compile(r"Verdict:?\**\s*(ACCEPT|CHANGES NEEDED|BLOCKED)")
+VERDICT_RE = re.compile(r"(?m)^[\s>*#\d.\-]*\**Verdict:?\**\s*(ACCEPT|CHANGES NEEDED|BLOCKED)\b")
+VERDICT_RANK = {"ACCEPT": 0, "CHANGES NEEDED": 1, "BLOCKED": 2}
+
+
+def parse_verdict(text: str) -> str:
+    """The worst verdict that starts a line. 'ACCEPTED WITH CONCERNS' is not ACCEPT, and a quoted verdict cannot hide a real one."""
+    found = [m.group(1) for m in VERDICT_RE.finditer(text)]
+    return max(found, key=VERDICT_RANK.get) if found else "none"
 ENV_FILE_OK = (".env.example", ".env.sample", ".env.dist")
 
 # What the PC must never run (merge, deploy, migrate, write production data).
 # These patterns are shaped like commands, so ordinary prose such as "write the
 # deploy plan" does not match. An item that matches becomes a Hafiz gate.
 FORBIDDEN_PATTERNS: tuple[tuple[str, str], ...] = (
-    ("merge", r"\bgh\s+pr\s+merge\b"),
-    ("merge", r"\bgh\s+api\b[^\n]*\b(merge|deployments?)\b"),
-    ("merge", r"\bgit\s+merge\b"),
-    ("merge", r"\bgit\s+push\b[^\n]*(\b(main|master|production|prod)\b|--force|--delete|\s-f\b)"),
-    ("migrate", r"\bartisan\s+migrate\b"),
-    ("migrate", r"\b(prisma|knex|sequelize|typeorm|drizzle-kit)\b[^\n]*\bmigrat\w*"),
-    ("migrate", r"\bdb:migrate\b|\bmigrate:(fresh|refresh|rollback|reset)\b|\balembic\s+upgrade\b|\bflyway\s+migrate\b"),
-    ("deploy", r"\b(npm|pnpm|yarn)\s+(run\s+)?deploy\b"),
+    ("merge", r"\bgh\b[^\n]*\bpr\s+(merge|ready)\b"),
+    ("merge", r"\bgh\b[^\n]*\bapi\b[^\n]*(\b(merge|deployments?|dispatches)\b|(-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b|\s-f\s|\s-F\s|--field|--raw-field|--input)"),
+    ("merge", r"\bgit\b[^\n]*\bmerge\b(?!-)"),
+    ("merge", r"\bgit\b[^\n]*\bpush\b[^\n]*(\b(main|master|production|prod)\b|--force|--mirror|--delete|--prune|\s-f\b|\s\+\S|\s:\S)"),
+    ("merge", r"\bgh\b[^\n]*\b(release\s+(create|upload|edit|delete)|workflow\s+run)\b"),
+    ("deploy", r"\b(npm|pnpm|yarn)\b[^\n]*\b(deploy|publish)\b"),
+    ("migrate", r"\bmigrate\b|\bmigrate[:_-]\w+|\bmigrations?[./_-]\w*\.(js|ts|py|sh|sql)\b"),
+    ("migrate", r"\bdb:(seed|push|reset|drop|fresh)\b|\bdb\s+(push|seed|reset|execute)\b|\bprisma\b[^\n]*\b(db|migrate)\b|\balembic\s+upgrade\b|\bflyway\b|\bknex\b|\bsequelize\b|\btypeorm\b|\bdrizzle-kit\b"),
     ("deploy", r"\bdeploy[-_.\w]*\.sh\b|(^|\s)\./deploy\b|\bset-runtime-flag\b"),
-    ("deploy", r"\bpm2\s+(restart|reload|start|deploy)\b|\bsystemctl\s+(restart|start|reload)\b"),
-    ("deploy", r"\bkubectl\s+(apply|rollout|set|delete)\b|\bvercel\s+(--prod|deploy)\b"),
+    ("deploy", r"\bpm2\s+(restart|reload|start|deploy)\b|\bsystemctl\s+(restart|start|reload|stop)\b"),
+    ("deploy", r"\bkubectl\s+(apply|rollout|set|delete|scale)\b|\bvercel\s+(--prod|deploy)\b|\bterraform\s+(apply|destroy)\b"),
     ("deploy", r"(^|\s)(ssh|scp|sftp)\s|\brsync\b[^\n]*:"),
     ("production data write", r"\b(mysql|mysqldump|psql|mongosh|redis-cli|sqlcmd)\b"),
     ("production data write", r"(?-i:\b(DROP\s+TABLE|DELETE\s+FROM|INSERT\s+INTO|TRUNCATE\s+TABLE|UPDATE\s+\w+\s+SET)\b)"),
-    ("production data write", r"\bcurl\b[^\n]*\s(-X|--request)\s*(POST|PUT|PATCH|DELETE)\b"),
+    ("production data write", r"\bcurl\b[^\n]*(\s(-X|--request)[\s=]*(POST|PUT|PATCH|DELETE)\b|\s(-d|--data\S*|-F|--form\S*|-T|--upload-file|--json)\b)"),
+    ("production data write", r"\bwget\b[^\n]*(--post\S*|--method[\s=]*(POST|PUT|PATCH|DELETE)|--body\S*)"),
 )
 FORBIDDEN_ACTION_WORDS = ("merge", "deploy", "migrate", "release", "publish", "prod_write", "production")
 _FORBIDDEN_RE = tuple((name, re.compile(rx, re.IGNORECASE)) for name, rx in FORBIDDEN_PATTERNS)
@@ -453,6 +461,8 @@ def _check_commands(check: dict[str, Any] | None) -> list[str]:
     kind = check.get("type")
     if kind == "commands_exit_zero":
         return [c["run"] if isinstance(c, dict) else c for c in check.get("commands", [])]
+    if kind == "failing_first":
+        return [str(check.get("test_command", ""))] + [str(c) for c in check.get("install", [])]
     if kind == "all_of":
         return [cmd for sub in check.get("checks", []) for cmd in _check_commands(sub)]
     return []
@@ -516,17 +526,35 @@ def result(ok: bool, summary: str, evidence: list[dict[str, Any]] | None = None,
     return {"ok": ok, "summary": summary, "evidence": evidence or [], "detail": detail}
 
 
+def is_secret_name(name: str) -> str:
+    """Why a file name must never be read (environment file or key material), or an empty string."""
+    lower = name.lower()
+    if (lower.startswith(".env") or lower.endswith(".env") or ".env." in lower) and name not in ENV_FILE_OK:
+        return f"{name} is an environment file and is never read"
+    if lower.endswith((".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".kdbx")) or lower.startswith(("id_", "credentials")):
+        return f"{name} looks like a key or credentials file and is never read"
+    return ""
+
+
 def _safe_file(base: Path | None, relative: str) -> tuple[Path | None, str]:
     if base is None:
         return None, "the folder to read from is not available yet"
     if not relative or relative.startswith("/") or ".." in Path(relative).parts:
         return None, f"path {relative!r} leaves the release folder"
-    name = Path(relative).name
-    if name.startswith(".env") and name not in ENV_FILE_OK:
-        return None, f"{name} is an environment file and is never read"
-    if name.endswith((".pem", ".key")) or name.startswith("id_"):
-        return None, f"{name} looks like a key file and is never read"
-    return base / relative, ""
+    problem = is_secret_name(Path(relative).name)
+    if problem:
+        return None, problem
+    target = base / relative
+    try:
+        resolved = target.resolve()
+        if not resolved.is_relative_to(base.resolve()):
+            return None, f"path {relative!r} leaves the release folder through a link"
+        problem = is_secret_name(resolved.name)
+        if problem:
+            return None, problem
+    except OSError:
+        return None, f"cannot resolve {relative!r}"
+    return target, ""
 
 
 def check_file_contains(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
@@ -560,8 +588,7 @@ def check_verdict_file(check: dict[str, Any], ctx: CheckContext) -> dict[str, An
         text = path.read_text(errors="replace")
     except OSError:
         return result(False, f"{check['path']} does not exist yet")
-    found = VERDICT_RE.search(text)
-    verdict = found.group(1) if found else "none"
+    verdict = parse_verdict(text)
     evidence = [{"path": check["path"], "verdict": verdict}]
     if verdict == "ACCEPT":
         return result(True, "the reviewer said ACCEPT", evidence)
@@ -585,7 +612,10 @@ def check_commands_exit_zero(check: dict[str, Any], ctx: CheckContext) -> dict[s
     failures: list[str] = []
     baseline: list[str] = []
     detail_parts: list[str] = []
-    for command, baseline_reason in _commands(check):
+    wanted = [(c, r) for c, r in _commands(check) if c.strip()]
+    if not wanted:
+        return result(False, "the check lists no command to run, so it proves nothing")
+    for command, baseline_reason in wanted:
         found = forbidden_text(command)
         if found:
             return result(False, f"refused: {command[:60]} would {found}")
@@ -604,11 +634,14 @@ def check_commands_exit_zero(check: dict[str, Any], ctx: CheckContext) -> dict[s
             failures.append(f"{command} (exit {code})")
             detail_parts.append(f"$ {command}\nexit code {code}\n{tail(output, 60)}")
         evidence.append(entry)
-    summary = f"{len(evidence) - len(failures)} of {len(evidence)} commands passed"
+    passed = sum(1 for e in evidence if e["exit_code"] == 0)
+    summary = f"{passed} of {len(evidence)} commands passed"
     if baseline:
         summary += "; baseline failures reported separately: " + ", ".join(baseline)
     if failures:
         return result(False, summary + "; failed: " + ", ".join(failures), evidence, "\n\n".join(detail_parts))
+    if passed == 0:
+        return result(False, summary + "; at least one command must pass for the check to prove anything", evidence)
     return result(True, summary, evidence)
 
 
@@ -668,6 +701,7 @@ def check_commit_in_branch(check: dict[str, Any], ctx: CheckContext) -> dict[str
     return result(False, f"the release does not contain commit {sha[:10]} (exit {code})", evidence, tail(output, 10))
 
 
+BROKEN_RUN_RE = re.compile(r"command not found|No module named|Cannot find module|ENOENT|is not recognized|not found: ", re.IGNORECASE)
 TEST_FILE_RE = re.compile(r"(\.test\.|\.spec\.|/__tests__/|(^|/)test_[^/]*\.py$)")
 
 
@@ -706,6 +740,9 @@ def check_failing_first(check: dict[str, Any], ctx: CheckContext) -> dict[str, A
         if code != 0:
             return result(False, f"could not copy the test files to the base (exit {code})", detail=tail(output, 10))
         for install in check.get("install", []):
+            found = forbidden_text(install)
+            if found:
+                return result(False, f"refused: the install command would {found}")
             code, output = shell.run(shlex.split(install), cwd=scratch, stop_check=ctx.stop_check)
             evidence.append({"command": install + " (on the base)", "exit_code": code})
             if code != 0:
@@ -724,6 +761,9 @@ def check_failing_first(check: dict[str, Any], ctx: CheckContext) -> dict[str, A
                          "output_tail": tail(after_out, 12)})
     finally:
         shell.run(["git", "worktree", "remove", "--force", str(scratch)], cwd=cwd)
+    if before_code in (126, 127) or BROKEN_RUN_RE.search(before_out):
+        return result(False, "the run on the base did not really run the tests (command or module not found), "
+                             "so a failure there proves nothing", evidence, tail(before_out, 40))
     if before_code == 0:
         return result(False, "the new tests PASS on the base, so they do not prove the change", evidence,
                       "The test command exited 0 on the base with the release's test files:\n" + tail(before_out, 40))
@@ -733,6 +773,8 @@ def check_failing_first(check: dict[str, Any], ctx: CheckContext) -> dict[str, A
 
 
 def check_all_of(check: dict[str, Any], ctx: CheckContext) -> dict[str, Any]:
+    if not check.get("checks"):
+        return result(False, "all_of lists no check, so it proves nothing")
     evidence: list[dict[str, Any]] = []
     summaries: list[str] = []
     details: list[str] = []
@@ -818,6 +860,11 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
     by_id = {i["id"]: i for i in items}
     if not serving_commit:
         by_id["2"]["check"]["checks"] = [c for c in by_id["2"]["check"]["checks"] if c["type"] != "commit_in_branch"]
+    if not e2e_commands and not e2e_exception:
+        raise ReadinessError("item 6 needs proof the PC can check: give --e2e-command (run it) or --e2e-exception "
+                             "(one named in AGENTS.md: " + ", ".join(E2E_EXCEPTIONS) + ")")
+    if any(not c.strip() for c in (suite_commands or []) + e2e_commands):
+        raise ReadinessError("a suite or E2E command must not be empty")
     if e2e_commands:
         by_id["6"]["action"] = "script"
         by_id["6"]["check"] = {"type": "commands_exit_zero", "commands": list(e2e_commands)}
@@ -964,6 +1011,10 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
             item = next_item(data)
             out(f"{item['id']}: {item['title']} (action {item.get('action')})" if item else "none")
         elif args.cmd == "mark":
+            lock = acquire_lock(args.file.parent)
+            if lock is None:
+                raise ReadinessError("a loop is running on this file; stop it first (pc_release.py stop), or use gate for a gate")
+            data = load(args.file)  # read after taking the lock, so no loop can write in between
             items = item_map(data)
             if args.item not in items:
                 raise ReadinessError(f"no item {args.item}")
