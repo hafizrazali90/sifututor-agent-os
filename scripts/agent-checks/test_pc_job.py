@@ -25,6 +25,7 @@ REAL_RENDER = HERE / "render-claude-settings.py"
 FAKE_CLAUDE = r"""#!/bin/sh
 # fake claude: behaviour chosen by FAKE_MODE
 printf '%s\n' "$@" > "$ARGV_LOG"
+printf '%s' "$CLAUDE_CONFIG_DIR" > "$CFG_LOG"
 ok='{"type":"result","subtype":"success","is_error":false,"num_turns":2,"total_cost_usd":0.12,"result":"%s"}'
 case "$FAKE_MODE" in
   edit_commit)   echo x >> docs/a.md; git add docs/a.md; git commit -q -m "docs: change a"; printf "$ok" "Status: done" ;;
@@ -99,20 +100,30 @@ class RunnerTest(unittest.TestCase):
             (self.bin / name).write_text(body)
             (self.bin / name).chmod(0o755)
         self.argv_log, self.gh_log = self.tmp / "argv.log", self.tmp / "gh.log"
+        self.cfg_log = self.tmp / "cfg.log"
+        self.home = self.tmp / "home"
+        (self.home / ".claude").mkdir(parents=True)
+        (self.home / ".claude-chrome").mkdir()
         self.worktrees = self.tmp / "worktrees"
         env = {
-            "PATH": f"{self.bin}:{os.environ['PATH']}", "ARGV_LOG": str(self.argv_log), "GH_LOG": str(self.gh_log),
+            "PATH": f"{self.bin}:{os.environ['PATH']}", "ARGV_LOG": str(self.argv_log), "GH_LOG": str(self.gh_log), "CFG_LOG": str(self.cfg_log),
             "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
         }
         patcher = mock.patch.dict(os.environ, env)
         patcher.start()
         self.addCleanup(patcher.stop)
+        home_patcher = mock.patch.object(pc_job, "PC_HOME", str(self.home))
+        home_patcher.start()
+        self.addCleanup(home_patcher.stop)
+
+    account = "work"
 
     def job(self, brief: str, mode: str, name: str = "20261008-100000-test") -> Path:
         job_dir = self.tmp / "jobs" / name
         job_dir.mkdir(parents=True)
         (job_dir / "brief.md").write_text(brief)
         (job_dir / "role.txt").write_text("ROLE TEXT")
+        (job_dir / "account.txt").write_text(self.account)
         os.environ["FAKE_MODE"] = mode
         return job_dir
 
@@ -124,6 +135,64 @@ class RunnerTest(unittest.TestCase):
     def builder(self, finish: str = "local", extra: str = "", mode: str = "edit_commit") -> tuple[Path, dict]:
         job_dir = self.job(BRIEF.format(finish=finish, extra=extra), mode)
         return job_dir, self.run_job(job_dir)
+
+    # ------------------------------------------------------- account choice ----
+
+    def test_job_runs_under_the_second_account_folder(self) -> None:
+        self.account = "second"
+        _, status = self.builder()
+        self.assertEqual(status["account"], "second")
+        self.assertEqual(self.cfg_log.read_text(), str(self.home / ".claude-chrome"))
+
+    def test_job_runs_under_the_work_account_folder(self) -> None:
+        _, status = self.builder()
+        self.assertEqual(status["account"], "work")
+        self.assertEqual(self.cfg_log.read_text(), str(self.home / ".claude"))
+
+    def test_job_without_an_account_is_refused_before_claude_starts(self) -> None:
+        job_dir = self.job(BRIEF.format(finish="local", extra=""), "edit_commit")
+        (job_dir / "account.txt").unlink()
+        status = self.run_job(job_dir)
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("no account", status["reason"])
+        self.assertFalse(self.argv_log.exists())
+
+    def test_unknown_account_is_refused_before_claude_starts(self) -> None:
+        self.account = "bogus"
+        _, status = self.builder()
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("unknown account", status["reason"])
+        self.assertFalse(self.argv_log.exists())
+
+    def test_missing_account_folder_is_refused_before_claude_starts(self) -> None:
+        self.account = "second"
+        shutil.rmtree(self.home / ".claude-chrome")
+        _, status = self.builder()
+        self.assertEqual(status["state"], "blocked")
+        self.assertIn("not signed in on this PC", status["reason"])
+        self.assertFalse(self.argv_log.exists())
+
+    def test_submit_requires_an_account_choice(self) -> None:
+        brief = self.tmp / "brief.md"
+        brief.write_text(BRIEF.format(finish="local", extra=""))
+        with self.assertRaises(SystemExit) as exc:
+            pc_job.main(["submit", str(brief), "--dry-run"])
+        self.assertEqual(exc.exception.code, 2)
+
+    def test_submit_stores_the_chosen_account_in_the_job_folder(self) -> None:
+        brief = self.tmp / "brief.md"
+        brief.write_text(BRIEF.format(finish="local", extra=""))
+        captured: dict[str, str] = {}
+
+        def fake_install(job_id: str, files: dict[str, str], folder: str = "jobs") -> str:
+            captured.update(files)
+            return ""
+
+        with mock.patch.object(pc_job, "install_script", side_effect=fake_install), \
+                mock.patch.object(pc_job, "run_ssh", return_value=""):
+            code = pc_job.main(["submit", str(brief), "--account", "second"])
+        self.assertEqual(code, 0)
+        self.assertEqual(captured["account.txt"].strip(), "second")
 
     # ------------------------------------------------------------ builder ----
 
@@ -385,14 +454,14 @@ class MacSideTest(unittest.TestCase):
     def test_invalid_brief_is_refused_without_calling_the_pc(self) -> None:
         runner = mock.Mock()
         lines: list[str] = []
-        code = pc_job.submit(self.brief_file(BRIEF.format(finish="deployed", extra="")), runner=runner, out=lines.append)
+        code = pc_job.submit(self.brief_file(BRIEF.format(finish="deployed", extra="")), account="work", runner=runner, out=lines.append)
         self.assertEqual(code, 2)
         runner.assert_not_called()
         self.assertTrue(any("cannot merge or deploy" in line for line in lines))
 
     def test_dry_run_calls_nothing(self) -> None:
         runner = mock.Mock()
-        code = pc_job.submit(self.brief_file(BRIEF.format(finish="local", extra="")), dry_run=True, runner=runner, out=lambda _: None)
+        code = pc_job.submit(self.brief_file(BRIEF.format(finish="local", extra="")), account="work", dry_run=True, runner=runner, out=lambda _: None)
         self.assertEqual(code, 0)
         runner.assert_not_called()
 
@@ -404,7 +473,7 @@ class MacSideTest(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
 
         lines: list[str] = []
-        code = pc_job.submit(self.brief_file(BRIEF.format(finish="local", extra="")), runner=fake_runner, out=lines.append)
+        code = pc_job.submit(self.brief_file(BRIEF.format(finish="local", extra="")), account="work", runner=fake_runner, out=lines.append)
         self.assertEqual(code, 0)
         self.assertEqual(len(calls), 2)
         install_cmd, install_input = calls[0]
