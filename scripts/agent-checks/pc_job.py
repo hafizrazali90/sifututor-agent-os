@@ -45,6 +45,8 @@ PC_HOME = f"/home/{PC_USER}"
 PC_REPO = f"{PC_HOME}/Projects/Sifututor"
 PC_CLAUDE = f"{PC_HOME}/.local/bin/claude"
 GUARD_HOOK_MIN = 1
+# Claude accounts on the PC. The job picks one at submit time; nothing is remembered between jobs.
+ACCOUNTS = {"work": ".claude", "second": ".claude-chrome"}
 
 TERMINAL = ("done", "failed", "blocked", "timeout")
 
@@ -143,7 +145,10 @@ def schtasks_create(job_id: str, folder: str = "jobs", prefix: str = "job") -> s
     return f'schtasks /create /tn "{prefix}-{job_id}" /tr "{target}" /sc once /st 00:00 /f & schtasks /run /tn "{prefix}-{job_id}"'
 
 
-def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, out=print) -> int:
+def submit(brief_path: Path, *, account: str, dry_run: bool = False, runner=subprocess.run, out=print) -> int:
+    if account not in ACCOUNTS:
+        out(f"REFUSED: unknown account {account!r}; choose one of: {', '.join(ACCOUNTS)}")
+        return 2
     text = brief_path.read_text()
     try:
         parsed = job_brief.parse(text)
@@ -162,6 +167,7 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
         "pc_job.py": Path(__file__).read_text(),
         "job_brief.py": (HERE / "job_brief.py").read_text(),
         "role.txt": role_text(),
+        "account.txt": account + "\n",
         "start.sh": start_sh(job_id),
         "settings.template.json": (HERE.parents[1] / ".claude" / "settings.template.json").read_text(),
         "render-claude-settings.py": (HERE / "render-claude-settings.py").read_text(),
@@ -169,6 +175,7 @@ def submit(brief_path: Path, *, dry_run: bool = False, runner=subprocess.run, ou
     out(f"Job {job_id}: {normal['title']}")
     out(f"  role {normal['role']}, finish {normal['finish']}"
         + (" (defaulted)" if normal["finish_defaulted"] else ""))
+    out(f"  account: {account} (~/{ACCOUNTS[account]})")
     out("  no caps: runs until Claude finishes, as on the Mac")
     if dry_run:
         out("DRY RUN: nothing was sent to the PC.")
@@ -370,6 +377,15 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         blank = {"title": "?", "role": "?", "finish": "?"}
         return finish_job(job_dir, status, blank, {"state": "blocked", "reason": f"brief unreadable: {exc}"})
     status.update(title=normal["title"], role=normal["role"], finish=normal["finish"])
+    account = (job_dir / "account.txt").read_text().strip() if (job_dir / "account.txt").is_file() else ""
+    if not account:
+        return finish_job(job_dir, status, normal, {"state": "blocked", "reason": "no account was chosen for this job"})
+    if account not in ACCOUNTS:
+        return finish_job(job_dir, status, normal, {"state": "blocked", "reason": f"unknown account {account!r}"})
+    config_dir = Path(PC_HOME) / ACCOUNTS[account]
+    status.update(account=account)
+    if not config_dir.is_dir():
+        return finish_job(job_dir, status, normal, {"state": "blocked", "reason": f"account {account} is not signed in on this PC ({config_dir} is missing)"})
     if errors:
         return finish_job(job_dir, status, normal, {"state": "blocked", "reason": "brief failed validation: " + "; ".join(errors)})
 
@@ -399,7 +415,8 @@ def run(job_dir: Path, *, repo: Path | None = None, claude: str | None = None,
         status.update(state="running")
         # No wall-clock limit on a real job; timeout_override exists only for tests.
         try:
-            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=timeout_override, check=False)
+            proc = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, timeout=timeout_override, check=False,
+                                  env={**os.environ, "CLAUDE_CONFIG_DIR": str(config_dir)})
         except subprocess.TimeoutExpired:
             return finish_job(job_dir, status, normal, {"state": "timeout", "reason": f"test time limit of {timeout_override:g} seconds reached"})
         (job_dir / "claude-output.json").write_text(proc.stdout or "")
@@ -484,6 +501,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("submit"); p.add_argument("brief", type=Path); p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--account", required=True, choices=list(ACCOUNTS),
+                   help="which Claude account the job runs on: work or second (no default)")
     for name in ("status", "result"):
         p = sub.add_parser(name); p.add_argument("job_id")
     sub.add_parser("list")
@@ -492,7 +511,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout-seconds", type=float); p.add_argument("--keep-task", action="store_true")
     args = parser.parse_args(argv)
     if args.cmd == "submit":
-        return submit(args.brief, dry_run=args.dry_run)
+        return submit(args.brief, account=args.account, dry_run=args.dry_run)
     if args.cmd == "status":
         print(remote_cat(args.job_id, "status.json")); return 0
     if args.cmd == "result":
