@@ -470,14 +470,24 @@ class LockfileFoldersTest(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 1, "", "npm error code ERESOLVE")
 
         with mock.patch.object(pc_job, "sh", side_effect=fake_sh):
-            self.assertEqual(pc_job.npm_ci(Path(".")).returncode, 0)
+            self.assertEqual(pc_job.npm_ci(Path("."), "finch-inbox").returncode, 0)
         self.assertEqual(len(calls), 2)
         self.assertIn("--legacy-peer-deps", calls[1])
 
         calls.clear()
         with mock.patch.object(pc_job, "sh", return_value=subprocess.CompletedProcess([], 1, "", "network down")) as fake:
-            self.assertEqual(pc_job.npm_ci(Path(".")).returncode, 1)
+            self.assertEqual(pc_job.npm_ci(Path("."), "finch-inbox").returncode, 1)
             self.assertEqual(fake.call_count, 1)
+
+    def test_npm_ci_never_relaxes_peer_deps_outside_finch(self) -> None:
+        # Codex review of #365: the exception is Finch's documented dependency
+        # tree (KI-2026-030); other repos fail closed on a peer conflict.
+        eresolve = subprocess.CompletedProcess([], 1, "", "npm error code ERESOLVE")
+        for repo in ("ripple-suite", "sifu-tutor", None):
+            with mock.patch.object(pc_job, "sh", return_value=eresolve) as fake:
+                self.assertEqual(pc_job.npm_ci(Path("."), repo).returncode, 1)
+                self.assertEqual(fake.call_count, 1)
+                self.assertNotIn("--legacy-peer-deps", fake.call_args[0][0])
 
     def test_sims_docker_test_script_is_an_allowed_builder_tool(self) -> None:
         self.assertIn("Bash(bash scripts/docker-test.sh:*)", pc_job.PROJECT_BUILDER_TOOLS)

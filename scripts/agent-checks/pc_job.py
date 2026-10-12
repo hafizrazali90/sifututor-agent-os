@@ -267,19 +267,24 @@ def prepare_worktree(repo: Path, worktrees: Path, job_id: str, normal: dict) -> 
         # root or one folder down (finch-inbox keeps frontend/ and backend/) so
         # the builder can run the project's tests. Never link another checkout's copy.
         for folder in lockfile_folders(path):
-            install = npm_ci(folder)
+            install = npm_ci(folder, normal["repo"])
             if install.returncode != 0:
                 where = folder.relative_to(path).as_posix() or "."
                 raise RuntimeError(f"npm ci failed in {where} of the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
     return path
 
 
-def npm_ci(folder: Path) -> subprocess.CompletedProcess:
-    """npm ci from the lockfile; on a peer-range conflict (ERESOLVE) retry once with
-    --legacy-peer-deps, which finch-inbox documents for its frontend (KI-2026-030)."""
+LEGACY_PEER_DEPS_REPOS = ("finch-inbox",)
+
+
+def npm_ci(folder: Path, repo: str | None) -> subprocess.CompletedProcess:
+    """npm ci from the lockfile. Only for finch-inbox, whose frontend documents a
+    peer-range conflict (KI-2026-030), an ERESOLVE failure is retried once with
+    --legacy-peer-deps; every other repo fails closed."""
     base = ["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"]
     install = sh(base, cwd=folder, timeout=NPM_CI_TIMEOUT)
-    if install.returncode != 0 and "ERESOLVE" in (install.stderr + install.stdout):
+    if (repo in LEGACY_PEER_DEPS_REPOS and install.returncode != 0
+            and "ERESOLVE" in (install.stderr + install.stdout)):
         install = sh(base + ["--legacy-peer-deps"], cwd=folder, timeout=NPM_CI_TIMEOUT)
     return install
 
