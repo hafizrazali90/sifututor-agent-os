@@ -8,10 +8,10 @@ Claude; the Mac reads the result. Machine facts are in
 ## The flow
 
 1. Write a brief from `templates/job-brief.md`. Hafiz agrees the finish state.
-2. `python3 scripts/agent-checks/pc_job.py submit brief.md --account work|second` checks
+2. `python3 scripts/agent-checks/pc_job.py submit brief.md --account work|second|gmail` checks
    the brief, copies it and the runner to the PC, and starts the job. `--account` is
    required, with no default, and is asked again for every job: `work` runs on the main
-   Claude account (`~/.claude`), `second` on the other account (`~/.claude-chrome`).
+   Claude account (`~/.claude`), `second` on the other account (`~/.claude-chrome`), `gmail` on sthafizrazali@gmail.com (`~/.claude-sthafiz`).
    A job refuses to start if its account is not signed in on the PC.
 3. The PC re-checks the brief, makes its own git worktree, builds the hook
    wiring, runs Claude until it finishes, then checks what Claude did.

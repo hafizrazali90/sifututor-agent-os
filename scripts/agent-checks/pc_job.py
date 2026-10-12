@@ -46,7 +46,7 @@ PC_REPO = f"{PC_HOME}/Projects/Sifututor"
 PC_CLAUDE = f"{PC_HOME}/.local/bin/claude"
 GUARD_HOOK_MIN = 1
 # Claude accounts on the PC. The job picks one at submit time; nothing is remembered between jobs.
-ACCOUNTS = {"work": ".claude", "second": ".claude-chrome"}
+ACCOUNTS = {"work": ".claude", "second": ".claude-chrome", "gmail": ".claude-sthafiz"}
 
 TERMINAL = ("done", "failed", "blocked", "timeout")
 
