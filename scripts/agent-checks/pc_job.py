@@ -63,6 +63,9 @@ PROJECT_BUILDER_TOOLS = (
     "Bash(npx vitest:*)", "Bash(npm run test:unit:*)", "Bash(npx tsc:*)",
     "Bash(npx eslint:*)", "Bash(npm run lint:*)",
     f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
+    # sifu-tutor: the PC has no PHP or MySQL; the repo's own script runs its
+    # tests in Docker containers (issue #364).
+    "Bash(bash scripts/docker-test.sh:*)",
 )
 NPM_CI_TIMEOUT = 1200
 REVIEWER_TOOLS = (
@@ -259,13 +262,24 @@ def prepare_worktree(repo: Path, worktrees: Path, job_id: str, normal: dict) -> 
         proc = sh(["git", "worktree", "add", "-q", "--detach", str(path), ref], cwd=repo)
     if proc.returncode != 0:
         raise RuntimeError(f"could not create the worktree: {proc.stderr.strip()[:200]}")
-    if normal.get("repo") and normal["role"] == job_brief.BUILDER and (path / "package-lock.json").is_file():
-        # A fresh worktree has no node_modules; install from the lockfile so the
-        # builder can run the project's tests. Never link another checkout's copy.
-        install = sh(["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"], cwd=path, timeout=NPM_CI_TIMEOUT)
-        if install.returncode != 0:
-            raise RuntimeError(f"npm ci failed in the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
+    if normal.get("repo") and normal["role"] == job_brief.BUILDER:
+        # A fresh worktree has no node_modules; install from each lockfile at the
+        # root or one folder down (finch-inbox keeps frontend/ and backend/) so
+        # the builder can run the project's tests. Never link another checkout's copy.
+        for folder in lockfile_folders(path):
+            install = sh(["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"], cwd=folder, timeout=NPM_CI_TIMEOUT)
+            if install.returncode != 0:
+                where = folder.relative_to(path).as_posix() or "."
+                raise RuntimeError(f"npm ci failed in {where} of the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
     return path
+
+
+def lockfile_folders(path: Path) -> list[Path]:
+    """Folders holding a package-lock.json: the worktree root and its direct children."""
+    found = [path] if (path / "package-lock.json").is_file() else []
+    found += sorted(child for child in path.iterdir()
+                    if child.is_dir() and not child.name.startswith(".") and (child / "package-lock.json").is_file())
+    return found
 
 
 def count_hooks(settings: dict) -> int:

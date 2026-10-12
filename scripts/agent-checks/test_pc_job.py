@@ -442,6 +442,28 @@ class RunnerTest(unittest.TestCase):
         self.assertNotIn("Edit", argv[argv.index("--allowedTools") + 1].split(","))
 
 
+class LockfileFoldersTest(unittest.TestCase):
+    """Issue #364: install dependencies for each lockfile at the root or one folder down."""
+
+    def test_root_and_direct_children_with_lockfiles_are_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel in ("package-lock.json", "frontend/package-lock.json", "backend/package-lock.json",
+                        "deep/nested/package-lock.json", ".hidden/package-lock.json"):
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text("{}")
+            (root / "docs").mkdir()
+            found = [p.relative_to(root).as_posix() or "." for p in pc_job.lockfile_folders(root)]
+            self.assertEqual(found, [".", "backend", "frontend"])
+
+    def test_no_lockfile_means_nothing_to_install(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(pc_job.lockfile_folders(Path(tmp)), [])
+
+    def test_sims_docker_test_script_is_an_allowed_builder_tool(self) -> None:
+        self.assertIn("Bash(bash scripts/docker-test.sh:*)", pc_job.PROJECT_BUILDER_TOOLS)
+
+
 class MacSideTest(unittest.TestCase):
     def brief_file(self, text: str) -> Path:
         tmp = Path(tempfile.mkdtemp())
