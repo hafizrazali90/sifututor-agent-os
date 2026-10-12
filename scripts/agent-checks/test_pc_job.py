@@ -157,6 +157,13 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("no account", status["reason"])
         self.assertFalse(self.argv_log.exists())
 
+    def test_job_runs_under_the_gmail_account_folder(self) -> None:
+        (self.home / ".claude-sthafiz").mkdir()
+        self.account = "gmail"
+        _, status = self.builder()
+        self.assertEqual(status["account"], "gmail")
+        self.assertEqual(self.cfg_log.read_text(), str(self.home / ".claude-sthafiz"))
+
     def test_unknown_account_is_refused_before_claude_starts(self) -> None:
         self.account = "bogus"
         _, status = self.builder()
