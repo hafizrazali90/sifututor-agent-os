@@ -460,6 +460,25 @@ class LockfileFoldersTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(pc_job.lockfile_folders(Path(tmp)), [])
 
+    def test_npm_ci_retries_with_legacy_peer_deps_only_on_eresolve(self) -> None:
+        calls = []
+
+        def fake_sh(cmd, cwd=None, timeout=None):
+            calls.append(cmd)
+            if "--legacy-peer-deps" in cmd:
+                return subprocess.CompletedProcess(cmd, 0, "", "")
+            return subprocess.CompletedProcess(cmd, 1, "", "npm error code ERESOLVE")
+
+        with mock.patch.object(pc_job, "sh", side_effect=fake_sh):
+            self.assertEqual(pc_job.npm_ci(Path(".")).returncode, 0)
+        self.assertEqual(len(calls), 2)
+        self.assertIn("--legacy-peer-deps", calls[1])
+
+        calls.clear()
+        with mock.patch.object(pc_job, "sh", return_value=subprocess.CompletedProcess([], 1, "", "network down")) as fake:
+            self.assertEqual(pc_job.npm_ci(Path(".")).returncode, 1)
+            self.assertEqual(fake.call_count, 1)
+
     def test_sims_docker_test_script_is_an_allowed_builder_tool(self) -> None:
         self.assertIn("Bash(bash scripts/docker-test.sh:*)", pc_job.PROJECT_BUILDER_TOOLS)
 
