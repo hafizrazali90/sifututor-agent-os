@@ -492,6 +492,10 @@ class LockfileFoldersTest(unittest.TestCase):
     def test_sims_docker_test_script_is_an_allowed_builder_tool(self) -> None:
         self.assertIn("Bash(bash scripts/docker-test.sh:*)", pc_job.PROJECT_BUILDER_TOOLS)
 
+    def test_finch_backend_jest_is_an_allowed_builder_tool(self) -> None:
+        # F1b (13 Oct 2026) could not run Finch's backend specs: Jest was not allowed.
+        self.assertIn("Bash(npx jest:*)", pc_job.PROJECT_BUILDER_TOOLS)
+
 
 class MacSideTest(unittest.TestCase):
     def brief_file(self, text: str) -> Path:

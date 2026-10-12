@@ -61,6 +61,8 @@ BUILDER_TOOLS = (
 # Extra checks a builder may run inside a Node project repo (issue #347).
 PROJECT_BUILDER_TOOLS = (
     "Bash(npx vitest:*)", "Bash(npm run test:unit:*)", "Bash(npx tsc:*)",
+    # finch-inbox's backend specs run on Jest (F1b, 13 Oct 2026).
+    "Bash(npx jest:*)",
     "Bash(npx eslint:*)", "Bash(npm run lint:*)",
     f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
     # sifu-tutor: the PC has no PHP or MySQL; the repo's own script runs its
