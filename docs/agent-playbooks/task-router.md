@@ -77,6 +77,9 @@ Open the named owner only when its trigger appears:
   gates, and domain docs before implementation.
 - **User-facing behavior:** project `TESTING.md`, existing E2E, verify, QA,
   evidence model, and release documentation.
+- **Change staff will see on screen:** a `plan` review page before coding and
+  a `ship` page before deploy ([review-page.md](review-page.md)); without
+  Hafiz's go, wait for his ok on the plan page.
 - **SIMS UI or module redesign:** `sifu-tutor/docs/ui-ux/README.md`, relevant
   feature docs, and product design before coding. `proceed` does not replace
   missing scope, flow, screen/state inventory, evidence plan, or build approval.
