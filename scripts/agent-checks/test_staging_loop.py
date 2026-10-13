@@ -111,10 +111,13 @@ class StagingGatesTest(StagingLoopCase):
             self.assertFalse(any(e.get("simulated") for e in items[gate]["evidence"]), gate)
         self.assertEqual(rr.score(data)["prod_percent"], 100.0)
         self.assertEqual(data["staging_sha"], SHA_A)
-        # S2 checks again just before it starts; S5 reads the served commit back, then the copied columns
-        self.assertEqual(self.verbs(), ["check", "check", "start", "status", "verify", "verify", "verify", "schema"])
+        # S1 reads the S5 baseline before anything is deployed; S2 checks again just before it starts;
+        # S5 reads the served commit back, then the copied columns
+        self.assertEqual(self.verbs(), ["check", "schema", "check", "start", "status", "verify", "verify", "verify", "schema"])
+        self.assertEqual(data["staging"]["contract_baseline"]["candidate_sha"], SHA_A)
+        self.assertEqual(data["staging"]["contract_baseline"]["breaking"], [])
         s5_notes = " | ".join(e.get("note", "") for e in items["S5"]["evidence"])
-        for fragment in ("2 copied tables, 4 copied columns", "VERIFY OK", "4 columns read; 0 breaking; 0 new"):
+        for fragment in ("2 copied tables, 4 copied columns", "VERIFY OK", "4 columns read; 0 breaking added by this release; 0 already on staging before it"):
             self.assertIn(fragment, s5_notes)
         s2_notes = " | ".join(e.get("note", "") for e in items["S2"]["evidence"])
         for fragment in ("CHECK OK", "STARTED run=", "RESULT run=", "VERIFY OK", "read back"):
@@ -209,6 +212,7 @@ class StagingGatesTest(StagingLoopCase):
             self.assertEqual(items[gate]["status"], "open", gate)
         self.assertNotIn("staging_sha", data)
         self.assertNotIn("candidate_sha", data["staging"])
+        self.assertNotIn("contract_baseline", data["staging"], "the old baseline belongs to the old candidate")
         self.assertFalse(loop.staging_candidate_moved(), "nothing is left to reset")
 
     def test_an_unchanged_candidate_keeps_its_proof(self) -> None:

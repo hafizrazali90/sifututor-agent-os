@@ -22,7 +22,9 @@ production go is always Hafiz's.
   Playwright, the change smoke) and carries on to Prod readiness 100 percent.
 - Gate S5 then checks that staging still has every table and column Owner
   Analytics copies, with the same type. A release that renames, removes or
-  retypes one of them stops at S5, which names each column.
+  retypes one of them stops at S5, which names each column. S5 judges only what
+  the release adds: differences that were already on staging before the deploy
+  are listed and counted, never failed.
 
 ## What the PC can and cannot do
 
@@ -104,16 +106,17 @@ and there is no S5.
 
 | Gate | Owner | What the PC does | Evidence recorded |
 | --- | --- | --- | --- |
-| S1 candidate identified | pc | reads the branch tip on GitHub, runs `check` on the box | the exact ref and commit, and the box's `CHECK OK` line |
+| S1 candidate identified | pc | reads the branch tip on GitHub, runs `check` on the box, then (when the release has S5) reads the S5 baseline: the copied columns on staging before the deploy | the exact ref and commit, the box's `CHECK OK` line, and the baseline time and its breaking items |
 | S2 staging deployed | pc | `check` again, `start`, polls `status`, then `verify` | the `STARTED` line, the `RESULT` line with seconds, `VERIFY OK`, and the commit read back from the server |
 | S3 staging smoke | pc | confirms staging still serves the commit, scripted login on the staging lane, then each change smoke command | each command, exit code and a masked output tail; lane values are never shown |
 | S4 promotion holds the change | pc | Ripple: the branch contains the staged commit. SIMS: same changed lines on a different base (`git diff -U0` line sets, docs-only extras allowed) | the counts of staged, missing and extra lines |
-| S5 analytics contract | pc | reads what Owner Analytics copies from owner-analytics main, confirms staging still serves the commit, reads the column list of those tables on staging (read-only), compares | the contract commit, the number of tables and columns, each breaking column and each new column |
+| S5 analytics contract | pc | reads what Owner Analytics copies from owner-analytics main, confirms staging still serves the commit, reads the column list of those tables on staging (read-only), compares, and fails only on breaking items that are not in the S1 baseline | the contract commit, the number of tables and columns, each breaking column the release added, each column already breaking before it, and each new column |
 
 S1 waits for items 2, 3, 4, 5, 7 and 8, so staging is not used for a candidate
 that is still changing. S5 waits for S3, and for SIMS also for S4. A pushed
 fix, or a moved candidate branch, resets S1 to S5 and staging is redeployed on
-the new commit. A refusal on the box blocks the
+the new commit; a moved candidate also drops the S5 baseline, so S1 reads a
+fresh one. A refusal on the box blocks the
 loop after the second try, with the box's own reason (for example "needs a Mac
 session"). A stop (a `STOP` file) ends the polling but not a deploy already
 running on the box; on `resume` the loop attaches to that run and never starts a
@@ -150,17 +153,63 @@ production.
   removed (`normalizeType` in `engine.mjs`, `normalizePgType` in
   `pg-types.mjs`). So `BIGINT` equals `bigint`, but `int` is not `int unsigned`.
 
-| Found on staging | S5 |
+#### The baseline: S5 judges only what the release adds
+
+The staging databases are shared and drift from production over time (old test
+branches, hand changes). Production matches the copy, because its daily copies
+pass every check. So a difference that was already on staging before the
+candidate was deployed is not caused by the release and must not block it.
+
+- At S1, after the box accepts the candidate and before S2 deploys it, the PC
+  reads the same column list with the same read-only route, compares it with
+  the contract, and stores the breaking items in the release state as
+  `staging.contract_baseline`: the candidate commit, the time it was read (MYT),
+  the contract commit, the number of columns read, and each breaking item.
+- If that read fails, S1 fails closed and the loop tries again.
+- S1 keeps a baseline already read for the same commit (for example when a
+  pushed fix to the promotion branch reruns S1). It never reads a new baseline
+  once staging has been deployed with the candidate, even by a failed run,
+  because the release's own breaks would then hide in it.
+- S5 compares after the deploy and fails only on breaking items that are not in
+  the baseline. An item counts as the same when the table, the column, the kind
+  of break and the type found on staging match. So a column already retyped
+  from `bigint` to `integer` passes, but the release retyping it again to
+  `text` fails.
+- Baseline items are listed as "already on staging before this release (not
+  caused by it)" and counted, in the summary and in the evidence
+  (`already_on_staging`).
+- No baseline, or a baseline for another commit (a release state from before
+  this change), and S5 fails closed and says to rerun S1. That happens when the
+  staging candidate moves: the loop resets S1 to S5 and drops the old baseline.
+
+| Found on staging after the deploy | S5 |
 | --- | --- |
-| A copied table is missing | fails, names the table |
-| A copied column is missing (removed or renamed) | fails, names `table.column` |
-| A copied column has another type | fails, names `table.column` and both types |
+| A copied table is missing, and was not before | fails, names the table |
+| A copied column is missing (removed or renamed), and was not before | fails, names `table.column` |
+| A copied column has another type, and did not before | fails, names `table.column` and both types |
+| Any of the above that the baseline already had | passes, listed and counted as already on staging before this release |
 | A column the contract does not copy | passes, listed as information |
 
 A failure means one of two fixes: change the release so the copied column stays,
 or change the owner-analytics registry first (its own release) and run S5 again.
 A new column is never a failure; if the owner wants it, that is an
 owner-analytics change.
+
+#### What was found live on 13/10/2026
+
+Claude ran `staging_deploy.py contract ripple` and `contract sims` from the Mac
+at about 15:40 MYT, before the baseline existed. Both staging databases already
+differed from the contract, while production matched it:
+
+| Staging | Columns read | Breaking | Examples |
+| --- | --- | --- | --- |
+| Ripple | 1,920 | 19 | `api_usage_logs.id` and `tutor_profiles.id` are `integer` on staging, `bigint` in the contract |
+| SIMS | 1,538 | 5 | `classes.is_extra` missing; `referral_codes.referrer_id` `int unsigned` instead of `bigint unsigned`; `tutor_commitment_fees.status` enum without `'reallocated'`; `tutor_payments.approved_by` and `tutor_payments.status` missing |
+
+Without the baseline, S5 would have blocked every release on that old staging
+drift. These items now sit in each release's baseline and are reported, not
+failed. The drift itself is still worth fixing on staging, so the by-hand
+command keeps showing it.
 
 ### The S3 environment (Playwright without sudo)
 
@@ -223,7 +272,8 @@ python3 scripts/agent-checks/staging_deploy.py check  ripple --ref release/<issu
 python3 scripts/agent-checks/staging_deploy.py deploy ripple --ref release/<issue>-<name> --sha <40 hex>
 python3 scripts/agent-checks/staging_deploy.py status ripple
 python3 scripts/agent-checks/staging_deploy.py verify ripple <40 hex>
-python3 scripts/agent-checks/staging_deploy.py contract ripple   # S5 by hand on current staging; exit 1 when a copied column breaks
+python3 scripts/agent-checks/staging_deploy.py contract ripple   # S5 by hand on current staging, no baseline: every difference; exit 1 when a copied column breaks
+python3 scripts/agent-checks/staging_deploy.py contract ripple --baseline   # the same, then the S5 baseline of readiness.json in the release folder (or --baseline PATH)
 python3 scripts/agent-checks/pc_release.py staging-switch ripple off   # STOP: new deploys refused
 python3 scripts/agent-checks/pc_release.py staging-switch ripple on
 ```
@@ -291,6 +341,10 @@ commit each box already served. Nothing was deployed that was not already there.
   staging before the release. It sees the staging schema, which normally
   matches production after the same release; a column changed by hand on
   production alone is not visible to it.
+- The S5 baseline is staging as S1 saw it. If someone changes staging by hand
+  between S1 and S5 (a shared box), S5 can blame that change on the release.
+  And a release that breaks a column the baseline already had broken in the
+  same way passes, because staging already showed that break.
 - STOP does not kill a deploy that is already running; only the box finishes it.
 - A manual deploy by a person on the SIMS box takes no lock the PC can see; the
   process guard and the clean-checkout rule catch most overlaps, not all.

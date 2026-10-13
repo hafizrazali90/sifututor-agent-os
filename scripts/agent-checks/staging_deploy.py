@@ -53,7 +53,7 @@ PC_STOP_ENV = "SIFU_STAGING_DEPLOY_STOP"
 POLL_SECONDS = 30
 LOST_CONTACT_LIMIT = 20  # 20 polls in a row without an answer (10 minutes); the deploy itself keeps going on the box
 STAGING_KEYS = {"target", "ref", "mode", "commit", "smoke_commands", "smoke_exception", "approval", "candidate_sha",
-                "candidate_ref", "deploy", "deploys", "smoke", "last_status"}
+                "candidate_ref", "deploy", "deploys", "smoke", "last_status", "contract_baseline"}
 SMOKE_COMMAND_PREFIXES = ("npx playwright test ", "npm run test:", "bash scripts/qa/", "builtin:login", "builtin:page ")
 PLAYWRIGHT_HOST = "ubuntu24.04-x64"
 DOCS_EXTRA_OK = ("docs/", "CHANGELOG.md", "RELEASE-DOCS.md", "TESTING.md")
@@ -333,6 +333,30 @@ def load_contract(shell: Any, target: str, stop_check: Callable[[], bool] | None
         raise DeployError(f"{path} on owner-analytics {OA_REF} lists no {target} table{closed}")
     info = {"sha": sha, "path": path, "fetched": fetch_code == 0, "dir": str(oa)}
     return entries, info
+
+
+def contract_key(item: dict[str, str]) -> tuple[str, str, str, str]:
+    """What makes two breaking items the same break: the column, the kind of break and what staging has (not the expected type,
+    which can move when the registry on owner-analytics main is updated between S1 and S5)."""
+    return item.get("table", ""), item.get("column", ""), item.get("why", ""), item.get("found", "")
+
+
+def wants_baseline(data: dict[str, Any]) -> bool:
+    item = rr.item_map({"items": data.get("items", [])}).get("S5")
+    return item is not None and rr.is_applicable(item)
+
+
+def read_contract_baseline(ctx: Any, cfg: dict[str, Any], sha: str) -> dict[str, Any]:
+    """S1 part two: what already breaks the contract on staging BEFORE the candidate is deployed, so S5 judges only what the
+    release adds (13/10/2026: both staging databases already differed from production). Never taken once the candidate reached
+    staging, because then the release's own breaks would hide in it."""
+    if ctx.data.get("staging_sha") == sha or any(isinstance(d, dict) and d.get("sha") == sha for d in cfg.get("deploys") or []):
+        raise DeployError(f"the S5 baseline cannot be read now: staging was already deployed with {sha[:10]}, so it would hide "
+                          "what this release breaks; S5 fails closed until the staging candidate moves and S1 runs again")
+    entries, contract = load_contract(ctx.shell, cfg["target"], ctx.stop_check)
+    rows = deployer_for(ctx, cfg).schema(sorted({e["source_table"] for e in entries}))
+    return {"candidate_sha": sha, "read_at": rr.myt_text(), "contract_sha": contract["sha"], "columns_read": len(rows),
+            "breaking": compare_contract(entries, rows)["breaking"]}
 
 
 def contract_item_text(item: dict[str, str]) -> str:
@@ -672,6 +696,21 @@ def check_candidate(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
                 {"command": f"remote {cfg['target']} check", "note": line[:400]}]
     if not ok:
         return result(False, f"the candidate {ref} at {sha[:10]} was refused: {line}", evidence)
+    baseline = cfg.get("contract_baseline")
+    if wants_baseline(ctx.data):
+        kept = isinstance(baseline, dict) and baseline.get("candidate_sha") == sha
+        if not kept:
+            try:
+                baseline = read_contract_baseline(ctx, cfg, sha)
+            except DeployError as exc:
+                return result(False, f"the S5 baseline (what already breaks the analytics contract on staging) could not be "
+                                     f"read, so S1 fails closed: {exc}", evidence)
+        evidence.append({"command": f"remote {cfg['target']} schema (S5 baseline, before the deploy, read-only)",
+                         "note": ("kept the baseline already read for this commit at " if kept else "read at ") + baseline["read_at"]
+                                 + f": {baseline['columns_read']} columns read; {len(baseline['breaking'])} already breaking "
+                                 + f"(owner-analytics main {baseline['contract_sha'][:10]})",
+                         "breaking": [contract_item_text(i) for i in baseline["breaking"]]})
+        cfg["contract_baseline"] = baseline
     cfg["candidate_sha"], cfg["candidate_ref"] = sha, ref
     return result(True, f"candidate {ref} at {sha[:10]} passes the {cfg['target']} staging rules", evidence)
 
@@ -784,13 +823,20 @@ def check_patch_equivalent(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
 def check_analytics_contract(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
     """S5: staging still has every table and column Owner Analytics copies, with the same type (Sifututor/owner-analytics#134).
 
-    A renamed, removed or retyped copied column fails and is named. New tables and columns are listed as information only."""
+    Only what the release adds counts: a copied column that the release removes or retypes fails and is named. What already broke
+    the contract on staging before the deploy (the baseline S1 read) is listed and counted, never failed. New tables and columns
+    are listed as information only."""
     try:
         cfg = staging_cfg(ctx.data)
         sha, ref = str(cfg.get("candidate_sha", "")), str(cfg.get("candidate_ref", ""))
         target = cfg["target"]
         if not sr.valid_sha(sha) or ctx.data.get("staging_sha") != sha:
             return result(False, "staging has not been deployed with the candidate yet (S2 comes first)")
+        baseline = cfg.get("contract_baseline")
+        if not isinstance(baseline, dict) or baseline.get("candidate_sha") != sha or not isinstance(baseline.get("breaking"), list):
+            return result(False, f"there is no S5 baseline for {sha[:10]} (what already broke the contract on staging before this "
+                                 "release; older release states have none), so S5 fails closed: rerun S1 before staging is "
+                                 "deployed, which happens when the staging candidate moves")
         entries, contract = load_contract(ctx.shell, target, ctx.stop_check)
         tables = sorted({e["source_table"] for e in entries})
         columns = sum(len(e["source_columns"]) for e in entries)
@@ -808,19 +854,25 @@ def check_analytics_contract(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
     except DeployError as exc:
         return result(False, str(exc))
     diff = compare_contract(entries, rows)
-    breaking = [contract_item_text(i) for i in diff["breaking"]]
+    before = {contract_key(i) for i in baseline["breaking"] if isinstance(i, dict)}
+    breaking = [contract_item_text(i) for i in diff["breaking"] if contract_key(i) not in before]
+    already = [contract_item_text(i) for i in diff["breaking"] if contract_key(i) in before]
     new = [contract_item_text(i) for i in diff["new"]]
     evidence.append({"command": f"remote {target} schema ({len(tables)} copied tables, one read-only SELECT on staging)",
-                     "note": f"{len(rows)} columns read; {len(breaking)} breaking; {len(new)} new",
-                     "breaking": breaking, "new": new})
+                     "note": f"{len(rows)} columns read; {len(breaking)} breaking added by this release; {len(already)} already on "
+                             f"staging before it (baseline read {baseline.get('read_at', '?')}); {len(new)} new",
+                     "breaking": breaking, "already_on_staging": already, "new": new})
+    old = (f"; {len(already)} already on staging before this release (not caused by it): {', '.join(already[:8])}"
+           f"{' and more' if len(already) > 8 else ''}") if already else ""
     info = f"; for information, not copied yet: {', '.join(new[:8])}{' and more' if len(new) > 8 else ''}" if new else ""
     if breaking:
         return result(False, f"{len(breaking)} copied column(s) would stop the Owner Analytics copy: {', '.join(breaking[:10])}"
-                      + (" and more" if len(breaking) > 10 else "") + info, evidence,
-                      "Breaking (the copier stops these tables):\n" + "\n".join(breaking)
+                      + (" and more" if len(breaking) > 10 else "") + old + info, evidence,
+                      "Breaking, added by this release (the copier stops these tables):\n" + "\n".join(breaking)
+                      + ("\n\nAlready on staging before this release (not caused by it):\n" + "\n".join(already) if already else "")
                       + ("\n\nNew, information only:\n" + "\n".join(new) if new else ""))
-    return result(True, f"every copied table and column is still on {target} staging with the same type ({len(tables)} tables, "
-                  f"{columns} columns, owner-analytics main {contract['sha'][:10]}){info}", evidence)
+    return result(True, f"this release breaks no copied table or column on {target} staging ({len(tables)} tables, "
+                  f"{columns} columns, owner-analytics main {contract['sha'][:10]}){old}{info}", evidence)
 
 
 # ------------------------------------------------------------------- CLI ----
@@ -834,6 +886,10 @@ def report(path: Path, out: Callable[[str], None]) -> int:
     out(f"Release {data['release']}: PC staging deploy to {cfg.get('target')} (mode {cfg.get('mode', 'normal')})")
     out(f"  candidate: {cfg.get('candidate_ref') or candidate_ref(data, cfg)} at {cfg.get('candidate_sha', 'not accepted yet')}")
     out(f"  deployed commit read back: {data.get('staging_sha', 'none yet')}")
+    baseline = cfg.get("contract_baseline")
+    if isinstance(baseline, dict):
+        out(f"  S5 baseline: {len(baseline.get('breaking') or [])} breaking already on staging before this release, "
+            f"read {baseline.get('read_at', '?')} for {str(baseline.get('candidate_sha', ''))[:10]}")
     items = rr.item_map(data)
     for iid in ("S1", "S2", "S3", "S4", "S5"):
         if iid in items and rr.is_applicable(items[iid]):
@@ -848,6 +904,25 @@ def report(path: Path, out: Callable[[str], None]) -> int:
     except (DeployError, KeyError) as exc:
         out(f"  live status unavailable: {exc}")
     return 0
+
+
+def print_baseline(path: Path, out: Callable[[str], None]) -> None:
+    """The S5 baseline S1 stored for the current release: what already broke the contract on staging before its deploy."""
+    try:
+        data = rr.load(path)
+    except rr.ReadinessError as exc:
+        out(f"no S5 baseline: {exc}")
+        return
+    baseline = (data.get("staging") or {}).get("contract_baseline")
+    if not isinstance(baseline, dict):
+        out(f"no S5 baseline in release {data.get('release', '?')} yet (S1 reads it before staging is deployed)")
+        return
+    items = baseline.get("breaking") or []
+    out(f"baseline of release {data.get('release', '?')}: read {baseline.get('read_at', '?')} for candidate "
+        f"{str(baseline.get('candidate_sha', ''))[:10]}, owner-analytics main {str(baseline.get('contract_sha', ''))[:10]}, "
+        f"{len(items)} breaking already on staging before this release (not caused by it)")
+    for item in items:
+        out("  baseline " + contract_item_text(item))
 
 
 def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shell: Any = None) -> int:
@@ -868,6 +943,8 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
     p = sub.add_parser("switch"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("action", choices=("on", "off", "show"))
     p = sub.add_parser("report"); p.add_argument("readiness", type=Path)
     p = sub.add_parser("contract"); p.add_argument("target", choices=sr.TARGETS)
+    p.add_argument("--baseline", nargs="?", const=Path("readiness.json"), type=Path,
+                   help="also print the S5 baseline of the current release (default readiness.json in the release folder)")
     args = parser.parse_args(argv)
     shell = shell or rr.RealShell()
     try:
@@ -884,6 +961,8 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
                 out("  BREAKING " + contract_item_text(item))
             for item in diff["new"]:
                 out("  new      " + contract_item_text(item))
+            if args.baseline:
+                print_baseline(args.baseline, out)
             return 1 if diff["breaking"] else 0
         if args.cmd in ("check", "deploy"):
             sha = args.sha

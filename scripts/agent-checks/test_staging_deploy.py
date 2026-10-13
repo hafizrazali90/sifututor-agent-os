@@ -816,13 +816,16 @@ class AnalyticsContractGateTests(Quiet):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def ctx(self, box: FakeBox, target: str = "ripple", deployed: bool = True) -> FakeCtx:
+    def ctx(self, box: FakeBox, target: str = "ripple", deployed: bool = True, baseline: list | None = []) -> FakeCtx:
         extra = {"ref": "test/3373-staging-candidate"} if target == "sims" else {}
         data = staging_data(target=target, candidate_sha=SHA_A, candidate_ref=extra.get("ref", REF), **extra)
         if target == "sims":
             data["repo"] = "sifu-tutor"
         if deployed:
             data["staging_sha"] = SHA_A
+        if baseline is not None:
+            data["staging"]["contract_baseline"] = {"candidate_sha": SHA_A, "read_at": "13/10/2026 15:40:00 MYT",
+                                                    "contract_sha": CONTRACT_SHA, "columns_read": 4, "breaking": baseline}
         return FakeCtx(data, box, self.tmp)
 
     def schema_calls(self, box: FakeBox) -> list[dict]:
@@ -952,6 +955,147 @@ class AnalyticsContractGateTests(Quiet):
         self.assertEqual([a[:2] for a in local], [["git", "fetch"], ["git", "rev-parse"], ["git", "show"]])
         for argv in local:
             self.assertNotIn(argv[1], ("push", "merge", "reset", "checkout", "commit", "pull", "rebase", "clean"))
+
+
+# Staging already differed from the contract before the release: crm_leads.id was retyped there by an older staging deploy.
+DRIFT_ROWS = [["crm_leads", "id", "bigint"] if r[:2] == ["crm_leads", "id"] else r for r in RIPPLE_ROWS]
+DRIFT_ITEM = {"table": "crm_leads", "column": "id", "why": "type changed", "expected": "integer", "found": "bigint"}
+
+
+class ContractBaselineTests(AnalyticsContractGateTests):
+    """S5 judges only what the candidate release adds (13/10/2026 live finding: both staging databases already drift)."""
+
+    def s1_ctx(self, box: FakeBox, **cfg) -> FakeCtx:
+        data = staging_data(**cfg)
+        data["items"] = [{"id": "S5", "owner": "pc", "status": "open", "check": {"type": "analytics_contract"}}]
+        return FakeCtx(data, box, self.tmp)
+
+    def s1_box(self, rows: list | None = None) -> FakeBox:
+        box = contract_box(rows=rows)
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        return box
+
+    def verbs(self, box: FakeBox) -> list[str]:
+        return [re.search(r"remote \w+ (\w+)", c["argv"][-1]).group(1) for c in box.ssh_calls()]
+
+    def test_s1_reads_the_baseline_of_staging_before_the_deploy(self) -> None:
+        box = self.s1_box(rows=DRIFT_ROWS)
+        ctx = self.s1_ctx(box)
+        res = sd.check_candidate({}, ctx)
+        self.assertTrue(res["ok"], res)
+        baseline = ctx.data["staging"]["contract_baseline"]
+        self.assertEqual(baseline["candidate_sha"], SHA_A)
+        self.assertEqual(baseline["breaking"], [DRIFT_ITEM])
+        self.assertEqual(baseline["contract_sha"], CONTRACT_SHA)
+        self.assertTrue(baseline["read_at"].endswith("MYT"))
+        self.assertEqual(self.verbs(box), ["check", "schema"])
+        self.assertIn("1 already breaking", json.dumps(res["evidence"]))
+        self.assertEqual(sd.validate_staging(ctx.data), [])
+
+    def test_s1_reads_no_baseline_when_the_release_has_no_s5(self) -> None:
+        box = self.s1_box()
+        ctx = FakeCtx(staging_data(), box, self.tmp)
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        self.assertNotIn("contract_baseline", ctx.data["staging"])
+        self.assertEqual(self.verbs(box), ["check"])
+
+    def test_s1_fails_closed_when_the_baseline_cannot_be_read(self) -> None:
+        box = self.s1_box()
+        box.verbs["schema"] = [(2, "REFUSED: could not read the staging column list (psql exit 2)")]
+        ctx = self.s1_ctx(box)
+        res = sd.check_candidate({}, ctx)
+        self.assertFalse(res["ok"])
+        self.assertIn("baseline", res["summary"])
+        self.assertNotIn("candidate_sha", ctx.data["staging"])
+        self.assertNotIn("contract_baseline", ctx.data["staging"])
+
+    def test_s1_keeps_the_baseline_of_the_same_candidate_and_never_reads_one_after_the_deploy(self) -> None:
+        box = self.s1_box()
+        kept = {"candidate_sha": SHA_A, "read_at": "13/10/2026 15:40:00 MYT", "contract_sha": CONTRACT_SHA, "columns_read": 4,
+                "breaking": [DRIFT_ITEM]}
+        ctx = self.s1_ctx(box, contract_baseline=dict(kept))
+        ctx.data["staging_sha"] = SHA_A
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        self.assertEqual(ctx.data["staging"]["contract_baseline"], kept)
+        self.assertEqual(self.verbs(box), ["check"])
+        for already in ({"staging_sha": SHA_A}, {"deploys": [{"run": "r", "sha": SHA_A, "ok": False}]}):
+            box = self.s1_box()
+            ctx = self.s1_ctx(box, **({"deploys": already["deploys"]} if "deploys" in already else {}))
+            ctx.data.update({k: v for k, v in already.items() if k == "staging_sha"})
+            res = sd.check_candidate({}, ctx)
+            self.assertFalse(res["ok"], already)
+            self.assertIn("baseline", res["summary"])
+            self.assertNotIn("schema", self.verbs(box))
+
+    def test_an_item_already_in_the_baseline_does_not_fail_s5_and_is_counted(self) -> None:
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=DRIFT_ROWS), baseline=[DRIFT_ITEM]))
+        self.assertTrue(res["ok"], res)
+        self.assertIn("1 already on staging before this release (not caused by it)", res["summary"])
+        self.assertIn("crm_leads.id", res["summary"])
+        note = [e for e in res["evidence"] if "schema" in e["command"]][0]
+        self.assertEqual(note["already_on_staging"], ["crm_leads.id (type integer -> bigint)"])
+        self.assertEqual(note["breaking"], [])
+
+    def test_a_new_breaking_item_fails_s5_and_is_named_apart_from_the_baseline(self) -> None:
+        rows = [r for r in DRIFT_ROWS if r[1] != "note"]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows), baseline=[DRIFT_ITEM]))
+        self.assertFalse(res["ok"])
+        self.assertIn("1 copied column(s) would stop the Owner Analytics copy: accounts_cx_requests.note (column missing)",
+                      res["summary"])
+        self.assertNotIn("crm_leads.id", res["summary"].split("already on staging")[0])
+        self.assertIn("1 already on staging before this release (not caused by it)", res["summary"])
+
+    def test_the_same_column_breaking_in_a_new_way_is_new(self) -> None:
+        rows = [["crm_leads", "id", "text"] if r[:2] == ["crm_leads", "id"] else r for r in RIPPLE_ROWS]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows), baseline=[DRIFT_ITEM]))
+        self.assertFalse(res["ok"])
+        self.assertIn("crm_leads.id (type integer -> text)", res["summary"])
+
+    def test_a_missing_baseline_fails_closed_and_says_to_rerun_s1(self) -> None:
+        for baseline in (None, "other-commit"):
+            box = contract_box()
+            ctx = self.ctx(box, baseline=None if baseline is None else [])
+            if baseline == "other-commit":
+                ctx.data["staging"]["contract_baseline"]["candidate_sha"] = SHA_B
+            res = sd.check_analytics_contract({}, ctx)
+            self.assertFalse(res["ok"], baseline)
+            self.assertIn("fails closed", res["summary"])
+            self.assertIn("S1", res["summary"])
+            self.assertEqual(box.ssh_calls(), [], baseline)
+
+    def test_the_contract_command_stays_absolute_and_baseline_prints_the_release_baseline(self) -> None:
+        out: list[str] = []
+        self.assertEqual(sd.main(["contract", "ripple"], out=out.append, shell=contract_box(rows=DRIFT_ROWS)), 1, out)
+        self.assertIn("BREAKING crm_leads.id (type integer -> bigint)", "\n".join(out))
+        self.assertFalse(any("baseline" in line for line in out))
+        path = self.tmp / "readiness.json"
+        data = self.ctx(FakeBox(), baseline=[DRIFT_ITEM]).data
+        data["items"] = []
+        rr.save(path, data)
+        out = []
+        self.assertEqual(sd.main(["contract", "ripple", "--baseline", str(path)], out=out.append,
+                                 shell=contract_box(rows=DRIFT_ROWS)), 1, out)
+        text = "\n".join(out)
+        self.assertIn("BREAKING crm_leads.id (type integer -> bigint)", text)
+        self.assertIn("baseline of release Proof", text)
+        self.assertIn("13/10/2026 15:40:00 MYT", text)
+        self.assertIn("1 breaking already on staging before this release", text)
+        self.assertIn("  baseline crm_leads.id (type integer -> bigint)", text)
+        data["staging"].pop("contract_baseline")
+        rr.save(path, data)
+        out = []
+        sd.main(["contract", "ripple", "--baseline", str(path)], out=out.append, shell=contract_box(rows=DRIFT_ROWS))
+        self.assertIn("no S5 baseline", "\n".join(out))
+
+    def test_the_report_shows_the_baseline(self) -> None:
+        path = self.tmp / "readiness.json"
+        data = self.ctx(FakeBox(), baseline=[DRIFT_ITEM]).data
+        data["items"] = []
+        rr.save(path, data)
+        out: list[str] = []
+        with mock_patch(sd.Deployer, "status", lambda self, run=None: {"result": "", "state": "none"}):
+            sd.report(path, out.append)
+        self.assertIn("S5 baseline: 1 breaking already on staging before this release, read 13/10/2026 15:40:00 MYT", "\n".join(out))
 
 
 class ReadinessS5Tests(unittest.TestCase):

@@ -228,6 +228,7 @@ class Loop:
                 rr.add_evidence(item, note=f"proof reset: the staging candidate moved from {old[:10]} to {tip[:10]}, so staging is checked again")
         cfg.pop("candidate_sha", None)
         cfg.pop("candidate_ref", None)
+        cfg.pop("contract_baseline", None)  # it described staging before the old candidate; S1 reads a fresh one
         cfg["deploy"] = None
         self.data.pop("staging_sha", None)
         self.event(f"staging candidate {ref} moved to {tip[:10]}: S1 to S5 are checked again")
