@@ -1291,5 +1291,119 @@ class SimsScratchFixtureTests(Quiet):
         self.assertFalse(s.lock_held(lock))
 
 
+# ------------------------------------------------- schema read (gate S5) ----
+
+import re  # noqa: E402
+
+WRITE_WORDS = re.compile(r"(?i)\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|rename|replace|lock|set|copy|"
+                         r"call|do|vacuum|reindex|migrate|checkout|fetch|backup)\b")
+
+
+def only_select(sql: str) -> bool:
+    return sql.lstrip().upper().startswith("SELECT ") and not WRITE_WORDS.search(sql) and ";" not in sql.rstrip(";")
+
+
+class SchemaReadTests(Quiet):
+    """Gate S5 reads the column list of the copied tables on staging, read-only, and nothing else."""
+
+    def ripple(self) -> FakeSys:
+        s = FakeSys("srv1297548")
+        s.when("psql", out="accounts_cx_requests\tid\tbigint\naccounts_cx_requests\tnote\tcharacter varying(1000)\n"
+                           "crm_leads\tid\tinteger\n")
+        return s
+
+    def sims(self) -> SimsBox:
+        s = SimsBox()
+        s.when("tinker", "information_schema", out="Psy Shell\n" + json.dumps(
+            [["alert_templates", "id", "bigint unsigned"], ["alert_templates", "type", "enum('sms','notification','whatsapp')"]]) + "\n")
+        return s
+
+    def test_ripple_reads_the_staging_database_as_postgres_in_a_read_only_session(self) -> None:
+        s = self.ripple()
+        lines = sr.RippleRemote(s, "tester", "rel-1").read_schema(["accounts_cx_requests", "crm_leads"])
+        self.assertEqual(len(s.calls), 1)
+        argv = s.calls[0]
+        self.assertEqual(argv[:4], ["runuser", "-u", "postgres", "--"])
+        self.assertIn("ripple_suite_staging", argv)
+        self.assertEqual(argv[argv.index("-d") + 1], "ripple_suite_staging")
+        self.assertIn("default_transaction_read_only=on", " ".join(argv))
+        self.assertNotIn("prod", " ".join(argv))
+        sql = argv[argv.index("-c") + 1]
+        self.assertTrue(only_select(sql), sql)
+        self.assertIn("'accounts_cx_requests', 'crm_leads'", sql)
+        self.assertIn("format_type(a.atttypid, a.atttypmod)", sql)
+        rows = json.loads(lines[0].removeprefix("SCHEMA "))
+        self.assertEqual(rows[1], ["accounts_cx_requests", "note", "character varying(1000)"])
+        self.assertIn("SCHEMA OK tables=2 columns=3", lines[-1])
+
+    def test_sims_reads_information_schema_through_the_app_account_after_proving_staging(self) -> None:
+        s = self.sims()
+        lines = sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+        self.assertTrue(s.ran("artisan", "env"))
+        tinker = s.ran("tinker", "information_schema")
+        self.assertEqual(len(tinker), 1)
+        self.assertTrue(as_app_owner(tinker[0]), tinker[0])
+        php = next(a for a in tinker[0] if a.startswith("--execute="))
+        sql = re.search(r'DB::select\("([^"]+)"\)', php).group(1)
+        self.assertTrue(only_select(sql), sql)
+        self.assertIn("TABLE_SCHEMA = DATABASE()", sql)
+        self.assertIn("IN ('alert_templates')", sql)
+        rows = json.loads(lines[0].removeprefix("SCHEMA "))
+        self.assertEqual(rows[1][2], "enum('sms','notification','whatsapp')")
+
+    def test_the_schema_read_never_runs_a_write_or_a_deploy_step(self) -> None:
+        for s, box in ((self.ripple(), sr.RippleRemote), (self.sims(), sr.SimsRemote)):
+            files_before = dict(s.files)
+            box(s, "tester", "rel-1").read_schema(["accounts_cx_requests"])
+            for argv in s.calls:
+                line = " ".join(argv)
+                self.assertTrue(line.startswith(("runuser -u postgres -- env PGOPTIONS=", "runuser -u www-data -- php artisan env",
+                                                 "runuser -u www-data -- php artisan tinker")), line)
+                for word in ("migrate", "checkout", "fetch", "db:backup", "install", "queue:restart", "deploy-ripple-suite", "pm2"):
+                    self.assertNotIn(word, line)
+            self.assertEqual(s.files, files_before, "nothing is written on the box")
+            self.assertEqual((s.spawned, s.bounded), ([], []))
+
+    def test_a_bad_or_missing_table_name_is_refused_before_any_command(self) -> None:
+        for tables in ([], ["users; drop table x"], ["Users"], ["a" * 80], ["x'y"]):
+            s = self.ripple()
+            with self.assertRaises(sr.Refused):
+                sr.RippleRemote(s, "tester", "rel-1").read_schema(tables)
+            self.assertEqual(s.calls, [], tables)
+
+    def test_the_wrong_box_is_refused(self) -> None:
+        s = self.ripple()
+        s.host = "srv1701812"
+        with self.assertRaises(sr.Refused):
+            sr.RippleRemote(s, "tester", "rel-1").read_schema(["crm_leads"])
+        self.assertEqual(s.calls, [])
+
+    def test_sims_refuses_when_the_application_is_not_staging(self) -> None:
+        s = self.sims()
+        s.when("artisan env", out="INFO The application environment is [production].\n")
+        with self.assertRaises(sr.Refused) as ctx:
+            sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+        self.assertIn("not staging", str(ctx.exception))
+        self.assertEqual(s.ran("tinker"), [])
+
+    def test_a_failed_or_unreadable_read_is_a_refusal_not_an_empty_list(self) -> None:
+        s = self.ripple()
+        s.when("psql", rc=2, out="psql: error: connection failed")
+        with self.assertRaises(sr.Refused):
+            sr.RippleRemote(s, "tester", "rel-1").read_schema(["crm_leads"])
+        s = self.sims()
+        s.when("tinker", "information_schema", out="PHP Fatal error")
+        with self.assertRaises(sr.Refused):
+            sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+
+    def test_schema_through_the_command_line(self) -> None:
+        out: list[str] = []
+        code = sr.main(["remote", "ripple", "schema", "crm_leads", "accounts_cx_requests"], self.ripple(), out.append)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out[0].startswith("SCHEMA ["))
+        code = sr.main(["remote", "ripple", "schema", "bad;name"], self.ripple(), out.append)
+        self.assertEqual(code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

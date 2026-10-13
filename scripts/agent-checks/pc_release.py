@@ -13,7 +13,7 @@
     pc_release.py resume RELEASE_ID                  start a stopped, blocked or stuck release again
     pc_release.py clean RELEASE_ID                   remove the finished release's Task Scheduler task (the folder stays)
     pc_release.py list                               releases on the PC and their loop state
-    pc_release.py deploy-status RELEASE_ID           the staging gates S1 to S4 of a release and the live state of its staging deploy
+    pc_release.py deploy-status RELEASE_ID           the staging gates S1 to S5 of a release and the live state of its staging deploy
     pc_release.py staging-switch ripple|sims on|off|show
                                                      the STOP switch on a staging box (off = unattended deploys refused)
 
@@ -190,7 +190,7 @@ def clean(release_id: str, *, runner=subprocess.run) -> str:
 
 
 def deploy_status(release_id: str, *, runner=subprocess.run) -> str:
-    """The staging gates of a release (S1 to S4), what was deployed, and what the box says now."""
+    """The staging gates of a release (S1 to S5), what was deployed, and what the box says now."""
     check_id(release_id)
     return pc_job.run_ssh(f'cd "$HOME/{FOLDER}/{release_id}" || exit 1\npython3 staging_deploy.py report readiness.json\n', runner=runner)
 

@@ -1,8 +1,9 @@
 # Staging Deploy From The Home PC
 
 Owner of how the home PC deploys Ripple and SIMS STAGING, and how it closes the
-staging gates S1, S2 and S3 of a release by itself (issue #356). Production is
-never reachable from here and the production go is always Hafiz's.
+staging gates S1 to S5 of a release by itself (issue #356; S5 from
+Sifututor/owner-analytics#134). Production is never reachable from here and the
+production go is always Hafiz's.
 
 ## Plain summary
 
@@ -19,6 +20,9 @@ never reachable from here and the production go is always Hafiz's.
   back and the previous code restored.
 - Then the loop smoke tests staging itself (a scripted login and, with
   Playwright, the change smoke) and carries on to Prod readiness 100 percent.
+- Gate S5 then checks that staging still has every table and column Owner
+  Analytics copies, with the same type. A release that renames, removes or
+  retypes one of them stops at S5, which names each column.
 
 ## What the PC can and cannot do
 
@@ -92,10 +96,11 @@ still applies.
 5. A plain update, an insert without a where clause and a seeder are not
    scanned: the lane never runs a seeder, and data statements stay a person's call.
 
-## Gates S1, S2, S3 (and S4) in the loop
+## Gates S1 to S5 in the loop
 
 Create the readiness file with `--staging-deploy ripple|sims` and the loop owns
-the staging gates. Without that flag S1 to S3 stay Mac gates, exactly as before.
+the staging gates. Without that flag S1 to S3 stay Mac gates, exactly as before,
+and there is no S5.
 
 | Gate | Owner | What the PC does | Evidence recorded |
 | --- | --- | --- | --- |
@@ -103,14 +108,59 @@ the staging gates. Without that flag S1 to S3 stay Mac gates, exactly as before.
 | S2 staging deployed | pc | `check` again, `start`, polls `status`, then `verify` | the `STARTED` line, the `RESULT` line with seconds, `VERIFY OK`, and the commit read back from the server |
 | S3 staging smoke | pc | confirms staging still serves the commit, scripted login on the staging lane, then each change smoke command | each command, exit code and a masked output tail; lane values are never shown |
 | S4 promotion holds the change | pc | Ripple: the branch contains the staged commit. SIMS: same changed lines on a different base (`git diff -U0` line sets, docs-only extras allowed) | the counts of staged, missing and extra lines |
+| S5 analytics contract | pc | reads what Owner Analytics copies from owner-analytics main, confirms staging still serves the commit, reads the column list of those tables on staging (read-only), compares | the contract commit, the number of tables and columns, each breaking column and each new column |
 
 S1 waits for items 2, 3, 4, 5, 7 and 8, so staging is not used for a candidate
-that is still changing. A pushed fix, or a moved candidate branch, resets S1 to
-S4 and staging is redeployed on the new commit. A refusal on the box blocks the
+that is still changing. S5 waits for S3, and for SIMS also for S4. A pushed
+fix, or a moved candidate branch, resets S1 to S5 and staging is redeployed on
+the new commit. A refusal on the box blocks the
 loop after the second try, with the box's own reason (for example "needs a Mac
 session"). A stop (a `STOP` file) ends the polling but not a deploy already
 running on the box; on `resume` the loop attaches to that run and never starts a
 second one.
+
+### Gate S5: the analytics contract
+
+Owner Analytics copies chosen tables and columns from SIMS and Ripple. Before it
+copies a table, the copier checks that each copied column still exists with the
+type it expects; if not, it stops that table with `SourceSchemaDriftError` and
+the owner's data goes stale. Hafiz approved on 13/10/2026 that the copy must stay
+up 99 percent of the time, so S5 catches that break on staging, before
+production.
+
+- The contract is the copier's own list: `extractor/registry.json` (SIMS) and
+  `extractor/registry-ripple.json` (Ripple) in the owner-analytics checkout,
+  fields `source_table`, `source_columns` and `source_types`. S5 reads them from
+  `origin/main` after a `git fetch`, never from the working folder, which can be
+  behind (on 13/10/2026 the umbrella folder had no Ripple registry while main
+  did). If the fetch fails it uses the last fetched main and says so.
+- The checkout is `SIFU_OWNER_ANALYTICS_DIR`, else `sims-owner-analytics/` in
+  the umbrella checkout, else `~/Projects/Sifututor/sims-owner-analytics`. If it
+  is missing, or main or the registry cannot be read, S5 fails closed: without
+  the contract it cannot pass.
+- On staging, the box program runs one read-only SELECT of the column list of
+  the copied tables only. SIMS: `information_schema.COLUMNS` through the
+  application's own connection (`php artisan tinker` as `www-data`), after
+  `artisan env` proves the application is staging. Ripple: the
+  `ripple_suite_staging` database as the `postgres` account, the same route as
+  access lane 40, in a forced read-only session; no password or connection string
+  is handled. Nothing is written and no value is read, only table, column and
+  type names.
+- Types compare the way the copier compares them: lower case with all spaces
+  removed (`normalizeType` in `engine.mjs`, `normalizePgType` in
+  `pg-types.mjs`). So `BIGINT` equals `bigint`, but `int` is not `int unsigned`.
+
+| Found on staging | S5 |
+| --- | --- |
+| A copied table is missing | fails, names the table |
+| A copied column is missing (removed or renamed) | fails, names `table.column` |
+| A copied column has another type | fails, names `table.column` and both types |
+| A column the contract does not copy | passes, listed as information |
+
+A failure means one of two fixes: change the release so the copied column stays,
+or change the owner-analytics registry first (its own release) and run S5 again.
+A new column is never a failure; if the owner wants it, that is an
+owner-analytics change.
 
 ### The S3 environment (Playwright without sudo)
 
@@ -173,6 +223,7 @@ python3 scripts/agent-checks/staging_deploy.py check  ripple --ref release/<issu
 python3 scripts/agent-checks/staging_deploy.py deploy ripple --ref release/<issue>-<name> --sha <40 hex>
 python3 scripts/agent-checks/staging_deploy.py status ripple
 python3 scripts/agent-checks/staging_deploy.py verify ripple <40 hex>
+python3 scripts/agent-checks/staging_deploy.py contract ripple   # S5 by hand on current staging; exit 1 when a copied column breaks
 python3 scripts/agent-checks/pc_release.py staging-switch ripple off   # STOP: new deploys refused
 python3 scripts/agent-checks/pc_release.py staging-switch ripple on
 ```
@@ -234,6 +285,12 @@ commit each box already served. Nothing was deployed that was not already there.
   `388176fc4` on staging and `d9e9e9e0d` on main (different ids) has 389 changed
   lines each, 0 missing, 0 extra. Test one change at a time, or keep S4 a Mac gate
   for a stacked candidate.
+- S5 reads only the copied tables, so it cannot report a brand new table. Its
+  "new" list holds every column of a copied table that the contract leaves out,
+  including columns left out on purpose: it compares with the contract, not with
+  staging before the release. It sees the staging schema, which normally
+  matches production after the same release; a column changed by hand on
+  production alone is not visible to it.
 - STOP does not kill a deploy that is already running; only the box finishes it.
 - A manual deploy by a person on the SIMS box takes no lock the PC can see; the
   process guard and the clean-checkout rule catch most overlaps, not all.

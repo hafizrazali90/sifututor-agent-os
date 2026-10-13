@@ -12,11 +12,12 @@ here (ripple -> `staging`, sims -> `finch`), and the box-side program
     staging_deploy.py verify  ripple|sims SHA [--ref REF]
     staging_deploy.py switch  ripple|sims on|off|show     (STOP switch on the box)
     staging_deploy.py report  READINESS.json              (the staging gates of a release)
+    staging_deploy.py contract ripple|sims                (gate S5 by hand: copied columns against current staging, read-only)
 
 The loop (release_loop.py) uses the same code through the readiness checks
-staging_candidate (S1), staging_deployed (S2), staging_smoke (S3) and
-patch_equivalent (S4 for SIMS). The production deploy is never reachable from
-here and is always Hafiz's.
+staging_candidate (S1), staging_deployed (S2), staging_smoke (S3),
+patch_equivalent (S4 for SIMS) and analytics_contract (S5). The production
+deploy is never reachable from here and is always Hafiz's.
 """
 
 from __future__ import annotations
@@ -56,6 +57,9 @@ STAGING_KEYS = {"target", "ref", "mode", "commit", "smoke_commands", "smoke_exce
 SMOKE_COMMAND_PREFIXES = ("npx playwright test ", "npm run test:", "bash scripts/qa/", "builtin:login", "builtin:page ")
 PLAYWRIGHT_HOST = "ubuntu24.04-x64"
 DOCS_EXTRA_OK = ("docs/", "CHANGELOG.md", "RELEASE-DOCS.md", "TESTING.md")
+OA_DIR_ENV = "SIFU_OWNER_ANALYTICS_DIR"
+OA_REF = "origin/main"
+CONTRACT_FILES = {"sims": "extractor/registry.json", "ripple": "extractor/registry-ripple.json"}
 
 
 class DeployError(RuntimeError):
@@ -245,6 +249,101 @@ def patch_equivalence(shell: Any, repo_dir: Path | str, base_ref: str, staged_sh
     return info
 
 
+# ------------------------------------------------- analytics contract (S5) --
+
+def normalize_type(value: Any) -> str:
+    """The copier's own type rule (normalizeType in engine.mjs, normalizePgType in pg-types.mjs): lower case, no whitespace."""
+    return re.sub(r"\s+", "", str(value).lower())
+
+
+def compare_contract(entries: list[dict[str, Any]], rows: list[list[str]]) -> dict[str, list[dict[str, str]]]:
+    """Registry entries against (table, column, type) rows read from a database.
+
+    breaking: a copied table or column is missing, or its type differs after normalisation (the copier would stop that table with
+    SourceSchemaDriftError or SourceSchemaTypeDriftError). new: a column or table the contract does not copy; information only."""
+    actual: dict[str, dict[str, str]] = {}
+    for table, column, kind in rows:
+        actual.setdefault(table, {})[column] = kind
+    breaking: list[dict[str, str]] = []
+    copied: dict[str, set[str]] = {}
+    for entry in entries:
+        table = entry["source_table"]
+        copied.setdefault(table, set()).update(entry["source_columns"])
+        if table not in actual:
+            item = {"table": table, "column": "", "why": "table missing", "expected": "", "found": ""}
+            if item not in breaking:
+                breaking.append(item)
+            continue
+        for column in entry["source_columns"]:
+            expected = entry["source_types"][column]
+            if column not in actual[table]:
+                item = {"table": table, "column": column, "why": "column missing", "expected": expected, "found": ""}
+            elif normalize_type(actual[table][column]) != normalize_type(expected):
+                item = {"table": table, "column": column, "why": "type changed", "expected": expected, "found": actual[table][column]}
+            else:
+                continue
+            if item not in breaking:
+                breaking.append(item)
+    new: list[dict[str, str]] = []
+    for table, columns in actual.items():
+        if table not in copied:
+            new.append({"table": table, "column": "", "type": "", "why": "new table"})
+            continue
+        new += [{"table": table, "column": c, "type": t, "why": "new column"} for c, t in columns.items() if c not in copied[table]]
+    return {"breaking": breaking, "new": new}
+
+
+def owner_analytics_dir() -> Path:
+    """The owner-analytics checkout: SIFU_OWNER_ANALYTICS_DIR, else the umbrella's sims-owner-analytics folder."""
+    if os.environ.get(OA_DIR_ENV):
+        return Path(os.environ[OA_DIR_ENV])
+    beside = HERE.parent.parent / "sims-owner-analytics"
+    return beside if beside.is_dir() else Path.home() / "Projects" / "Sifututor" / "sims-owner-analytics"
+
+
+def load_contract(shell: Any, target: str, stop_check: Callable[[], bool] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """What Owner Analytics copies from this target, read from owner-analytics main (not the working tree, which can be behind).
+
+    Fails closed (DeployError) when the checkout, the commit or the registry cannot be read: without the contract S5 cannot pass."""
+    oa = owner_analytics_dir()
+    closed = "; S5 cannot know what Owner Analytics copies, so it fails closed"
+    if not (oa / ".git").exists():
+        raise DeployError(f"the owner-analytics checkout is missing at {oa} (set {OA_DIR_ENV}){closed}")
+    path = CONTRACT_FILES[target]
+    fetch_code, _ = shell.run(["git", "fetch", "--quiet", "origin", "main"], cwd=oa, stop_check=stop_check, timeout=120)
+    code, out = shell.run(["git", "rev-parse", "--verify", f"{OA_REF}^{{commit}}"], cwd=oa, stop_check=stop_check)
+    sha = out.strip().splitlines()[-1] if code == 0 and out.strip() else ""
+    if not sr.valid_sha(sha):
+        raise DeployError(f"the owner-analytics checkout has no readable {OA_REF} (exit {code}){closed}")
+    code, text = shell.run(["git", "show", f"{sha}:{path}"], cwd=oa, stop_check=stop_check)
+    if code != 0:
+        raise DeployError(f"{path} cannot be read from owner-analytics {OA_REF} {sha[:10]} (exit {code}){closed}")
+    try:
+        tables = json.loads(text)["tables"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise DeployError(f"{path} on owner-analytics {OA_REF} is not a readable registry ({exc.__class__.__name__}){closed}") from exc
+    entries = [t for t in tables if isinstance(t, dict) and t.get("source", target) == target]
+    for entry in entries:
+        columns, types = entry.get("source_columns"), entry.get("source_types")
+        if (not sr.TABLE_RE.fullmatch(str(entry.get("source_table", ""))) or not isinstance(columns, list) or not columns
+                or not isinstance(types, dict) or not all(isinstance(c, str) and isinstance(types.get(c), str) for c in columns)):
+            raise DeployError(f"{path} has an entry without a plain table name, columns and a type per column "
+                              f"({str(entry.get('source_table'))[:40]!r}){closed}")
+    if not entries:
+        raise DeployError(f"{path} on owner-analytics {OA_REF} lists no {target} table{closed}")
+    info = {"sha": sha, "path": path, "fetched": fetch_code == 0, "dir": str(oa)}
+    return entries, info
+
+
+def contract_item_text(item: dict[str, str]) -> str:
+    name = f"{item['table']}.{item['column']}" if item.get("column") else item["table"]
+    if item["why"] == "type changed":
+        return f"{name} (type {item['expected']} -> {item['found']})"
+    if item["why"] in ("new column", "new table"):
+        return f"{name} ({item['why']}{', ' + item['type'] if item.get('type') else ''})"
+    return f"{name} ({item['why']})"
+
+
 # ----------------------------------------------------------- the deployer ---
 
 class Deployer:
@@ -358,6 +457,23 @@ class Deployer:
             raise DeployError("the commit must be 40 lowercase hex characters")
         code, out = self.call("verify", [sha], ref=ref, timeout=180)
         return code == 0 and "VERIFY OK" in out, out.strip()
+
+    def schema(self, tables: list[str]) -> list[list[str]]:
+        """The (table, column, type) rows of these tables on the staging database, read-only on the box."""
+        if not tables or not all(sr.TABLE_RE.fullmatch(t) for t in tables):
+            raise DeployError("schema needs plain lowercase table names")
+        code, out = self.call("schema", sorted(set(tables)), timeout=300)
+        line = next((l for l in out.splitlines() if l.startswith("SCHEMA [")), "")
+        if code != 0 or not line:
+            raise DeployError("the staging column list could not be read: " +
+                              (self.refusal(out) if code == 2 else f"exit {code}: {self.refusal(out)}"))
+        try:
+            rows = json.loads(line.removeprefix("SCHEMA "))
+        except ValueError as exc:
+            raise DeployError("the staging column list came back unreadable") from exc
+        if not all(isinstance(r, list) and len(r) == 3 and all(isinstance(v, str) for v in r) for r in rows):
+            raise DeployError("the staging column list came back in an unexpected shape")
+        return rows
 
     def switch(self, action: str) -> str:
         if action not in ("on", "off", "show"):
@@ -665,6 +781,48 @@ def check_patch_equivalent(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
     return result(False, info.get("why", "not equivalent"), evidence)
 
 
+def check_analytics_contract(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
+    """S5: staging still has every table and column Owner Analytics copies, with the same type (Sifututor/owner-analytics#134).
+
+    A renamed, removed or retyped copied column fails and is named. New tables and columns are listed as information only."""
+    try:
+        cfg = staging_cfg(ctx.data)
+        sha, ref = str(cfg.get("candidate_sha", "")), str(cfg.get("candidate_ref", ""))
+        target = cfg["target"]
+        if not sr.valid_sha(sha) or ctx.data.get("staging_sha") != sha:
+            return result(False, "staging has not been deployed with the candidate yet (S2 comes first)")
+        entries, contract = load_contract(ctx.shell, target, ctx.stop_check)
+        tables = sorted({e["source_table"] for e in entries})
+        columns = sum(len(e["source_columns"]) for e in entries)
+        evidence: list[dict[str, Any]] = [{
+            "command": f"git show {contract['sha'][:12]}:{contract['path']} (owner-analytics {OA_REF})",
+            "sha": contract["sha"],
+            "note": f"{len(tables)} copied tables, {columns} copied columns"
+                    + ("" if contract["fetched"] else "; could not refresh from GitHub, so the last fetched main was used")}]
+        deployer = deployer_for(ctx, cfg)
+        ok, text = deployer.verify(sha, ref)
+        evidence.append({"command": f"remote {target} verify {sha[:12]}", "note": (text.splitlines() or ["no answer"])[-1]})
+        if not ok:
+            return result(False, "staging no longer serves the deployed commit, so its columns would belong to something else", evidence)
+        rows = deployer.schema(tables)
+    except DeployError as exc:
+        return result(False, str(exc))
+    diff = compare_contract(entries, rows)
+    breaking = [contract_item_text(i) for i in diff["breaking"]]
+    new = [contract_item_text(i) for i in diff["new"]]
+    evidence.append({"command": f"remote {target} schema ({len(tables)} copied tables, one read-only SELECT on staging)",
+                     "note": f"{len(rows)} columns read; {len(breaking)} breaking; {len(new)} new",
+                     "breaking": breaking, "new": new})
+    info = f"; for information, not copied yet: {', '.join(new[:8])}{' and more' if len(new) > 8 else ''}" if new else ""
+    if breaking:
+        return result(False, f"{len(breaking)} copied column(s) would stop the Owner Analytics copy: {', '.join(breaking[:10])}"
+                      + (" and more" if len(breaking) > 10 else "") + info, evidence,
+                      "Breaking (the copier stops these tables):\n" + "\n".join(breaking)
+                      + ("\n\nNew, information only:\n" + "\n".join(new) if new else ""))
+    return result(True, f"every copied table and column is still on {target} staging with the same type ({len(tables)} tables, "
+                  f"{columns} columns, owner-analytics main {contract['sha'][:10]}){info}", evidence)
+
+
 # ------------------------------------------------------------------- CLI ----
 
 def report(path: Path, out: Callable[[str], None]) -> int:
@@ -677,7 +835,7 @@ def report(path: Path, out: Callable[[str], None]) -> int:
     out(f"  candidate: {cfg.get('candidate_ref') or candidate_ref(data, cfg)} at {cfg.get('candidate_sha', 'not accepted yet')}")
     out(f"  deployed commit read back: {data.get('staging_sha', 'none yet')}")
     items = rr.item_map(data)
-    for iid in ("S1", "S2", "S3", "S4"):
+    for iid in ("S1", "S2", "S3", "S4", "S5"):
         if iid in items and rr.is_applicable(items[iid]):
             out(f"  {iid} {items[iid].get('title', '')[:70]} [{items[iid].get('owner')}]: {items[iid].get('status')}")
     if cfg.get("deploy"):
@@ -709,11 +867,24 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
     p = sub.add_parser("verify"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("sha"); p.add_argument("--ref")
     p = sub.add_parser("switch"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("action", choices=("on", "off", "show"))
     p = sub.add_parser("report"); p.add_argument("readiness", type=Path)
+    p = sub.add_parser("contract"); p.add_argument("target", choices=sr.TARGETS)
     args = parser.parse_args(argv)
     shell = shell or rr.RealShell()
     try:
         if args.cmd == "report":
             return report(args.readiness, out)
+        if args.cmd == "contract":
+            entries, contract = load_contract(shell, args.target)
+            rows = Deployer(args.target, shell).schema(sorted({e["source_table"] for e in entries}))
+            diff = compare_contract(entries, rows)
+            out(f"owner-analytics {OA_REF} {contract['sha'][:10]} {contract['path']}"
+                + ("" if contract["fetched"] else " (could not refresh from GitHub)"))
+            out(f"{args.target} staging: {len(rows)} columns read, {len(diff['breaking'])} breaking, {len(diff['new'])} new")
+            for item in diff["breaking"]:
+                out("  BREAKING " + contract_item_text(item))
+            for item in diff["new"]:
+                out("  new      " + contract_item_text(item))
+            return 1 if diff["breaking"] else 0
         if args.cmd in ("check", "deploy"):
             sha = args.sha
             if not sha:
