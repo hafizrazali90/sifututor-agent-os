@@ -94,7 +94,10 @@ name the holder, branch, purpose and end time. Deploy under your own lease with
 `--holder <name>` (default: the actor; the loop deploys as `pc-loop`, or as
 `staging.lease_holder` from the readiness file). `--override-lease "<reason>"`
 deploys anyway: the reason goes into the box log, the `CHECK OK` and `STARTED`
-answers, the run state, `status`, and the PC's run output. The lease guards only
+answers, the run state, `status`, and the PC's run output. The box program then
+starts the Ripple controller with `--lease-holder <holder>` (the holder it
+checked) and, when one was given, `--override-lease "<reason>"`, because the
+controller version from #371 enforces the lease itself; SIMS gets neither. The lease guards only
 deploys that go through this script; a person running the controller by hand on
 the box does not see it.
 
