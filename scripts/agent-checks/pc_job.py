@@ -62,6 +62,11 @@ BUILDER_TOOLS = (
 PROJECT_BUILDER_TOOLS = (
     "Bash(npx vitest:*)", "Bash(npm run test:unit:*)", "Bash(npx tsc:*)",
     "Bash(npx eslint:*)", "Bash(npm run lint:*)",
+    "Bash(npm test:*)", "Bash(npm run validate:registry:*)",
+    "Bash(git mv:*)", "Bash(grep:*)", "Bash(sed:*)",
+    "Bash(python3 scripts/generate-ripple-registry.py:*)",
+    "Bash(python3 scripts/generate-extractor-registry.py:*)", "Bash(python3 scripts/generate-mcp-bundle-f.py:*)",
+    "Bash(python3 scripts/apply-staff-scopes.py:*)",
     f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
 )
 NPM_CI_TIMEOUT = 1200
