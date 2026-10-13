@@ -754,10 +754,10 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | Field | Value |
 |-------|-------|
 | **Conf file** | None for the deploy. The route is the PC's own key `~/.ssh/id_ed25519_pc_agent` with the aliases `staging` (Ripple staging box) and `finch` (SIMS staging box), the same logins the Mac has. The smoke reads the existing staging lanes (`ripple-staging-smoke.conf`, `staging-smoke.conf`, `sims-staging-browser-qa.conf`, `sims-staging-e2e.conf`, `staging-lifecycle-qa.conf`) copied to the PC, mode 600 |
-| **Wrapper** | `scripts/agent-checks/staging_deploy.py check\|deploy\|status\|verify\|switch ripple\|sims`; the release loop uses the same code for gates S1 to S3. The box-side program `staging_remote.py` is sent over ssh and re-checks every rule |
+| **Wrapper** | `scripts/agent-checks/staging_deploy.py check\|deploy\|status\|verify\|switch ripple\|sims`, and `lease\|release-lease ripple` for the Ripple staging lease; the release loop uses the same code for gates S1 to S3. The box-side program `staging_remote.py` is sent over ssh and re-checks every rule |
 | **Purpose** | Let the PC release loop deploy staging for a release by itself and close the staging gates with real evidence (issue #356) |
 | **Tier** | write on staging only. Hafiz's approval line is recorded in each readiness file (`--staging-approval`); no further approval per run |
-| **Allowed operations** | `check`, `deploy`, `status`, `verify` and the STOP `switch` for the two targets `ripple` and `sims`; Ripple through the sealed controller `deploy-ripple-suite staging --release-ref --commit`; SIMS through the staging runbook steps as `www-data`, with the scanned migration lane |
+| **Allowed operations** | `check`, `deploy`, `status`, `verify` and the STOP `switch` for the two targets `ripple` and `sims`; `lease` and `release-lease` for Ripple staging (who holds the shared box, until when; `check` and `deploy` refuse over someone else's unexpired lease unless `--override-lease "<reason>"` is given, and the reason is logged); Ripple through the sealed controller `deploy-ripple-suite staging --release-ref --commit`; SIMS through the staging runbook steps as `www-data`, with the scanned migration lane |
 | **Safe verification** | `staging_deploy.py status ripple`, `staging_deploy.py verify ripple <sha>`, `staging_deploy.py check ...` (changes nothing) |
 | **Revoke** | Remove the single `homepc-agent 09/10/2026` line from `/root/.ssh/authorized_keys` on both boxes; or `pc_release.py staging-switch ripple\|sims off` to refuse new deploys at once |
 | **Forbidden** | Never production, never main, never a Ripple migration or confirm phrase, never a rollback, never a production credential on the PC. Rules and refusals: [staging-deploy-from-pc.md](staging-deploy-from-pc.md) |
@@ -784,6 +784,19 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Method** | Download the newest object, compare its sha256 with the run summary, decrypt on the Mac and stream over ssh into a throwaway `--network none` MySQL on KVM8 (same as `scripts/verify-synthetic-restore.sh` in owner-analytics), compare every table with `sync_state.destination_count`, scan for credential patterns, remove the container, its folder and the download |
 | **Safe verification** | Listing `backups/ripple/` returns objects; a put, a delete and a list of another bucket return `AccessDenied` (all proved 13/10/2026) |
 | **Forbidden** | Never restore over the live `oa-mysql`, never decrypt on KVM8, never keep a decrypted dump on disk, never print the key or passphrase |
+
+### 45. `ripple-logs-readonly` - Ripple PM2 Error Log, Read-Only
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The route is `ssh staging` (the KVM8 box, which runs both Ripple staging and Ripple production), and the log is read as the `deploy` account that owns it, never as root. No password or key is handled by the wrapper |
+| **Logs** | `staging`: `/home/deploy/.pm2/logs/ripple-suite-staging-error.log`; `prod`: `/home/deploy/.pm2/logs/ripple-suite-prod-error.log` |
+| **Wrapper** | `scripts/agent-access/ripple-logs-readonly.sh staging\|prod [--lines N] [--pattern REGEX]`. Reads the last 400 lines at most, keeps the error-level ones (stack frames left out), prints at most 60 (default 30), newest last. The pattern is matched against the masked line |
+| **Masking** | Secret, token, password and key values; cookies; authorization headers; database and cache connection URLs (whole URL) and `user:pass@` in any URL; JWTs and long opaque tokens; phone numbers; email addresses. Record ids (UUIDs) and commit ids stay readable |
+| **Purpose** | Diagnose a Ripple 500 or a failing deploy the way an operator would, without an ad-hoc `sudo tail` (issue #371) |
+| **Tier** | auto-read |
+| **Safe verification** | `RIPPLE_LOGS_DRY_RUN=1 scripts/agent-access/ripple-logs-readonly.sh staging` prints the remote command; `scripts/agent-access/ripple-logs-readonly.sh staging --lines 5` |
+| **Forbidden** | Never `pm2 env`, `pm2 jlist`, `pm2 show` or any read of the process environment; never the out log or a log outside the two files; never copy personal data from a log into notes, issues or chat beyond what the task needs |
 
 ---
 
@@ -812,6 +825,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `sims-staging-browser-qa` | `sims-staging-browser-qa.conf` | write (staging only) | Yes: before cases that change staging data |
 | `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
 | `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
+| `ripple-logs-readonly` | none (ssh staging, PM2 error log read as deploy, masked) | auto-read | Never |
 | `pc-staging-deploy` | none (PC key, aliases `staging` and `finch`) | write (staging only) | Approval line in each readiness file (`--staging-approval`) |
 | `owner-analytics-backup-restore` | `owner-analytics-backup-restore.conf` + restore keyring (read-only Wasabi user) | auto-read | Never (restore only into a throwaway database) |
 | `betterstack-uptime-write` | `betterstack-uptime-write.conf` | write | List the exact monitor first |
@@ -851,6 +865,7 @@ never print secret values.
 | `check-ripple-staging-auth.sh` | Ripple staging: reusable authenticated Luna Superadmin/restricted RBAC journey |
 | `lls-server-readonly.sh <env> artisan\|logs\|pm2` | Learnest server, allow-listed read commands as the app account (lane 41) |
 | `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
+| `ripple-logs-readonly.sh staging\|prod [--lines N] [--pattern REGEX]` | Ripple PM2 error log, error-level lines only, masked, at most 60 lines (lane 45) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
@@ -862,7 +877,7 @@ never print secret values.
 | `check-microsoft-planner.sh` | Lokka / M365 access availability |
 | `check-backups.sh` | Backup storage object count and latest timestamp |
 | `proc-list-masked.sh [pattern]` | Running processes: pid, user, elapsed time and the full command line with secret-looking values masked (`-p<value>` after mysql/mariadb/mysqldump, `--password=`/`--token=`/`--secret=`/`--api-key=`, `Authorization: Bearer`, `user:pass@` in URLs, long tokens after key-like flags, secret-looking `KEY=value`). Use it instead of `ps -ef`, `ps aux` or `ps -o command`, which the secret guard blocks. The pattern is matched against the masked line. `--mask-stdin` masks lines piped in |
-| `../agent-checks/staging_deploy.py` | Staging deploy for Ripple and SIMS from the PC or the Mac (lane 42): `check` changes nothing, `deploy` runs the rules, the deploy and the read-back, `status`, `verify`, `switch` |
+| `../agent-checks/staging_deploy.py` | Staging deploy for Ripple and SIMS from the PC or the Mac (lane 42): `check` changes nothing, `deploy` runs the rules, the deploy and the read-back, `status`, `verify`, `switch`; `lease` and `release-lease` hold Ripple staging for one person |
 | `check-jev-shadow.py` | Jev credential/SDK readiness and optional non-sensitive live canary |
 
 ---

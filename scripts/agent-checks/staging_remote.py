@@ -13,6 +13,10 @@ way to name production.
     staging_remote.py remote ripple|sims verify SHA [--ref REF]
     staging_remote.py remote ripple|sims switch on|off|show
     staging_remote.py remote ripple|sims schema TABLE [TABLE ...]     (gate S5: read-only column list)
+    staging_remote.py remote ripple lease --holder NAME --purpose TEXT --minutes N [--branch REF]
+    staging_remote.py remote ripple release-lease
+
+check and start also take --holder NAME (default: the actor) and --override-lease REASON.
 
 ripple: runs the sealed controller `deploy-ripple-suite staging --release-ref REF
         --commit SHA` as the `deploy` user. Refuses anything that adds or changes
@@ -21,10 +25,11 @@ sims:   runs the staging runbook steps as `www-data`: ownership check, fetch and
         checkout, install and build, backup, migrations (scanned first, rolled
         back on failure), cache clears, queue restart, writable gate, read back.
 
-Safety lives here, not in a server user: STOP switch, one deploy at a time, a
-lock probe of every deploy lock, a clean checkout on the served commit, a
-bounded run time, a log line with who, what and when (MYT), and a read-only
-verify at the end. Nothing here prints an environment or a secret.
+Safety lives here, not in a server user: STOP switch, one deploy at a time, the
+Ripple staging lease (who holds the shared box, and until when), a lock probe of
+every deploy lock, a clean checkout on the served commit, a bounded run time, a
+log line with who, what and when (MYT), and a read-only verify at the end.
+Nothing here prints an environment or a secret.
 """
 
 from __future__ import annotations
@@ -56,6 +61,11 @@ RELEASE_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,59}")
 RUN_RE = re.compile(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}")
 TABLE_RE = re.compile(r"[a-z][a-z0-9_]{0,63}")
 MAX_SCHEMA_TABLES = 500
+# The Ripple staging lease (issue #371): free text is limited to plain characters, never '=' or quotes, so a lease
+# line can never look like a status field (run=, state=) or break a log line.
+LEASE_TEXT_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 .,:;()#/@+_-]{2,159}")
+LEASE_BRANCH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,89}")
+LEASE_MAX_MINUTES = 720
 
 RIPPLE_REF_RE = re.compile(r"release/[0-9]+-[a-z0-9]+([a-z0-9-]*[a-z0-9])?")
 SIMS_REF_RES = (
@@ -401,11 +411,15 @@ class Base:
     own_lock = ""
     max_seconds = 3600
     lock_names: tuple[str, ...] = ()
+    lease_path = ""  # only Ripple staging has a lease
 
-    def __init__(self, s: Any, actor: str = "pc-loop", release: str = "none") -> None:
+    def __init__(self, s: Any, actor: str = "pc-loop", release: str = "none", holder: str = "", override: str = "") -> None:
         self.s = s
         self.actor = actor
         self.release = release
+        self.holder = holder or actor
+        self.override = override
+        self.lease_note = ""
 
     # ---- log ----
     def log(self, text: str) -> None:
@@ -438,12 +452,107 @@ class Base:
             self.refuse(f"{ref!r} is not an allowed {self.target} staging ref name")
 
     def check_identity(self) -> None:
-        for name, value, rx in (("actor", self.actor, NAME_RE), ("release", self.release, RELEASE_RE)):
+        for name, value, rx in (("actor", self.actor, NAME_RE), ("release", self.release, RELEASE_RE), ("holder", self.holder, NAME_RE)):
             if not rx.fullmatch(value or ""):
                 self.refuse(f"{name} is not a valid name")
+        if self.override and not LEASE_TEXT_RE.fullmatch(self.override):
+            self.refuse("the lease override reason must be 3 to 160 plain characters")
 
     def held_locks(self) -> list[str]:
         raise NotImplementedError
+
+    # ---- the staging lease (issue #371) ----
+    def read_lease(self) -> dict[str, Any] | None:
+        """The lease on this box, or None. An unreadable lease file counts as held by nobody who can match it (fails closed)."""
+        if not self.lease_path or not self.s.exists(self.lease_path):
+            return None
+        try:
+            lease = json.loads(self.s.read_text(self.lease_path, 20_000))
+            expires = dt.datetime.fromisoformat(lease["expires_utc"])
+            if not isinstance(lease.get("holder"), str) or expires.tzinfo is None:
+                raise ValueError("bad lease")
+        except (OSError, ValueError, KeyError, TypeError):
+            return {"holder": "(unreadable lease)", "branch": "", "purpose": "the lease file is unreadable; release-lease clears it",
+                    "expires_at": "unknown", "active": True, "minutes_left": -1}
+        lease["active"] = expires > self.s.now()
+        lease["minutes_left"] = max(0, int((expires - self.s.now()).total_seconds() // 60))
+        return lease
+
+    @staticmethod
+    def lease_text(lease: dict[str, Any]) -> str:
+        left = f", {lease['minutes_left']} min left" if lease.get("minutes_left", -1) >= 0 else ""
+        branch = f" for {lease['branch']}" if lease.get("branch") else ""
+        return f"{lease.get('holder')}{branch} until {lease.get('expires_at')}{left}: {lease.get('purpose', '')}"
+
+    def lease_lines(self) -> list[str]:
+        if not self.lease_path:
+            return []
+        lease = self.read_lease()
+        if lease is None:
+            return ["LEASE none: Ripple staging is free"]
+        if not lease["active"]:
+            return [f"LEASE expired (was held by {self.lease_text(lease)}): Ripple staging is free"]
+        return [f"LEASE held by {self.lease_text(lease)}"]
+
+    def check_lease(self) -> None:
+        """Refuse while someone else holds an unexpired lease, unless an override reason is given (then it is logged)."""
+        lease = self.read_lease()
+        if lease is None or not lease["active"]:
+            self.lease_note = "lease free"
+            return
+        if lease.get("holder") == self.holder:
+            self.lease_note = f"lease held by {self.holder} until {lease.get('expires_at')}"
+            return
+        if not self.override:
+            self.refuse(f"Ripple staging is leased to {self.lease_text(lease)}. Ask them, wait for the lease to end, or give "
+                        "--override-lease \"<reason>\"")
+        self.lease_note = f"LEASE OVERRIDE of {lease.get('holder')}'s lease by {self.holder}: {self.override}"
+        self.log(f"LEASE_OVERRIDE holder={self.holder} lease_holder={lease.get('holder')} "
+                 f"lease_branch={lease.get('branch') or '-'} reason={json.dumps(self.override)}")
+
+    def lease_word(self) -> str:
+        """One word for the log line: free, held (by this holder) or override."""
+        if self.lease_note.startswith("LEASE OVERRIDE"):
+            return "override"
+        return "held" if self.lease_note.startswith("lease held") else "free"
+
+    def take_lease(self, branch: str, purpose: str, minutes: int) -> list[str]:
+        """Take the lease, or extend it when this holder already has it."""
+        self.check_host()
+        if not self.lease_path:
+            self.refuse(f"the staging lease exists for ripple only, not {self.target}")
+        if not NAME_RE.fullmatch(self.holder or ""):
+            self.refuse("holder is not a valid name")
+        if not LEASE_TEXT_RE.fullmatch(purpose or ""):
+            self.refuse("purpose must be 3 to 160 plain characters (letters, digits, spaces and . , : ; ( ) # / @ + _ -)")
+        if branch and not LEASE_BRANCH_RE.fullmatch(branch):
+            self.refuse("branch is not a valid branch name")
+        if not isinstance(minutes, int) or not 1 <= minutes <= LEASE_MAX_MINUTES:
+            self.refuse(f"minutes must be between 1 and {LEASE_MAX_MINUTES}")
+        lease = self.read_lease()
+        if lease is not None and lease["active"] and lease.get("holder") != self.holder:
+            self.refuse(f"Ripple staging is already leased to {self.lease_text(lease)}; ask them, wait, or release-lease")
+        extended = lease is not None and lease["active"]
+        now = self.s.now()
+        expires = now + dt.timedelta(minutes=minutes)
+        record = {"holder": self.holder, "branch": branch, "purpose": purpose, "minutes": minutes,
+                  "taken_at": lease.get("taken_at", myt(now)) if extended else myt(now), "expires_at": myt(expires),
+                  "expires_utc": expires.astimezone(dt.timezone.utc).isoformat()}
+        self.s.write_text(self.lease_path, json.dumps(record, indent=1, sort_keys=True) + "\n")
+        self.log(f"LEASE_{'EXTENDED' if extended else 'TAKEN'} holder={self.holder} branch={branch or '-'} minutes={minutes} "
+                 f"expires_myt={myt(expires)} purpose={json.dumps(purpose)}")
+        return [f"LEASE {'extended' if extended else 'taken'}: {self.lease_text(dict(record, minutes_left=minutes))}"]
+
+    def release_lease(self) -> list[str]:
+        self.check_host()
+        if not self.lease_path:
+            self.refuse(f"the staging lease exists for ripple only, not {self.target}")
+        lease = self.read_lease()
+        if lease is None:
+            return ["LEASE none: nothing to release"]
+        self.s.remove(self.lease_path)
+        self.log(f"LEASE_RELEASED by={self.holder} lease_holder={lease.get('holder')} was_active={lease['active']}")
+        return [f"LEASE released (was held by {self.lease_text(lease)})"]
 
     # ---- run store ----
     def run_dir(self, runid: str) -> str:
@@ -466,9 +575,10 @@ class Base:
         return sorted(names)[-1] if names else None
 
     def status_lines(self, runid: str | None) -> list[str]:
+        lease = self.lease_lines()
         runid = runid or self.latest_run()
         if not runid:
-            return ["state=none (no PC staging deploy has run on this box)"]
+            return ["state=none (no PC staging deploy has run on this box)"] + lease
         if not RUN_RE.fullmatch(runid):
             raise Refused("bad run id")
         try:
@@ -479,7 +589,9 @@ class Base:
         shown = state.get("state", "unknown")
         if shown == "running" and not running:
             shown = "died"  # the runner is gone but never wrote a result
-        lines = [f"run={runid} state={shown} step={state.get('step', '')}"]
+        lines = [f"run={runid} state={shown} step={state.get('step', '')}"] + lease
+        if state.get("lease_override"):
+            lines.append(f"recorded for this run: {state['lease_override']}")
         if state.get("result_line"):
             lines.append(state["result_line"])
         try:
@@ -517,12 +629,16 @@ class Base:
         self.s.mkdir(self.run_dir(runid), 0o750)
         self.write_state(runid, run=runid, target=self.target, state="starting", step="starting", ref=ref, sha=sha, mode=mode,
                          actor=self.actor, release=self.release, base=base, started_myt=myt(now), started_utc=now.isoformat(),
-                         previous_sha=info.get("served", ""))
-        self.log(f"START run={runid} ref={ref} sha={sha} mode={mode} previous={info.get('served', '')}")
+                         previous_sha=info.get("served", ""), holder=self.holder,
+                         lease_override=self.lease_note if self.lease_word() == "override" else "")
+        self.log(f"START run={runid} ref={ref} sha={sha} mode={mode} previous={info.get('served', '')} holder={self.holder}")
         argv = [sys.executable, self.s.self_path(), "remote", self.target, "_run", runid, ref, sha, mode,
                 "--base", base or "-", "--actor", self.actor, "--release", self.release, "--lock-fd", str(fd)]
         self.s.spawn_detached(argv, self.run_dir(runid) + "/run.log", fd)
-        return [f"STARTED run={runid} target={self.target} ref={ref} sha={sha} mode={mode} (poll with: status)"]
+        lines = [f"STARTED run={runid} target={self.target} ref={ref} sha={sha} mode={mode} (poll with: status)"]
+        if self.lease_word() == "override":
+            lines.append(self.lease_note)
+        return lines
 
     def run_body(self, runid: str, ref: str, sha: str, mode: str, base: str, lock_fd: int) -> int:
         """The detached runner. It holds the deploy lock until it ends."""
@@ -560,6 +676,7 @@ class RippleRemote(Base):
     log_path = "/var/log/apps/ripple-staging-pc.log"
     base_dir = "/opt/deploy/ripple-suite"
     own_lock = base_dir + "/.pc-staging-release.lock"
+    lease_path = base_dir + "/.staging-lease.json"
     repo = base_dir + "/repo-staging"
     app_dir = "/var/www/staging/ripple-suite"
     controller = "/usr/local/bin/deploy-ripple-suite"
@@ -617,6 +734,7 @@ class RippleRemote(Base):
         self.check_switch()
         self.check_shapes(ref, sha, mode)
         self.check_identity()
+        self.check_lease()
         for path, what in ((self.controller, "the deploy controller"),):
             if self.s.is_link(path):
                 self.refuse(f"{what} is a symlink")
@@ -688,13 +806,14 @@ class RippleRemote(Base):
                 self.refuse(f"the release does not contain the commit production serves ({prod}); rebuild it on that commit")
         if self.s.free_kb(self.base_dir) < self.min_free_kb:
             self.refuse("less than 20 GiB free on the deploy disk")
-        self.log(f"PREFLIGHT_OK ref={ref} sha={sha} mode={mode} served={served} prod={prod} containment={containment}")
+        self.log(f"PREFLIGHT_OK ref={ref} sha={sha} mode={mode} served={served} prod={prod} containment={containment} "
+                 f"holder={self.holder} lease={self.lease_word()}")
         return {"served": served, "prod": prod, "containment": containment}
 
     def check(self, ref: str, sha: str, mode: str, base: str) -> list[str]:
         info = self.preflight(ref, sha, mode, base, own_lock_counts=True)
         return [f"CHECK OK: {sha} on {ref} would be accepted for ripple staging now (mode {mode}, served {info['served']}, "
-                f"production base {info['prod']}, containment {info['containment']})"]
+                f"production base {info['prod']}, containment {info['containment']}, {self.lease_note})"]
 
     def run_body(self, runid: str, ref: str, sha: str, mode: str, base: str, lock_fd: int) -> int:
         started = time.time()
@@ -1085,11 +1204,11 @@ class SimsRemote(Base):
 
 # ----------------------------------------------------------------- CLI ------
 
-def make(target: str, s: Any, actor: str, release: str) -> Base:
+def make(target: str, s: Any, actor: str, release: str, holder: str = "", override: str = "") -> Base:
     if target == "ripple":
-        return RippleRemote(s, actor, release)
+        return RippleRemote(s, actor, release, holder, override)
     if target == "sims":
-        return SimsRemote(s, actor, release)
+        return SimsRemote(s, actor, release, holder, override)
     raise Refused("unknown target")
 
 
@@ -1097,7 +1216,7 @@ def main(argv: list[str] | None = None, s: Any = None, out: Callable[[str], None
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("remote_word", choices=["remote"])
     parser.add_argument("target", choices=TARGETS)
-    parser.add_argument("verb", choices=["check", "start", "_run", "status", "verify", "switch", "schema"])
+    parser.add_argument("verb", choices=["check", "start", "_run", "status", "verify", "switch", "schema", "lease", "release-lease"])
     parser.add_argument("rest", nargs="*")
     parser.add_argument("--mode", default="normal")
     parser.add_argument("--base", default="")
@@ -1105,9 +1224,14 @@ def main(argv: list[str] | None = None, s: Any = None, out: Callable[[str], None
     parser.add_argument("--release", default="none")
     parser.add_argument("--ref", default=None)
     parser.add_argument("--lock-fd", type=int, default=None)
+    parser.add_argument("--holder", default="")
+    parser.add_argument("--override-lease", default="")
+    parser.add_argument("--branch", default="")
+    parser.add_argument("--purpose", default="")
+    parser.add_argument("--minutes", type=int, default=0)
     args = parser.parse_args(argv)
     s = s or RealSys()
-    box = make(args.target, s, args.actor, args.release)
+    box = make(args.target, s, args.actor, args.release, args.holder, args.override_lease)
     base = "" if args.base in ("-", "") else args.base
     try:
         if args.verb in ("check", "start"):
@@ -1149,6 +1273,13 @@ def main(argv: list[str] | None = None, s: Any = None, out: Callable[[str], None
             return 0
         if args.verb == "schema":
             for line in box.read_schema(args.rest):
+                out(line)
+            return 0
+        if args.verb in ("lease", "release-lease"):
+            if args.rest:
+                raise Refused(f"{args.verb} takes no positional arguments")
+            lines = box.take_lease(args.branch, args.purpose, args.minutes) if args.verb == "lease" else box.release_lease()
+            for line in lines:
                 out(line)
             return 0
     except Refused as exc:

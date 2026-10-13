@@ -1172,6 +1172,133 @@ class ReportAndCliTests(Quiet):
         self.assertTrue(any(l.startswith("DEPLOYED:") for l in out))
 
 
+class LeaseTests(Quiet):
+    """The Ripple staging lease from the PC side (issue #371). The box answers are faked; the box rules are in test_staging_remote."""
+
+    @staticmethod
+    def remote(call: dict) -> list[str]:
+        import shlex
+        return shlex.split(call["argv"][-1].split("exec ", 1)[1])
+
+    def test_lease_sends_the_values_to_the_box_quoted_and_prints_its_answer(self) -> None:
+        box = FakeBox()
+        box.reply("lease", 0, "LEASE taken: helmi for release/1724-x until 2026-10-13T15:00:00+0800, 60 min left: QA of 1724")
+        out: list[str] = []
+        code = sd.main(["lease", "ripple", "--holder", "helmi", "--purpose", "QA of 1724", "--minutes", "60",
+                        "--branch", "release/1724-x"], out=out.append, shell=box)
+        self.assertEqual(code, 0, out)
+        self.assertIn("LEASE taken: helmi", out[0])
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[2:5], ["remote", "ripple", "lease"])
+        for flag, value in (("--holder", "helmi"), ("--purpose", "QA of 1724"), ("--minutes", "60"), ("--branch", "release/1724-x")):
+            self.assertEqual(argv[argv.index(flag) + 1], value)
+        self.assertEqual(box.ssh_calls()[0]["argv"][-2], "staging")
+
+    def test_bad_lease_values_are_refused_before_ssh(self) -> None:
+        for extra in (["--purpose", "x state=none", "--minutes", "30"], ["--purpose", "ok purpose", "--minutes", "0"],
+                      ["--purpose", "ok purpose", "--minutes", "721"], ["--purpose", 'say "hi"', "--minutes", "5"],
+                      ["--purpose", "ok purpose", "--minutes", "5", "--branch", "a;id"]):
+            box = FakeBox()
+            out: list[str] = []
+            code = sd.main(["lease", "ripple", "--holder", "helmi", *extra], out=out.append, shell=box)
+            self.assertEqual(code, 2, extra)
+            self.assertTrue(out[0].startswith("REFUSED"), extra)
+            self.assertEqual(box.ssh_calls(), [], extra)
+        box = FakeBox()
+        self.assertEqual(sd.main(["lease", "ripple", "--holder", "a b", "--purpose", "ok", "--minutes", "5"],
+                                 out=lambda s: None, shell=box), 2)
+        self.assertEqual(box.ssh_calls(), [])
+
+    def test_the_lease_is_ripple_only_and_needs_holder_purpose_and_minutes(self) -> None:
+        for argv in (["lease", "sims", "--holder", "a", "--purpose", "abc", "--minutes", "5"],
+                     ["lease", "ripple", "--purpose", "abc", "--minutes", "5"], ["lease", "ripple", "--holder", "a", "--minutes", "5"],
+                     ["lease", "ripple", "--holder", "a", "--purpose", "abc"], ["release-lease", "sims"]):
+            with self.assertRaises(SystemExit):
+                sd.main(argv, out=lambda s: None, shell=FakeBox())
+
+    def test_a_lease_refused_by_the_box_exits_2_with_the_reason(self) -> None:
+        box = FakeBox()
+        box.reply("lease", 2, "REFUSED: Ripple staging is already leased to helmi until 2026-10-13T15:00:00+0800")
+        out: list[str] = []
+        code = sd.main(["lease", "ripple", "--holder", "hafiz", "--purpose", "CRM release 2", "--minutes", "30"], out=out.append, shell=box)
+        self.assertEqual(code, 2)
+        self.assertIn("already leased to helmi", out[0])
+
+    def test_release_lease_calls_the_box_with_the_releaser(self) -> None:
+        box = FakeBox()
+        box.reply("release", 0, "LEASE released (was held by helmi until 2026-10-13T15:00:00+0800: QA)")
+        out: list[str] = []
+        self.assertEqual(sd.main(["release-lease", "ripple", "--holder", "hafiz"], out=out.append, shell=box), 0)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[2:5], ["remote", "ripple", "release-lease"])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertIn("LEASE released", out[0])
+
+    def test_check_and_deploy_send_the_holder_and_the_override_reason(self) -> None:
+        box = good_box()
+        out: list[str] = []
+        code = sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease",
+                        "Helmi agreed in chat 13/10"], out=out.append, shell=box)
+        self.assertEqual(code, 0, out)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertEqual(argv[argv.index("--override-lease") + 1], "Helmi agreed in chat 13/10")
+        box = good_box()
+        sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, "--actor", "pc-cli"], out=lambda s: None, shell=box)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "pc-cli")
+        self.assertNotIn("--override-lease", argv)
+
+    def test_the_deploy_run_record_prints_the_override(self) -> None:
+        out: list[str] = []
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            code = sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease",
+                            "Helmi agreed in chat 13/10"], out=out.append, shell=good_box())
+        self.assertEqual(code, 0, out)
+        self.assertTrue(any("lease override given by hafiz: Helmi agreed in chat 13/10" in l for l in out), out)
+        box = good_box()
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease", "agreed"],
+                    out=lambda s: None, shell=box)
+        verbs_with_override = [re.search(r"remote ripple (\w+)", c["argv"][-1]).group(1) for c in box.ssh_calls()
+                               if "--override-lease" in c["argv"][-1]]
+        self.assertEqual(verbs_with_override, ["check", "start"])
+
+    def test_a_deploy_refused_for_someone_elses_lease_never_starts(self) -> None:
+        box = good_box()
+        box.verbs["check"] = [(2, "REFUSED: Ripple staging is leased to helmi for release/1724-x until 2026-10-13T15:00:00+0800")]
+        out: list[str] = []
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            code = sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz"], out=out.append, shell=box)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("leased to helmi" in l for l in out), out)
+        self.assertEqual([c for c in box.ssh_calls() if "remote ripple start" in c["argv"][-1]], [])
+
+    def test_a_bad_override_reason_or_holder_is_refused_before_ssh(self) -> None:
+        for extra in (["--override-lease", "x=y"], ["--override-lease", "no"], ["--holder", "a b"]):
+            box = good_box()
+            out: list[str] = []
+            code = sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, *extra], out=out.append, shell=box)
+            self.assertEqual(code, 2, extra)
+            self.assertEqual(box.ssh_calls(), [], extra)
+
+    def test_the_loop_deploys_under_the_lease_holder_named_in_the_readiness_file(self) -> None:
+        box = good_box()
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        ctx = FakeCtx(staging_data(lease_holder="hafiz"), box, self.tmp)
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertNotIn("--override-lease", argv)
+        box = good_box()
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        sd.check_candidate({}, FakeCtx(staging_data(), box, self.tmp))
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "pc-loop")
+        self.assertTrue(sd.validate_staging(staging_data(lease_holder="a b")))
+        self.assertEqual(sd.validate_staging(staging_data(lease_holder="hafiz")), [])
+
+
 class RemoteSourceTests(unittest.TestCase):
     def test_the_program_that_is_sent_is_standard_library_only(self) -> None:
         text = (HERE / "staging_remote.py").read_text()

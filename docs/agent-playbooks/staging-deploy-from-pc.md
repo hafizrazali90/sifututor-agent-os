@@ -77,6 +77,27 @@ so it can never put different code on staging. It exists to prove the script on
 a shared box, and for a repair redeploy after a build tree fix. Every other rule
 still applies.
 
+### The Ripple staging lease
+
+Ripple staging is one shared box, and two deploys back to back rewrite `.next`
+under each other's running app (13/10/2026: Helmi's #1724 and CRM release 2
+gave "client reference manifest does not exist" 500s). So whoever needs it takes
+the lease first: `staging_deploy.py lease ripple --holder <name> --purpose
+"<text>" --minutes N [--branch <ref>]` (1 to 720 minutes; the same holder
+extends it), and `release-lease ripple` when done. The box program writes
+`/opt/deploy/ripple-suite/.staging-lease.json` (holder, branch, purpose,
+`expires_at` in MYT) through the same ssh route as every other verb, and logs
+each take, extend and release. `status ripple` shows it.
+
+`check` and `deploy` refuse while someone else holds an unexpired lease, and
+name the holder, branch, purpose and end time. Deploy under your own lease with
+`--holder <name>` (default: the actor; the loop deploys as `pc-loop`, or as
+`staging.lease_holder` from the readiness file). `--override-lease "<reason>"`
+deploys anyway: the reason goes into the box log, the `CHECK OK` and `STARTED`
+answers, the run state, `status`, and the PC's run output. The lease guards only
+deploys that go through this script; a person running the controller by hand on
+the box does not see it.
+
 ### The SIMS migration lane
 
 1. Before anything runs, every migration the candidate would run (files not yet
@@ -270,7 +291,10 @@ One-off use without the loop (Mac or PC):
 ```bash
 python3 scripts/agent-checks/staging_deploy.py check  ripple --ref release/<issue>-<name> --sha <40 hex>
 python3 scripts/agent-checks/staging_deploy.py deploy ripple --ref release/<issue>-<name> --sha <40 hex>
-python3 scripts/agent-checks/staging_deploy.py status ripple
+python3 scripts/agent-checks/staging_deploy.py status ripple   # also who holds the staging lease
+python3 scripts/agent-checks/staging_deploy.py lease ripple --holder <name> --purpose "<text>" --minutes 120 --branch release/<issue>-<name>
+python3 scripts/agent-checks/staging_deploy.py release-lease ripple --holder <name>
+python3 scripts/agent-checks/staging_deploy.py deploy ripple --ref release/<issue>-<name> --sha <40 hex> --holder <name>   # add --override-lease "<reason>" only when the holder agreed
 python3 scripts/agent-checks/staging_deploy.py verify ripple <40 hex>
 python3 scripts/agent-checks/staging_deploy.py contract ripple   # S5 by hand on current staging, no baseline: every difference; exit 1 when a copied column breaks
 python3 scripts/agent-checks/staging_deploy.py contract ripple --baseline   # the same, then the S5 baseline of readiness.json in the release folder (or --baseline PATH)
