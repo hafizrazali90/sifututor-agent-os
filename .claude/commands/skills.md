@@ -64,6 +64,7 @@ If he adds a word after the command (for example `/skills test`), show only the 
 - `$weekly-delivery` (Codex only): Summarises what shipped this week and what is blocked as a short team report.
 - `/prod-audit` (Claude only): Audits a live system for health, security, code quality and deployment habits and ranks the problems found.
 - `/monitor-production-logs`: After a release, watches Sentry and BetterStack for new errors, especially in payments and the mobile API.
+- `/review-page`: Makes the review page Hafiz confirms: plan before coding (real screen beside the proposed one), ship before deploy (staging screenshots, tests, release state).
 - `/koda-audit` (Claude only): Checks the health of the shared memory (Koda), finds stale, duplicate or misplaced entries and proposes a cleanup.
 - `/self-improve` (Claude only): Looks at repeated failures and past corrections and proposes which ones should become permanent rules, one by one for your approval.
 - `/workflow-improvement`: Fixes the working system itself (skills, hooks, playbooks) when an agent keeps making the same mistake.

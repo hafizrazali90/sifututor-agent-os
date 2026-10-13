@@ -117,6 +117,8 @@ owner docs define the required fields and state language.
   publish one review page Hafiz confirms first: business and technical
   explanation side by side, screenshots of every UI/UX change, decisions,
   risks, evidence and required approvals. No deploy until he confirms it.
+- A change staff will see on screen also gets an automatic plan page before
+  coding; [review-page.md](docs/agent-playbooks/review-page.md) owns both modes.
 - For a staff report or PR, first explain who reported/requested it (or say the
   source is unnamed), what they observed, expected behavior, who uses it, why it
   matters, the proposed/final solution, author, evidence, and release state.
