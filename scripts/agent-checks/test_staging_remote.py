@@ -516,9 +516,41 @@ class RippleRunTests(Quiet):
         s.when("rev-parse", "HEAD", out=SHA_A + "\n")
         s.files["/var/log/apps/ripple-suite-staging-deploy.log"] = f"Deploy complete: staging {SHA_A} (release:{REF})\n"
         self.assertEqual(sr.main(argv[2:], s, lambda line: None), 0)
-        self.assertEqual(s.bounded[0][-5:], ["staging", "--release-ref", REF, "--commit", SHA_A])
+        self.assertEqual(s.bounded[0][-7:], ["staging", "--release-ref", REF, "--commit", SHA_A, "--lease-holder", "pc-loop"])
         state = json.loads(s.files[next(p for p in s.files if p.endswith("state.json"))])
         self.assertEqual(state["status"], "ok")
+
+    def run_started(self, holder: str = "", override: str = "") -> list[str]:
+        """Start a run, then play the runner it spawned; return the controller command the runner used."""
+        s = ripple_box()
+        sr.RippleRemote(s, "pc-cli", "manual", holder, override).start(REF, SHA_A, "normal", "")
+        argv = s.spawned[0][0]
+        s.held.add(BASE + "/.pc-staging-release.lock")
+        s.when("pm2", "jlist", out=JLIST.replace(SERVED, SHA_A))
+        s.when("rev-parse", "HEAD", out=SHA_A + "\n")
+        s.files["/var/log/apps/ripple-suite-staging-deploy.log"] = f"Deploy complete: staging {SHA_A} (release:{REF})\n"
+        self.assertEqual(sr.main(argv[2:], s, lambda line: None), 0)
+        return s.bounded[0]
+
+    def test_the_controller_gets_the_lease_holder_that_start_checked(self) -> None:
+        argv = self.run_started(holder="hafiz")
+        self.assertEqual(argv[-2:], ["--lease-holder", "hafiz"])
+        self.assertNotIn("--override-lease", argv)
+        self.assertEqual(self.run_started()[-2:], ["--lease-holder", "pc-cli"], "the holder defaults to the actor")
+
+    def test_the_controller_gets_the_override_reason_when_one_was_given(self) -> None:
+        reason = "Helmi agreed in chat 13/10 14:05, his QA is done"
+        argv = self.run_started(holder="hafiz", override=reason)
+        self.assertEqual(argv[-4:], ["--lease-holder", "hafiz", "--override-lease", reason])
+
+    def test_a_runner_with_a_bad_holder_or_reason_starts_no_controller(self) -> None:
+        for extra in (["--holder", "bad name"], ["--override-lease", "reason=with equals"]):
+            s = ripple_box()
+            s.held.add(BASE + "/.pc-staging-release.lock")
+            code = sr.main(["remote", "ripple", "_run", "20261009T053000Z-aaaaaaaa", REF, SHA_A, "normal", "--lock-fd", "9",
+                            *extra], s, lambda line: None)
+            self.assertEqual(code, 2)
+            self.assertEqual(s.bounded, [])
 
     def test_start_refuses_when_the_wrapper_lock_is_taken(self) -> None:
         s = ripple_box()
@@ -546,7 +578,7 @@ class RippleRunTests(Quiet):
         box.run_body("20261009T053000Z-aaaaaaaa", REF, SHA_A, "normal", "", 9)
         argv = s.bounded[0]
         self.assertEqual(argv, ["sudo", "-n", "-u", "deploy", "/usr/local/bin/deploy-ripple-suite", "staging", "--release-ref", REF,
-                                "--commit", SHA_A])
+                                "--commit", SHA_A, "--lease-holder", "pc-loop"])
         joined = " ".join(argv)
         for word in ("prod", "--replace-serving", "--code-only", "--runtime-refresh", "--staging-main-commit", "CONFIRM"):
             self.assertNotIn(word, joined)
@@ -918,6 +950,17 @@ class SimsRunTests(Quiet):
         box.run_body(self.RUN, SIMS_REF, sha, mode, "", 9)
         return json.loads(s.files[box.run_dir(self.RUN) + "/state.json"])
 
+    def test_a_sims_run_never_passes_a_lease_holder_or_override_to_any_command(self) -> None:
+        s = SimsBox()
+        s.held.add(sr.SimsRemote.own_lock)
+        box = sr.SimsRemote(s, "pc-loop", "rel-1", "hafiz", "agreed with Helmi")
+        box.write_state(self.RUN, run=self.RUN)
+        box.run_body(self.RUN, SIMS_REF, SHA_A, "normal", "", 9)
+        self.assertTrue(s.calls)
+        for word in ("--lease-holder", "--override-lease", "agreed with Helmi"):
+            self.assertEqual(s.ran(word), [])
+            self.assertFalse(any(word in " ".join(c) for c in s.bounded))
+
     def test_a_code_only_deploy_follows_the_runbook_in_order_and_never_migrates(self) -> None:
         s = SimsBox()
         state = self.run_deploy(s)
@@ -1072,9 +1115,11 @@ class SimsRunTests(Quiet):
 
     def test_sims_start_spawns_a_detached_runner(self) -> None:
         s = SimsBox()
-        lines = sr.SimsRemote(s, "pc-loop", "rel-1").start(SIMS_REF, SHA_A, "normal", "")
+        lines = sr.SimsRemote(s, "pc-loop", "rel-1", "hafiz", "agreed with Helmi").start(SIMS_REF, SHA_A, "normal", "")
         self.assertTrue(lines[0].startswith("STARTED run="))
         self.assertEqual(s.spawned[0][2], 9)
+        # SIMS has no lease: neither the runner nor any command it builds carries a lease holder or override.
+        self.assertFalse({"--holder", "--lease-holder", "--override-lease"} & set(s.spawned[0][0]))
 
     def test_sims_verify_reads_head_pending_login_and_worker(self) -> None:
         s = SimsBox(sha=CUR)
