@@ -210,7 +210,7 @@ class Loop:
     def staging_candidate_moved(self) -> bool:
         """The staging candidate branch moved on GitHub: what was checked, deployed and smoke tested is not the new tip.
 
-        S1 to S3 (and S4) go back to open so staging is redeployed on the new commit. Without a staging section this does nothing."""
+        S1 to S5 go back to open so staging is redeployed and checked on the new commit. Without a staging section this does nothing."""
         cfg = self.data.get("staging")
         if not cfg or not cfg.get("candidate_sha"):
             return False
@@ -220,7 +220,7 @@ class Loop:
         if why or tip == cfg["candidate_sha"]:
             return False  # cannot tell, or unchanged: keep what is proven
         old = cfg["candidate_sha"]
-        for gate_id in ("S1", "S2", "S3", "S4"):
+        for gate_id in ("S1", "S2", "S3", "S4", "S5"):
             item = self.items().get(gate_id)
             if item is not None and rr.is_pc_item(item) and item.get("status") == "green":
                 item["status"] = "open"
@@ -228,9 +228,10 @@ class Loop:
                 rr.add_evidence(item, note=f"proof reset: the staging candidate moved from {old[:10]} to {tip[:10]}, so staging is checked again")
         cfg.pop("candidate_sha", None)
         cfg.pop("candidate_ref", None)
+        cfg.pop("contract_baseline", None)  # it described staging before the old candidate; S1 reads a fresh one
         cfg["deploy"] = None
         self.data.pop("staging_sha", None)
-        self.event(f"staging candidate {ref} moved to {tip[:10]}: S1 to S4 are checked again")
+        self.event(f"staging candidate {ref} moved to {tip[:10]}: S1 to S5 are checked again")
         return True
 
     def reset_sensitive(self, sha: str) -> None:

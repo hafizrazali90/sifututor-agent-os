@@ -45,6 +45,9 @@ class LoopShell(tsd.FakeBox):
         self.reply("start", 0, f"STARTED run=20261009T060000Z-aaaaaaaa target=ripple ref={REF} sha={SHA_A} mode=normal")
         self.statuses = [f"run=20261009T060000Z-aaaaaaaa state=finished step=verify\n{tsd.RESULT_OK}\n"]
         self.reply("verify", 0, f"expected={SHA_A}\nVERIFY OK")
+        self.when("git", "rev-parse", "--verify", "origin/main", out=tsd.CONTRACT_SHA + "\n")
+        self.when("git", "show", out=json.dumps(tsd.RIPPLE_REGISTRY))
+        self.reply("schema", 0, "SCHEMA " + json.dumps(tsd.RIPPLE_ROWS) + "\nSCHEMA OK tables=2 columns=4")
         self.stop_after_status = False
 
     def run(self, argv, cwd=None, stop_check=None, input_text=None, env=None, timeout=None):
@@ -80,7 +83,9 @@ class StagingLoopCase(trl.LoopCase):
         (self.lanes / "staging-lifecycle-qa.conf").write_text(
             f"STAGING_LIFECYCLE_QA_EMAIL={tsd.SEKRET_MAIL}\nSTAGING_LIFECYCLE_QA_PASSWORD={tsd.SEKRET_PASS}\n")
         (self.lanes / "staging-lifecycle-qa.conf").chmod(0o600)
-        patcher = mock.patch.dict(os.environ, {sd.LANE_DIR_ENV: str(self.lanes), sd.PC_STOP_ENV: str(self.tmp / "no-stop")})
+        (self.lanes / "owner-analytics" / ".git").mkdir(parents=True)
+        patcher = mock.patch.dict(os.environ, {sd.LANE_DIR_ENV: str(self.lanes), sd.PC_STOP_ENV: str(self.tmp / "no-stop"),
+                                               sd.OA_DIR_ENV: str(self.lanes / "owner-analytics")})
         patcher.start()
         self.addCleanup(patcher.stop)
         self.http = tsd.FakeHttp({("GET", "/login"): (200, {}, ""), ("POST", "/api/auth/login"): (200, {}, ""),
@@ -95,18 +100,25 @@ class StagingLoopCase(trl.LoopCase):
 
 
 class StagingGatesTest(StagingLoopCase):
-    def test_the_loop_closes_s1_s2_s3_s4_with_real_actions_and_reaches_ready(self) -> None:
+    def test_the_loop_closes_s1_to_s5_with_real_actions_and_reaches_ready(self) -> None:
         loop = self.make_staging(ripple_data())
         self.assertEqual(loop.run(), "ready_for_prod_go")
         data = self.saved()
         items = {i["id"]: i for i in data["items"]}
-        for gate in ("S1", "S2", "S3", "S4"):
+        for gate in ("S1", "S2", "S3", "S4", "S5"):
             self.assertEqual(items[gate]["owner"], "pc", gate)
             self.assertEqual(items[gate]["status"], "green", gate)
             self.assertFalse(any(e.get("simulated") for e in items[gate]["evidence"]), gate)
         self.assertEqual(rr.score(data)["prod_percent"], 100.0)
         self.assertEqual(data["staging_sha"], SHA_A)
-        self.assertEqual(self.verbs(), ["check", "check", "start", "status", "verify", "verify"])  # S2 checks again just before it starts
+        # S1 reads the S5 baseline before anything is deployed; S2 checks again just before it starts;
+        # S5 reads the served commit back, then the copied columns
+        self.assertEqual(self.verbs(), ["check", "schema", "check", "start", "status", "verify", "verify", "verify", "schema"])
+        self.assertEqual(data["staging"]["contract_baseline"]["candidate_sha"], SHA_A)
+        self.assertEqual(data["staging"]["contract_baseline"]["breaking"], [])
+        s5_notes = " | ".join(e.get("note", "") for e in items["S5"]["evidence"])
+        for fragment in ("2 copied tables, 4 copied columns", "VERIFY OK", "4 columns read; 0 breaking added by this release; 0 already on staging before it"):
+            self.assertIn(fragment, s5_notes)
         s2_notes = " | ".join(e.get("note", "") for e in items["S2"]["evidence"])
         for fragment in ("CHECK OK", "STARTED run=", "RESULT run=", "VERIFY OK", "read back"):
             self.assertIn(fragment, s2_notes)
@@ -196,10 +208,11 @@ class StagingGatesTest(StagingLoopCase):
         self.assertTrue(loop.staging_candidate_moved())
         data = loop.data
         items = {i["id"]: i for i in data["items"]}
-        for gate in ("S1", "S2", "S3", "S4"):
+        for gate in ("S1", "S2", "S3", "S4", "S5"):
             self.assertEqual(items[gate]["status"], "open", gate)
         self.assertNotIn("staging_sha", data)
         self.assertNotIn("candidate_sha", data["staging"])
+        self.assertNotIn("contract_baseline", data["staging"], "the old baseline belongs to the old candidate")
         self.assertFalse(loop.staging_candidate_moved(), "nothing is left to reset")
 
     def test_an_unchanged_candidate_keeps_its_proof(self) -> None:

@@ -12,6 +12,7 @@ way to name production.
     staging_remote.py remote ripple|sims status [RUN_ID]
     staging_remote.py remote ripple|sims verify SHA [--ref REF]
     staging_remote.py remote ripple|sims switch on|off|show
+    staging_remote.py remote ripple|sims schema TABLE [TABLE ...]     (gate S5: read-only column list)
 
 ripple: runs the sealed controller `deploy-ripple-suite staging --release-ref REF
         --commit SHA` as the `deploy` user. Refuses anything that adds or changes
@@ -53,6 +54,8 @@ SHA_RE = re.compile(r"[0-9a-f]{40}")
 NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,39}")
 RELEASE_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,59}")
 RUN_RE = re.compile(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}")
+TABLE_RE = re.compile(r"[a-z][a-z0-9_]{0,63}")
+MAX_SCHEMA_TABLES = 500
 
 RIPPLE_REF_RE = re.compile(r"release/[0-9]+-[a-z0-9]+([a-z0-9-]*[a-z0-9])?")
 SIMS_REF_RES = (
@@ -525,6 +528,21 @@ class Base:
         """The detached runner. It holds the deploy lock until it ends."""
         raise NotImplementedError
 
+    # ---- schema read (gate S5) ----
+    def schema_rows(self, tables: list[str]) -> list[list[str]]:
+        raise NotImplementedError
+
+    def read_schema(self, tables: list[str]) -> list[str]:
+        """The (table, column, type) rows of the named tables on this staging database. One read-only SELECT; nothing else."""
+        self.check_host()
+        if not tables or len(tables) > MAX_SCHEMA_TABLES or not all(TABLE_RE.fullmatch(t or "") for t in tables):
+            self.refuse(f"schema needs 1 to {MAX_SCHEMA_TABLES} plain lowercase table names")
+        rows = self.schema_rows(sorted(set(tables)))
+        if not all(isinstance(r, list) and len(r) == 3 and all(isinstance(v, str) for v in r) for r in rows):
+            self.refuse("the column list came back in an unexpected shape")
+        self.log(f"SCHEMA_READ tables={len(set(tables))} columns={len(rows)}")
+        return ["SCHEMA " + json.dumps(rows), f"SCHEMA OK tables={len(set(tables))} columns={len(rows)}"]
+
     def finish(self, runid: str, status: str, exit_code: int, started: float, ref: str, sha: str, extra: str = "") -> int:
         seconds = int(time.time() - started)
         line = f"RESULT run={runid} status={status} exit={exit_code} seconds={seconds} ref={ref} sha={sha}{extra}"
@@ -710,6 +728,23 @@ class RippleRemote(Base):
         line = (f"expected={sha} pm2_status={status} pm2_commit={pm2_sha} repo_head={head} deploy_log_commit={done_sha} "
                 f"deploy_log_ref={done_ref} local_login_http={http}")
         return ok, line + ("\nVERIFY OK" if ok else "\nVERIFY FAILED")
+
+    # The staging database on this box, read as the postgres OS account (the same route as access lane 40), so no password or
+    # connection string is handled. The name is written here and nowhere else; the session is forced read-only.
+    schema_db = "ripple_suite_staging"
+
+    def schema_rows(self, tables: list[str]) -> list[list[str]]:
+        names = ", ".join(f"'{t}'" for t in tables)  # every name matched TABLE_RE, so it cannot close the quote
+        sql = ("SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod) FROM pg_catalog.pg_attribute a "
+               "JOIN pg_catalog.pg_class c ON c.oid = a.attrelid JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+               f"WHERE n.nspname = 'public' AND c.relname IN ({names}) AND c.relkind IN ('r', 'p', 'v', 'm', 'f') "
+               "AND a.attnum > 0 AND NOT a.attisdropped ORDER BY c.relname, a.attnum")
+        argv = ["runuser", "-u", "postgres", "--", "env", "PGOPTIONS=-c default_transaction_read_only=on -c statement_timeout=60000",
+                "psql", "-X", "-q", "-A", "-t", "-F", "\t", "-v", "ON_ERROR_STOP=1", "-d", self.schema_db, "-c", sql]
+        code, out = self.s.run(argv, timeout=120)
+        if code != 0:
+            self.refuse(f"could not read the staging column list (psql exit {code})")
+        return [line.split("\t") for line in out.splitlines() if line.count("\t") == 2]
 
 
 # --------------------------------------------------------------- sims -------
@@ -1027,6 +1062,26 @@ class SimsRemote(Base):
                 f"login_http={http} worker={worker}")
         return ok, line + ("\nVERIFY OK" if ok else "\nVERIFY FAILED")
 
+    def schema_rows(self, tables: list[str]) -> list[list[str]]:
+        """information_schema through the application's own database connection, after proving the application is staging."""
+        code, env = self.art("env", "--no-ansi", timeout=120)
+        if code != 0 or "[staging]" not in env:
+            self.refuse("the application environment is not staging")
+        names = ",".join(f"'{t}'" for t in tables)  # every name matched TABLE_RE, so it cannot close the quote
+        sql = ("SELECT TABLE_NAME AS t, COLUMN_NAME AS c, COLUMN_TYPE AS y FROM information_schema.COLUMNS "
+               f"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ({names}) ORDER BY TABLE_NAME, ORDINAL_POSITION")
+        php = f'echo json_encode(array_map(fn($r) => [$r->t, $r->c, $r->y], DB::select("{sql}")));'
+        code, out = self.art("tinker", "--execute=" + php, timeout=120)
+        if code == 0:
+            for line in reversed(out.splitlines()):
+                if line.strip().startswith("["):
+                    try:
+                        return json.loads(line.strip())
+                    except ValueError:
+                        break
+        self.refuse(f"could not read the staging column list (tinker exit {code})")
+        return []
+
 
 # ----------------------------------------------------------------- CLI ------
 
@@ -1042,7 +1097,7 @@ def main(argv: list[str] | None = None, s: Any = None, out: Callable[[str], None
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("remote_word", choices=["remote"])
     parser.add_argument("target", choices=TARGETS)
-    parser.add_argument("verb", choices=["check", "start", "_run", "status", "verify", "switch"])
+    parser.add_argument("verb", choices=["check", "start", "_run", "status", "verify", "switch", "schema"])
     parser.add_argument("rest", nargs="*")
     parser.add_argument("--mode", default="normal")
     parser.add_argument("--base", default="")
@@ -1090,6 +1145,10 @@ def main(argv: list[str] | None = None, s: Any = None, out: Callable[[str], None
                 raise Refused("switch takes on, off or show")
             box.check_host()
             for line in box.switch(args.rest[0]):
+                out(line)
+            return 0
+        if args.verb == "schema":
+            for line in box.read_schema(args.rest):
                 out(line)
             return 0
     except Refused as exc:

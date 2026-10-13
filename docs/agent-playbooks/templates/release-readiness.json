@@ -7,7 +7,7 @@
     "Tokens: <<name>> inside text and a whole-string @name are replaced at init (release, repo, branch, base, issue, github_repo, serving_commit, route, pr_numbers, suite_commands, e2e_commands, umbrella_script_dir). A whole-string @staging_sha is resolved when the check runs.",
     "Items that do not apply are set to na with a reason at init (--na ITEM=reason, --e2e-exception).",
     "Rules live in docs/agent-playbooks/release-deploy-live-monitoring.md and AGENTS.md 'Build, Evidence, And Release'.",
-    "staging_pc_items: when init is given --staging-deploy, S1, S2 and S3 (and S4 for SIMS) are replaced by these PC items. The PC then deploys STAGING only, through scripts/agent-checks/staging_deploy.py (never production, never main). Without the flag S1 to S3 stay Mac gates."
+    "staging_pc_items: when init is given --staging-deploy, S1, S2 and S3 (and S4 for SIMS) are replaced by these PC items, and S5 (analytics contract, Sifututor/owner-analytics#134) is added after S4; for SIMS it also waits for S4. The PC then deploys STAGING only, through scripts/agent-checks/staging_deploy.py (never production, never main). Without the flag S1 to S3 stay Mac gates and there is no S5."
   ],
   "defaults": {
     "agent-os": {
@@ -496,6 +496,21 @@
             "type": "patch_equivalent"
           }
         ]
+      }
+    },
+    "S5": {
+      "id": "S5",
+      "group": "Staging (staging-first only)",
+      "owner": "pc",
+      "action": "script",
+      "route_only": "staging-first",
+      "depends_on": [
+        "S3"
+      ],
+      "sha_sensitive": false,
+      "title": "Analytics contract: staging still has every table and column Owner Analytics copies, with the same type (new ones are information only)",
+      "check": {
+        "type": "analytics_contract"
       }
     }
   }
