@@ -7,8 +7,12 @@ here (ripple -> `staging`, sims -> `finch`), and the box-side program
 (staging_remote.py, sent over ssh and re-checked there) repeats every rule.
 
     staging_deploy.py check   ripple|sims --ref REF [--sha SHA] [--mode M] [--base SHA] [--repo-dir DIR]
+                              [--holder NAME] [--override-lease "REASON"]
     staging_deploy.py deploy  ripple|sims --ref REF [--sha SHA] [--mode M] [--base SHA] [--repo-dir DIR]
-    staging_deploy.py status  ripple|sims [RUN_ID]
+                              [--holder NAME] [--override-lease "REASON"]
+    staging_deploy.py status  ripple|sims [RUN_ID]                (Ripple: also who holds the staging lease)
+    staging_deploy.py lease   ripple --holder NAME --purpose TEXT --minutes N [--branch REF]   (take or extend)
+    staging_deploy.py release-lease ripple [--holder NAME]
     staging_deploy.py verify  ripple|sims SHA [--ref REF]
     staging_deploy.py switch  ripple|sims on|off|show     (STOP switch on the box)
     staging_deploy.py report  READINESS.json              (the staging gates of a release)
@@ -53,7 +57,7 @@ PC_STOP_ENV = "SIFU_STAGING_DEPLOY_STOP"
 POLL_SECONDS = 30
 LOST_CONTACT_LIMIT = 20  # 20 polls in a row without an answer (10 minutes); the deploy itself keeps going on the box
 STAGING_KEYS = {"target", "ref", "mode", "commit", "smoke_commands", "smoke_exception", "approval", "candidate_sha",
-                "candidate_ref", "deploy", "deploys", "smoke", "last_status", "contract_baseline"}
+                "candidate_ref", "deploy", "deploys", "smoke", "last_status", "contract_baseline", "lease_holder"}
 SMOKE_COMMAND_PREFIXES = ("npx playwright test ", "npm run test:", "bash scripts/qa/", "builtin:login", "builtin:page ")
 PLAYWRIGHT_HOST = "ubuntu24.04-x64"
 DOCS_EXTRA_OK = ("docs/", "CHANGELOG.md", "RELEASE-DOCS.md", "TESTING.md")
@@ -96,6 +100,8 @@ def validate_staging(data: dict[str, Any]) -> list[str]:
     ref = cfg.get("ref") or data.get("branch", "")
     if not sr.ref_ok(target, ref):
         errors.append(f"staging ref {ref!r} is not an allowed {target} staging branch name")
+    if cfg.get("lease_holder") and not sr.NAME_RE.fullmatch(str(cfg["lease_holder"])):
+        errors.append("staging.lease_holder must be a plain name (the holder of the Ripple staging lease the loop deploys under)")
     if cfg.get("commit") and not sr.valid_sha(cfg["commit"]):
         errors.append("staging.commit must be 40 lowercase hex characters")
     if cfg.get("mode") == "redeploy-served" and not cfg.get("commit"):
@@ -375,7 +381,7 @@ class Deployer:
 
     def __init__(self, target: str, shell: Any, *, remote_source: Path | str | None = None, actor: str = "pc-loop",
                  release: str = "none", sleep: Callable[[float], None] = time.sleep, poll_seconds: float | None = None,
-                 stop_check: Callable[[], bool] | None = None) -> None:
+                 stop_check: Callable[[], bool] | None = None, holder: str = "", override_lease: str = "") -> None:
         if target not in sr.TARGETS:
             raise DeployError(f"target must be one of {', '.join(sr.TARGETS)}")
         self.target = target
@@ -384,6 +390,7 @@ class Deployer:
         self.source = Path(remote_source or REMOTE_SOURCE).read_text()
         self.digest = hashlib.sha256(self.source.encode()).hexdigest()[:12]
         self.actor, self.release = actor, release
+        self.holder, self.override_lease = holder or actor, override_lease
         self.sleep, self.stop_check = sleep, stop_check
         self.poll_seconds = POLL_SECONDS if poll_seconds is None else poll_seconds
 
@@ -396,8 +403,11 @@ class Deployer:
                 "exec " + " ".join(shlex.quote(p) for p in parts))
 
     def call(self, verb: str, args: list[str] | None = None, *, mode: str | None = None, base: str = "", ref: str | None = None,
-             timeout: float = 600) -> tuple[int, str]:
-        flags = ["--actor", self.actor, "--release", self.release]
+             timeout: float = 600, extra: list[str] | None = None) -> tuple[int, str]:
+        flags = ["--actor", self.actor, "--release", self.release, "--holder", self.holder]
+        if self.override_lease and verb in ("check", "start"):
+            flags += ["--override-lease", self.override_lease]
+        flags += extra or []
         if mode:
             flags += ["--mode", mode]
         if base:
@@ -420,9 +430,12 @@ class Deployer:
             raise DeployError(f"{ref!r} is not an allowed {self.target} staging branch name")
         if base and not sr.valid_sha(base):
             raise DeployError("the base commit must be 40 lowercase hex characters")
-        for name, value, rx in (("actor", self.actor, sr.NAME_RE), ("release", self.release, sr.RELEASE_RE)):
+        for name, value, rx in (("actor", self.actor, sr.NAME_RE), ("release", self.release, sr.RELEASE_RE),
+                                ("holder", self.holder, sr.NAME_RE)):
             if not rx.fullmatch(value):
                 raise DeployError(f"{name} is not a valid name")
+        if self.override_lease and not sr.LEASE_TEXT_RE.fullmatch(self.override_lease):
+            raise DeployError("the lease override reason must be 3 to 160 plain characters (no = or quotes)")
 
     # ---- verbs ----
     @staticmethod
@@ -499,6 +512,28 @@ class Deployer:
             raise DeployError("the staging column list came back in an unexpected shape")
         return rows
 
+    def lease(self, purpose: str, minutes: int, branch: str = "") -> tuple[bool, str]:
+        """Take or extend the Ripple staging lease for this holder. The box writes the file and re-checks every value."""
+        if self.target != "ripple":
+            raise DeployError("the staging lease exists for ripple only")
+        if not sr.NAME_RE.fullmatch(self.holder):
+            raise DeployError("holder is not a valid name")
+        if not sr.LEASE_TEXT_RE.fullmatch(purpose):
+            raise DeployError("purpose must be 3 to 160 plain characters (no = or quotes)")
+        if branch and not sr.LEASE_BRANCH_RE.fullmatch(branch):
+            raise DeployError("branch is not a valid branch name")
+        if not 1 <= minutes <= sr.LEASE_MAX_MINUTES:
+            raise DeployError(f"minutes must be between 1 and {sr.LEASE_MAX_MINUTES}")
+        extra = ["--purpose", purpose, "--minutes", str(minutes)] + (["--branch", branch] if branch else [])
+        code, out = self.call("lease", extra=extra, timeout=120)
+        return code == 0 and "LEASE " in out, self.refusal(out) if code == 2 else out.strip()
+
+    def release_lease(self) -> tuple[bool, str]:
+        if self.target != "ripple":
+            raise DeployError("the staging lease exists for ripple only")
+        code, out = self.call("release-lease", timeout=120)
+        return code == 0, self.refusal(out) if code == 2 else out.strip()
+
     def switch(self, action: str) -> str:
         if action not in ("on", "off", "show"):
             raise DeployError("switch takes on, off or show")
@@ -510,6 +545,8 @@ class Deployer:
         """check, start (or attach to `run`), poll to the end, verify. Returns evidence; never claims success without the read-back."""
         started_at = time.time()
         evidence: list[dict[str, Any]] = []
+        if self.override_lease:
+            evidence.append({"note": f"lease override given by {self.holder}: {self.override_lease}"})
         if run is None:
             ok, line = self.check(ref, sha, mode, base)
             evidence.append({"command": f"remote {self.target} check {ref} {sha[:12]}", "note": line})
@@ -674,7 +711,8 @@ def deployer_for(ctx: Any, cfg: dict[str, Any]) -> Deployer:
     if not sr.RELEASE_RE.fullmatch(release):
         release = "release"
     return Deployer(cfg["target"], ctx.shell, release=release, stop_check=ctx.stop_check,
-                    sleep=getattr(ctx, "sleep", time.sleep), poll_seconds=getattr(ctx, "poll_seconds", None))
+                    sleep=getattr(ctx, "sleep", time.sleep), poll_seconds=getattr(ctx, "poll_seconds", None),
+                    holder=str(cfg.get("lease_holder") or ""))
 
 
 def check_candidate(check: dict[str, Any], ctx: Any) -> dict[str, Any]:
@@ -938,7 +976,19 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
         p.add_argument("--repo-dir", type=Path)
         p.add_argument("--actor", default="pc-cli")
         p.add_argument("--release", default="manual")
+        p.add_argument("--holder", default="", help="who deploys, for the Ripple staging lease (default: the actor)")
+        p.add_argument("--override-lease", default="", metavar="REASON",
+                       help="deploy although someone else holds the Ripple staging lease; the reason is logged and printed")
     p = sub.add_parser("status"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("run", nargs="?")
+    p = sub.add_parser("lease", help="take or extend the Ripple staging lease")
+    p.add_argument("target", choices=("ripple",))
+    p.add_argument("--holder", required=True)
+    p.add_argument("--purpose", required=True)
+    p.add_argument("--minutes", required=True, type=int)
+    p.add_argument("--branch", default="")
+    p = sub.add_parser("release-lease", help="release the Ripple staging lease")
+    p.add_argument("target", choices=("ripple",))
+    p.add_argument("--holder", default="", help="who releases it, for the box log (default: pc-cli)")
     p = sub.add_parser("verify"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("sha"); p.add_argument("--ref")
     p = sub.add_parser("switch"); p.add_argument("target", choices=sr.TARGETS); p.add_argument("action", choices=("on", "off", "show"))
     p = sub.add_parser("report"); p.add_argument("readiness", type=Path)
@@ -970,7 +1020,8 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
                 sha, why = local_tip(shell, args.repo_dir, args.ref, None)
                 if why:
                     raise DeployError(why)
-            deployer = Deployer(args.target, shell, actor=args.actor, release=args.release)
+            deployer = Deployer(args.target, shell, actor=args.actor, release=args.release, holder=args.holder,
+                                override_lease=args.override_lease)
             if args.cmd == "check":
                 ok, line = deployer.check(args.ref, sha, args.mode, args.base)
                 out(line if ok else f"REFUSED: {line}")
@@ -982,6 +1033,11 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print, shel
                 out("  " + (entry.get("note") or entry.get("command", "")))
             out(("DEPLOYED: " if outcome["ok"] else "NOT DEPLOYED: ") + outcome["summary"] + f" ({int(time.time() - t0)} s)")
             return 0 if outcome["ok"] else 1
+        if args.cmd in ("lease", "release-lease"):
+            deployer = Deployer(args.target, shell, actor="pc-cli", holder=args.holder)
+            ok, text = deployer.lease(args.purpose, args.minutes, args.branch) if args.cmd == "lease" else deployer.release_lease()
+            out(text if ok else f"REFUSED: {text}")
+            return 0 if ok else 2
         deployer = Deployer(args.target, shell)
         if args.cmd == "status":
             out(deployer.status(args.run)["raw"].strip())
