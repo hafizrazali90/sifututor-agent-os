@@ -39,6 +39,7 @@ WRAPPERS = {
     "quality-gate.py": ROOT / ".claude" / "hooks" / "quality-gate.py",
     "workflow-gate.py": ROOT / ".claude" / "hooks" / "workflow-gate.py",
     "claude-hook.cjs": ROOT / ".claude" / "hooks" / "claude-hook.cjs",
+    "run-python-hook.cjs": ROOT / ".claude" / "hooks" / "run-python-hook.cjs",
 }
 
 RECORDING_GATE = """#!/usr/bin/env python3
@@ -192,6 +193,25 @@ class DispatchFixture(unittest.TestCase):
         self.assertEqual(Path(self.recorded()["cwd"]).resolve(), self.worktree)
         self.assertEqual(self.recorded()["stdin"].encode(), payload)
         self.assertEqual(self.recorded()["args"], ["worker-safety"])
+
+    def test_run_python_hook_wrapper_forwards_the_script_argument(self) -> None:
+        write_node_gate(self.worktree / ".claude" / "hooks" / "run-python-hook.cjs")
+        payload = payload_bytes(str(self.nested))
+
+        result = subprocess.run(
+            ["node", ".claude/hooks/run-python-hook.cjs", ".claude/hooks/workflow-gate.py"],
+            cwd=self.umbrella,
+            input=payload,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, "FIXTURE_RECORD": str(self.record)},
+            timeout=60,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(Path(self.recorded()["cwd"]).resolve(), self.worktree)
+        self.assertEqual(self.recorded()["args"], [".claude/hooks/workflow-gate.py"])
 
     def test_node_wrapper_preserves_a_real_finch_rejection(self) -> None:
         write_node_gate(

@@ -80,6 +80,7 @@ plugins/*
 .claude/hooks/*
 !.claude/hooks/*.py
 !.claude/hooks/*.sh
+!.claude/hooks/*.cjs
 !.claude/hooks/*.ps1
 .mcp.json
 .pytest_cache/
