@@ -798,6 +798,21 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | **Safe verification** | `RIPPLE_LOGS_DRY_RUN=1 scripts/agent-access/ripple-logs-readonly.sh staging` prints the remote command; `scripts/agent-access/ripple-logs-readonly.sh staging --lines 5` |
 | **Forbidden** | Never `pm2 env`, `pm2 jlist`, `pm2 show` or any read of the process environment; never the out log or a log outside the two files; never copy personal data from a log into notes, issues or chat beyond what the task needs |
 
+### 46. `company-monitor-readonly` - Daily Money And Work Monitor Per Company, Read-Only
+
+| Field | Value |
+|-------|-------|
+| **Conf file** | None. The script sends every query through the two existing read-only lanes: SIMS through `sims-db-readonly-sql.sh` (lane 4) and Ripple through `ripple-prod-sql-readonly.sh` (lane 40). It never reads a conf file or a credential itself |
+| **Wrapper** | `scripts/agent-access/nakngaji-company-monitor.py [--json]` |
+| **What it reports** | One report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the eleven WP-28 signals (Sifututor/sifu-tutor#3479): unmatched payments, callback mismatches, failed credit allocation, rejected clock-ins, follow-up cases older than 72 hours, extra charges waiting more than one month end, payout differences between the approved selection and the bank file, carried-forward deductions, QuickBooks sync failures, owed to Nakngaji versus recorded transfers, and MyInvois list counts. Each signal has a count, an amount to the sen where money is involved, up to five record ids and a status: `OK`, `CHECK` or `NOT DEPLOYED` |
+| **Release steps** | It reads `information_schema` first. A signal whose go-live tables or columns are missing prints `NOT DEPLOYED` with the missing names instead of failing; where today's schema already holds the signal, it runs a labelled before-go-live reading. So it runs before go-live and keeps working after each release step without a code change |
+| **Masking** | Record ids, counts and amounts only. The queries select no names, emails, phone numbers or free text |
+| **Purpose** | Watch the signals that show money or work going wrong per company during the agreed go-live window (WP-28, TP-089) |
+| **Tier** | auto-read |
+| **Exit codes** | 0 nothing to check, 1 at least one `CHECK`, 2 a database could not be read |
+| **Safe verification** | `python3 -m unittest scripts/agent-checks/test_nakngaji_company_monitor.py` (fixtures, no connection); then `scripts/agent-access/nakngaji-company-monitor.py` |
+| **Forbidden** | No writes; never add a query that selects personal data; keep every query inside the lane 4 and lane 40 guards (the unit tests run each query through both guards) |
+
 ---
 
 ## Quick Reference: Approval Matrix
@@ -826,6 +841,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
 | `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
 | `ripple-logs-readonly` | none (ssh staging, PM2 error log read as deploy, masked) | auto-read | Never |
+| `company-monitor-readonly` | none (uses lanes 4 and 40) | auto-read | Never |
 | `pc-staging-deploy` | none (PC key, aliases `staging` and `finch`) | write (staging only) | Approval line in each readiness file (`--staging-approval`) |
 | `owner-analytics-backup-restore` | `owner-analytics-backup-restore.conf` + restore keyring (read-only Wasabi user) | auto-read | Never (restore only into a throwaway database) |
 | `betterstack-uptime-write` | `betterstack-uptime-write.conf` | write | List the exact monitor first |
@@ -866,6 +882,7 @@ never print secret values.
 | `lls-server-readonly.sh <env> artisan\|logs\|pm2` | Learnest server, allow-listed read commands as the app account (lane 41) |
 | `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
 | `ripple-logs-readonly.sh staging\|prod [--lines N] [--pattern REGEX]` | Ripple PM2 error log, error-level lines only, masked, at most 60 lines (lane 45) |
+| `nakngaji-company-monitor.py [--json]` | Daily read-only report per company (Sifu Edu & Learning, Nakngaji) with the eleven WP-28 go-live signals; `NOT DEPLOYED` for any signal whose tables are not in production yet (lane 46) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
