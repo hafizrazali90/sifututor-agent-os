@@ -642,11 +642,80 @@ class ConfigurationAuditTests(unittest.TestCase):
 
         self.assertNotIn("team-inbox.archived-2026-08-26", {f.project for f in findings})
 
-    def test_tracked_umbrella_configuration_has_no_blocking_gap(self) -> None:
-        """This checkout must never ship a PreToolUse gate that cannot resolve."""
-        findings = claude_hook_dispatch.audit_workspace_hook_configuration(ROOT)
+    # --- tracked wrappers cover every launcher form -------------------------
+    #
+    # The live sub-project checkouts next to the umbrella are gitignored, so
+    # auditing them proves nothing about this checkout: the answer changes with
+    # which projects a machine has and which branch each is on (#375, #377).
+    # Readiness CL-053 keeps that live check. These tests build the umbrella
+    # from the real tracked wrappers and a fixture project instead.
+
+    PROJECT_HOOKS = (
+        "workflow-gate.py",
+        "validate-branch-name.py",
+        "conventional-commits.py",
+        "session-start.py",
+        "memory-flush.py",
+    )
+
+    def _tracked_wrapper_umbrella(self, root: Path) -> Path:
+        """Umbrella holding only the wrappers the repository tracks."""
+        hooks = root / ".claude" / "hooks"
+        hooks.mkdir(parents=True)
+        for source in (ROOT / ".claude" / "hooks").iterdir():
+            if source.suffix in {".py", ".sh", ".ps1", ".cjs"}:
+                (hooks / source.name).write_text(source.read_text())
+        return root
+
+    def _launcher_form_project(self, umbrella: Path) -> Path:
+        """Project whose PreToolUse gates use every launcher form in use today."""
+        project = umbrella / "fixture-project"
+        hooks = project / ".claude" / "hooks"
+        hooks.mkdir(parents=True)
+        for name in (*self.PROJECT_HOOKS, "run-python-hook.cjs", "claude-hook.cjs"):
+            (hooks / name).write_text("exit 0\n")
+        commands = [
+            *(f"node .claude/hooks/run-python-hook.cjs .claude/hooks/{n}" for n in self.PROJECT_HOOKS),
+            "node .claude/hooks/claude-hook.cjs worker-safety",
+            "python3 .claude/hooks/quality-gate.py",
+        ]
+        (hooks / "quality-gate.py").write_text("exit 0\n")
+        (project / ".claude" / "settings.json").write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "PreToolUse": [
+                            {"hooks": [{"type": "command", "command": c} for c in commands]}
+                        ]
+                    }
+                }
+            )
+        )
+        return project
+
+    def test_tracked_wrappers_cover_every_project_launcher_form(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            umbrella = self._tracked_wrapper_umbrella(Path(tmp).resolve())
+            project = self._launcher_form_project(umbrella)
+
+            findings = claude_hook_dispatch.audit_project_hook_configuration(umbrella, project)
+
+        self.assertTrue(findings, "the fixture project must configure hooks")
         blocking = [f for f in findings if f.blocks_readiness]
         self.assertFalse(blocking, [f.detail for f in blocking])
+
+    def test_removing_a_tracked_wrapper_blocks_readiness(self) -> None:
+        for wrapper in ("run-python-hook.cjs", "claude-hook.cjs", "quality-gate.py"):
+            with self.subTest(wrapper=wrapper), tempfile.TemporaryDirectory() as tmp:
+                umbrella = self._tracked_wrapper_umbrella(Path(tmp).resolve())
+                project = self._launcher_form_project(umbrella)
+                (umbrella / ".claude" / "hooks" / wrapper).unlink()
+
+                findings = claude_hook_dispatch.audit_project_hook_configuration(umbrella, project)
+
+                blocking = [f for f in findings if f.blocks_readiness]
+                self.assertTrue(blocking, f"missing {wrapper} must block readiness")
+                self.assertIn(wrapper, {f.script_name for f in blocking})
 
 
 if __name__ == "__main__":
