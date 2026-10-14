@@ -3,26 +3,36 @@
 
 Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the eleven go-live signals. Each signal
 gives a count, an amount to the sen where money is involved, up to five example record ids and a status:
-OK, CHECK, or NOT DEPLOYED when the tables or columns it reads are not in production yet.
+OK, CHECK, NOT DEPLOYED when the tables or columns one of its parts reads are not in production yet, or UNAVAILABLE
+when one of its parts could not be read. A signal is OK only when every one of its parts was read and found nothing.
 
-Every query goes through the existing read-only lanes, so this script never touches a credential:
+Database queries go through the existing read-only lanes, so this script never touches a database credential:
   - SIMS production: scripts/agent-access/sims-db-readonly-sql.sh (lane 4, SELECT-only account)
   - Ripple production: scripts/agent-access/ripple-prod-sql-readonly.sh (lane 40, forced read-only session)
+Failures SIMS only logs are read from lane 14 (monitoring-readonly.conf): Sentry errors for the SIMS project, and the
+Better Stack SIMS log source through its SQL query connection. Values from that file are used, never printed.
 The report holds ids, counts and amounts only, never names, emails or phone numbers.
 
 Usage:  scripts/agent-access/nakngaji-company-monitor.py [--json]
-Exit:   0 nothing to check, 1 at least one CHECK, 2 a database could not be read
+Exit:   0 every signal OK; 1 at least one CHECK or NOT DEPLOYED; 2 a database, a log lane or a query could not be read
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
+import hashlib
 import io
 import json
+import math
 import os
 import subprocess
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -41,7 +51,10 @@ COMPANY_NAMES = {
     UNRECORDED: "Company not recorded",
 }
 BRAND_TO_COMPANY = {"sifututor": SIFU, "nakngaji": NAK}
-DB_NAMES = {"sims": "SIMS", "ripple": "Ripple"}
+DATABASES = ("sims", "ripple")
+LOG_SOURCES = ("sentry", "betterstack")
+DB_NAMES = {"sims": "SIMS", "ripple": "Ripple", "sentry": "Sentry", "betterstack": "Better Stack"}
+STATUSES = ("OK", "CHECK", "NOT DEPLOYED", "UNAVAILABLE")
 STANDARD_COLUMNS = {"company", "n", "amount_sen", "ex", "needs_check"}
 
 BEFORE_GO_LIVE_SIMS = "before go-live schema, company from the request brand"
@@ -57,6 +70,7 @@ class Variant:
     requires: dict[str, tuple[str, ...]]
     sql: str
     basis: str = ""
+    post: Callable[[list[dict]], list[dict]] | None = None  # turns raw rows into the standard columns
 
 
 @dataclass(frozen=True)
@@ -65,7 +79,9 @@ class Part:
     db: str
     label: str
     example_label: str
-    variants: tuple[Variant, ...]
+    variants: tuple[Variant, ...] = ()
+    search: str = ""  # log parts: a Sentry search, or a ClickHouse condition on the Better Stack log line
+    count_info: str = ""  # log parts: the info name for what they counted
 
 
 @dataclass(frozen=True)
@@ -415,14 +431,155 @@ GROUP BY company""",
 )
 
 # ---------------------------------------------------------------------------------------------------------------
-# 7. Payout differences between the approved selection and the bank file (Ripple, last 45 days of files)
+# 7. Payout differences between the approved selection and the bank file (Ripple, last 45 days of files).
+#    Each file's total, count and paying company are compared with its linked payments. A company file (one made
+#    with a paying company, WP-16) must also carry its selection fingerprint, and every payment in it must match the
+#    latest approval: the fingerprint is recomputed here from the source records with Ripple's own rules
+#    (tutor-payments/lib/company-payments.ts slipSelectionFingerprint and fileSelectionFingerprint), never trusted.
 
-PAYOUT_TOTALS = """count(s.id) AS slips, coalesce(sum(s.net_amount), 0) AS slips_total"""
-PAYOUT_FINAL = f"""SELECT company, count(*) FILTER (WHERE differs) AS n,
-       (round(coalesce(sum(abs(total_amount - slips_total)) FILTER (WHERE differs), 0) * 100))::bigint AS amount_sen,
-       array_to_string((array_agg(id ORDER BY id DESC) FILTER (WHERE differs))[1:5], ',') AS ex,
-       count(*) AS files_checked
-FROM checked GROUP BY company"""
+def js_number(value) -> float:
+    """JavaScript Number(value) for the values the fingerprint reads."""
+    if value is None:
+        return 0.0
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value).strip()
+    if text == "":
+        return 0.0
+    try:
+        return float(text) if text.lower().lstrip("+-") not in ("inf", "infinity", "nan") else math.nan
+    except ValueError:
+        return math.nan
+
+
+def js_round(value: float):
+    """JavaScript Math.round (halves go up); NaN and infinities become null as JSON.stringify writes them."""
+    if math.isnan(value) or math.isinf(value):
+        return None
+    low = math.floor(value)
+    return int(low + 1 if value - low >= 0.5 else low)
+
+
+def js_integer(value):
+    number = js_number(value)
+    if math.isnan(number) or math.isinf(number):
+        return None
+    return int(number) if number.is_integer() else number
+
+
+def js_sen(value):
+    return js_round(js_number(value) * 100)
+
+
+def slip_selection_fingerprint(selection: dict) -> str:
+    """Ripple's slipSelectionFingerprint: payer, class lines, bonus shares, notes and net, in sen, in a fixed order."""
+    classes = sorted(([js_integer(c[0]), js_sen(c[1])] for c in selection["classes"]), key=lambda c: c[0] or 0)
+    bonuses = sorted(([js_integer(b[0]), js_sen(b[1])] for b in selection["bonuses"]),
+                     key=lambda b: (b[0] or 0, b[1] or 0))
+    notes = sorted(([js_integer(n[0]), str(n[1]), js_sen(n[2])] for n in selection["notes"]), key=lambda n: n[0] or 0)
+    canonical = {
+        "slip_id": selection["slip_id"],
+        "tutor_id": selection["tutor_id"],
+        "payer_company_code": selection.get("payer_company_code"),
+        "net_sen": js_sen(selection["net_amount"]),
+        "classes": classes,
+        "bonuses": bonuses,
+        "notes": notes,
+    }
+    return hashlib.sha256(json.dumps(canonical, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+
+
+def file_selection_fingerprint(slip_fingerprints: list[str]) -> str:
+    """Ripple's fileSelectionFingerprint: the sorted fingerprints of the file's payments."""
+    return hashlib.sha256(json.dumps(sorted(slip_fingerprints), separators=(",", ":")).encode()).hexdigest()
+
+
+def sen_exact(value) -> int:
+    number = Decimal(str(value).strip()) * 100
+    if number != number.to_integral_value():
+        raise QueryError(f"amount is not in whole sen: {value!r}")
+    return int(number)
+
+
+PAYOUT_COUNTERS = ("payments_changed_since_approval", "approvals_missing", "file_fingerprints_missing",
+                   "file_fingerprints_differ")
+
+
+def payout_rows(rows: list[dict]) -> list[dict]:
+    """One raw row per payment in each file (a file with no payments has one row with no slip_id) -> per company:
+    n = files that differ, amount = total of those files, ex = their ids, and what was checked."""
+    files: dict[int, dict] = {}
+    company_files = "file_company" in (rows[0] if rows else {})
+    for r in rows:
+        f = files.setdefault(int(r["batch_id"]), {"row": r, "slips": []})
+        if r.get("slip_id") not in (None, ""):
+            f["slips"].append(r)
+    out: dict[str, dict] = {}
+    for batch_id in sorted(files, reverse=True):
+        f = files[batch_id]
+        head, slips = f["row"], f["slips"]
+        file_company = head.get("file_company") or None
+        company = file_company or SIFU
+        agg = out.setdefault(company, {"company": company, "n": 0, "amount_sen": 0, "ex": [], "files_checked": 0,
+                                       **({k: 0 for k in PAYOUT_COUNTERS} if company_files else {})})
+        agg["files_checked"] += 1
+        total = sen_exact(head["total_amount"])
+        differs = total != sum(sen_exact(s["net_amount"]) for s in slips) or parse_int(head["slip_count"]) != len(slips)
+        if company_files:
+            differs |= any((s.get("slip_company") or None) != file_company for s in slips)
+        if company_files and file_company is not None:
+            file_fingerprint = head.get("file_fingerprint") or None
+            if file_fingerprint is None:
+                agg["file_fingerprints_missing"] += 1
+                differs = True
+            fingerprints = []
+            for s in slips:
+                fingerprint = slip_selection_fingerprint({
+                    "slip_id": int(s["slip_id"]),
+                    "tutor_id": js_integer(s["tutor_id"]),
+                    "payer_company_code": s.get("slip_company") or None,
+                    "net_amount": s["net_amount"],
+                    "classes": json.loads(s.get("classes") or "[]"),
+                    "bonuses": json.loads(s.get("bonuses") or "[]"),
+                    "notes": json.loads(s.get("notes") or "[]"),
+                })
+                fingerprints.append(fingerprint)
+                approved = s.get("approved_fingerprint") or None
+                if approved is None:
+                    agg["approvals_missing"] += 1
+                    differs = True
+                elif approved != fingerprint:
+                    agg["payments_changed_since_approval"] += 1
+                    differs = True
+            if file_fingerprint is not None and file_selection_fingerprint(fingerprints) != file_fingerprint:
+                agg["file_fingerprints_differ"] += 1
+                differs = True
+        if differs:
+            agg["n"] += 1
+            agg["amount_sen"] += total
+            agg["ex"].append(str(batch_id))
+    return [dict(a, ex=",".join(a["ex"][:5])) for a in out.values()]
+
+
+PAYOUT_WINDOW = "b.status <> 'superseded' AND b.created_at > now() - interval '45 days'"
+PAYOUT_SELECTION = """CASE WHEN b.payer_company_code IS NOT NULL AND s.id IS NOT NULL THEN (
+         SELECT coalesce(json_agg(json_build_array(c.sims_class_id, coalesce(c.resolved_amount, c.sims_commission)::text)), '[]')
+           FROM tutor_slip_classes c WHERE c.slip_id = s.id AND c.class_status = 'included') END AS classes,
+       CASE WHEN b.payer_company_code IS NOT NULL AND s.id IS NOT NULL THEN (
+         SELECT coalesce(json_agg(json_build_array(
+                  CASE WHEN e ? 'sims_bonus_id' THEN e->'sims_bonus_id' ELSE '"undefined"'::jsonb END,
+                  CASE WHEN e ? 'amount' THEN e->'amount' ELSE '"undefined"'::jsonb END)), '[]')
+           FROM jsonb_array_elements(CASE WHEN jsonb_typeof(s.bonus_details) = 'array' THEN s.bonus_details ELSE '[]'::jsonb END) e
+          WHERE e->>'action' = 'included') END AS bonuses,
+       CASE WHEN b.payer_company_code IS NOT NULL AND s.id IS NOT NULL THEN (
+         SELECT coalesce(json_agg(json_build_array(n.id, n.type, n.amount::text)), '[]')
+           FROM tutor_payment_notes n WHERE n.slip_id = s.id AND n.note_status = 'approved') END AS notes,
+       (SELECT l.details->>'selection_fingerprint' FROM tutor_payment_audit_log l
+         WHERE l.slip_id = s.id AND l.action IN ('slip_approved', 'payment_approved')
+         ORDER BY l.id DESC LIMIT 1) AS approved_fingerprint"""
+
 PAYOUTS = Part(
     key="payout_differences.ripple_bank_files", db="ripple", label="Ripple tutor payment bank files",
     example_label="bank file batch",
@@ -431,40 +588,35 @@ PAYOUTS = Part(
             requires={
                 "tutor_payment_csv_batches": ("id", "status", "created_at", "total_amount", "slip_count",
                                               "payer_company_code", "selection_fingerprint"),
-                "tutor_payment_slips": ("id", "csv_batch_id", "net_amount", "payer_company_code"),
-                "tutor_payment_audit_log": ("slip_id", "action", "details"),
+                "tutor_payment_slips": ("id", "tutor_id", "csv_batch_id", "net_amount", "payer_company_code",
+                                        "bonus_details"),
+                "tutor_slip_classes": ("slip_id", "sims_class_id", "resolved_amount", "sims_commission", "class_status"),
+                "tutor_payment_notes": ("id", "slip_id", "type", "amount", "note_status"),
+                "tutor_payment_audit_log": ("id", "slip_id", "action", "details"),
             },
-            sql=f"""WITH files AS (
-  SELECT b.id, coalesce(b.payer_company_code, 'sifu_edu_learning') AS company, b.total_amount, b.slip_count,
-         {PAYOUT_TOTALS},
-         coalesce(bool_or(s.payer_company_code IS DISTINCT FROM b.payer_company_code), false) AS company_differs,
-         coalesce(bool_or(b.selection_fingerprint IS NOT NULL AND NOT EXISTS (
-           SELECT 1 FROM tutor_payment_audit_log l
-           WHERE l.slip_id = s.id AND l.action IN ('slip_approved', 'payment_approved')
-             AND l.details->>'selection_fingerprint' IS NOT NULL)), false) AS approval_missing
-  FROM tutor_payment_csv_batches b
-  LEFT JOIN tutor_payment_slips s ON s.csv_batch_id = b.id
-  WHERE b.status <> 'superseded' AND b.created_at > now() - interval '45 days'
-  GROUP BY b.id, b.payer_company_code, b.total_amount, b.slip_count),
-checked AS (
-  SELECT *, (total_amount <> slips_total OR slip_count <> slips OR company_differs OR approval_missing) AS differs FROM files)
-{PAYOUT_FINAL}""",
+            sql=f"""SELECT b.id AS batch_id, b.payer_company_code AS file_company, b.total_amount::text AS total_amount,
+       b.slip_count, b.selection_fingerprint AS file_fingerprint,
+       s.id AS slip_id, s.tutor_id, s.payer_company_code AS slip_company, s.net_amount::text AS net_amount,
+       {PAYOUT_SELECTION}
+FROM tutor_payment_csv_batches b
+LEFT JOIN tutor_payment_slips s ON s.csv_batch_id = b.id
+WHERE {PAYOUT_WINDOW}
+ORDER BY b.id, s.id""",
+            post=payout_rows,
         ),
         Variant(
             requires={
                 "tutor_payment_csv_batches": ("id", "status", "created_at", "total_amount", "slip_count"),
                 "tutor_payment_slips": ("id", "csv_batch_id", "net_amount"),
             },
-            sql=f"""WITH files AS (
-  SELECT b.id, 'sifu_edu_learning' AS company, b.total_amount, b.slip_count, {PAYOUT_TOTALS}
-  FROM tutor_payment_csv_batches b
-  LEFT JOIN tutor_payment_slips s ON s.csv_batch_id = b.id
-  WHERE b.status <> 'superseded' AND b.created_at > now() - interval '45 days'
-  GROUP BY b.id, b.total_amount, b.slip_count),
-checked AS (
-  SELECT *, (total_amount <> slips_total OR slip_count <> slips) AS differs FROM files)
-{PAYOUT_FINAL}""",
+            sql=f"""SELECT b.id AS batch_id, b.total_amount::text AS total_amount, b.slip_count,
+       s.id AS slip_id, s.net_amount::text AS net_amount
+FROM tutor_payment_csv_batches b
+LEFT JOIN tutor_payment_slips s ON s.csv_batch_id = b.id
+WHERE {PAYOUT_WINDOW}
+ORDER BY b.id, s.id""",
             basis=BEFORE_GO_LIVE_RIPPLE + "; totals and counts only, no approved fingerprint yet",
+            post=payout_rows,
         ),
     ),
 )
@@ -632,22 +784,73 @@ MYINVOIS = Part(
     ),
 )
 
+# ---------------------------------------------------------------------------------------------------------------
+# Failures SIMS only logs (no table holds them). SIMS sends exceptions to Sentry but not its log lines (14 days of
+# events on 15/10/2026: every one an exception, no log-channel events), so refusals and caught errors are read from
+# the Better Stack SIMS log source. Each search covers the last 24 hours. The company comes from the invoice
+# reference in the log context (NINV- is Nakngaji, PINV- is Sifu Edu & Learning); otherwise "Company not recorded".
+
+def log_message_has(*phrases: str) -> str:
+    return "(" + " OR ".join(f"positionCaseInsensitive(msg, '{p}') > 0" for p in phrases) + ")"
+
+
+REFUSED_CALLBACKS = Part(
+    key="callback_mismatches.betterstack_refused_callbacks", db="betterstack",
+    label="Better Stack SIMS logs: FIUU callbacks refused for merchant, amount or company",
+    example_label="invoice reference", count_info="refused_callbacks_logged",
+    # PaymentController handleCallback / handleNotify log every refusal once, with the reason in context.result.
+    search=(log_message_has("CALLBACK: Processing failed", "NOTIFY: Processing failed")
+            + " AND match(lower(JSONExtractRaw(raw, 'monolog', 'context', 'result')), 'merchant|amount|company')"),
+)
+REFERRAL_ALLOCATION_LOGS = Part(
+    key="failed_credit_allocation.betterstack_referral_allocation_errors", db="betterstack",
+    label="Better Stack SIMS logs: pending referral credit allocation failed", example_label="invoice",
+    count_info="allocation_errors_logged",
+    # ParentInvoiceObserver::created and ClassService invoice activation catch the exception and log it.
+    search=log_message_has("Pending referral credit allocation failed"),
+)
+REFERRAL_ALLOCATION_EXCEPTIONS = Part(
+    key="failed_credit_allocation.sentry_referral_allocation_exceptions", db="sentry",
+    label="Sentry SIMS errors: referral credit allocation exceptions", example_label="Sentry issue",
+    count_info="allocation_exceptions",
+    # EvaluateReferralBonus calls the allocation without a catch, so its exceptions reach Sentry.
+    search='stack.function:"*allocatePendingForParent*"',
+)
+OLD_BUILD_REFUSAL_LOGS = Part(
+    key="rejected_clock_ins.betterstack_old_build_refusals", db="betterstack",
+    label="Better Stack SIMS logs: clock-ins refused for an old Tutor App build", example_label="invoice reference",
+    count_info="old_build_refusals_logged",
+    search="(positionCaseInsensitive(raw, 'Please update the Tutor App') > 0 OR position(raw, 'APP_UPDATE_REQUIRED') > 0)",
+)
+OLD_BUILD_REFUSAL_EVENTS = Part(
+    key="rejected_clock_ins.sentry_old_build_refusals", db="sentry",
+    label="Sentry SIMS errors: clock-ins refused for an old Tutor App build", example_label="Sentry issue",
+    count_info="old_build_refusal_events",
+    search='message:"*update the Tutor App*"',
+)
+
 SIGNALS: tuple[Signal, ...] = (
     Signal("unmatched_payments", "Unmatched payments", (UNMATCHED_GATEWAY_RECEIPTS, UNMATCHED_BANK_SUSPENSE),
            count_label=("payment", "payments")),
-    Signal("callback_mismatches", "Callback mismatches (amount or company)", (CALLBACK_MISMATCHES,),
-           count_label=("attempt", "attempts")),
-    Signal("failed_credit_allocation", "Failed credit allocation", (CROSS_COMPANY_CREDIT, FEE_ALLOCATIONS),
+    Signal("callback_mismatches", "Callback mismatches (amount, merchant or company)", (CALLBACK_MISMATCHES, REFUSED_CALLBACKS),
+           count_label=("attempt or refused callback", "attempts or refused callbacks"),
+           note="money is from the payment attempts; refused callbacks are counted from the logs"),
+    Signal("failed_credit_allocation", "Failed credit allocation",
+           (CROSS_COMPANY_CREDIT, FEE_ALLOCATIONS, REFERRAL_ALLOCATION_LOGS, REFERRAL_ALLOCATION_EXCEPTIONS),
            count_label=("record", "records"),
-           note="read from credit moved across companies and failed fee allocations; no single failure record exists"),
-    Signal("rejected_clock_ins", "Rejected clock-ins (holds)", (HOLDS,), money=False, count_label=("hold blocking", "holds blocking"),
-           note="refusals of old Tutor App builds are not stored in any database; watch Sentry for them"),
+           note="read from credit moved across companies, failed fee allocations and logged allocation errors; "
+                "no single failure record exists"),
+    Signal("rejected_clock_ins", "Rejected clock-ins (holds and old-build refusals)",
+           (HOLDS, OLD_BUILD_REFUSAL_LOGS, OLD_BUILD_REFUSAL_EVENTS), money=False,
+           count_label=("hold or refusal", "holds or refusals"),
+           note="old-build refusals are not stored in any database, so they are read from the logs; "
+                "the SIMS refusal (WP-21) was not found in the go-live branches on 15/10/2026"),
     Signal("followup_cases_72h", "Open follow-up cases older than 72 hours", (FOLLOWUPS,), money=False,
            count_label=("case", "cases")),
     Signal("extra_charges_waiting", "Extra charges waiting more than one month end", (EXTRA_CHARGES,),
            count_label=("charge", "charges")),
     Signal("payout_differences", "Payout differences, approved selection vs bank file", (PAYOUTS,),
-           count_label=("file differs", "files differ")),
+           count_label=("file differs", "files differ"), note="the amount is the total of the bank files that differ"),
     Signal("carried_deductions", "Carried-forward deductions", (CARRIED,), count_label=("waiting", "waiting"),
            note="CHECK only when one has waited more than 35 days"),
     Signal("quickbooks_sync_failures", "QuickBooks sync failures", (QUICKBOOKS,), count_label=("record", "records")),
@@ -727,6 +930,26 @@ def all_queries(db: str):
                     yield variant.sql, part.key
 
 
+def betterstack_sql(table: str, condition: str) -> str:
+    """Counts matching SIMS log lines of the last day per company; recent and archived rows, as Better Stack documents."""
+    window = "dt >= now() - INTERVAL 1 DAY"
+    return f"""SELECT multiIf(ref LIKE 'NINV-%', '{NAK}', ref LIKE 'PINV-%', '{SIFU}', '') AS company,
+       count() AS n, arrayStringConcat(arraySlice(groupUniqArrayIf(ref, ref != ''), 1, 5), ',') AS ex
+FROM (
+  SELECT coalesce(nullIf(JSONExtractString(raw, 'monolog', 'context', 'orderid'), ''),
+                  nullIf(JSONExtractString(raw, 'monolog', 'context', 'order_id'), ''),
+                  nullIf(toString(JSONExtractInt(raw, 'monolog', 'context', 'parent_invoice_id')), '0'), '') AS ref
+  FROM (
+    SELECT raw, JSONExtractString(raw, 'message') AS msg FROM remote({table}_logs) WHERE {window}
+    UNION ALL
+    SELECT raw, JSONExtractString(raw, 'message') AS msg FROM s3Cluster(primary, {table}_s3) WHERE _row_type = 1 AND {window}
+  )
+  WHERE {condition}
+)
+GROUP BY company
+FORMAT JSONEachRow"""
+
+
 def tables_for(db: str) -> list[str]:
     names = set()
     for signal in SIGNALS:
@@ -740,9 +963,108 @@ def tables_for(db: str) -> list[str]:
 # ---------------------------------------------------------------------------------------------------------------
 # Runner: the real one calls the read-only wrappers; tests pass a fake with the same two methods.
 
+MONITORING_CONF = ".config/sifututor/agent-access/monitoring-readonly.conf"
+BETTERSTACK_QUERY_KEYS = ("BETTERSTACK_QUERY_HOST", "BETTERSTACK_QUERY_USERNAME", "BETTERSTACK_QUERY_PASSWORD",
+                          "BETTERSTACK_SIMS_LOGS_TABLE")
+SENTRY_KEYS = ("SENTRY_AUTH_TOKEN", "SENTRY_ORG_SLUG", "SENTRY_PROJECT_SLUG")
+SENTRY_HOST = "https://de.sentry.io"  # the organisation lives in the EU region
+
+
 class WrapperRunner:
-    def __init__(self, timeout: int = 150):
+    def __init__(self, timeout: int = 150, home: Path | None = None):
         self.timeout = timeout
+        self.home = home or Path.home()
+        self._conf: dict[str, str] | None = None
+        self._sentry_project_id: str | None = None
+
+    # Lane 14. Values are only ever passed to the API; error messages name keys, never values.
+    def conf(self) -> dict[str, str]:
+        if self._conf is None:
+            path = self.home / MONITORING_CONF
+            if not path.is_file():
+                raise QueryError(f"lane 14 file ~/{MONITORING_CONF} is missing")
+            values = {}
+            for raw in path.read_text().splitlines():
+                line = raw.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    values[key.strip().removeprefix("export ").strip()] = value.strip().strip('"').strip("'")
+            self._conf = values
+        return self._conf
+
+    def _need(self, keys: tuple[str, ...], what: str) -> dict[str, str]:
+        conf = self.conf()
+        missing = [k for k in keys if not conf.get(k)]
+        if missing:
+            raise QueryError(f"lane 14 has no {what}; missing " + ", ".join(missing))
+        return conf
+
+    def _http(self, url: str, headers: dict[str, str], body: str | None = None) -> tuple[int, str]:
+        request = urllib.request.Request(url, headers=headers, data=body.encode() if body is not None else None,
+                                         method="POST" if body is not None else "GET")
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                return response.status, response.read().decode()
+        except urllib.error.HTTPError as exc:
+            return exc.code, ""
+        except (OSError, urllib.error.URLError) as exc:
+            raise QueryError(f"could not connect ({type(exc).__name__})") from exc
+
+    def _sentry(self, path: str, params: list[tuple[str, str]] | None = None):
+        conf = self._need(SENTRY_KEYS, "Sentry read token")
+        url = f"{SENTRY_HOST}/api/0/organizations/{conf['SENTRY_ORG_SLUG']}/{path}"
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        status, text = self._http(url, {"Authorization": f"Bearer {conf['SENTRY_AUTH_TOKEN']}",
+                                        "Accept": "application/json"})
+        if status != 200:
+            raise QueryError(f"Sentry answered HTTP {status}")
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise QueryError("Sentry answer is not JSON") from exc
+
+    def probe(self, source: str) -> None:
+        if source == "sentry":
+            slug = self._need(SENTRY_KEYS, "Sentry read token")["SENTRY_PROJECT_SLUG"]
+            projects = self._sentry("projects/")
+            found = [p for p in projects if isinstance(p, dict) and p.get("slug") == slug]
+            if not found:
+                raise QueryError(f"Sentry project {slug} not found")
+            self._sentry_project_id = str(found[0]["id"])
+        elif source == "betterstack":
+            self._need(BETTERSTACK_QUERY_KEYS, "Better Stack query connection (Better Stack > Integrations > "
+                                               "ClickHouse HTTP client, read only)")
+        else:
+            raise QueryError(f"unknown source {source}")
+
+    def logs(self, source: str, search: str, key: str) -> list[dict]:
+        if source == "sentry":
+            base = [("dataset", "errors"), ("field", "count()"), ("project", self._sentry_project_id or ""),
+                    ("statsPeriod", "24h"), ("query", search)]
+            data = self._sentry("events/", base).get("data") or [{}]
+            n = parse_int(data[0].get("count()"))
+            if n == 0:
+                return []
+            top = self._sentry("events/", [("dataset", "errors"), ("field", "issue"), ("field", "count()"),
+                                           ("project", self._sentry_project_id or ""), ("statsPeriod", "24h"),
+                                           ("query", search), ("sort", "-count()"), ("per_page", "5")])
+            issues = [str(r.get("issue")) for r in top.get("data") or [] if r.get("issue")]
+            return [{"company": None, "n": str(n), "amount_sen": "0", "ex": ",".join(issues[:5])}]
+        conf = self._need(BETTERSTACK_QUERY_KEYS, "Better Stack query connection")
+        auth = base64.b64encode(f"{conf['BETTERSTACK_QUERY_USERNAME']}:{conf['BETTERSTACK_QUERY_PASSWORD']}".encode())
+        status, text = self._http(conf["BETTERSTACK_QUERY_HOST"].rstrip("/") + "?output_format_pretty_row_numbers=0",
+                                  {"Authorization": "Basic " + auth.decode(), "Content-Type": "text/plain"},
+                                  betterstack_sql(conf["BETTERSTACK_SIMS_LOGS_TABLE"], search))
+        if status != 200:
+            raise QueryError(f"Better Stack answered HTTP {status}")
+        rows = []
+        for line in text.splitlines():
+            if line.strip():
+                r = json.loads(line)
+                rows.append({"company": r.get("company") or None, "n": str(r.get("n", 0)), "amount_sen": "0",
+                             "ex": r.get("ex") or ""})
+        return rows
 
     def _run(self, db: str, sql: str) -> list[dict]:
         if db == "sims":
@@ -781,6 +1103,7 @@ class CompanyLine:
     examples: list[str] = field(default_factory=list)
     info: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    partial: bool = False  # at least one part was not read
 
 
 @dataclass
@@ -794,6 +1117,7 @@ class Report:
     run_at: datetime
     results: list[SignalResult]
     unreadable: list[str]
+    reasons: dict[str, str] = field(default_factory=dict)
 
 
 def missing_for(variant: Variant, schema: dict[str, set[str]]) -> list[str]:
@@ -812,34 +1136,40 @@ def info_text(key: str, value) -> str:
     return f"{key}={parse_int(value):,}"
 
 
-def evaluate(signal: Signal, schemas: dict[str, dict[str, set[str]] | None], runner) -> SignalResult:
+def evaluate(signal: Signal, schemas: dict[str, dict[str, set[str]] | None], runner,
+             reasons: dict[str, str] | None = None) -> SignalResult:
+    """A signal is OK for a company only when every part was read and found nothing for it (coverage per part)."""
     lines = {c: CompanyLine() for c in signal.companies}
-    ran = False
     problems: dict[str, bool] = {}
+    missed = {"NOT DEPLOYED": False, "UNAVAILABLE": False}
     part_notes: list[str] = []
     per_company_examples: dict[str, list[str]] = {}
     for part in signal.parts:
         schema = schemas.get(part.db)
         if schema is None:
-            ran = True
-            part_notes.append(f"{part.label}: query failed, {DB_NAMES[part.db]} could not be read")
-            for c in lines:
-                problems[c] = True
+            missed["UNAVAILABLE"] = True
+            reason = (reasons or {}).get(part.db, "")
+            part_notes.append(f"{part.label}: unavailable, {DB_NAMES[part.db]} could not be read"
+                              + (f" ({reason})" if reason else ""))
             continue
-        variant = next((v for v in part.variants if not missing_for(v, schema)), None)
-        if variant is None:
-            missing = missing_for(part.variants[0], schema)
-            part_notes.append(f"{part.label}: not deployed, missing {DB_NAMES[part.db]} " + ", ".join(missing))
-            continue
-        ran = True
-        if variant.basis:
-            part_notes.append(f"{part.label}: {variant.basis}")
         try:
-            rows = runner.query(part.db, variant.sql, part.key)
+            if part.db in LOG_SOURCES:
+                rows = runner.logs(part.db, part.search, part.key)
+            else:
+                variant = next((v for v in part.variants if not missing_for(v, schema)), None)
+                if variant is None:
+                    missed["NOT DEPLOYED"] = True
+                    missing = missing_for(part.variants[0], schema)
+                    part_notes.append(f"{part.label}: not deployed, missing {DB_NAMES[part.db]} " + ", ".join(missing))
+                    continue
+                if variant.basis:
+                    part_notes.append(f"{part.label}: {variant.basis}")
+                rows = runner.query(part.db, variant.sql, part.key)
+                if variant.post:
+                    rows = variant.post(rows)
         except QueryError as exc:
-            part_notes.append(f"{part.label}: query failed, {exc}")
-            for c in lines:
-                problems[c] = True
+            missed["UNAVAILABLE"] = True
+            part_notes.append(f"{part.label}: unavailable, query failed, {exc}")
             continue
         for r in rows:
             company = normalise_company(r.get("company"))
@@ -857,15 +1187,22 @@ def evaluate(signal: Signal, schemas: dict[str, dict[str, set[str]] | None], run
             else:
                 flagged = n > 0 or amount != 0
             problems[company] = problems.get(company, False) or flagged
-            ids = [i.strip() for i in (r.get("ex") or "").split(",") if i.strip()]
+            ids = [i.strip() for i in str(r.get("ex") or "").split(",") if i.strip()]
             prefix = f"{part.example_label} " if part.example_label else ""
             per_company_examples.setdefault(company, []).extend(prefix + i for i in ids)
             line.info.extend(info_text(k, v) for k, v in r.items() if k not in STANDARD_COLUMNS)
+            if part.count_info:
+                line.info.append(f"{part.count_info}={n:,}")
     for company, line in lines.items():
-        if not ran:
+        if problems.get(company):
+            line.status = "CHECK"
+        elif missed["UNAVAILABLE"]:
+            line.status = "UNAVAILABLE"
+        elif missed["NOT DEPLOYED"]:
             line.status = "NOT DEPLOYED"
         else:
-            line.status = "CHECK" if problems.get(company) else "OK"
+            line.status = "OK"
+        line.partial = missed["UNAVAILABLE"] or missed["NOT DEPLOYED"]
         line.examples = per_company_examples.get(company, [])[:5]
         line.notes = list(part_notes)
         if signal.note:
@@ -876,14 +1213,24 @@ def evaluate(signal: Signal, schemas: dict[str, dict[str, set[str]] | None], run
 def build_report(runner, now: datetime | None = None) -> Report:
     schemas: dict[str, dict[str, set[str]] | None] = {}
     unreadable = []
-    for db in ("sims", "ripple"):
+    reasons: dict[str, str] = {}
+    for db in DATABASES:
         try:
             schemas[db] = runner.columns(db, tables_for(db))
-        except QueryError:
+        except QueryError as exc:
             schemas[db] = None
             unreadable.append(db)
-    results = [evaluate(s, schemas, runner) for s in SIGNALS]
-    return Report(now or datetime.now(MYT), results, unreadable)
+            reasons[db] = str(exc)
+    for source in LOG_SOURCES:
+        try:
+            runner.probe(source)
+            schemas[source] = {}
+        except QueryError as exc:
+            schemas[source] = None
+            unreadable.append(source)
+            reasons[source] = str(exc)
+    results = [evaluate(s, schemas, runner, reasons) for s in SIGNALS]
+    return Report(now or datetime.now(MYT), results, unreadable, reasons)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -898,7 +1245,7 @@ def company_order(report: Report) -> list[str]:
 
 def headline(result: SignalResult, line: CompanyLine) -> str:
     signal = result.signal
-    if line.status == "NOT DEPLOYED":
+    if line.status in ("NOT DEPLOYED", "UNAVAILABLE") and not (line.count or line.amount_sen or line.info):
         return signal.title
     text = f"{signal.title}: {line.count:,}"
     label = signal.count_label[0 if line.count == 1 else 1]
@@ -906,6 +1253,8 @@ def headline(result: SignalResult, line: CompanyLine) -> str:
         text += f" {label}"
     if signal.money:
         text += f", {format_money(line.amount_sen)}"
+    if line.partial:
+        text += " (not every part was read)"
     return text
 
 
@@ -913,14 +1262,17 @@ def render_text(report: Report) -> str:
     out = [
         "Nakngaji and Sifututor company monitor (WP-28), read only",
         f"Run at {report.run_at.astimezone(MYT).strftime('%d/%m/%Y %H:%M')} MYT. Sources: SIMS production (lane 4), "
-        "Ripple production (lane 40). Record ids only, no personal data.",
+        "Ripple production (lane 40), Sentry and Better Stack SIMS logs for the last 24 hours (lane 14). "
+        "Record ids only, no personal data.",
     ]
     for db in report.unreadable:
-        out.append(f"WARNING: {DB_NAMES[db]} could not be read; its signals show CHECK.")
+        reason = report.reasons.get(db, "")
+        out.append(f"WARNING: {DB_NAMES[db]} could not be read" + (f" ({reason})" if reason else "")
+                   + "; the signals that need it show UNAVAILABLE unless another part found something to check.")
     summary = []
     for company in company_order(report):
         out += ["", COMPANY_NAMES[company], "-" * len(COMPANY_NAMES[company])]
-        counts = {"OK": 0, "CHECK": 0, "NOT DEPLOYED": 0}
+        counts = dict.fromkeys(STATUSES, 0)
         for result in report.results:
             line = result.companies.get(company)
             if line is None:
@@ -932,15 +1284,14 @@ def render_text(report: Report) -> str:
                 out.append(f"{pad}examples: {', '.join(line.examples)}")
             if line.info:
                 out.append(f"{pad}{'; '.join(line.info)}")
-        summary.append(f"{COMPANY_NAMES[company]}: OK {counts['OK']}, CHECK {counts['CHECK']}, "
-                       f"NOT DEPLOYED {counts['NOT DEPLOYED']}")
+        summary.append(f"{COMPANY_NAMES[company]}: " + ", ".join(f"{k} {counts[k]}" for k in STATUSES))
     out += ["", "Notes (how each signal was read today)", "--------------------------------------"]
     for result in report.results:
         notes = next(iter(result.companies.values())).notes
         if notes:
             out.append(f"  {result.signal.title}")
             out += [f"    - {note}" for note in notes]
-    out += ["", "Summary", *[f"  {s}" for s in summary]]
+    out += ["", "Summary", *[f"  {s}" for s in summary], f"  Exit code {exit_code(report)}: {EXIT_MEANING[exit_code(report)]}"]
     return "\n".join(out) + "\n"
 
 
@@ -948,13 +1299,15 @@ def render_json(report: Report) -> str:
     return json.dumps({
         "run_at_myt": report.run_at.astimezone(MYT).isoformat(timespec="seconds"),
         "unreadable": report.unreadable,
+        "unreadable_reasons": report.reasons,
+        "exit_code": exit_code(report),
         "signals": [
             {
                 "key": r.signal.key,
                 "title": r.signal.title,
                 "companies": {
                     c: {"status": l.status, "count": l.count, "amount_sen": l.amount_sen if r.signal.money else None,
-                        "examples": l.examples, "info": l.info, "notes": l.notes}
+                        "every_part_read": not l.partial, "examples": l.examples, "info": l.info, "notes": l.notes}
                     for c, l in r.companies.items()
                 },
             }
@@ -963,10 +1316,18 @@ def render_json(report: Report) -> str:
     }, indent=2)
 
 
+EXIT_MEANING = {
+    0: "every signal OK",
+    1: "something to check, or a signal not deployed",
+    2: "a source or a query could not be read",
+}
+
+
 def exit_code(report: Report) -> int:
-    if report.unreadable:
+    lines = [l for r in report.results for l in r.companies.values()]
+    if report.unreadable or any(l.status == "UNAVAILABLE" or "unavailable" in " ".join(l.notes) for l in lines):
         return 2
-    if any(l.status == "CHECK" for r in report.results for l in r.companies.values()):
+    if any(l.status != "OK" for l in lines):
         return 1
     return 0
 

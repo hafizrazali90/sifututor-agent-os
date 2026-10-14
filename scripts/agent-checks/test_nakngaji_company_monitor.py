@@ -11,6 +11,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -61,6 +62,13 @@ class FakeRunner:
         if key in self.errors:
             raise monitor.QueryError(self.errors[key])
         return [dict(r) for r in self.rows.get(key, [])]
+
+    def probe(self, source):
+        if self.schema.get(source, True) is False:
+            raise monitor.QueryError(f"{source} lane not readable in this test")
+
+    def logs(self, source, search, key):
+        return self.query(source, search, key)
 
 
 def row(company, n, amount_sen=0, ex="", **extra):
@@ -122,7 +130,8 @@ class NotDeployed(unittest.TestCase):
             self.assertTrue(result.companies)
             for company, line in result.companies.items():
                 self.assertEqual(line.status, "NOT DEPLOYED", f"{result.signal.key} {company}")
-        self.assertEqual(runner.calls, [], "no signal query may run when its tables are missing")
+        db_calls = [c for c in runner.calls if c[0] in ("sims", "ripple")]
+        self.assertEqual(db_calls, [], "no database query may run when its tables are missing")
 
     def test_missing_column_is_named(self):
         schema = full_schema()
@@ -137,13 +146,13 @@ class NotDeployed(unittest.TestCase):
         for key in ("extra_charges_waiting", "rejected_clock_ins", "carried_deductions", "owed_to_nakngaji"):
             self.assertEqual(result_for(report, key, NAK).status, "NOT DEPLOYED", key)
 
-    def test_report_text_says_not_deployed(self):
+    def test_report_text_says_not_deployed_and_alerts(self):
         report = monitor.build_report(FakeRunner({"sims": {}, "ripple": {}}))
         text = monitor.render_text(report)
         self.assertIn("NOT DEPLOYED", text)
         self.assertIn("Sifu Edu & Learning Sdn Bhd", text)
         self.assertIn("Nakngaji Sdn Bhd", text)
-        self.assertEqual(monitor.exit_code(report), 0)
+        self.assertEqual(monitor.exit_code(report), 1, "a signal that was not checked is never a success")
 
 
 class SignalsOnTheGoLiveSchema(unittest.TestCase):
@@ -208,12 +217,6 @@ class SignalsOnTheGoLiveSchema(unittest.TestCase):
         line = result_for(report, "extra_charges_waiting", NAK)
         self.assertEqual((line.status, line.amount_sen), ("CHECK", 1250))
 
-    def test_payout_differences(self):
-        report, _ = self.run_signal("payout_differences", {
-            "payout_differences.ripple_bank_files": [row(NAK, 1, 2525, "140")],
-        })
-        line = result_for(report, "payout_differences", NAK)
-        self.assertEqual((line.status, line.amount_sen, line.examples), ("CHECK", 2525, ["bank file batch 140"]))
 
     def test_carried_deductions_only_check_when_old(self):
         report, _ = self.run_signal("carried_deductions", {
@@ -262,12 +265,12 @@ class SignalsOnTheGoLiveSchema(unittest.TestCase):
         self.assertEqual(line.status, "CHECK")
         self.assertIn("Company not recorded", monitor.render_text(report))
 
-    def test_failed_query_is_check_and_names_the_part(self):
+    def test_failed_query_is_unavailable_and_names_the_part(self):
         report, _ = self.run_signal("quickbooks_sync_failures", {}, errors={"quickbooks_sync_failures.ripple_qb": "timeout"})
         line = result_for(report, "quickbooks_sync_failures", SIFU)
-        self.assertEqual(line.status, "CHECK")
+        self.assertEqual(line.status, "UNAVAILABLE")
         self.assertIn("query failed", " ".join(line.notes))
-        self.assertEqual(monitor.exit_code(report), 1)
+        self.assertEqual(monitor.exit_code(report), 2)
 
 
 class ReleaseSteps(unittest.TestCase):
@@ -307,7 +310,8 @@ class Output(unittest.TestCase):
         out = io.StringIO()
         with redirect_stdout(out):
             code = monitor.main([], runner=runner)
-        self.assertEqual(code, 0)
+        self.assertEqual(code, 1, "nothing deployed is not a success")
+        self.assertIn("Exit code 1", out.getvalue())
         self.assertIn("read only", out.getvalue())
 
     def test_report_holds_ids_only(self):
@@ -317,6 +321,361 @@ class Output(unittest.TestCase):
                     low = variant.sql.lower()
                     for word in ("email", "phone", "parent_name", "customer_name", "payee_name", "sender_name", "tutor_name", "ic_"):
                         self.assertNotIn(word, low, f"{part.key} selects {word}")
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Payout fingerprints: the same rules as Ripple (tutor-payments/lib/company-payments.ts), run on seeded records
+
+# Computed with Ripple's slipSelectionFingerprint / fileSelectionFingerprint code in Node, not with this module.
+RIPPLE_FINGERPRINTS = {
+    "approved90": "e97aa53549c44b6ce86308dc0971c992ecf7efa9ae602a67ad1ae6802aff460b",
+    "now100": "52745e8eac57e91b19398581d344d1ae710915cf634c011d4e32767d4fb7f25d",
+    "mixed": "76a3b25a17a110b84ba85a8768ab3a4334478950c1e68d42e436dd1bd3a17aa3",
+    "file_now100": "60f3c673afb0dc643551e547267ff1a4fb2500510c4c5238c2f9116434ee4d13",
+    "file_two": "294ebd7dd09ec7d45adbe39bc171d88a2e11d059b1f52c6774bbb218107ce35e",
+}
+APPROVED_90 = {"slip_id": 501, "tutor_id": 77, "payer_company_code": NAK, "net_amount": "90.00",
+               "classes": [[9002, "40.00"], [9001, "50.00"]], "bonuses": [], "notes": []}
+NOW_100 = dict(APPROVED_90, net_amount="100.00", classes=[[9002, "50.00"], [9001, "50.00"]])
+MIXED = {"slip_id": 7, "tutor_id": 3, "payer_company_code": None, "net_amount": "1.005",
+         "classes": [[5, "0.29"], [2, "10.10"]], "bonuses": [[4, 12.5], [4, "2.35"]],
+         "notes": [[9, "deduction", "3.00"], [1, "addition", "0.07"]]}
+
+
+class PayoutFingerprintRules(unittest.TestCase):
+    def test_slip_fingerprint_is_the_one_ripple_computes(self):
+        self.assertEqual(monitor.slip_selection_fingerprint(APPROVED_90), RIPPLE_FINGERPRINTS["approved90"])
+        self.assertEqual(monitor.slip_selection_fingerprint(NOW_100), RIPPLE_FINGERPRINTS["now100"])
+        self.assertEqual(monitor.slip_selection_fingerprint(MIXED), RIPPLE_FINGERPRINTS["mixed"])
+
+    def test_file_fingerprint_is_the_one_ripple_computes(self):
+        now, mixed = RIPPLE_FINGERPRINTS["now100"], RIPPLE_FINGERPRINTS["mixed"]
+        self.assertEqual(monitor.file_selection_fingerprint([now]), RIPPLE_FINGERPRINTS["file_now100"])
+        self.assertEqual(monitor.file_selection_fingerprint([mixed, now]), RIPPLE_FINGERPRINTS["file_two"])
+
+
+RIPPLE_PAYOUT_DDL = """
+CREATE TABLE tutor_payment_csv_batches (id int PRIMARY KEY, status text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
+  total_amount numeric(12,2) NOT NULL, slip_count int NOT NULL, payer_company_code text, selection_fingerprint text);
+CREATE TABLE tutor_payment_slips (id int PRIMARY KEY, tutor_id int NOT NULL, csv_batch_id int, net_amount numeric(12,2) NOT NULL,
+  payer_company_code text, bonus_details jsonb);
+CREATE TABLE tutor_slip_classes (id serial PRIMARY KEY, slip_id int NOT NULL, sims_class_id int NOT NULL,
+  sims_commission numeric(10,2) NOT NULL, resolved_amount numeric(10,2), class_status text NOT NULL);
+CREATE TABLE tutor_payment_notes (id int PRIMARY KEY, slip_id int, type text NOT NULL, amount numeric(10,2) NOT NULL,
+  note_status text NOT NULL);
+CREATE TABLE tutor_payment_audit_log (id serial PRIMARY KEY, slip_id int, action text NOT NULL, details jsonb);
+"""
+
+
+class PsqlRunner:
+    """Runs the monitor's real Ripple SQL on a throwaway local Postgres; SIMS has no tables here."""
+
+    def __init__(self, socket_dir, port):
+        self.base = ["psql", "-X", "-q", "-h", socket_dir, "-p", str(port), "-U", "postgres", "-d", "postgres",
+                     "-v", "ON_ERROR_STOP=1", "--csv"]
+
+    def run(self, sql):
+        done = subprocess.run(self.base + ["-c", sql], capture_output=True, text=True, timeout=60)
+        if done.returncode != 0:
+            raise monitor.QueryError(done.stderr.strip()[:300])
+        return done.stdout
+
+    def columns(self, db, tables):
+        if db != "ripple":
+            return {}
+        found = {}
+        for r in monitor.parse_csv(self.run(monitor.schema_sql(db, tables))):
+            found.setdefault(r["t"], set()).add(r["c"])
+        return found
+
+    def query(self, db, sql, key):
+        return monitor.parse_csv(self.run(sql))
+
+    def probe(self, source):
+        return None
+
+    def logs(self, source, search, key):
+        return []
+
+
+@unittest.skipUnless(shutil.which("initdb") and shutil.which("pg_ctl") and shutil.which("psql"), "no local Postgres")
+class PayoutQueryOnSeededRecords(unittest.TestCase):
+    """The go-live payout query, run against seeded source records (codex review finding 1)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="wp28pg", dir="/tmp")
+        data = os.path.join(cls.tmp, "data")
+        subprocess.run(["initdb", "-D", data, "-U", "postgres", "--auth=trust", "-E", "UTF8", "--no-locale"],
+                       check=True, capture_output=True)
+        cls.port = 55400 + os.getpid() % 500
+        subprocess.run(["pg_ctl", "-D", data, "-w", "-l", os.path.join(cls.tmp, "log"), "-o",
+                        f"-c listen_addresses='' -k {cls.tmp} -p {cls.port}", "start"], check=True, capture_output=True)
+        cls.data = data
+        cls.runner = PsqlRunner(cls.tmp, cls.port)
+        cls.runner.run(RIPPLE_PAYOUT_DDL)
+
+    @classmethod
+    def tearDownClass(cls):
+        subprocess.run(["pg_ctl", "-D", cls.data, "-m", "fast", "-w", "stop"], capture_output=True)
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def setUp(self):
+        self.runner.run("TRUNCATE tutor_payment_csv_batches, tutor_payment_slips, tutor_slip_classes, "
+                        "tutor_payment_notes, tutor_payment_audit_log RESTART IDENTITY")
+
+    def seed_now_100(self, file_fingerprint="current", approvals=("approved90",)):
+        fp = {"current": RIPPLE_FINGERPRINTS["file_now100"], "missing": None}.get(file_fingerprint, file_fingerprint)
+        fp_sql = "NULL" if fp is None else f"'{fp}'"
+        self.runner.run(f"""
+INSERT INTO tutor_payment_csv_batches VALUES (140, 'generated', now() - interval '2 days', 100.00, 1, '{NAK}', {fp_sql});
+INSERT INTO tutor_payment_slips VALUES (501, 77, 140, 100.00, '{NAK}', '[]');
+INSERT INTO tutor_slip_classes (slip_id, sims_class_id, sims_commission, resolved_amount, class_status) VALUES
+  (501, 9001, 50.00, NULL, 'included'), (501, 9002, 45.00, 50.00, 'included'), (501, 9003, 30.00, NULL, 'excluded');
+""")
+        for name in approvals:
+            details = "'{}'" if name is None else f"""'{{"selection_fingerprint": "{RIPPLE_FINGERPRINTS[name]}"}}'"""
+            self.runner.run(f"INSERT INTO tutor_payment_audit_log (slip_id, action, details) "
+                            f"VALUES (501, 'payment_approved', {details})")
+
+    def payout(self, company=NAK):
+        report = monitor.build_report(self.runner)
+        return result_for(report, "payout_differences", company), report
+
+    def test_finance_approved_rm90_but_slip_and_file_now_rm100_is_check(self):
+        self.seed_now_100(approvals=("approved90",))
+        line, report = self.payout()
+        self.assertEqual(line.status, "CHECK")
+        self.assertEqual((line.count, line.amount_sen, line.examples), (1, 10000, ["bank file batch 140"]))
+        self.assertIn("payments_changed_since_approval=1", " ".join(line.info))
+        self.assertNotEqual(monitor.exit_code(report), 0)
+
+    def test_file_matching_the_latest_approval_is_ok(self):
+        self.seed_now_100(approvals=("approved90", "now100"))
+        line, _ = self.payout()
+        self.assertEqual((line.status, line.count), ("OK", 0))
+        self.assertIn("files_checked=1", " ".join(line.info))
+
+    def test_an_older_matching_approval_does_not_hide_a_newer_one(self):
+        self.seed_now_100(approvals=("now100", "approved90"))
+        self.assertEqual(self.payout()[0].status, "CHECK")
+
+    def test_missing_file_fingerprint_is_check(self):
+        self.seed_now_100(file_fingerprint="missing", approvals=("now100",))
+        line, _ = self.payout()
+        self.assertEqual(line.status, "CHECK")
+        self.assertIn("file_fingerprints_missing=1", " ".join(line.info))
+
+    def test_missing_approval_fingerprint_is_check(self):
+        self.seed_now_100(approvals=(None,))
+        line, _ = self.payout()
+        self.assertEqual(line.status, "CHECK")
+        self.assertIn("approvals_missing=1", " ".join(line.info))
+
+    def test_no_approval_at_all_is_check(self):
+        self.seed_now_100(approvals=())
+        self.assertEqual(self.payout()[0].status, "CHECK")
+
+    def test_file_fingerprint_of_another_selection_is_check(self):
+        self.seed_now_100(file_fingerprint=RIPPLE_FINGERPRINTS["file_two"], approvals=("now100",))
+        line, _ = self.payout()
+        self.assertEqual(line.status, "CHECK")
+        self.assertIn("file_fingerprints_differ=1", " ".join(line.info))
+
+    def test_bonus_shares_and_notes_count_in_the_fingerprint(self):
+        # The same payment as MIXED (whose fingerprint is checked against Ripple above), paid by Sifu Edu & Learning.
+        approved = monitor.slip_selection_fingerprint(dict(MIXED, payer_company_code=SIFU, net_amount="1.00"))
+        self.runner.run(f"""
+INSERT INTO tutor_payment_csv_batches VALUES (150, 'generated', now(), 1.00, 1, '{SIFU}', '{monitor.file_selection_fingerprint([approved])}');
+INSERT INTO tutor_payment_slips VALUES (7, 3, 150, 1.00, '{SIFU}',
+  '[{{"sims_bonus_id": 4, "amount": 12.5, "action": "included"}}, {{"sims_bonus_id": 4, "amount": "2.35", "action": "included"}},
+    {{"sims_bonus_id": 8, "amount": 99, "action": "excluded"}}]');
+INSERT INTO tutor_slip_classes (slip_id, sims_class_id, sims_commission, resolved_amount, class_status) VALUES
+  (7, 5, 0.29, NULL, 'included'), (7, 2, 10.10, NULL, 'included');
+INSERT INTO tutor_payment_notes VALUES (9, 7, 'deduction', 3.00, 'approved'), (1, 7, 'addition', 0.07, 'approved'),
+  (2, 7, 'addition', 50.00, 'rejected');
+""")
+        self.runner.run(f"""INSERT INTO tutor_payment_audit_log (slip_id, action, details) VALUES (7, 'slip_approved',
+  '{{"selection_fingerprint": "{approved}"}}')""")
+        line, _ = self.payout(SIFU)
+        self.assertEqual((line.status, line.count), ("OK", 0), line.info)
+        self.runner.run("UPDATE tutor_payment_notes SET amount = 3.01 WHERE id = 9")
+        self.assertEqual(self.payout(SIFU)[0].status, "CHECK")
+
+    def test_totals_still_compared_and_files_without_a_company_need_no_fingerprint(self):
+        self.runner.run("""
+INSERT INTO tutor_payment_csv_batches VALUES (90, 'paid', now(), 60.00, 1, NULL, NULL), (91, 'paid', now(), 70.00, 1, NULL, NULL);
+INSERT INTO tutor_payment_slips VALUES (1, 1, 90, 60.00, NULL, NULL), (2, 2, 91, 65.00, NULL, NULL);
+""")
+        line, _ = self.payout(SIFU)
+        self.assertEqual((line.status, line.count, line.amount_sen, line.examples), ("CHECK", 1, 7000, ["bank file batch 91"]))
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Failures that live only in logs (codex review finding 2)
+
+LOG_PARTS = {
+    "callback_mismatches": "callback_mismatches.betterstack_refused_callbacks",
+    "failed_credit_allocation": "failed_credit_allocation.betterstack_referral_allocation_errors",
+    "rejected_clock_ins": "rejected_clock_ins.betterstack_old_build_refusals",
+}
+
+
+class LogReadings(unittest.TestCase):
+    def test_each_log_only_failure_has_a_sentry_or_betterstack_part(self):
+        for key, part_key in LOG_PARTS.items():
+            sources = {p.db for p in signal(key).parts}
+            self.assertIn("betterstack", sources, key)
+            self.assertIn(part_key, {p.key for p in signal(key).parts})
+        self.assertIn("sentry", {p.db for p in signal("failed_credit_allocation").parts})
+        self.assertIn("sentry", {p.db for p in signal("rejected_clock_ins").parts})
+        self.assertIn("update the tutor app", " ".join(p.search for p in signal("rejected_clock_ins").parts).lower())
+
+    def test_unreadable_log_lane_is_unavailable_never_ok(self):
+        schema = full_schema()
+        schema["betterstack"] = False
+        report = monitor.build_report(FakeRunner(schema))
+        for key in LOG_PARTS:
+            for company in (SIFU, NAK):
+                line = result_for(report, key, company)
+                self.assertEqual(line.status, "UNAVAILABLE", f"{key} {company}")
+                self.assertIn("Better Stack", " ".join(line.notes))
+        self.assertEqual(monitor.exit_code(report), 2)
+        self.assertIn("UNAVAILABLE", monitor.render_text(report))
+
+    def test_logged_refusals_are_check_and_attributed_to_the_company(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {
+            LOG_PARTS["callback_mismatches"]: [row(NAK, 2, 0, "NINV-1000002,NINV-1000001")],
+        }))
+        nak = result_for(report, "callback_mismatches", NAK)
+        self.assertEqual((nak.status, nak.count), ("CHECK", 2))
+        self.assertEqual(nak.examples, ["invoice reference NINV-1000002", "invoice reference NINV-1000001"])
+        self.assertEqual(result_for(report, "callback_mismatches", SIFU).status, "OK")
+
+    def test_sentry_events_without_a_company_get_their_own_section(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {
+            "rejected_clock_ins.sentry_old_build_refusals": [row(None, 3, 0, "SIMS-SIFU-TUTOR-9Z")],
+        }))
+        line = result_for(report, "rejected_clock_ins", monitor.UNRECORDED)
+        self.assertEqual((line.status, line.count), ("CHECK", 3))
+
+    def run_wrapper(self, conf_text, responses):
+        home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, home, True)
+        conf = Path(home, ".config/sifututor/agent-access/monitoring-readonly.conf")
+        conf.parent.mkdir(parents=True)
+        conf.write_text(conf_text)
+        calls = []
+
+        class Http(monitor.WrapperRunner):
+            def _http(self, url, headers, body=None):
+                calls.append((url, headers, body))
+                for prefix, answer in responses:
+                    if url.startswith(prefix):
+                        return answer
+                raise monitor.QueryError("unexpected url")
+
+        return Http(home=Path(home)), calls
+
+    def test_betterstack_without_a_query_connection_is_unavailable_and_prints_no_secret(self):
+        runner, calls = self.run_wrapper("SENTRY_AUTH_TOKEN=s3cr3t-value\nBETTERSTACK_TELEMETRY_TOKEN=t0ken-value\n", [])
+        with self.assertRaises(monitor.QueryError) as caught:
+            runner.probe("betterstack")
+        message = str(caught.exception)
+        self.assertIn("BETTERSTACK_QUERY_USERNAME", message)
+        self.assertNotIn("s3cr3t", message)
+        self.assertNotIn("t0ken", message)
+        self.assertEqual(calls, [])
+
+    def test_missing_lane_file_is_unavailable(self):
+        home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, home, True)
+        with self.assertRaises(monitor.QueryError):
+            monitor.WrapperRunner(home=Path(home)).probe("sentry")
+
+    def test_betterstack_query_is_bounded_and_read_per_company(self):
+        conf = ("BETTERSTACK_QUERY_HOST=https://eu-nbg-2-connect.betterstackdata.com\nBETTERSTACK_QUERY_USERNAME=u\n"
+                "BETTERSTACK_QUERY_PASSWORD=p\nBETTERSTACK_SIMS_LOGS_TABLE=t547964_test_php\n")
+        answer = (200, '{"company":"nakngaji_sdn_bhd","n":"2","ex":"NINV-1000002"}\n{"company":"","n":"1","ex":""}\n')
+        runner, calls = self.run_wrapper(conf, [("https://eu-nbg-2-connect.betterstackdata.com", answer)])
+        part = next(p for p in signal("callback_mismatches").parts if p.db == "betterstack")
+        runner.probe("betterstack")
+        rows = runner.logs("betterstack", part.search, part.key)
+        self.assertEqual([(r["company"], r["n"]) for r in rows], [(NAK, "2"), (None, "1")])
+        url, headers, body = calls[-1]
+        self.assertTrue(headers["Authorization"].startswith("Basic "))
+        self.assertIn("INTERVAL 1 DAY", body)
+        self.assertIn("t547964_test_php_logs", body)
+        self.assertTrue(body.lstrip().upper().startswith("SELECT"))
+
+    def test_sentry_reading_counts_events_and_lists_issue_ids(self):
+        conf = "SENTRY_AUTH_TOKEN=x\nSENTRY_ORG_SLUG=org\nSENTRY_PROJECT_SLUG=sims-sifu-tutor\n"
+        runner, calls = self.run_wrapper(conf, [
+            ("https://de.sentry.io/api/0/organizations/org/projects/", (200, '[{"slug": "sims-sifu-tutor", "id": "45"}]')),
+            ("https://de.sentry.io/api/0/organizations/org/events/?dataset=errors&field=count%28%29&",
+             (200, '{"data": [{"count()": 4}]}')),
+            ("https://de.sentry.io/api/0/organizations/org/events/", (200, '{"data": [{"issue": "SIMS-SIFU-TUTOR-9Z", "count()": 4}]}')),
+        ])
+        part = next(p for p in signal("rejected_clock_ins").parts if p.db == "sentry")
+        runner.probe("sentry")
+        rows = runner.logs("sentry", part.search, part.key)
+        self.assertEqual(rows, [{"company": None, "n": "4", "amount_sen": "0", "ex": "SIMS-SIFU-TUTOR-9Z"}])
+        self.assertTrue(all("statsPeriod=24h" in c[0] for c in calls if "/events/" in c[0]))
+        self.assertTrue(all("project=45" in c[0] for c in calls if "/events/" in c[0]))
+
+    def test_sentry_reading_with_no_events_returns_no_rows(self):
+        conf = "SENTRY_AUTH_TOKEN=x\nSENTRY_ORG_SLUG=org\nSENTRY_PROJECT_SLUG=sims-sifu-tutor\n"
+        runner, _ = self.run_wrapper(conf, [
+            ("https://de.sentry.io/api/0/organizations/org/projects/", (200, '[{"slug": "sims-sifu-tutor", "id": "45"}]')),
+            ("https://de.sentry.io/api/0/organizations/org/events/", (200, '{"data": [{"count()": 0}]}')),
+        ])
+        part = next(p for p in signal("rejected_clock_ins").parts if p.db == "sentry")
+        runner.probe("sentry")
+        self.assertEqual(runner.logs("sentry", part.search, part.key), [])
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Coverage per part (codex review finding 3)
+
+class CoveragePerPart(unittest.TestCase):
+    def test_review_scenario_sims_credit_missing_and_ripple_clean_is_not_ok(self):
+        schema = full_schema()
+        del schema["sims"]["payment_transfers"]
+        del schema["sims"]["referral_reward_allocations"]
+        report = monitor.build_report(FakeRunner(schema, {}))
+        for company in (SIFU, NAK):
+            line = result_for(report, "failed_credit_allocation", company)
+            self.assertEqual(line.status, "NOT DEPLOYED", company)
+            self.assertIn("SIMS credit moved across companies: not deployed", " ".join(line.notes))
+        self.assertNotEqual(monitor.exit_code(report), 0)
+
+    def test_one_unreadable_part_makes_the_signal_unavailable(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {}, errors={
+            "unmatched_payments.ripple_bank_suspense": "timeout"}))
+        self.assertEqual(result_for(report, "unmatched_payments", NAK).status, "UNAVAILABLE")
+        self.assertEqual(monitor.exit_code(report), 2)
+
+    def test_a_problem_found_still_shows_check_when_another_part_was_missed(self):
+        schema = full_schema()
+        schema["sentry"] = False
+        report = monitor.build_report(FakeRunner(schema, {
+            LOG_PARTS["rejected_clock_ins"]: [row(NAK, 1, 0, "")]}))
+        line = result_for(report, "rejected_clock_ins", NAK)
+        self.assertEqual(line.status, "CHECK")
+        self.assertIn("unavailable", " ".join(line.notes).lower())
+
+    def test_every_part_read_and_clean_is_ok_and_exits_zero(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {}))
+        for result in report.results:
+            for company, line in result.companies.items():
+                self.assertEqual(line.status, "OK", f"{result.signal.key} {company}")
+        self.assertEqual(monitor.exit_code(report), 0)
+
+    def test_summary_counts_unavailable(self):
+        schema = full_schema()
+        schema["betterstack"] = False
+        text = monitor.render_text(monitor.build_report(FakeRunner(schema)))
+        self.assertRegex(text, r"Nakngaji Sdn Bhd: OK \d+, CHECK \d+, NOT DEPLOYED \d+, UNAVAILABLE 3")
 
 
 class Guards(unittest.TestCase):

@@ -275,6 +275,7 @@ dated record when the two disagree.
 | **Sentry project** | `sims-sifu-tutor` |
 | **BetterStack team** | `sifututor` |
 | **Purpose** | Read error events, uptime monitors, log drain; diagnose production issues |
+| **Log search** | Sentry event search works with `SENTRY_AUTH_TOKEN` on `https://de.sentry.io` (errors dataset; SIMS sends exceptions, not log lines). Reading Better Stack log lines needs a separate read-only SQL query connection (`BETTERSTACK_QUERY_HOST`, `BETTERSTACK_QUERY_USERNAME`, `BETTERSTACK_QUERY_PASSWORD`, `BETTERSTACK_SIMS_LOGS_TABLE`); the telemetry token only lists sources. Not in the file on 15/10/2026, so lane 46 shows its log parts as `UNAVAILABLE` |
 | **Tier** | auto-read |
 | **Hafiz approval** | Not required for reads; required if resolving/snoozing Sentry issues at scale |
 | **Safe verification** | `scripts/agent-access/check-monitoring.sh` |
@@ -802,16 +803,18 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 
 | Field | Value |
 |-------|-------|
-| **Conf file** | None. The script sends every query through the two existing read-only lanes: SIMS through `sims-db-readonly-sql.sh` (lane 4) and Ripple through `ripple-prod-sql-readonly.sh` (lane 40). It never reads a conf file or a credential itself |
+| **Conf file** | Databases: none. Every database query goes through the two existing read-only lanes: SIMS through `sims-db-readonly-sql.sh` (lane 4) and Ripple through `ripple-prod-sql-readonly.sh` (lane 40). Logs: `monitoring-readonly.conf` (lane 14), read in the script and never printed: the Sentry read token for the SIMS project, and the Better Stack SQL query connection (`BETTERSTACK_QUERY_HOST`, `BETTERSTACK_QUERY_USERNAME`, `BETTERSTACK_QUERY_PASSWORD`, `BETTERSTACK_SIMS_LOGS_TABLE`, for example `t547964_test_php` for the "SIMS Production" source). The Better Stack keys are not in the file yet (15/10/2026): until a read-only ClickHouse HTTP connection is created in Better Stack > Integrations, the log parts show `UNAVAILABLE` |
 | **Wrapper** | `scripts/agent-access/nakngaji-company-monitor.py [--json]` |
-| **What it reports** | One report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the eleven WP-28 signals (Sifututor/sifu-tutor#3479): unmatched payments, callback mismatches, failed credit allocation, rejected clock-ins, follow-up cases older than 72 hours, extra charges waiting more than one month end, payout differences between the approved selection and the bank file, carried-forward deductions, QuickBooks sync failures, owed to Nakngaji versus recorded transfers, and MyInvois list counts. Each signal has a count, an amount to the sen where money is involved, up to five record ids and a status: `OK`, `CHECK` or `NOT DEPLOYED` |
+| **What it reports** | One report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the eleven WP-28 signals (Sifututor/sifu-tutor#3479): unmatched payments, callback mismatches, failed credit allocation, rejected clock-ins, follow-up cases older than 72 hours, extra charges waiting more than one month end, payout differences between the approved selection and the bank file, carried-forward deductions, QuickBooks sync failures, owed to Nakngaji versus recorded transfers, and MyInvois list counts. Each signal has a count, an amount to the sen where money is involved, up to five record ids and a status: `OK`, `CHECK`, `NOT DEPLOYED` or `UNAVAILABLE`. A signal is `OK` only when every one of its parts was read and found nothing |
+| **Log-only failures** | Read for the last 24 hours. Better Stack SIMS logs: FIUU callbacks refused for merchant, amount or company (the `Processing failed` line), pending referral credit allocation errors, and old Tutor App build refusals ("Please update the Tutor App"). Sentry SIMS errors: referral allocation exceptions and old-build refusal events. SIMS sends exceptions to Sentry but not its log lines, so Sentry alone cannot show refusals. The company comes from the invoice reference in the log line (`NINV-` Nakngaji, `PINV-` Sifu Edu & Learning), otherwise "Company not recorded" |
+| **Payout fingerprints** | For a company bank file, the script recomputes each payment's selection fingerprint from the source records with Ripple's rules (`company-payments.ts`) and compares it with the latest approval and with the file's fingerprint. A missing fingerprint is `CHECK` |
 | **Release steps** | It reads `information_schema` first. A signal whose go-live tables or columns are missing prints `NOT DEPLOYED` with the missing names instead of failing; where today's schema already holds the signal, it runs a labelled before-go-live reading. So it runs before go-live and keeps working after each release step without a code change |
 | **Masking** | Record ids, counts and amounts only. The queries select no names, emails, phone numbers or free text |
 | **Purpose** | Watch the signals that show money or work going wrong per company during the agreed go-live window (WP-28, TP-089) |
 | **Tier** | auto-read |
-| **Exit codes** | 0 nothing to check, 1 at least one `CHECK`, 2 a database could not be read |
-| **Safe verification** | `python3 -m unittest scripts/agent-checks/test_nakngaji_company_monitor.py` (fixtures, no connection); then `scripts/agent-access/nakngaji-company-monitor.py` |
-| **Forbidden** | No writes; never add a query that selects personal data; keep every query inside the lane 4 and lane 40 guards (the unit tests run each query through both guards) |
+| **Exit codes** | 0 every signal `OK`; 1 at least one `CHECK` or `NOT DEPLOYED`; 2 a database, a log lane or a query could not be read (`UNAVAILABLE`) |
+| **Safe verification** | `python3 -m unittest scripts/agent-checks/test_nakngaji_company_monitor.py` (fixtures and a throwaway local Postgres, no server connection); then `scripts/agent-access/nakngaji-company-monitor.py` |
+| **Forbidden** | No writes; never add a query that selects personal data; keep every query inside the lane 4 and lane 40 guards (the unit tests run each query through both guards); never print a lane 14 value or a raw log line |
 
 ---
 
@@ -841,7 +844,7 @@ names in `~/.config/sifututor/agent-access/` and the project's `scripts/qa/*smok
 | `ripple-prod-sql-readonly` | none (ssh staging as postgres, forced read-only) | auto-read | Never |
 | `lls-server-readonly` | none (ssh lls as www-data, allow-listed read commands) | auto-read | Never |
 | `ripple-logs-readonly` | none (ssh staging, PM2 error log read as deploy, masked) | auto-read | Never |
-| `company-monitor-readonly` | none (uses lanes 4 and 40) | auto-read | Never |
+| `company-monitor-readonly` | none for databases (uses lanes 4 and 40); `monitoring-readonly.conf` for logs (lane 14) | auto-read | Never |
 | `pc-staging-deploy` | none (PC key, aliases `staging` and `finch`) | write (staging only) | Approval line in each readiness file (`--staging-approval`) |
 | `owner-analytics-backup-restore` | `owner-analytics-backup-restore.conf` + restore keyring (read-only Wasabi user) | auto-read | Never (restore only into a throwaway database) |
 | `betterstack-uptime-write` | `betterstack-uptime-write.conf` | write | List the exact monitor first |
@@ -882,7 +885,7 @@ never print secret values.
 | `lls-server-readonly.sh <env> artisan\|logs\|pm2` | Learnest server, allow-listed read commands as the app account (lane 41) |
 | `ripple-prod-sql-readonly.sh "<query>"` | Ripple production database, one read-only query, forced read-only session, CSV output (lane 40) |
 | `ripple-logs-readonly.sh staging\|prod [--lines N] [--pattern REGEX]` | Ripple PM2 error log, error-level lines only, masked, at most 60 lines (lane 45) |
-| `nakngaji-company-monitor.py [--json]` | Daily read-only report per company (Sifu Edu & Learning, Nakngaji) with the eleven WP-28 go-live signals; `NOT DEPLOYED` for any signal whose tables are not in production yet (lane 46) |
+| `nakngaji-company-monitor.py [--json]` | Daily read-only report per company (Sifu Edu & Learning, Nakngaji) with the eleven WP-28 go-live signals, including log-only failures from Sentry and Better Stack; `NOT DEPLOYED` or `UNAVAILABLE` for any signal with a part that was not read (lane 46) |
 | `check-ripple-destination-readonly.sh` | Ripple destination lane: exact views and columns, plus read/write boundary checks |
 | `ripple-destination-readonly-run.sh` | Runs one command with the narrow destination URL over a temporary SSH tunnel |
 | `check-sims-db-readonly.sh` | SIMS DB readonly lane: connection test, row count spot-check |
