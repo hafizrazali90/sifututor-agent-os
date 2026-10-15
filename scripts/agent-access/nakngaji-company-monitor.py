@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Daily read-only money and work monitor per company (WP-28, Sifututor/sifu-tutor#3479).
 
-Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the eleven go-live signals. Each signal
+Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the twelve go-live signals. Each signal
 gives a count, an amount to the sen where money is involved, up to five example record ids and a status:
 OK, CHECK, NOT DEPLOYED when the tables or columns one of its parts reads are not in production yet, or UNAVAILABLE
 when one of its parts could not be read. A signal is OK only when every one of its parts was read and found nothing.
@@ -787,8 +787,9 @@ MYINVOIS = Part(
 # ---------------------------------------------------------------------------------------------------------------
 # Failures SIMS only logs (no table holds them). SIMS sends exceptions to Sentry but not its log lines (14 days of
 # events on 15/10/2026: every one an exception, no log-channel events), so refusals and caught errors are read from
-# the Better Stack SIMS log source. Each search covers the last 24 hours. The company comes from the invoice
-# reference in the log context (NINV- is Nakngaji, PINV- is Sifu Edu & Learning); otherwise "Company not recorded".
+# the Better Stack SIMS log source. Each search covers the last 24 hours. The company comes from the company_code SIMS
+# writes in the log context (CLEANUP-6, c080d3133), then from the invoice reference (NINV- is Nakngaji, PINV- is
+# Sifu Edu & Learning); otherwise "Company not recorded".
 
 def log_message_has(*phrases: str) -> str:
     return "(" + " OR ".join(f"positionCaseInsensitive(msg, '{p}') > 0" for p in phrases) + ")"
@@ -816,17 +817,40 @@ REFERRAL_ALLOCATION_EXCEPTIONS = Part(
     # EvaluateReferralBonus calls the allocation without a catch, so its exceptions reach Sentry.
     search='stack.function:"*allocatePendingForParent*"',
 )
+# The Tutor App actions that are a clock-in or class start: POST api/tutor/class/attendance and its bulk form. SIMS
+# logs the action as "<METHOD> <route template>" (nakngaji_app_refused). Any other refused action is not a clock-in.
+CLOCK_IN_ACTION_PATTERN = "^POST api/tutor/class/attendance(/bulk)?$"
+_ACTION = "JSONExtractString(raw, 'monolog', 'context', 'action')"
+# Both old-app signals: the answer text (responseCode 104) and the update-required code, plus the structured event.
+OLD_BUILD_REFUSAL_LINE = (
+    "(positionCaseInsensitive(raw, 'Please update the Tutor App') > 0 OR position(raw, 'APP_UPDATE_REQUIRED') > 0"
+    " OR (position(raw, 'nakngaji_app_refused') > 0 AND JSONExtractString(raw, 'monolog', 'context', 'app') = 'tutor'))"
+)
+_SENTRY_OLD_BUILD = 'message:"*update the Tutor App*" OR message:"*APP_UPDATE_REQUIRED*"'
+_SENTRY_CLOCK_IN_URL = 'url:"*/api/tutor/class/attendance" OR url:"*/api/tutor/class/attendance/bulk"'
 OLD_BUILD_REFUSAL_LOGS = Part(
     key="rejected_clock_ins.betterstack_old_build_refusals", db="betterstack",
     label="Better Stack SIMS logs: clock-ins refused for an old Tutor App build", example_label="invoice reference",
     count_info="old_build_refusals_logged",
-    search="(positionCaseInsensitive(raw, 'Please update the Tutor App') > 0 OR position(raw, 'APP_UPDATE_REQUIRED') > 0)",
+    search=f"{OLD_BUILD_REFUSAL_LINE} AND match({_ACTION}, '{CLOCK_IN_ACTION_PATTERN}')",
 )
 OLD_BUILD_REFUSAL_EVENTS = Part(
     key="rejected_clock_ins.sentry_old_build_refusals", db="sentry",
     label="Sentry SIMS errors: clock-ins refused for an old Tutor App build", example_label="Sentry issue",
     count_info="old_build_refusal_events",
-    search='message:"*update the Tutor App*"',
+    search=f"({_SENTRY_OLD_BUILD}) AND ({_SENTRY_CLOCK_IN_URL})",
+)
+OTHER_OLD_BUILD_REFUSAL_LOGS = Part(
+    key="other_old_build_refusals.betterstack_old_build_refusals", db="betterstack",
+    label="Better Stack SIMS logs: other Tutor App actions refused for an old build", example_label="invoice reference",
+    count_info="other_old_build_refusals_logged",
+    search=f"{OLD_BUILD_REFUSAL_LINE} AND NOT match({_ACTION}, '{CLOCK_IN_ACTION_PATTERN}')",
+)
+OTHER_OLD_BUILD_REFUSAL_EVENTS = Part(
+    key="other_old_build_refusals.sentry_old_build_refusals", db="sentry",
+    label="Sentry SIMS errors: other Tutor App actions refused for an old build", example_label="Sentry issue",
+    count_info="other_old_build_refusal_events",
+    search=f"({_SENTRY_OLD_BUILD}) AND !({_SENTRY_CLOCK_IN_URL})",
 )
 
 SIGNALS: tuple[Signal, ...] = (
@@ -843,8 +867,12 @@ SIGNALS: tuple[Signal, ...] = (
     Signal("rejected_clock_ins", "Rejected clock-ins (holds and old-build refusals)",
            (HOLDS, OLD_BUILD_REFUSAL_LOGS, OLD_BUILD_REFUSAL_EVENTS), money=False,
            count_label=("hold or refusal", "holds or refusals"),
-           note="old-build refusals are not stored in any database, so they are read from the logs; "
-                "the SIMS refusal (WP-21) was not found in the go-live branches on 15/10/2026"),
+           note="old-build refusals are not stored in any database, so they are read from the logs; only a refusal "
+                "whose logged action is a clock-in (class attendance) is counted here"),
+    Signal("other_old_build_refusals", "Other old-build refusals (not clock-ins)",
+           (OTHER_OLD_BUILD_REFUSAL_LOGS, OTHER_OLD_BUILD_REFUSAL_EVENTS), money=False,
+           count_label=("refusal", "refusals"),
+           note="other Tutor App actions refused for an old build (a refusal with no logged action lands here too)"),
     Signal("followup_cases_72h", "Open follow-up cases older than 72 hours", (FOLLOWUPS,), money=False,
            count_label=("case", "cases")),
     Signal("extra_charges_waiting", "Extra charges waiting more than one month end", (EXTRA_CHARGES,),
@@ -930,13 +958,35 @@ def all_queries(db: str):
                     yield variant.sql, part.key
 
 
+def log_company(company_code, ref_company) -> str | None:
+    """A log line's company: the company_code in its context first, then the invoice-reference prefix."""
+    for value in (company_code, ref_company):
+        code = BRAND_TO_COMPANY.get(str(value or "").strip(), str(value or "").strip())
+        if code in (SIFU, NAK):
+            return code
+    return None
+
+
+def resolve_log_rows(rows: list[dict]) -> list[dict]:
+    """Better Stack rows per (company_code, reference prefix) -> one row per company, counts summed."""
+    merged: dict[str | None, dict] = {}
+    for r in rows:
+        company = log_company(r.get("company_code"), r.get("ref_company") or r.get("company"))
+        out = merged.setdefault(company, {"company": company, "n": 0, "amount_sen": "0", "ex": []})
+        out["n"] += parse_int(r.get("n"))
+        out["ex"].extend(i.strip() for i in str(r.get("ex") or "").split(",") if i.strip())
+    return [{**m, "n": str(m["n"]), "ex": ",".join(dict.fromkeys(m["ex"]))} for m in merged.values()]
+
+
 def betterstack_sql(table: str, condition: str) -> str:
     """Counts matching SIMS log lines of the last day per company; recent and archived rows, as Better Stack documents."""
     window = "dt >= now() - INTERVAL 1 DAY"
-    return f"""SELECT multiIf(ref LIKE 'NINV-%', '{NAK}', ref LIKE 'PINV-%', '{SIFU}', '') AS company,
+    return f"""SELECT company_code,
+       multiIf(ref LIKE 'NINV-%', '{NAK}', ref LIKE 'PINV-%', '{SIFU}', '') AS ref_company,
        count() AS n, arrayStringConcat(arraySlice(groupUniqArrayIf(ref, ref != ''), 1, 5), ',') AS ex
 FROM (
-  SELECT coalesce(nullIf(JSONExtractString(raw, 'monolog', 'context', 'orderid'), ''),
+  SELECT JSONExtractString(raw, 'monolog', 'context', 'company_code') AS company_code,
+         coalesce(nullIf(JSONExtractString(raw, 'monolog', 'context', 'orderid'), ''),
                   nullIf(JSONExtractString(raw, 'monolog', 'context', 'order_id'), ''),
                   nullIf(toString(JSONExtractInt(raw, 'monolog', 'context', 'parent_invoice_id')), '0'), '') AS ref
   FROM (
@@ -946,7 +996,7 @@ FROM (
   )
   WHERE {condition}
 )
-GROUP BY company
+GROUP BY company_code, ref_company
 FORMAT JSONEachRow"""
 
 
@@ -1058,13 +1108,7 @@ class WrapperRunner:
                                   betterstack_sql(conf["BETTERSTACK_SIMS_LOGS_TABLE"], search))
         if status != 200:
             raise QueryError(f"Better Stack answered HTTP {status}")
-        rows = []
-        for line in text.splitlines():
-            if line.strip():
-                r = json.loads(line)
-                rows.append({"company": r.get("company") or None, "n": str(r.get("n", 0)), "amount_sen": "0",
-                             "ex": r.get("ex") or ""})
-        return rows
+        return resolve_log_rows([json.loads(line) for line in text.splitlines() if line.strip()])
 
     def _run(self, db: str, sql: str) -> list[dict]:
         if db == "sims":

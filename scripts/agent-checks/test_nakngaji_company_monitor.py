@@ -128,6 +128,8 @@ class NotDeployed(unittest.TestCase):
         report = monitor.build_report(runner)
         for result in report.results:
             self.assertTrue(result.companies)
+            if all(p.db in monitor.LOG_SOURCES for p in result.signal.parts):
+                continue  # a log-only signal needs no table, so a missing table cannot make it NOT DEPLOYED
             for company, line in result.companies.items():
                 self.assertEqual(line.status, "NOT DEPLOYED", f"{result.signal.key} {company}")
         db_calls = [c for c in runner.calls if c[0] in ("sims", "ripple")]
@@ -635,6 +637,130 @@ class LogReadings(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------------------------------------------
+# WP-28c: company_code attribution and clock-in-only refusals (the line shapes SIMS writes since CLEANUP-6, c080d3133)
+
+def sims_log_line(message, context, level="warning"):
+    """A Better Stack row as SIMS writes it: Laravel context sits at raw.monolog.context."""
+    return json.dumps({"message": message, "level": level, "monolog": {"context": context, "level_name": level.upper()}})
+
+
+def refusal_line(action, *, app="tutor", reason="below_minimum_version", company_code=NAK):
+    answer = f"Please update the {app.title()} App to continue"
+    return sims_log_line("Nakngaji app refused: " + answer, {
+        "event": "nakngaji_app_refused", "app": app, "reason": reason, "action": action,
+        "app_version": "1.0.0", "minimum_version": "9.0.0", "brand_code": "nakngaji", "company_code": company_code,
+        "tutor_request_id": 123, "class_id": 456, "tutor_id": 789})
+
+
+def context_of(raw):
+    return json.loads(raw)["monolog"]["context"]
+
+
+class CompanyCodeAndClockInRefusals(unittest.TestCase):
+    CLOCK_IN_ACTIONS = ("POST api/tutor/class/attendance", "POST api/tutor/class/attendance/bulk")
+    OTHER_ACTIONS = ("POST api/tutor/request/apply", "POST api/tutor/class/mark-attended", "POST api/tutor/submit-report",
+                     "POST api/tutor/class/backdate", "POST api/tutor/class/update-status")
+
+    def test_company_code_in_the_context_is_used_before_the_invoice_prefix(self):
+        # A PBA- order reference carries no NINV-/PINV- prefix; company_code is the only thing that names the company.
+        refused_callback = sims_log_line("❌ CALLBACK: Processing failed", {
+            "result": {"success": False, "message": "Payment merchant does not match.", "code": 400},
+            "event": "fiuu_callback_refused", "orderid": "PBA-0123456789", "company_code": NAK,
+            "invoice_ids": [1], "invoice_numbers": ["PINV-980558"]}, "error")
+        context = context_of(refused_callback)
+        self.assertEqual(monitor.log_company(context["company_code"], ""), NAK)
+        # company_code wins over a prefix that disagrees with it
+        self.assertEqual(monitor.log_company(NAK, SIFU), NAK)
+        self.assertEqual(monitor.log_company(SIFU, NAK), SIFU)
+
+    def test_invoice_prefix_is_only_the_fallback(self):
+        self.assertEqual(monitor.log_company("", NAK), NAK)
+        self.assertEqual(monitor.log_company(None, SIFU), SIFU)
+        self.assertIsNone(monitor.log_company("", ""))
+        self.assertIsNone(monitor.log_company("some_other_company", ""))
+
+    def test_log_rows_are_merged_per_company_after_attribution(self):
+        rows = monitor.resolve_log_rows([
+            {"company_code": NAK, "ref_company": "", "n": "2", "ex": "PBA-1"},
+            {"company_code": "", "ref_company": NAK, "n": "1", "ex": "NINV-7"},
+            {"company_code": SIFU, "ref_company": "", "n": "4", "ex": ""},
+            {"company_code": "", "ref_company": "", "n": "3", "ex": ""},
+        ])
+        by_company = {r["company"]: (r["n"], r["ex"]) for r in rows}
+        self.assertEqual(by_company, {NAK: ("3", "PBA-1,NINV-7"), SIFU: ("4", ""), None: ("3", "")})
+
+    def test_betterstack_query_reads_company_code_from_the_context(self):
+        sql = monitor.betterstack_sql("t1", "1 = 1")
+        self.assertIn("JSONExtractString(raw, 'monolog', 'context', 'company_code')", sql)
+        self.assertIn("'NINV-%'", sql)
+        self.assertIn("FORMAT JSONEachRow", sql)
+
+    def test_betterstack_rows_with_a_company_code_come_back_attributed(self):
+        conf = ("BETTERSTACK_QUERY_HOST=https://eu-nbg-2-connect.betterstackdata.com\nBETTERSTACK_QUERY_USERNAME=u\n"
+                "BETTERSTACK_QUERY_PASSWORD=p\nBETTERSTACK_SIMS_LOGS_TABLE=t547964_test_php\n")
+        answer = (200, '{"company_code":"nakngaji_sdn_bhd","ref_company":"","n":"2","ex":"PBA-1"}\n'
+                       '{"company_code":"","ref_company":"sifu_edu_learning","n":"1","ex":"PINV-9"}\n')
+        runner, _ = LogReadings.run_wrapper(self, conf, [("https://eu-nbg-2-connect.betterstackdata.com", answer)])
+        part = next(p for p in signal("callback_mismatches").parts if p.db == "betterstack")
+        rows = runner.logs("betterstack", part.search, part.key)
+        self.assertEqual(sorted((r["company"], r["n"]) for r in rows), [(NAK, "2"), (SIFU, "1")])
+
+    def test_clock_in_actions_match_and_other_tutor_actions_do_not(self):
+        import re
+        pattern = re.compile(monitor.CLOCK_IN_ACTION_PATTERN)
+        for action in self.CLOCK_IN_ACTIONS:
+            self.assertTrue(pattern.search(context_of(refusal_line(action))["action"]), action)
+        for action in self.OTHER_ACTIONS + ("", "GET api/tutor/class/attendance-status", "POST api/tutor/class/attendance-extra"):
+            self.assertFalse(pattern.search(context_of(refusal_line(action))["action"]), action)
+
+    def old_build_parts(self):
+        clock_in = next(p for p in signal("rejected_clock_ins").parts if p.key.endswith("betterstack_old_build_refusals"))
+        other_signal = signal("other_old_build_refusals")
+        other = next(p for p in other_signal.parts if p.db == "betterstack")
+        return clock_in, other
+
+    def test_clock_in_line_counts_only_class_attendance_actions(self):
+        clock_in, other = self.old_build_parts()
+        self.assertIn(monitor.CLOCK_IN_ACTION_PATTERN, clock_in.search)
+        self.assertNotIn("NOT match(", clock_in.search)
+        self.assertIn("NOT match(", other.search)
+        self.assertIn(monitor.CLOCK_IN_ACTION_PATTERN, other.search)
+
+    def test_both_old_app_refusal_signals_are_still_searched_for(self):
+        for part in self.old_build_parts():
+            self.assertIn("Please update the Tutor App", part.search)
+            self.assertIn("APP_UPDATE_REQUIRED", part.search)
+            self.assertIn("nakngaji_app_refused", part.search)
+        sentry = next(p for p in signal("other_old_build_refusals").parts if p.db == "sentry")
+        self.assertIn("update the Tutor App", sentry.search)
+        self.assertIn("APP_UPDATE_REQUIRED", sentry.search)
+
+    def test_other_refusals_get_their_own_line_and_are_not_clock_ins(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {
+            "other_old_build_refusals.betterstack_old_build_refusals": [row(NAK, 3)],
+        }))
+        other = result_for(report, "other_old_build_refusals", NAK)
+        self.assertEqual((other.status, other.count), ("CHECK", 3))
+        clock_in = result_for(report, "rejected_clock_ins", NAK)
+        self.assertEqual((clock_in.status, clock_in.count), ("OK", 0))
+        text = monitor.render_text(report)
+        self.assertIn("Other old-build refusals", text)
+
+    def test_clock_in_refusals_do_not_appear_on_the_other_line(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {
+            "rejected_clock_ins.betterstack_old_build_refusals": [row(NAK, 2)],
+        }))
+        self.assertEqual(result_for(report, "rejected_clock_ins", NAK).count, 2)
+        self.assertEqual(result_for(report, "other_old_build_refusals", NAK).status, "OK")
+
+    def test_unreadable_log_lane_makes_the_other_line_unavailable(self):
+        schema = full_schema()
+        schema["betterstack"] = False
+        report = monitor.build_report(FakeRunner(schema))
+        self.assertIn(result_for(report, "other_old_build_refusals", NAK).status, ("UNAVAILABLE",))
+
+
+# ---------------------------------------------------------------------------------------------------------------
 # Coverage per part (codex review finding 3)
 
 class CoveragePerPart(unittest.TestCase):
@@ -675,7 +801,7 @@ class CoveragePerPart(unittest.TestCase):
         schema = full_schema()
         schema["betterstack"] = False
         text = monitor.render_text(monitor.build_report(FakeRunner(schema)))
-        self.assertRegex(text, r"Nakngaji Sdn Bhd: OK \d+, CHECK \d+, NOT DEPLOYED \d+, UNAVAILABLE 3")
+        self.assertRegex(text, r"Nakngaji Sdn Bhd: OK \d+, CHECK \d+, NOT DEPLOYED \d+, UNAVAILABLE 4")
 
 
 class Guards(unittest.TestCase):
