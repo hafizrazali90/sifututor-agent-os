@@ -5,6 +5,8 @@ Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the 
 gives a count, an amount to the sen where money is involved, up to five example record ids and a status:
 OK, CHECK, NOT DEPLOYED when the tables or columns one of its parts reads are not in production yet, or UNAVAILABLE
 when one of its parts could not be read. A signal is OK only when every one of its parts was read and found nothing.
+A before-go-live fallback reading is used only on a schema with none of the company columns; once one exists and the
+full reading cannot run, the part is NOT DEPLOYED (company schema incomplete), never OK.
 
 Database queries go through the existing read-only lanes, so this script never touches a database credential:
   - SIMS production: scripts/agent-access/sims-db-readonly-sql.sh (lane 4, SELECT-only account)
@@ -72,8 +74,10 @@ class Variant:
     sql: str
     basis: str = ""
     post: Callable[[list[dict]], list[dict]] | None = None  # turns raw rows into the standard columns
-    # A fallback reading that skips a check once its columns exist: if any of these tables.columns is present the
-    # schema is a half-deployed go-live one, not the legacy one, and this variant must not stand in for the full one.
+    # The company stamps a fallback reading ignores. Rule for every fallback that drops a company check or attributes
+    # by the legacy rule: if any of these tables.columns is present the schema is a half-deployed go-live one, not the
+    # legacy one, and this variant must not stand in for the full reading (NOT DEPLOYED, never OK). A fallback with
+    # nothing here is only valid because the full reading differs from it by nothing but the company column itself.
     unless_present: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
@@ -107,6 +111,20 @@ SIMS_INVOICE_COMPANY_GO_LIVE = """CASE WHEN lc.code IS NOT NULL THEN lc.code
             WHEN b.code = 'nakngaji' THEN 'nakngaji_sdn_bhd' ELSE 'sifu_edu_learning' END"""
 SIMS_REQUEST_COMPANY = """CASE WHEN tr.id IS NULL THEN NULL
             WHEN b.code = 'nakngaji' THEN 'nakngaji_sdn_bhd' ELSE 'sifu_edu_learning' END"""
+
+
+# Company stamps on SIMS invoices and attempts, and on Ripple import batches and QuickBooks records. Their presence
+# makes the before-go-live reading wrong even when the full reading cannot run (see Variant.unless_present).
+SIMS_INVOICE_STAMPS = {
+    "parent_invoices": ("brand_id", "legal_company_id"),
+    "parent_payment_attempts": ("issuer_company_id",),
+}
+SIMS_CREDIT_STAMPS = {
+    "parent_invoices": ("legal_company_id",),
+    "referral_rewards": ("legal_company_id",),
+}
+RIPPLE_IMPORT_BATCH_STAMPS = {"import_batches": ("company_code",)}
+RIPPLE_QB_STAMPS = {"pv_vouchers": ("company_code",), "qb_destinations": ("company_code",)}
 
 
 def ripple_ids(column: str, order: str = "") -> str:
@@ -174,6 +192,7 @@ LEFT JOIN tutor_requests tr ON tr.id = COALESCE(pi.request_id, a.request_id)
 LEFT JOIN brands b ON b.id = tr.brand_id
 {UNMATCHED_RECEIPTS_WHERE}""",
             basis=BEFORE_GO_LIVE_SIMS,
+            unless_present=SIMS_INVOICE_STAMPS,
         ),
     ),
 )
@@ -207,6 +226,7 @@ GROUP BY 1""",
 WHERE si.status IN ('open', 'pending_write_off')
 GROUP BY 1""",
             basis=BEFORE_GO_LIVE_RIPPLE,
+            unless_present=RIPPLE_IMPORT_BATCH_STAMPS,
         ),
     ),
 )
@@ -259,6 +279,7 @@ LEFT JOIN brands b ON b.id = tr.brand_id
 WHERE a.status = 'mismatch_review' AND a.resolved_at IS NULL
 GROUP BY company""",
             basis=BEFORE_GO_LIVE_SIMS,
+            unless_present=SIMS_INVOICE_STAMPS,
         ),
     ),
 )
@@ -321,6 +342,7 @@ WHERE pt.reverted_at IS NULL AND pt.deleted_at IS NULL
   AND COALESCE(sb.code, 'sifututor') <> COALESCE(tb.code, 'sifututor')
 GROUP BY company""",
             basis=BEFORE_GO_LIVE_SIMS,
+            unless_present=SIMS_CREDIT_STAMPS,
         ),
     ),
 )
@@ -352,6 +374,7 @@ GROUP BY 1""",
 WHERE a.status IN ('failed', 'needs_review')
 GROUP BY 1""",
             basis=BEFORE_GO_LIVE_RIPPLE,
+            unless_present=RIPPLE_IMPORT_BATCH_STAMPS,
         ),
     ),
 )
@@ -703,6 +726,7 @@ QUICKBOOKS = Part(
   WHERE {QB_FAILED_REVENUE_ROW})
 {QB_FINAL}""",
             basis=BEFORE_GO_LIVE_RIPPLE,
+            unless_present=RIPPLE_QB_STAMPS,
         ),
     ),
 )

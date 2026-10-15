@@ -832,6 +832,164 @@ class IncompletePayoutSchema(unittest.TestCase):
                 self.assertEqual(line.status, "OK", f"{result.signal.key} {company}")
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# WP-28e: the Codex recheck of 3137060. One shared rule for every fallback reading that skips a company check:
+# once any company stamp the full reading needs exists, the fallback must not stand in for it.
+
+# part key -> (signal key, the schema changes that leave company stamps in place but break the full reading)
+PARTIAL_COMPANY_SCHEMAS = {
+    "unmatched_payments.sims_gateway_receipts": ("unmatched_payments", [
+        ("sims", "parent_invoices", "brand_id"),
+        ("sims", "parent_invoices", "legal_company_id"),
+        ("sims", "parent_payment_attempts", "issuer_company_id"),
+        ("sims", "legal_companies", None),
+    ]),
+    "unmatched_payments.ripple_bank_suspense": ("unmatched_payments", [
+        ("ripple", "bank_transactions", "batch_id"),
+        ("ripple", "gateway_transactions", "batch_id"),
+        ("ripple", "import_batches", "id"),
+    ]),
+    "callback_mismatches.sims_attempts": ("callback_mismatches", [
+        ("sims", "parent_invoices", "brand_id"),
+        ("sims", "parent_invoices", "legal_company_id"),
+        ("sims", "parent_payment_attempts", "issuer_company_id"),
+        ("sims", "legal_companies", None),
+    ]),
+    "failed_credit_allocation.sims_cross_company_transfers": ("failed_credit_allocation", [
+        ("sims", "referral_rewards", "legal_company_id"),
+        ("sims", "parent_invoices", "legal_company_id"),
+        ("sims", "referral_reward_allocations", None),
+        ("sims", "legal_companies", None),
+    ]),
+    "failed_credit_allocation.ripple_fee_allocations": ("failed_credit_allocation", [
+        ("ripple", "customer_receipts", "bank_transaction_id"),
+        ("ripple", "bank_transactions", "batch_id"),
+        ("ripple", "import_batches", "id"),
+    ]),
+    "quickbooks_sync_failures.ripple_qb": ("quickbooks_sync_failures", [
+        ("ripple", "qb_destinations", None),
+        ("ripple", "pv_vouchers", "qb_destination_id"),
+        ("ripple", "pv_vouchers", "company_code"),
+        ("ripple", "revenue_qb_batches", None),
+    ]),
+}
+# part key -> the company stamps whose presence alone makes the legacy reading wrong
+COMPANY_STAMPS = {
+    "unmatched_payments.sims_gateway_receipts": [
+        ("sims", "parent_invoices", "brand_id"), ("sims", "parent_invoices", "legal_company_id"),
+        ("sims", "parent_payment_attempts", "issuer_company_id")],
+    "unmatched_payments.ripple_bank_suspense": [("ripple", "import_batches", "company_code")],
+    "callback_mismatches.sims_attempts": [
+        ("sims", "parent_invoices", "brand_id"), ("sims", "parent_invoices", "legal_company_id"),
+        ("sims", "parent_payment_attempts", "issuer_company_id")],
+    "failed_credit_allocation.sims_cross_company_transfers": [
+        ("sims", "referral_rewards", "legal_company_id"), ("sims", "parent_invoices", "legal_company_id")],
+    "failed_credit_allocation.ripple_fee_allocations": [("ripple", "import_batches", "company_code")],
+    "quickbooks_sync_failures.ripple_qb": [
+        ("ripple", "pv_vouchers", "company_code"), ("ripple", "qb_destinations", "company_code")],
+}
+
+
+def part_for(key):
+    return next(p for s in monitor.SIGNALS for p in s.parts if p.key == key)
+
+
+def drop(schema, db, table, column):
+    if column is None:
+        schema[db].pop(table, None)
+    else:
+        schema[db][table].discard(column)
+    return schema
+
+
+class IncompleteCompanySchemaFallbacks(unittest.TestCase):
+    def assert_part_not_read(self, report, runner, part_key, signal_key):
+        part = part_for(part_key)
+        self.assertNotIn((part.db, part_key), runner.calls, f"{part_key}: the legacy query must not run")
+        for company in (SIFU, NAK):
+            line = result_for(report, signal_key, company)
+            self.assertEqual(line.status, "NOT DEPLOYED", f"{part_key} {company}")
+            self.assertTrue(line.partial, f"{part_key} {company}")
+            note = next(n for n in line.notes if n.startswith(part.label))
+            self.assertIn("not deployed", note)
+            self.assertIn("company schema is incomplete", note)
+        self.assertEqual(monitor.exit_code(report), 1)
+        data = json.loads(monitor.render_json(report))
+        entry = next(s for s in data["signals"] if s["key"] == signal_key)
+        self.assertFalse(entry["companies"][NAK]["every_part_read"])
+
+    def test_every_fallback_that_skips_a_company_check_is_listed_here(self):
+        fallbacks = {p.key for s in monitor.SIGNALS for p in s.parts if p.db not in monitor.LOG_SOURCES
+                     and len(p.variants) > 1 and any(v.basis for v in p.variants)}
+        # MyInvois differs only by the submission company_code, so a partial schema cannot exist there; the payout
+        # fallback has its own cases in IncompletePayoutSchema.
+        covered_elsewhere = {"myinvois_counts.ripple_myinvois", PAYOUT_KEY}
+        self.assertEqual(fallbacks - covered_elsewhere, set(PARTIAL_COMPANY_SCHEMAS))
+        self.assertEqual(set(COMPANY_STAMPS), set(PARTIAL_COMPANY_SCHEMAS))
+
+    def test_a_partial_company_schema_is_not_deployed_never_ok_for_every_fallback(self):
+        for part_key, (signal_key, drops) in PARTIAL_COMPANY_SCHEMAS.items():
+            for db, table, column in drops:
+                with self.subTest(part=part_key, missing=f"{table}.{column}"):
+                    schema = drop(full_schema(), db, table, column)
+                    runner = FakeRunner(schema)  # the legacy query would see nothing, as in Codex's replay
+                    report = monitor.build_report(runner)
+                    self.assert_part_not_read(report, runner, part_key, signal_key)
+
+    def test_callback_fallback_without_the_invoice_brand_drops_the_issuer_comparison(self):
+        schema = drop(full_schema(), "sims", "parent_invoices", "brand_id")
+        key = "callback_mismatches.sims_attempts"
+        runner = FakeRunner(schema)
+        report = monitor.build_report(runner)
+        self.assert_part_not_read(report, runner, key, "callback_mismatches")
+        self.assertIn("parent_invoices.brand_id", " ".join(result_for(report, "callback_mismatches", NAK).notes))
+        self.assertIn("NOT DEPLOYED", monitor.render_text(report))
+
+    def test_credit_fallback_without_the_reward_company_drops_the_referral_allocation_checks(self):
+        schema = drop(full_schema(), "sims", "referral_rewards", "legal_company_id")
+        key = "failed_credit_allocation.sims_cross_company_transfers"
+        runner = FakeRunner(schema)
+        report = monitor.build_report(runner)
+        self.assert_part_not_read(report, runner, key, "failed_credit_allocation")
+        self.assertIn("referral_rewards.legal_company_id",
+                      " ".join(result_for(report, "failed_credit_allocation", SIFU).notes))
+
+    def test_one_company_stamp_on_an_otherwise_legacy_schema_blocks_the_fallback(self):
+        for part_key, stamps in COMPANY_STAMPS.items():
+            signal_key = PARTIAL_COMPANY_SCHEMAS[part_key][0]
+            for db, table, column in stamps:
+                with self.subTest(part=part_key, stamp=f"{table}.{column}"):
+                    schema = full_schema(variant=1)
+                    schema[db].setdefault(table, set()).add(column)
+                    runner = FakeRunner(schema)
+                    report = monitor.build_report(runner)
+                    self.assert_part_not_read(report, runner, part_key, signal_key)
+
+    def test_a_genuine_legacy_schema_keeps_every_labelled_fallback_reading(self):
+        runner = FakeRunner(full_schema(variant=1))
+        report = monitor.build_report(runner)
+        for part_key, (signal_key, _) in PARTIAL_COMPANY_SCHEMAS.items():
+            with self.subTest(part=part_key):
+                part = part_for(part_key)
+                self.assertIn((part.db, part_key), runner.calls)
+                notes = " ".join(result_for(report, signal_key, SIFU).notes)
+                self.assertIn(f"{part.label}: before go-live", notes)
+                self.assertNotIn("company schema is incomplete", notes)
+
+    def test_the_full_schema_still_runs_the_full_readings(self):
+        runner = FakeRunner(full_schema())
+        monitor.build_report(runner)
+        for part_key in PARTIAL_COMPANY_SCHEMAS:
+            self.assertIn((part_for(part_key).db, part_key), runner.calls)
+
+    def test_a_partial_schema_in_one_part_leaves_the_other_signals_alone(self):
+        schema = drop(full_schema(), "sims", "referral_rewards", "legal_company_id")
+        report = monitor.build_report(FakeRunner(schema))
+        for key in ("followup_cases_72h", "payout_differences", "carried_deductions", "myinvois_counts"):
+            for company, line in next(r for r in report.results if r.signal.key == key).companies.items():
+                self.assertEqual(line.status, "OK", f"{key} {company}")
+
+
 PHONE_ORDER = "+60123456789"
 EMAIL_ORDER = "ahmad.tan@example.com"
 
