@@ -598,12 +598,13 @@ class LogReadings(unittest.TestCase):
     def test_betterstack_query_is_bounded_and_read_per_company(self):
         conf = ("BETTERSTACK_QUERY_HOST=https://eu-nbg-2-connect.betterstackdata.com\nBETTERSTACK_QUERY_USERNAME=u\n"
                 "BETTERSTACK_QUERY_PASSWORD=p\nBETTERSTACK_SIMS_LOGS_TABLE=t547964_test_php\n")
-        answer = (200, '{"company":"nakngaji_sdn_bhd","n":"2","ex":"NINV-1000002"}\n{"company":"","n":"1","ex":""}\n')
+        answer = (200, json.dumps(log_row(company_code=NAK, orderid="NINV-1000002", n=2)) + "\n"
+                       + json.dumps(log_row(n=1)) + "\n")
         runner, calls = self.run_wrapper(conf, [("https://eu-nbg-2-connect.betterstackdata.com", answer)])
         part = next(p for p in signal("callback_mismatches").parts if p.db == "betterstack")
         runner.probe("betterstack")
         rows = runner.logs("betterstack", part.search, part.key)
-        self.assertEqual([(r["company"], r["n"]) for r in rows], [(NAK, "2"), (None, "1")])
+        self.assertEqual([(r["company"], r["n"], r["ex"]) for r in rows], [(NAK, "2", "NINV-1000002"), (None, "1", "")])
         url, headers, body = calls[-1]
         self.assertTrue(headers["Authorization"].startswith("Basic "))
         self.assertIn("INTERVAL 1 DAY", body)
@@ -656,6 +657,15 @@ def context_of(raw):
     return json.loads(raw)["monolog"]["context"]
 
 
+PBA_ORDER = "PBA-01j9z8x7c6v5b4n3m2k1h0g9f8"  # PBA- plus a lowercase ULID, as Str::ulid() writes it
+
+
+def log_row(company_code="", orderid="", order_id="", invoice_number="", parent_invoice_id="", n=1):
+    """One row of what the Better Stack query returns: the four reference fields as the query cleaned them."""
+    return {"company_code": company_code, "orderid": orderid, "order_id": order_id, "invoice_number": invoice_number,
+            "parent_invoice_id": parent_invoice_id, "n": str(n)}
+
+
 class CompanyCodeAndClockInRefusals(unittest.TestCase):
     CLOCK_IN_ACTIONS = ("POST api/tutor/class/attendance", "POST api/tutor/class/attendance/bulk")
     OTHER_ACTIONS = ("POST api/tutor/request/apply", "POST api/tutor/class/mark-attended", "POST api/tutor/submit-report",
@@ -681,25 +691,25 @@ class CompanyCodeAndClockInRefusals(unittest.TestCase):
 
     def test_log_rows_are_merged_per_company_after_attribution(self):
         rows = monitor.resolve_log_rows([
-            {"company_code": NAK, "ref_company": "", "n": "2", "ex": "PBA-1"},
-            {"company_code": "", "ref_company": NAK, "n": "1", "ex": "NINV-7"},
-            {"company_code": SIFU, "ref_company": "", "n": "4", "ex": ""},
-            {"company_code": "", "ref_company": "", "n": "3", "ex": ""},
+            log_row(company_code=NAK, orderid=PBA_ORDER, n=2),
+            log_row(orderid="NINV-1000007", n=1),
+            log_row(company_code=SIFU, n=4),
+            log_row(n=3),
         ])
         by_company = {r["company"]: (r["n"], r["ex"]) for r in rows}
-        self.assertEqual(by_company, {NAK: ("3", "PBA-1,NINV-7"), SIFU: ("4", ""), None: ("3", "")})
+        self.assertEqual(by_company, {NAK: ("3", f"{PBA_ORDER},NINV-1000007"), SIFU: ("4", ""), None: ("3", "")})
 
     def test_betterstack_query_reads_company_code_from_the_context(self):
         sql = monitor.betterstack_sql("t1", "1 = 1")
         self.assertIn("JSONExtractString(raw, 'monolog', 'context', 'company_code')", sql)
-        self.assertIn("'NINV-%'", sql)
+        self.assertIn("JSONExtractString(raw, 'monolog', 'context', 'invoice_number')", sql)
         self.assertIn("FORMAT JSONEachRow", sql)
 
     def test_betterstack_rows_with_a_company_code_come_back_attributed(self):
         conf = ("BETTERSTACK_QUERY_HOST=https://eu-nbg-2-connect.betterstackdata.com\nBETTERSTACK_QUERY_USERNAME=u\n"
                 "BETTERSTACK_QUERY_PASSWORD=p\nBETTERSTACK_SIMS_LOGS_TABLE=t547964_test_php\n")
-        answer = (200, '{"company_code":"nakngaji_sdn_bhd","ref_company":"","n":"2","ex":"PBA-1"}\n'
-                       '{"company_code":"","ref_company":"sifu_edu_learning","n":"1","ex":"PINV-9"}\n')
+        answer = (200, json.dumps(log_row(company_code=NAK, orderid=PBA_ORDER, n=2)) + "\n"
+                       + json.dumps(log_row(orderid="PINV-123456", n=1)) + "\n")
         runner, _ = LogReadings.run_wrapper(self, conf, [("https://eu-nbg-2-connect.betterstackdata.com", answer)])
         part = next(p for p in signal("callback_mismatches").parts if p.db == "betterstack")
         rows = runner.logs("betterstack", part.search, part.key)
@@ -758,6 +768,198 @@ class CompanyCodeAndClockInRefusals(unittest.TestCase):
         schema["betterstack"] = False
         report = monitor.build_report(FakeRunner(schema))
         self.assertIn(result_for(report, "other_old_build_refusals", NAK).status, ("UNAVAILABLE",))
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# WP-28d: the Codex check of e856095 (Sifututor/sifu-tutor#3479)
+
+PAYOUT_KEY = "payout_differences.ripple_bank_files"
+PAYOUT_FILE_ROWS = [{"batch_id": "140", "total_amount": "100.00", "slip_count": "1", "slip_id": "501", "net_amount": "100.00"}]
+
+
+class IncompletePayoutSchema(unittest.TestCase):
+    """Finding 1: company columns without the approval audit table is not the legacy schema."""
+
+    def incomplete(self, table, column):
+        schema = full_schema()
+        schema["ripple"][table].discard(column)
+        runner = FakeRunner(schema, {PAYOUT_KEY: PAYOUT_FILE_ROWS})
+        return monitor.build_report(runner), runner
+
+    def assert_not_checked(self, report, runner, missing):
+        for company in (SIFU, NAK):
+            line = result_for(report, "payout_differences", company)
+            self.assertEqual(line.status, "NOT DEPLOYED", company)
+            self.assertTrue(line.partial, company)
+            self.assertIn(missing, " ".join(line.notes))
+        self.assertNotIn(("ripple", PAYOUT_KEY), runner.calls, "the totals-only query must not stand in for the fingerprints")
+        self.assertEqual(monitor.exit_code(report), 1)
+        entry = next(s for s in json.loads(monitor.render_json(report))["signals"] if s["key"] == "payout_differences")
+        self.assertFalse(entry["companies"][NAK]["every_part_read"])
+
+    def test_company_columns_without_the_approval_audit_table_is_not_deployed(self):
+        schema = full_schema()
+        del schema["ripple"]["tutor_payment_audit_log"]
+        runner = FakeRunner(schema, {PAYOUT_KEY: PAYOUT_FILE_ROWS})
+        self.assert_not_checked(monitor.build_report(runner), runner, "tutor_payment_audit_log")
+
+    def test_any_one_missing_go_live_column_is_not_deployed_never_legacy(self):
+        for table, column in (("tutor_payment_csv_batches", "selection_fingerprint"),
+                              ("tutor_payment_csv_batches", "payer_company_code"),
+                              ("tutor_payment_slips", "payer_company_code"),
+                              ("tutor_payment_slips", "bonus_details"),
+                              ("tutor_slip_classes", "resolved_amount")):
+            with self.subTest(missing=f"{table}.{column}"):
+                report, runner = self.incomplete(table, column)
+                self.assert_not_checked(report, runner, f"{table}.{column}")
+
+    def test_a_genuine_legacy_schema_still_gets_the_labelled_totals_reading(self):
+        runner = FakeRunner(full_schema(variant=1), {PAYOUT_KEY: PAYOUT_FILE_ROWS})
+        report = monitor.build_report(runner)
+        line = result_for(report, "payout_differences", SIFU)
+        self.assertEqual((line.status, line.partial), ("OK", False))
+        self.assertIn(("ripple", PAYOUT_KEY), runner.calls)
+        self.assertIn("before go-live", " ".join(line.notes))
+
+    def test_every_other_signal_is_untouched_by_the_incomplete_payout_schema(self):
+        schema = full_schema()
+        del schema["ripple"]["tutor_payment_audit_log"]
+        report = monitor.build_report(FakeRunner(schema))
+        for result in report.results:
+            if result.signal.key == "payout_differences":
+                continue
+            for company, line in result.companies.items():
+                self.assertEqual(line.status, "OK", f"{result.signal.key} {company}")
+
+
+PHONE_ORDER = "+60123456789"
+EMAIL_ORDER = "ahmad.tan@example.com"
+
+
+class SafeExamples(unittest.TestCase):
+    """Finding 3: an example is a validated record reference, never any string a callback carried."""
+
+    VALID = ("NINV-1000001", "PINV-743209", "PINV-743209-2", "PINV-730799+PINV-293585", "NCF-1000001",
+             "PCF-AB12CD34EF56", "PCF-4821", "PCF-BACKFILL-77", PBA_ORDER, "PCFA-01j9z8x7c6v5b4n3m2k1h0g9f8",
+             "TCFA-01j9z8x7c6v5b4n3m2k1h0g9f8", "TAPA-01j9z8x7c6v5b4n3m2k1h0g9f8",
+             "PIR-7432091a2b3c4d5e6f708192a3b4", "PIR-3f2b8c1e-5d4a-4b7c-9e1f-0a2b3c4d5e6f")
+    INVALID = (EMAIL_ORDER, PHONE_ORDER, "0123456789", "601234567890", "NINV-1000001 " + EMAIL_ORDER, "NINV-123",
+               "PBA-1", "NCF-12", "PINV-743209 call 0123456789", "Ahmad Tan", "https://example.com/pay?ic=900101105555",
+               "PCF-AHMAD", "")
+
+    def test_every_real_reference_shape_is_accepted(self):
+        for ref in self.VALID:
+            self.assertTrue(monitor.is_record_reference(ref), ref)
+
+    def test_anything_else_is_refused(self):
+        for ref in self.INVALID:
+            self.assertFalse(monitor.is_record_reference(ref), repr(ref))
+
+    def test_a_malformed_order_id_keeps_its_count_but_never_becomes_an_example(self):
+        rows = monitor.resolve_log_rows([
+            log_row(company_code=NAK, orderid=EMAIL_ORDER, n=2),
+            log_row(company_code=NAK, orderid=PHONE_ORDER, order_id="NINV-1000003 " + EMAIL_ORDER, n=1),
+            log_row(company_code=NAK, orderid="NINV-1000004", n=1),
+        ])
+        self.assertEqual([(r["company"], r["n"], r["ex"]) for r in rows], [(NAK, "4", "NINV-1000004")])
+
+    def test_the_text_and_json_reports_hold_no_personal_data(self):
+        conf = ("BETTERSTACK_QUERY_HOST=https://eu-nbg-2-connect.betterstackdata.com\nBETTERSTACK_QUERY_USERNAME=u\n"
+                "BETTERSTACK_QUERY_PASSWORD=p\nBETTERSTACK_SIMS_LOGS_TABLE=t547964_test_php\n")
+        answer = (200, "\n".join(json.dumps(r) for r in (
+            log_row(company_code=NAK, orderid=EMAIL_ORDER, n=2),
+            log_row(company_code=NAK, orderid=PHONE_ORDER, n=1),
+            log_row(company_code=NAK, orderid="NINV-1000004", n=1))) + "\n")
+        runner, _ = LogReadings.run_wrapper(LogReadings(), conf, [("https://eu-nbg-2-connect.betterstackdata.com", answer)])
+        runner.probe = lambda source: None
+        runner.columns = lambda db, tables: full_schema()[db]
+        runner.query = lambda db, sql, key: []
+        report = monitor.build_report(runner)
+        line = result_for(report, "callback_mismatches", NAK)
+        self.assertEqual((line.count, line.examples), (4, ["invoice reference NINV-1000004"]))
+        for output in (monitor.render_text(report), monitor.render_json(report)):
+            for secret in ("example.com", "@", "123456789"):
+                self.assertNotIn(secret, output)
+
+    def test_the_query_cleans_every_reference_field_before_it_leaves_better_stack(self):
+        sql = monitor.betterstack_sql("t1", "1 = 1")
+        self.assertEqual(sql.count(monitor.REFERENCE_SQL_PATTERN), 3)  # orderid, order_id, invoice_number
+        self.assertIn(f"'^{monitor.RECORD_ID_PATTERN}$'", sql)  # parent_invoice_id: a short database id only
+        for key in ("orderid", "order_id", "invoice_number", "parent_invoice_id"):
+            self.assertIn(f"'context', '{key}'", sql)
+
+
+class Cleanup6LogLines(unittest.TestCase):
+    """Finding 2: the line shapes SIMS writes since CLEANUP-6 (d50c8db92, STEP3b handback)."""
+
+    def resolve(self, *rows):
+        return {r["company"]: r for r in monitor.resolve_log_rows(list(rows))}
+
+    def test_allocation_line_with_a_null_company_is_attributed_by_its_invoice_number(self):
+        # {"parent_invoice_id": 2, "invoice_number": "NINV-1000123", "company_code": null, "trigger_invoice_number": "PINV-743209"}
+        by_company = self.resolve(log_row(invoice_number="NINV-1000123", parent_invoice_id="2"))
+        self.assertEqual(list(by_company), [NAK])
+        self.assertEqual(by_company[NAK]["ex"], "NINV-1000123")
+
+    def test_company_code_still_comes_first(self):
+        by_company = self.resolve(log_row(company_code=SIFU, invoice_number="NINV-1000123"))
+        self.assertEqual(list(by_company), [SIFU])
+
+    def test_the_order_id_is_the_example_and_a_bare_pba_order_takes_its_company_from_the_invoice_number(self):
+        by_company = self.resolve(log_row(orderid=PBA_ORDER, invoice_number="PINV-743209"))
+        self.assertEqual(list(by_company), [SIFU])
+        self.assertEqual(by_company[SIFU]["ex"], PBA_ORDER)
+
+    def test_a_failure_outside_any_reward_stays_not_recorded(self):
+        # parent_invoice_id, invoice_number and company_code are null; only trigger_invoice_number is set, and the
+        # trigger invoice's company is not the failed money's company (STEP3b decision), so it is never read.
+        sql = monitor.betterstack_sql("t1", "1 = 1")
+        self.assertNotIn("trigger_invoice_number", sql)
+        by_company = self.resolve(log_row())
+        self.assertEqual(list(by_company), [None])
+        self.assertEqual((by_company[None]["n"], by_company[None]["ex"]), ("1", ""))
+
+    def test_the_example_is_the_invoice_number_not_the_bare_id(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {
+            LOG_PARTS["failed_credit_allocation"]: [row(NAK, 1, 0, "NINV-1000123")]}))
+        self.assertEqual(result_for(report, "failed_credit_allocation", NAK).examples, ["invoice NINV-1000123"])
+
+
+class MissingBrandInvoices(unittest.TestCase):
+    """Finding 4: AUTO-DECISIONS.md:352 gives WP-28 the detection of an NINV- invoice whose request has no brand."""
+
+    KEY = "invoices_without_brand.sims_invoices"
+
+    def test_the_signal_is_listed_for_nakngaji_and_reads_sims_only(self):
+        sig = signal("invoices_without_brand")
+        self.assertEqual(sig.companies, (NAK,))
+        self.assertEqual([p.db for p in sig.parts], ["sims"])
+        self.assertTrue(sig.money)
+
+    def test_an_invoice_with_no_brand_is_check_with_its_id_and_amount(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {self.KEY: [row(NAK, 2, 15000, "88,71")]}))
+        line = result_for(report, "invoices_without_brand", NAK)
+        self.assertEqual((line.status, line.count, line.amount_sen), ("CHECK", 2, 15000))
+        self.assertEqual(line.examples, ["invoice 88", "invoice 71"])
+        self.assertEqual(monitor.exit_code(report), 1)
+
+    def test_no_such_invoice_is_ok(self):
+        report = monitor.build_report(FakeRunner(full_schema(), {}))
+        self.assertEqual(result_for(report, "invoices_without_brand", NAK).status, "OK")
+
+    def test_the_query_finds_nakngaji_numbers_whose_request_or_brand_is_missing(self):
+        part = signal("invoices_without_brand").parts[0]
+        sql = part.variants[0].sql
+        self.assertIn("pi.invoice_number LIKE 'NINV-%'", sql)
+        self.assertIn("pi.deleted_at IS NULL", sql)
+        for gap in ("tr.id IS NULL", "tr.brand_id IS NULL", "b.id IS NULL"):
+            self.assertIn(gap, sql)
+
+    def test_a_missing_table_is_not_deployed(self):
+        schema = full_schema()
+        del schema["sims"]["brands"]
+        report = monitor.build_report(FakeRunner(schema))
+        self.assertEqual(result_for(report, "invoices_without_brand", NAK).status, "NOT DEPLOYED")
 
 
 # ---------------------------------------------------------------------------------------------------------------

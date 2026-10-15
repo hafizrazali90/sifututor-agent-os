@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Daily read-only money and work monitor per company (WP-28, Sifututor/sifu-tutor#3479).
 
-Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the twelve go-live signals. Each signal
+Prints one report for Sifu Edu & Learning Sdn Bhd and Nakngaji Sdn Bhd with the thirteen go-live signals. Each signal
 gives a count, an amount to the sen where money is involved, up to five example record ids and a status:
 OK, CHECK, NOT DEPLOYED when the tables or columns one of its parts reads are not in production yet, or UNAVAILABLE
 when one of its parts could not be read. A signal is OK only when every one of its parts was read and found nothing.
@@ -27,6 +27,7 @@ import io
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import urllib.error
@@ -71,6 +72,9 @@ class Variant:
     sql: str
     basis: str = ""
     post: Callable[[list[dict]], list[dict]] | None = None  # turns raw rows into the standard columns
+    # A fallback reading that skips a check once its columns exist: if any of these tables.columns is present the
+    # schema is a half-deployed go-live one, not the legacy one, and this variant must not stand in for the full one.
+    unless_present: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -617,6 +621,10 @@ WHERE {PAYOUT_WINDOW}
 ORDER BY b.id, s.id""",
             basis=BEFORE_GO_LIVE_RIPPLE + "; totals and counts only, no approved fingerprint yet",
             post=payout_rows,
+            unless_present={
+                "tutor_payment_csv_batches": ("payer_company_code", "selection_fingerprint"),
+                "tutor_payment_slips": ("payer_company_code",),
+            },
         ),
     ),
 )
@@ -785,11 +793,39 @@ MYINVOIS = Part(
 )
 
 # ---------------------------------------------------------------------------------------------------------------
+# 12. A Nakngaji invoice (NINV- number) whose Tutor Request has no brand. Brand lists are built from the request's
+#     brand, so such a paid invoice sits in neither list while every other signal stays healthy (AUTO-DECISIONS CLEANUP-4).
+#     NINV numbers are only issued for Nakngaji requests, so the company is Nakngaji by the number.
+
+INVOICES_WITHOUT_BRAND = Part(
+    key="invoices_without_brand.sims_invoices", db="sims", label="SIMS Nakngaji invoices without a brand",
+    example_label="invoice",
+    variants=(
+        Variant(
+            requires={
+                "parent_invoices": ("id", "request_id", "invoice_number", "invoice_total", "deleted_at"),
+                "tutor_requests": ("id", "brand_id"),
+                "brands": ("id",),
+            },
+            sql=f"""SELECT 'nakngaji_sdn_bhd' AS company,
+       COUNT(*) AS n, {sims_sen('pi.invoice_total')} AS amount_sen,
+       SUBSTRING_INDEX(GROUP_CONCAT(pi.id ORDER BY pi.id DESC), ',', 5) AS ex
+FROM parent_invoices pi
+LEFT JOIN tutor_requests tr ON tr.id = pi.request_id
+LEFT JOIN brands b ON b.id = tr.brand_id
+WHERE pi.deleted_at IS NULL AND pi.invoice_number LIKE 'NINV-%'
+  AND (tr.id IS NULL OR tr.brand_id IS NULL OR b.id IS NULL)
+GROUP BY company""",
+        ),
+    ),
+)
+
+# ---------------------------------------------------------------------------------------------------------------
 # Failures SIMS only logs (no table holds them). SIMS sends exceptions to Sentry but not its log lines (14 days of
 # events on 15/10/2026: every one an exception, no log-channel events), so refusals and caught errors are read from
 # the Better Stack SIMS log source. Each search covers the last 24 hours. The company comes from the company_code SIMS
-# writes in the log context (CLEANUP-6, c080d3133), then from the invoice reference (NINV- is Nakngaji, PINV- is
-# Sifu Edu & Learning); otherwise "Company not recorded".
+# writes in the log context (CLEANUP-6, d50c8db92), then from the NINV-/PINV- prefix of the order id, order_id or
+# invoice_number (NINV- is Nakngaji, PINV- is Sifu Edu & Learning); otherwise "Company not recorded".
 
 def log_message_has(*phrases: str) -> str:
     return "(" + " OR ".join(f"positionCaseInsensitive(msg, '{p}') > 0" for p in phrases) + ")"
@@ -873,6 +909,9 @@ SIGNALS: tuple[Signal, ...] = (
            (OTHER_OLD_BUILD_REFUSAL_LOGS, OTHER_OLD_BUILD_REFUSAL_EVENTS), money=False,
            count_label=("refusal", "refusals"),
            note="other Tutor App actions refused for an old build (a refusal with no logged action lands here too)"),
+    Signal("invoices_without_brand", "Nakngaji invoices whose Tutor Request has no brand", (INVOICES_WITHOUT_BRAND,),
+           count_label=("invoice", "invoices"), companies=(NAK,),
+           note="a NINV- invoice with no brand on its Tutor Request shows in neither brand list"),
     Signal("followup_cases_72h", "Open follow-up cases older than 72 hours", (FOLLOWUPS,), money=False,
            count_label=("case", "cases")),
     Signal("extra_charges_waiting", "Extra charges waiting more than one month end", (EXTRA_CHARGES,),
@@ -958,6 +997,32 @@ def all_queries(db: str):
                     yield variant.sql, part.key
 
 
+# The only strings a log example may show: a record reference SIMS itself generates. Character classes only (no
+# backslash), so the same text is a valid Python and ClickHouse (RE2) pattern. Shapes come from the SIMS code:
+# ParentInvoiceNumber (PINV- digits, NINV- seven or more digits, a numbered try -2, a bundle joined by +),
+# CommitmentFeeNumber (NCF- seven or more digits, PCF- twelve upper-case letters or digits, the old PCF- four digits,
+# PCF-BACKFILL-<request>), the attempt references PBA-/PCFA-/TCFA-/TAPA- plus a ULID, and PIR- recovery references.
+_INVOICE_NUMBER = "(?:PINV-[0-9]{1,10}|NINV-[0-9]{7,10})(?:-[0-9]{1,3})?"
+_ULID = "[0-9a-hjkmnp-tv-zA-HJKMNP-TV-Z]{26}"
+REFERENCE_PATTERN = (
+    f"{_INVOICE_NUMBER}(?:[+]{_INVOICE_NUMBER})*"
+    "|NCF-[0-9]{7,10}"
+    "|PCF-(?:[A-Z0-9]{12}|[0-9]{4}|BACKFILL-[0-9]{1,10})"
+    f"|(?:PBA|PCFA|TCFA|TAPA)-{_ULID}"
+    "|PIR-(?:[0-9a-f]{28}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})"
+)
+REFERENCE_SQL_PATTERN = f"^(?:{REFERENCE_PATTERN})$"
+RECORD_ID_PATTERN = "[1-9][0-9]{0,8}"  # parent_invoice_id only: a database id, never user text
+_REFERENCE = re.compile(REFERENCE_SQL_PATTERN)
+_RECORD_ID = re.compile(f"^{RECORD_ID_PATTERN}$")
+REFERENCE_FIELDS = ("orderid", "order_id", "invoice_number")  # in the order an example and a prefix are taken
+LOG_COMPANY_VALUES = (SIFU, NAK, *BRAND_TO_COMPANY)
+
+
+def is_record_reference(value) -> bool:
+    return isinstance(value, str) and _REFERENCE.fullmatch(value) is not None
+
+
 def log_company(company_code, ref_company) -> str | None:
     """A log line's company: the company_code in its context first, then the invoice-reference prefix."""
     for value in (company_code, ref_company):
@@ -967,36 +1032,66 @@ def log_company(company_code, ref_company) -> str | None:
     return None
 
 
+def log_reference(row: dict) -> tuple[str, str | None]:
+    """(example reference, company named by an invoice-number prefix) of one log row, from validated fields only.
+    The reference is the first valid of orderid, order_id, invoice_number, parent_invoice_id; the prefix is read from
+    the first of the first three that starts with NINV- or PINV-, so CLEANUP-6's invoice_number counts."""
+    values = [str(row.get(k) or "").strip() for k in REFERENCE_FIELDS]
+    valid = [v for v in values if is_record_reference(v)]
+    parent = str(row.get("parent_invoice_id") or "").strip()
+    if _RECORD_ID.fullmatch(parent):
+        valid.append(parent)
+    company = next((NAK if v.startswith("NINV-") else SIFU for v in valid if v.startswith(("NINV-", "PINV-"))), None)
+    return (valid[0] if valid else ""), company
+
+
 def resolve_log_rows(rows: list[dict]) -> list[dict]:
-    """Better Stack rows per (company_code, reference prefix) -> one row per company, counts summed."""
+    """Better Stack rows per distinct (company_code, references) -> one row per company, counts summed. Examples are
+    validated here as well as in the query; a count is always kept, even when its reference is dropped."""
     merged: dict[str | None, dict] = {}
     for r in rows:
-        company = log_company(r.get("company_code"), r.get("ref_company") or r.get("company"))
+        reference, prefix_company = log_reference(r)
+        company = log_company(r.get("company_code"), prefix_company)
         out = merged.setdefault(company, {"company": company, "n": 0, "amount_sen": "0", "ex": []})
         out["n"] += parse_int(r.get("n"))
-        out["ex"].extend(i.strip() for i in str(r.get("ex") or "").split(",") if i.strip())
+        if reference:
+            out["ex"].append(reference)
     return [{**m, "n": str(m["n"]), "ex": ",".join(dict.fromkeys(m["ex"]))} for m in merged.values()]
 
 
 def betterstack_sql(table: str, condition: str) -> str:
-    """Counts matching SIMS log lines of the last day per company; recent and archived rows, as Better Stack documents."""
+    """Counts matching SIMS log lines of the last day per company and reference; recent and archived rows, as Better
+    Stack documents. Each reference field is blanked unless it is a validated record reference, so an arbitrary
+    string a callback carried (an email, a phone number) never leaves Better Stack; the company is blanked unless
+    it is one of ours."""
     window = "dt >= now() - INTERVAL 1 DAY"
-    return f"""SELECT company_code,
-       multiIf(ref LIKE 'NINV-%', '{NAK}', ref LIKE 'PINV-%', '{SIFU}', '') AS ref_company,
-       count() AS n, arrayStringConcat(arraySlice(groupUniqArrayIf(ref, ref != ''), 1, 5), ',') AS ex
+    companies = ", ".join(f"'{c}'" for c in LOG_COMPANY_VALUES)
+
+    def clean(column: str) -> str:
+        return f"match({column}, '{REFERENCE_SQL_PATTERN}')"
+
+    return f"""SELECT company_code, orderid, order_id, invoice_number, parent_invoice_id, count() AS n
 FROM (
-  SELECT JSONExtractString(raw, 'monolog', 'context', 'company_code') AS company_code,
-         coalesce(nullIf(JSONExtractString(raw, 'monolog', 'context', 'orderid'), ''),
-                  nullIf(JSONExtractString(raw, 'monolog', 'context', 'order_id'), ''),
-                  nullIf(toString(JSONExtractInt(raw, 'monolog', 'context', 'parent_invoice_id')), '0'), '') AS ref
+  SELECT if(c IN ({companies}), c, '') AS company_code,
+         if({clean('o')}, o, '') AS orderid,
+         if({clean('oi')}, oi, '') AS order_id,
+         if({clean('i')}, i, '') AS invoice_number,
+         if(match(p, '^{RECORD_ID_PATTERN}$'), p, '') AS parent_invoice_id
   FROM (
-    SELECT raw, JSONExtractString(raw, 'message') AS msg FROM remote({table}_logs) WHERE {window}
-    UNION ALL
-    SELECT raw, JSONExtractString(raw, 'message') AS msg FROM s3Cluster(primary, {table}_s3) WHERE _row_type = 1 AND {window}
+    SELECT JSONExtractString(raw, 'monolog', 'context', 'company_code') AS c,
+           JSONExtractString(raw, 'monolog', 'context', 'orderid') AS o,
+           JSONExtractString(raw, 'monolog', 'context', 'order_id') AS oi,
+           JSONExtractString(raw, 'monolog', 'context', 'invoice_number') AS i,
+           toString(JSONExtractInt(raw, 'monolog', 'context', 'parent_invoice_id')) AS p
+    FROM (
+      SELECT raw, JSONExtractString(raw, 'message') AS msg FROM remote({table}_logs) WHERE {window}
+      UNION ALL
+      SELECT raw, JSONExtractString(raw, 'message') AS msg FROM s3Cluster(primary, {table}_s3) WHERE _row_type = 1 AND {window}
+    )
+    WHERE {condition}
   )
-  WHERE {condition}
 )
-GROUP BY company_code, ref_company
+GROUP BY company_code, orderid, order_id, invoice_number, parent_invoice_id
 FORMAT JSONEachRow"""
 
 
@@ -1174,6 +1269,12 @@ def missing_for(variant: Variant, schema: dict[str, set[str]]) -> list[str]:
     return missing
 
 
+def present_for(variant: Variant, schema: dict[str, set[str]]) -> list[str]:
+    """The go-live columns that exist although the full reading cannot run: an incomplete company schema, for which
+    a fallback reading that skips a check must not be used."""
+    return [f"{t}.{c}" for t, columns in variant.unless_present.items() for c in columns if c in schema.get(t, ())]
+
+
 def info_text(key: str, value) -> str:
     if key.endswith("_sen"):
         return f"{key[:-4]}_amount={format_money(parse_sen(value))}"
@@ -1200,11 +1301,15 @@ def evaluate(signal: Signal, schemas: dict[str, dict[str, set[str]] | None], run
             if part.db in LOG_SOURCES:
                 rows = runner.logs(part.db, part.search, part.key)
             else:
-                variant = next((v for v in part.variants if not missing_for(v, schema)), None)
+                variant = next((v for v in part.variants
+                                if not missing_for(v, schema) and not present_for(v, schema)), None)
                 if variant is None:
                     missed["NOT DEPLOYED"] = True
                     missing = missing_for(part.variants[0], schema)
-                    part_notes.append(f"{part.label}: not deployed, missing {DB_NAMES[part.db]} " + ", ".join(missing))
+                    text = f"{part.label}: not deployed, missing {DB_NAMES[part.db]} " + ", ".join(missing)
+                    if any(present_for(v, schema) for v in part.variants):
+                        text += "; the company schema is incomplete, so this reading is not run"
+                    part_notes.append(text)
                     continue
                 if variant.basis:
                     part_notes.append(f"{part.label}: {variant.basis}")
