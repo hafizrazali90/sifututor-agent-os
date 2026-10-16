@@ -749,6 +749,394 @@ class ChecksTests(Quiet):
         self.assertFalse(sd.check_patch_equivalent({}, ctx)["ok"])
 
 
+CONTRACT_SHA = "f" * 40
+RIPPLE_REGISTRY = {"source": "ripple", "tables": [
+    {"source": "ripple", "source_table": "accounts_cx_requests", "source_columns": ["id", "note"],
+     "source_types": {"id": "bigint", "note": "character varying(1000)"}},
+    {"source": "ripple", "source_table": "crm_leads", "source_columns": ["id", "created_at"],
+     "source_types": {"id": "integer", "created_at": "timestamp with time zone"}}]}
+RIPPLE_ROWS = [["accounts_cx_requests", "id", "bigint"], ["accounts_cx_requests", "note", "character varying(1000)"],
+               ["crm_leads", "id", "integer"], ["crm_leads", "created_at", "timestamp with time zone"]]
+
+
+def contract_box(registry: dict | None = None, rows: list | None = None) -> FakeBox:
+    """The box and the owner-analytics checkout as the gate sees them: git answers from the checkout, the schema verb from staging."""
+    box = good_box()
+    box.when("git", "rev-parse", "--verify", "origin/main", out=CONTRACT_SHA + "\n")
+    box.when("git", "show", out=json.dumps(RIPPLE_REGISTRY if registry is None else registry))
+    box.reply("schema", 0, "SCHEMA " + json.dumps(RIPPLE_ROWS if rows is None else rows) + "\nSCHEMA OK tables=2 columns=4")
+    return box
+
+
+class ContractCompareTests(unittest.TestCase):
+    """The pure comparison behind gate S5: what Owner Analytics copies against the columns staging really has."""
+
+    def test_an_unchanged_schema_has_nothing_breaking_and_nothing_new(self) -> None:
+        self.assertEqual(sd.compare_contract(RIPPLE_REGISTRY["tables"], RIPPLE_ROWS), {"breaking": [], "new": []})
+
+    def test_a_removed_or_renamed_column_is_breaking_and_named(self) -> None:
+        rows = [r for r in RIPPLE_ROWS if r[1] != "note"] + [["accounts_cx_requests", "note_text", "character varying(1000)"]]
+        diff = sd.compare_contract(RIPPLE_REGISTRY["tables"], rows)
+        self.assertEqual([(b["table"], b["column"], b["why"]) for b in diff["breaking"]], [("accounts_cx_requests", "note", "column missing")])
+        self.assertEqual([(n["table"], n["column"]) for n in diff["new"]], [("accounts_cx_requests", "note_text")])
+
+    def test_a_type_change_is_breaking_with_both_types(self) -> None:
+        rows = [r if r[1] != "id" or r[0] != "crm_leads" else ["crm_leads", "id", "bigint"] for r in RIPPLE_ROWS]
+        diff = sd.compare_contract(RIPPLE_REGISTRY["tables"], rows)
+        self.assertEqual(len(diff["breaking"]), 1)
+        item = diff["breaking"][0]
+        self.assertEqual((item["table"], item["column"], item["why"], item["expected"], item["found"]),
+                         ("crm_leads", "id", "type changed", "integer", "bigint"))
+
+    def test_types_compare_like_the_copier_lower_case_without_spaces(self) -> None:
+        rows = [["accounts_cx_requests", "id", "BIGINT"], ["accounts_cx_requests", "note", "character  varying (1000)"],
+                ["crm_leads", "id", "integer"], ["crm_leads", "created_at", "timestamp with time zone"]]
+        self.assertEqual(sd.compare_contract(RIPPLE_REGISTRY["tables"], rows)["breaking"], [])
+        self.assertEqual(sd.normalize_type(" Enum('a', 'b') "), "enum('a','b')")
+        self.assertNotEqual(sd.normalize_type("int unsigned"), sd.normalize_type("int"))
+
+    def test_a_missing_table_is_breaking_and_a_new_column_only_informs(self) -> None:
+        rows = [r for r in RIPPLE_ROWS if r[0] != "crm_leads"] + [["accounts_cx_requests", "priority", "integer"]]
+        diff = sd.compare_contract(RIPPLE_REGISTRY["tables"], rows)
+        self.assertEqual([(b["table"], b["why"]) for b in diff["breaking"]], [("crm_leads", "table missing")])
+        self.assertEqual([(n["table"], n["column"], n["type"]) for n in diff["new"]], [("accounts_cx_requests", "priority", "integer")])
+
+    def test_a_table_the_contract_does_not_copy_is_reported_as_new_not_breaking(self) -> None:
+        diff = sd.compare_contract(RIPPLE_REGISTRY["tables"], RIPPLE_ROWS + [["brand_new", "id", "integer"]])
+        self.assertEqual(diff["breaking"], [])
+        self.assertEqual([(n["table"], n["why"]) for n in diff["new"]], [("brand_new", "new table")])
+
+
+class AnalyticsContractGateTests(Quiet):
+    def setUp(self) -> None:
+        super().setUp()
+        self.oa = self.tmp / "owner-analytics"
+        (self.oa / ".git").mkdir(parents=True)
+        patcher = mock_env({sd.OA_DIR_ENV: str(self.oa)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def ctx(self, box: FakeBox, target: str = "ripple", deployed: bool = True, baseline: list | None = []) -> FakeCtx:
+        extra = {"ref": "test/3373-staging-candidate"} if target == "sims" else {}
+        data = staging_data(target=target, candidate_sha=SHA_A, candidate_ref=extra.get("ref", REF), **extra)
+        if target == "sims":
+            data["repo"] = "sifu-tutor"
+        if deployed:
+            data["staging_sha"] = SHA_A
+        if baseline is not None:
+            data["staging"]["contract_baseline"] = {"candidate_sha": SHA_A, "read_at": "13/10/2026 15:40:00 MYT",
+                                                    "contract_sha": CONTRACT_SHA, "columns_read": 4, "breaking": baseline}
+        return FakeCtx(data, box, self.tmp)
+
+    def schema_calls(self, box: FakeBox) -> list[dict]:
+        return [c for c in box.ssh_calls() if " schema " in c["argv"][-1]]
+
+    def test_an_unchanged_schema_passes_and_reads_only_the_copied_tables(self) -> None:
+        box = contract_box()
+        res = sd.check_analytics_contract({}, self.ctx(box))
+        self.assertTrue(res["ok"], res)
+        call = self.schema_calls(box)[0]
+        self.assertEqual(call["argv"][-2], "staging")
+        self.assertIn("remote ripple schema accounts_cx_requests crm_leads", call["argv"][-1])
+        self.assertIn(CONTRACT_SHA[:10], json.dumps(res["evidence"]))
+        show = [c for c in box.calls if c["argv"][:2] == ["git", "show"]][0]
+        self.assertEqual(show["argv"][-1], CONTRACT_SHA + ":extractor/registry-ripple.json")
+        self.assertEqual(show["cwd"], self.oa)
+
+    def test_a_removed_column_fails_s5_and_names_it(self) -> None:
+        rows = [r for r in RIPPLE_ROWS if r[1] != "note"]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows)))
+        self.assertFalse(res["ok"])
+        self.assertIn("accounts_cx_requests.note", res["summary"])
+        self.assertIn("missing", res["summary"])
+
+    def test_a_type_change_fails_s5_and_names_both_types(self) -> None:
+        rows = [["crm_leads", "id", "bigint"] if r[:2] == ["crm_leads", "id"] else r for r in RIPPLE_ROWS]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows)))
+        self.assertFalse(res["ok"])
+        self.assertIn("crm_leads.id", res["summary"])
+        self.assertIn("integer -> bigint", res["summary"])
+
+    def test_a_new_column_only_informs(self) -> None:
+        rows = RIPPLE_ROWS + [["crm_leads", "priority", "integer"]]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows)))
+        self.assertTrue(res["ok"], res)
+        self.assertIn("crm_leads.priority", res["summary"])
+        self.assertIn("information", res["summary"])
+
+    def test_a_missing_owner_analytics_checkout_fails_closed_before_any_ssh(self) -> None:
+        for env in ({sd.OA_DIR_ENV: str(self.tmp / "nowhere")}, {sd.OA_DIR_ENV: str(self.tmp)}):
+            box = contract_box()
+            with mock_env(env):
+                res = sd.check_analytics_contract({}, self.ctx(box))
+            self.assertFalse(res["ok"])
+            self.assertIn("owner-analytics checkout", res["summary"])
+            self.assertIn("fails closed", res["summary"])
+            self.assertEqual(box.ssh_calls(), [])
+
+    def test_an_unreadable_contract_fails_closed(self) -> None:
+        cases = []
+        box = contract_box()
+        box.when("git", "show", rc=128, out="fatal: path 'extractor/registry-ripple.json' does not exist in 'origin/main'")
+        cases.append(box)
+        box = contract_box()
+        box.when("git", "show", out="{not json")
+        cases.append(box)
+        cases.append(contract_box(registry={"tables": []}))
+        cases.append(contract_box(registry={"tables": [{"source_table": "x", "source_columns": ["a"], "source_types": {}}]}))
+        cases.append(contract_box(registry={"tables": [{"source_table": "x; drop", "source_columns": ["a"], "source_types": {"a": "int"}}]}))
+        box = contract_box()
+        box.when("git", "rev-parse", "--verify", "origin/main", rc=128, out="fatal: Needed a single revision")
+        cases.append(box)
+        for box in cases:
+            res = sd.check_analytics_contract({}, self.ctx(box))
+            self.assertFalse(res["ok"], res)
+            self.assertIn("fails closed", res["summary"])
+            self.assertEqual(self.schema_calls(box), [])
+
+    def test_a_failed_fetch_still_checks_with_the_last_fetched_main_and_says_so(self) -> None:
+        box = contract_box()
+        box.when("git", "fetch", rc=1, out="fatal: unable to access")
+        res = sd.check_analytics_contract({}, self.ctx(box))
+        self.assertTrue(res["ok"], res)
+        self.assertIn("could not refresh", json.dumps(res["evidence"]))
+
+    def test_sims_reads_the_sims_contract_and_skips_other_sources(self) -> None:
+        registry = {"tables": [{"source_table": "alert_templates", "source_columns": ["id"], "source_types": {"id": "bigint unsigned"}},
+                               {"source": "ripple", "source_table": "crm_leads", "source_columns": ["id"], "source_types": {"id": "integer"}}]}
+        box = contract_box(registry=registry, rows=[["alert_templates", "id", "bigint unsigned"]])
+        box.reply("check", 0, "CHECK OK")
+        res = sd.check_analytics_contract({}, self.ctx(box, "sims"))
+        self.assertTrue(res["ok"], res)
+        show = [c for c in box.calls if c["argv"][:2] == ["git", "show"]][0]
+        self.assertTrue(show["argv"][-1].endswith(":extractor/registry.json"))
+        call = self.schema_calls(box)[0]
+        self.assertEqual(call["argv"][-2], "finch")
+        self.assertIn("remote sims schema alert_templates --actor", call["argv"][-1])
+
+    def test_s5_needs_the_deployed_candidate_and_a_staging_that_still_serves_it(self) -> None:
+        box = contract_box()
+        res = sd.check_analytics_contract({}, self.ctx(box, deployed=False))
+        self.assertFalse(res["ok"])
+        self.assertEqual(box.ssh_calls(), [])
+        box = contract_box()
+        box.verbs["verify"] = [(1, "VERIFY FAILED")]
+        res = sd.check_analytics_contract({}, self.ctx(box))
+        self.assertFalse(res["ok"])
+        self.assertIn("no longer serves", res["summary"])
+        self.assertEqual(self.schema_calls(box), [])
+
+    def test_a_refused_schema_read_fails_s5_with_the_reason(self) -> None:
+        box = contract_box()
+        box.verbs["schema"] = [(2, "REFUSED: could not read the staging column list (psql exit 2)")]
+        res = sd.check_analytics_contract({}, self.ctx(box))
+        self.assertFalse(res["ok"])
+        self.assertIn("psql exit 2", res["summary"])
+
+    def test_the_contract_command_runs_s5_by_hand_and_exits_1_on_a_breaking_change(self) -> None:
+        out: list[str] = []
+        self.assertEqual(sd.main(["contract", "ripple"], out=out.append, shell=contract_box()), 0, out)
+        self.assertIn("0 breaking", out[1])
+        rows = [r for r in RIPPLE_ROWS if r[1] != "created_at"]
+        out = []
+        self.assertEqual(sd.main(["contract", "ripple"], out=out.append, shell=contract_box(rows=rows)), 1, out)
+        self.assertIn("BREAKING crm_leads.created_at (column missing)", "\n".join(out))
+        out = []
+        with mock_env({sd.OA_DIR_ENV: str(self.tmp / "nowhere")}):
+            self.assertEqual(sd.main(["contract", "sims"], out=out.append, shell=contract_box()), 2)
+        self.assertIn("fails closed", out[0])
+
+    def test_s5_runs_no_write_on_the_pc_side_either(self) -> None:
+        box = contract_box()
+        sd.check_analytics_contract({}, self.ctx(box))
+        verbs = [re.search(r"remote \w+ (\w+)", c["argv"][-1]).group(1) for c in box.ssh_calls()]
+        self.assertEqual(verbs, ["verify", "schema"])
+        local = [c["argv"] for c in box.calls if c["argv"][0] != "ssh"]
+        self.assertEqual([a[:2] for a in local], [["git", "fetch"], ["git", "rev-parse"], ["git", "show"]])
+        for argv in local:
+            self.assertNotIn(argv[1], ("push", "merge", "reset", "checkout", "commit", "pull", "rebase", "clean"))
+
+
+# Staging already differed from the contract before the release: crm_leads.id was retyped there by an older staging deploy.
+DRIFT_ROWS = [["crm_leads", "id", "bigint"] if r[:2] == ["crm_leads", "id"] else r for r in RIPPLE_ROWS]
+DRIFT_ITEM = {"table": "crm_leads", "column": "id", "why": "type changed", "expected": "integer", "found": "bigint"}
+
+
+class ContractBaselineTests(AnalyticsContractGateTests):
+    """S5 judges only what the candidate release adds (13/10/2026 live finding: both staging databases already drift)."""
+
+    def s1_ctx(self, box: FakeBox, **cfg) -> FakeCtx:
+        data = staging_data(**cfg)
+        data["items"] = [{"id": "S5", "owner": "pc", "status": "open", "check": {"type": "analytics_contract"}}]
+        return FakeCtx(data, box, self.tmp)
+
+    def s1_box(self, rows: list | None = None) -> FakeBox:
+        box = contract_box(rows=rows)
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        return box
+
+    def verbs(self, box: FakeBox) -> list[str]:
+        return [re.search(r"remote \w+ (\w+)", c["argv"][-1]).group(1) for c in box.ssh_calls()]
+
+    def test_s1_reads_the_baseline_of_staging_before_the_deploy(self) -> None:
+        box = self.s1_box(rows=DRIFT_ROWS)
+        ctx = self.s1_ctx(box)
+        res = sd.check_candidate({}, ctx)
+        self.assertTrue(res["ok"], res)
+        baseline = ctx.data["staging"]["contract_baseline"]
+        self.assertEqual(baseline["candidate_sha"], SHA_A)
+        self.assertEqual(baseline["breaking"], [DRIFT_ITEM])
+        self.assertEqual(baseline["contract_sha"], CONTRACT_SHA)
+        self.assertTrue(baseline["read_at"].endswith("MYT"))
+        self.assertEqual(self.verbs(box), ["check", "schema"])
+        self.assertIn("1 already breaking", json.dumps(res["evidence"]))
+        self.assertEqual(sd.validate_staging(ctx.data), [])
+
+    def test_s1_reads_no_baseline_when_the_release_has_no_s5(self) -> None:
+        box = self.s1_box()
+        ctx = FakeCtx(staging_data(), box, self.tmp)
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        self.assertNotIn("contract_baseline", ctx.data["staging"])
+        self.assertEqual(self.verbs(box), ["check"])
+
+    def test_s1_fails_closed_when_the_baseline_cannot_be_read(self) -> None:
+        box = self.s1_box()
+        box.verbs["schema"] = [(2, "REFUSED: could not read the staging column list (psql exit 2)")]
+        ctx = self.s1_ctx(box)
+        res = sd.check_candidate({}, ctx)
+        self.assertFalse(res["ok"])
+        self.assertIn("baseline", res["summary"])
+        self.assertNotIn("candidate_sha", ctx.data["staging"])
+        self.assertNotIn("contract_baseline", ctx.data["staging"])
+
+    def test_s1_keeps_the_baseline_of_the_same_candidate_and_never_reads_one_after_the_deploy(self) -> None:
+        box = self.s1_box()
+        kept = {"candidate_sha": SHA_A, "read_at": "13/10/2026 15:40:00 MYT", "contract_sha": CONTRACT_SHA, "columns_read": 4,
+                "breaking": [DRIFT_ITEM]}
+        ctx = self.s1_ctx(box, contract_baseline=dict(kept))
+        ctx.data["staging_sha"] = SHA_A
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        self.assertEqual(ctx.data["staging"]["contract_baseline"], kept)
+        self.assertEqual(self.verbs(box), ["check"])
+        for already in ({"staging_sha": SHA_A}, {"deploys": [{"run": "r", "sha": SHA_A, "ok": False}]}):
+            box = self.s1_box()
+            ctx = self.s1_ctx(box, **({"deploys": already["deploys"]} if "deploys" in already else {}))
+            ctx.data.update({k: v for k, v in already.items() if k == "staging_sha"})
+            res = sd.check_candidate({}, ctx)
+            self.assertFalse(res["ok"], already)
+            self.assertIn("baseline", res["summary"])
+            self.assertNotIn("schema", self.verbs(box))
+
+    def test_an_item_already_in_the_baseline_does_not_fail_s5_and_is_counted(self) -> None:
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=DRIFT_ROWS), baseline=[DRIFT_ITEM]))
+        self.assertTrue(res["ok"], res)
+        self.assertIn("1 already on staging before this release (not caused by it)", res["summary"])
+        self.assertIn("crm_leads.id", res["summary"])
+        note = [e for e in res["evidence"] if "schema" in e["command"]][0]
+        self.assertEqual(note["already_on_staging"], ["crm_leads.id (type integer -> bigint)"])
+        self.assertEqual(note["breaking"], [])
+
+    def test_a_new_breaking_item_fails_s5_and_is_named_apart_from_the_baseline(self) -> None:
+        rows = [r for r in DRIFT_ROWS if r[1] != "note"]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows), baseline=[DRIFT_ITEM]))
+        self.assertFalse(res["ok"])
+        self.assertIn("1 copied column(s) would stop the Owner Analytics copy: accounts_cx_requests.note (column missing)",
+                      res["summary"])
+        self.assertNotIn("crm_leads.id", res["summary"].split("already on staging")[0])
+        self.assertIn("1 already on staging before this release (not caused by it)", res["summary"])
+
+    def test_the_same_column_breaking_in_a_new_way_is_new(self) -> None:
+        rows = [["crm_leads", "id", "text"] if r[:2] == ["crm_leads", "id"] else r for r in RIPPLE_ROWS]
+        res = sd.check_analytics_contract({}, self.ctx(contract_box(rows=rows), baseline=[DRIFT_ITEM]))
+        self.assertFalse(res["ok"])
+        self.assertIn("crm_leads.id (type integer -> text)", res["summary"])
+
+    def test_a_missing_baseline_fails_closed_and_says_to_rerun_s1(self) -> None:
+        for baseline in (None, "other-commit"):
+            box = contract_box()
+            ctx = self.ctx(box, baseline=None if baseline is None else [])
+            if baseline == "other-commit":
+                ctx.data["staging"]["contract_baseline"]["candidate_sha"] = SHA_B
+            res = sd.check_analytics_contract({}, ctx)
+            self.assertFalse(res["ok"], baseline)
+            self.assertIn("fails closed", res["summary"])
+            self.assertIn("S1", res["summary"])
+            self.assertEqual(box.ssh_calls(), [], baseline)
+
+    def test_the_contract_command_stays_absolute_and_baseline_prints_the_release_baseline(self) -> None:
+        out: list[str] = []
+        self.assertEqual(sd.main(["contract", "ripple"], out=out.append, shell=contract_box(rows=DRIFT_ROWS)), 1, out)
+        self.assertIn("BREAKING crm_leads.id (type integer -> bigint)", "\n".join(out))
+        self.assertFalse(any("baseline" in line for line in out))
+        path = self.tmp / "readiness.json"
+        data = self.ctx(FakeBox(), baseline=[DRIFT_ITEM]).data
+        data["items"] = []
+        rr.save(path, data)
+        out = []
+        self.assertEqual(sd.main(["contract", "ripple", "--baseline", str(path)], out=out.append,
+                                 shell=contract_box(rows=DRIFT_ROWS)), 1, out)
+        text = "\n".join(out)
+        self.assertIn("BREAKING crm_leads.id (type integer -> bigint)", text)
+        self.assertIn("baseline of release Proof", text)
+        self.assertIn("13/10/2026 15:40:00 MYT", text)
+        self.assertIn("1 breaking already on staging before this release", text)
+        self.assertIn("  baseline crm_leads.id (type integer -> bigint)", text)
+        data["staging"].pop("contract_baseline")
+        rr.save(path, data)
+        out = []
+        sd.main(["contract", "ripple", "--baseline", str(path)], out=out.append, shell=contract_box(rows=DRIFT_ROWS))
+        self.assertIn("no S5 baseline", "\n".join(out))
+
+    def test_the_report_shows_the_baseline(self) -> None:
+        path = self.tmp / "readiness.json"
+        data = self.ctx(FakeBox(), baseline=[DRIFT_ITEM]).data
+        data["items"] = []
+        rr.save(path, data)
+        out: list[str] = []
+        with mock_patch(sd.Deployer, "status", lambda self, run=None: {"result": "", "state": "none"}):
+            sd.report(path, out.append)
+        self.assertIn("S5 baseline: 1 breaking already on staging before this release, read 13/10/2026 15:40:00 MYT", "\n".join(out))
+
+
+class ReadinessS5Tests(unittest.TestCase):
+    def build(self, target: str) -> dict:
+        repo, ref = ("sifu-tutor", "test/3373-staging-candidate") if target == "sims" else ("ripple-suite", REF)
+        template = json.loads((HERE.parent.parent / "docs" / "agent-playbooks" / "templates" / "release-readiness.json").read_text())
+        cfg = {"target": target, "mode": "normal", "approval": "Hafiz, test", "ref": ref, "smoke_exception": "not user-facing: x"}
+        return rr.build_from_template(template, release="x", repo=repo, branch=ref, base="origin/main", pr_numbers_=[], issue="1",
+                                      serving_commit="", approval="", github_repo=None, suite_commands=None, e2e_commands=[],
+                                      e2e_exception="not user-facing: x", fix_paths=None, na={}, route="staging-first", staging=cfg)
+
+    def test_s5_is_a_pc_script_gate_after_s3_and_after_s4_for_sims(self) -> None:
+        for target, needs in (("ripple", ["S3"]), ("sims", ["S3", "S4"])):
+            items = self.build(target)["items"]
+            ids = [i["id"] for i in items]
+            self.assertEqual(ids.index("S5"), ids.index("S4") + 1, target)
+            s5 = items[ids.index("S5")]
+            self.assertEqual((s5["owner"], s5["action"], s5["check"]["type"]), ("pc", "script", "analytics_contract"))
+            self.assertEqual(s5["depends_on"], needs, target)
+            self.assertFalse(rr.validate(self.build(target)), target)
+        self.assertIn("analytics_contract", rr.CHECKS)
+
+    def test_without_the_staging_flag_there_is_no_s5(self) -> None:
+        template = json.loads((HERE.parent.parent / "docs" / "agent-playbooks" / "templates" / "release-readiness.json").read_text())
+        data = rr.build_from_template(template, release="x", repo="ripple-suite", branch=REF, base="origin/main", pr_numbers_=[], issue="1",
+                                      serving_commit="", approval="", github_repo=None, suite_commands=None, e2e_commands=[],
+                                      e2e_exception="not user-facing: x", fix_paths=None, na={}, route="staging-first")
+        self.assertNotIn("S5", [i["id"] for i in data["items"]])
+
+    def test_the_report_lists_s5(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="sd-report-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        data = self.build("ripple")
+        path = tmp / "r.json"
+        rr.save(path, data)
+        out: list[str] = []
+        with mock_patch(sd.Deployer, "status", lambda self, run=None: {"result": "", "state": "none"}):
+            sd.report(path, out.append)
+        self.assertTrue(any(line.strip().startswith("S5 ") for line in out), out)
+
+
 class ReportAndCliTests(Quiet):
     def test_report_without_a_staging_section_says_gates_are_mac_gates(self) -> None:
         path = self.tmp / "r.json"
@@ -782,6 +1170,133 @@ class ReportAndCliTests(Quiet):
             code = sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A], out=out.append, shell=good_box())
         self.assertEqual(code, 0, out)
         self.assertTrue(any(l.startswith("DEPLOYED:") for l in out))
+
+
+class LeaseTests(Quiet):
+    """The Ripple staging lease from the PC side (issue #371). The box answers are faked; the box rules are in test_staging_remote."""
+
+    @staticmethod
+    def remote(call: dict) -> list[str]:
+        import shlex
+        return shlex.split(call["argv"][-1].split("exec ", 1)[1])
+
+    def test_lease_sends_the_values_to_the_box_quoted_and_prints_its_answer(self) -> None:
+        box = FakeBox()
+        box.reply("lease", 0, "LEASE taken: helmi for release/1724-x until 2026-10-13T15:00:00+0800, 60 min left: QA of 1724")
+        out: list[str] = []
+        code = sd.main(["lease", "ripple", "--holder", "helmi", "--purpose", "QA of 1724", "--minutes", "60",
+                        "--branch", "release/1724-x"], out=out.append, shell=box)
+        self.assertEqual(code, 0, out)
+        self.assertIn("LEASE taken: helmi", out[0])
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[2:5], ["remote", "ripple", "lease"])
+        for flag, value in (("--holder", "helmi"), ("--purpose", "QA of 1724"), ("--minutes", "60"), ("--branch", "release/1724-x")):
+            self.assertEqual(argv[argv.index(flag) + 1], value)
+        self.assertEqual(box.ssh_calls()[0]["argv"][-2], "staging")
+
+    def test_bad_lease_values_are_refused_before_ssh(self) -> None:
+        for extra in (["--purpose", "x state=none", "--minutes", "30"], ["--purpose", "ok purpose", "--minutes", "0"],
+                      ["--purpose", "ok purpose", "--minutes", "721"], ["--purpose", 'say "hi"', "--minutes", "5"],
+                      ["--purpose", "ok purpose", "--minutes", "5", "--branch", "a;id"]):
+            box = FakeBox()
+            out: list[str] = []
+            code = sd.main(["lease", "ripple", "--holder", "helmi", *extra], out=out.append, shell=box)
+            self.assertEqual(code, 2, extra)
+            self.assertTrue(out[0].startswith("REFUSED"), extra)
+            self.assertEqual(box.ssh_calls(), [], extra)
+        box = FakeBox()
+        self.assertEqual(sd.main(["lease", "ripple", "--holder", "a b", "--purpose", "ok", "--minutes", "5"],
+                                 out=lambda s: None, shell=box), 2)
+        self.assertEqual(box.ssh_calls(), [])
+
+    def test_the_lease_is_ripple_only_and_needs_holder_purpose_and_minutes(self) -> None:
+        for argv in (["lease", "sims", "--holder", "a", "--purpose", "abc", "--minutes", "5"],
+                     ["lease", "ripple", "--purpose", "abc", "--minutes", "5"], ["lease", "ripple", "--holder", "a", "--minutes", "5"],
+                     ["lease", "ripple", "--holder", "a", "--purpose", "abc"], ["release-lease", "sims"]):
+            with self.assertRaises(SystemExit):
+                sd.main(argv, out=lambda s: None, shell=FakeBox())
+
+    def test_a_lease_refused_by_the_box_exits_2_with_the_reason(self) -> None:
+        box = FakeBox()
+        box.reply("lease", 2, "REFUSED: Ripple staging is already leased to helmi until 2026-10-13T15:00:00+0800")
+        out: list[str] = []
+        code = sd.main(["lease", "ripple", "--holder", "hafiz", "--purpose", "CRM release 2", "--minutes", "30"], out=out.append, shell=box)
+        self.assertEqual(code, 2)
+        self.assertIn("already leased to helmi", out[0])
+
+    def test_release_lease_calls_the_box_with_the_releaser(self) -> None:
+        box = FakeBox()
+        box.reply("release", 0, "LEASE released (was held by helmi until 2026-10-13T15:00:00+0800: QA)")
+        out: list[str] = []
+        self.assertEqual(sd.main(["release-lease", "ripple", "--holder", "hafiz"], out=out.append, shell=box), 0)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[2:5], ["remote", "ripple", "release-lease"])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertIn("LEASE released", out[0])
+
+    def test_check_and_deploy_send_the_holder_and_the_override_reason(self) -> None:
+        box = good_box()
+        out: list[str] = []
+        code = sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease",
+                        "Helmi agreed in chat 13/10"], out=out.append, shell=box)
+        self.assertEqual(code, 0, out)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertEqual(argv[argv.index("--override-lease") + 1], "Helmi agreed in chat 13/10")
+        box = good_box()
+        sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, "--actor", "pc-cli"], out=lambda s: None, shell=box)
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "pc-cli")
+        self.assertNotIn("--override-lease", argv)
+
+    def test_the_deploy_run_record_prints_the_override(self) -> None:
+        out: list[str] = []
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            code = sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease",
+                            "Helmi agreed in chat 13/10"], out=out.append, shell=good_box())
+        self.assertEqual(code, 0, out)
+        self.assertTrue(any("lease override given by hafiz: Helmi agreed in chat 13/10" in l for l in out), out)
+        box = good_box()
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz", "--override-lease", "agreed"],
+                    out=lambda s: None, shell=box)
+        verbs_with_override = [re.search(r"remote ripple (\w+)", c["argv"][-1]).group(1) for c in box.ssh_calls()
+                               if "--override-lease" in c["argv"][-1]]
+        self.assertEqual(verbs_with_override, ["check", "start"])
+
+    def test_a_deploy_refused_for_someone_elses_lease_never_starts(self) -> None:
+        box = good_box()
+        box.verbs["check"] = [(2, "REFUSED: Ripple staging is leased to helmi for release/1724-x until 2026-10-13T15:00:00+0800")]
+        out: list[str] = []
+        with mock_patch(sd, "POLL_SECONDS", 0):
+            code = sd.main(["deploy", "ripple", "--ref", REF, "--sha", SHA_A, "--holder", "hafiz"], out=out.append, shell=box)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("leased to helmi" in l for l in out), out)
+        self.assertEqual([c for c in box.ssh_calls() if "remote ripple start" in c["argv"][-1]], [])
+
+    def test_a_bad_override_reason_or_holder_is_refused_before_ssh(self) -> None:
+        for extra in (["--override-lease", "x=y"], ["--override-lease", "no"], ["--holder", "a b"]):
+            box = good_box()
+            out: list[str] = []
+            code = sd.main(["check", "ripple", "--ref", REF, "--sha", SHA_A, *extra], out=out.append, shell=box)
+            self.assertEqual(code, 2, extra)
+            self.assertEqual(box.ssh_calls(), [], extra)
+
+    def test_the_loop_deploys_under_the_lease_holder_named_in_the_readiness_file(self) -> None:
+        box = good_box()
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        ctx = FakeCtx(staging_data(lease_holder="hafiz"), box, self.tmp)
+        self.assertTrue(sd.check_candidate({}, ctx)["ok"])
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "hafiz")
+        self.assertNotIn("--override-lease", argv)
+        box = good_box()
+        box.when("ls-remote", out=f"{SHA_A}\trefs/heads/{REF}\n")
+        sd.check_candidate({}, FakeCtx(staging_data(), box, self.tmp))
+        argv = self.remote(box.ssh_calls()[0])
+        self.assertEqual(argv[argv.index("--holder") + 1], "pc-loop")
+        self.assertTrue(sd.validate_staging(staging_data(lease_holder="a b")))
+        self.assertEqual(sd.validate_staging(staging_data(lease_holder="hafiz")), [])
 
 
 class RemoteSourceTests(unittest.TestCase):

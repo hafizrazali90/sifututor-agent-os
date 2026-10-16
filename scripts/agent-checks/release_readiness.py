@@ -815,6 +815,7 @@ CHECKS: dict[str, Callable[[dict[str, Any], CheckContext], dict[str, Any]]] = {
     "staging_deployed": _staging_check("check_deployed"),
     "staging_smoke": _staging_check("check_smoke"),
     "patch_equivalent": _staging_check("check_patch_equivalent"),
+    "analytics_contract": _staging_check("check_analytics_contract"),
     "file_contains": check_file_contains,
     "verdict_file": check_verdict_file,
     "commands_exit_zero": check_commands_exit_zero,
@@ -884,7 +885,13 @@ def build_from_template(template: dict[str, Any], *, release: str, repo: str, br
         if staging["target"] == "sims":
             replacements["S4"] = replacements.pop("S4_sims")
         replacements.pop("S4_sims", None)
+        contract = replacements.pop("S5", None)
         items = [replacements.get(i["id"], i) for i in items]
+        if contract:  # S5 is new, not a replacement: it goes after S4 (and waits for S4 too for SIMS)
+            if staging["target"] == "sims":
+                contract["depends_on"] = [*contract.get("depends_on", []), "S4"]
+            after = next((n for n, i in enumerate(items) if i["id"] == "S4"), len(items) - 1)
+            items.insert(after + 1, contract)
     for item in items:
         item.setdefault("evidence", [])
         item.setdefault("depends_on", [])
@@ -993,7 +1000,8 @@ def main(argv: list[str] | None = None, out: Callable[[str], None] = print) -> i
     p.add_argument("--fix-path", action="append"); p.add_argument("--na", action="append", default=[],
                                                                   help="ITEM=reason, mark an item not applicable")
     p.add_argument("--staging-deploy", choices=("ripple", "sims"),
-                   help="let the PC deploy STAGING for this release (never production): S1 to S3 become PC items")
+                   help="let the PC deploy STAGING for this release (never production): S1 to S3 become PC items and "
+                        "S5 (analytics contract) is added")
     p.add_argument("--staging-ref", default="", help="the staging candidate branch (default: the release branch)")
     p.add_argument("--staging-mode", default="normal", choices=("normal", "redeploy-served"))
     p.add_argument("--staging-commit", default="", help="pin the candidate commit (needed for redeploy-served)")

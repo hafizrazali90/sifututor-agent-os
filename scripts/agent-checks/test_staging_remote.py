@@ -516,9 +516,41 @@ class RippleRunTests(Quiet):
         s.when("rev-parse", "HEAD", out=SHA_A + "\n")
         s.files["/var/log/apps/ripple-suite-staging-deploy.log"] = f"Deploy complete: staging {SHA_A} (release:{REF})\n"
         self.assertEqual(sr.main(argv[2:], s, lambda line: None), 0)
-        self.assertEqual(s.bounded[0][-5:], ["staging", "--release-ref", REF, "--commit", SHA_A])
+        self.assertEqual(s.bounded[0][-7:], ["staging", "--release-ref", REF, "--commit", SHA_A, "--lease-holder", "pc-loop"])
         state = json.loads(s.files[next(p for p in s.files if p.endswith("state.json"))])
         self.assertEqual(state["status"], "ok")
+
+    def run_started(self, holder: str = "", override: str = "") -> list[str]:
+        """Start a run, then play the runner it spawned; return the controller command the runner used."""
+        s = ripple_box()
+        sr.RippleRemote(s, "pc-cli", "manual", holder, override).start(REF, SHA_A, "normal", "")
+        argv = s.spawned[0][0]
+        s.held.add(BASE + "/.pc-staging-release.lock")
+        s.when("pm2", "jlist", out=JLIST.replace(SERVED, SHA_A))
+        s.when("rev-parse", "HEAD", out=SHA_A + "\n")
+        s.files["/var/log/apps/ripple-suite-staging-deploy.log"] = f"Deploy complete: staging {SHA_A} (release:{REF})\n"
+        self.assertEqual(sr.main(argv[2:], s, lambda line: None), 0)
+        return s.bounded[0]
+
+    def test_the_controller_gets_the_lease_holder_that_start_checked(self) -> None:
+        argv = self.run_started(holder="hafiz")
+        self.assertEqual(argv[-2:], ["--lease-holder", "hafiz"])
+        self.assertNotIn("--override-lease", argv)
+        self.assertEqual(self.run_started()[-2:], ["--lease-holder", "pc-cli"], "the holder defaults to the actor")
+
+    def test_the_controller_gets_the_override_reason_when_one_was_given(self) -> None:
+        reason = "Helmi agreed in chat 13/10 14:05, his QA is done"
+        argv = self.run_started(holder="hafiz", override=reason)
+        self.assertEqual(argv[-4:], ["--lease-holder", "hafiz", "--override-lease", reason])
+
+    def test_a_runner_with_a_bad_holder_or_reason_starts_no_controller(self) -> None:
+        for extra in (["--holder", "bad name"], ["--override-lease", "reason=with equals"]):
+            s = ripple_box()
+            s.held.add(BASE + "/.pc-staging-release.lock")
+            code = sr.main(["remote", "ripple", "_run", "20261009T053000Z-aaaaaaaa", REF, SHA_A, "normal", "--lock-fd", "9",
+                            *extra], s, lambda line: None)
+            self.assertEqual(code, 2)
+            self.assertEqual(s.bounded, [])
 
     def test_start_refuses_when_the_wrapper_lock_is_taken(self) -> None:
         s = ripple_box()
@@ -546,7 +578,7 @@ class RippleRunTests(Quiet):
         box.run_body("20261009T053000Z-aaaaaaaa", REF, SHA_A, "normal", "", 9)
         argv = s.bounded[0]
         self.assertEqual(argv, ["sudo", "-n", "-u", "deploy", "/usr/local/bin/deploy-ripple-suite", "staging", "--release-ref", REF,
-                                "--commit", SHA_A])
+                                "--commit", SHA_A, "--lease-holder", "pc-loop"])
         joined = " ".join(argv)
         for word in ("prod", "--replace-serving", "--code-only", "--runtime-refresh", "--staging-main-commit", "CONFIRM"):
             self.assertNotIn(word, joined)
@@ -918,6 +950,17 @@ class SimsRunTests(Quiet):
         box.run_body(self.RUN, SIMS_REF, sha, mode, "", 9)
         return json.loads(s.files[box.run_dir(self.RUN) + "/state.json"])
 
+    def test_a_sims_run_never_passes_a_lease_holder_or_override_to_any_command(self) -> None:
+        s = SimsBox()
+        s.held.add(sr.SimsRemote.own_lock)
+        box = sr.SimsRemote(s, "pc-loop", "rel-1", "hafiz", "agreed with Helmi")
+        box.write_state(self.RUN, run=self.RUN)
+        box.run_body(self.RUN, SIMS_REF, SHA_A, "normal", "", 9)
+        self.assertTrue(s.calls)
+        for word in ("--lease-holder", "--override-lease", "agreed with Helmi"):
+            self.assertEqual(s.ran(word), [])
+            self.assertFalse(any(word in " ".join(c) for c in s.bounded))
+
     def test_a_code_only_deploy_follows_the_runbook_in_order_and_never_migrates(self) -> None:
         s = SimsBox()
         state = self.run_deploy(s)
@@ -1072,9 +1115,11 @@ class SimsRunTests(Quiet):
 
     def test_sims_start_spawns_a_detached_runner(self) -> None:
         s = SimsBox()
-        lines = sr.SimsRemote(s, "pc-loop", "rel-1").start(SIMS_REF, SHA_A, "normal", "")
+        lines = sr.SimsRemote(s, "pc-loop", "rel-1", "hafiz", "agreed with Helmi").start(SIMS_REF, SHA_A, "normal", "")
         self.assertTrue(lines[0].startswith("STARTED run="))
         self.assertEqual(s.spawned[0][2], 9)
+        # SIMS has no lease: neither the runner nor any command it builds carries a lease holder or override.
+        self.assertFalse({"--holder", "--lease-holder", "--override-lease"} & set(s.spawned[0][0]))
 
     def test_sims_verify_reads_head_pending_login_and_worker(self) -> None:
         s = SimsBox(sha=CUR)
@@ -1289,6 +1334,309 @@ class SimsScratchFixtureTests(Quiet):
         self.assertIsNone(s.take_lock(lock), "a second holder is refused")
         os.close(fd)
         self.assertFalse(s.lock_held(lock))
+
+
+# ------------------------------------------------- schema read (gate S5) ----
+
+import re  # noqa: E402
+
+WRITE_WORDS = re.compile(r"(?i)\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|rename|replace|lock|set|copy|"
+                         r"call|do|vacuum|reindex|migrate|checkout|fetch|backup)\b")
+
+
+def only_select(sql: str) -> bool:
+    return sql.lstrip().upper().startswith("SELECT ") and not WRITE_WORDS.search(sql) and ";" not in sql.rstrip(";")
+
+
+class SchemaReadTests(Quiet):
+    """Gate S5 reads the column list of the copied tables on staging, read-only, and nothing else."""
+
+    def ripple(self) -> FakeSys:
+        s = FakeSys("srv1297548")
+        s.when("psql", out="accounts_cx_requests\tid\tbigint\naccounts_cx_requests\tnote\tcharacter varying(1000)\n"
+                           "crm_leads\tid\tinteger\n")
+        return s
+
+    def sims(self) -> SimsBox:
+        s = SimsBox()
+        s.when("tinker", "information_schema", out="Psy Shell\n" + json.dumps(
+            [["alert_templates", "id", "bigint unsigned"], ["alert_templates", "type", "enum('sms','notification','whatsapp')"]]) + "\n")
+        return s
+
+    def test_ripple_reads_the_staging_database_as_postgres_in_a_read_only_session(self) -> None:
+        s = self.ripple()
+        lines = sr.RippleRemote(s, "tester", "rel-1").read_schema(["accounts_cx_requests", "crm_leads"])
+        self.assertEqual(len(s.calls), 1)
+        argv = s.calls[0]
+        self.assertEqual(argv[:4], ["runuser", "-u", "postgres", "--"])
+        self.assertIn("ripple_suite_staging", argv)
+        self.assertEqual(argv[argv.index("-d") + 1], "ripple_suite_staging")
+        self.assertIn("default_transaction_read_only=on", " ".join(argv))
+        self.assertNotIn("prod", " ".join(argv))
+        sql = argv[argv.index("-c") + 1]
+        self.assertTrue(only_select(sql), sql)
+        self.assertIn("'accounts_cx_requests', 'crm_leads'", sql)
+        self.assertIn("format_type(a.atttypid, a.atttypmod)", sql)
+        rows = json.loads(lines[0].removeprefix("SCHEMA "))
+        self.assertEqual(rows[1], ["accounts_cx_requests", "note", "character varying(1000)"])
+        self.assertIn("SCHEMA OK tables=2 columns=3", lines[-1])
+
+    def test_sims_reads_information_schema_through_the_app_account_after_proving_staging(self) -> None:
+        s = self.sims()
+        lines = sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+        self.assertTrue(s.ran("artisan", "env"))
+        tinker = s.ran("tinker", "information_schema")
+        self.assertEqual(len(tinker), 1)
+        self.assertTrue(as_app_owner(tinker[0]), tinker[0])
+        php = next(a for a in tinker[0] if a.startswith("--execute="))
+        sql = re.search(r'DB::select\("([^"]+)"\)', php).group(1)
+        self.assertTrue(only_select(sql), sql)
+        self.assertIn("TABLE_SCHEMA = DATABASE()", sql)
+        self.assertIn("IN ('alert_templates')", sql)
+        rows = json.loads(lines[0].removeprefix("SCHEMA "))
+        self.assertEqual(rows[1][2], "enum('sms','notification','whatsapp')")
+
+    def test_the_schema_read_never_runs_a_write_or_a_deploy_step(self) -> None:
+        for s, box in ((self.ripple(), sr.RippleRemote), (self.sims(), sr.SimsRemote)):
+            files_before = dict(s.files)
+            box(s, "tester", "rel-1").read_schema(["accounts_cx_requests"])
+            for argv in s.calls:
+                line = " ".join(argv)
+                self.assertTrue(line.startswith(("runuser -u postgres -- env PGOPTIONS=", "runuser -u www-data -- php artisan env",
+                                                 "runuser -u www-data -- php artisan tinker")), line)
+                for word in ("migrate", "checkout", "fetch", "db:backup", "install", "queue:restart", "deploy-ripple-suite", "pm2"):
+                    self.assertNotIn(word, line)
+            self.assertEqual(s.files, files_before, "nothing is written on the box")
+            self.assertEqual((s.spawned, s.bounded), ([], []))
+
+    def test_a_bad_or_missing_table_name_is_refused_before_any_command(self) -> None:
+        for tables in ([], ["users; drop table x"], ["Users"], ["a" * 80], ["x'y"]):
+            s = self.ripple()
+            with self.assertRaises(sr.Refused):
+                sr.RippleRemote(s, "tester", "rel-1").read_schema(tables)
+            self.assertEqual(s.calls, [], tables)
+
+    def test_the_wrong_box_is_refused(self) -> None:
+        s = self.ripple()
+        s.host = "srv1701812"
+        with self.assertRaises(sr.Refused):
+            sr.RippleRemote(s, "tester", "rel-1").read_schema(["crm_leads"])
+        self.assertEqual(s.calls, [])
+
+    def test_sims_refuses_when_the_application_is_not_staging(self) -> None:
+        s = self.sims()
+        s.when("artisan env", out="INFO The application environment is [production].\n")
+        with self.assertRaises(sr.Refused) as ctx:
+            sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+        self.assertIn("not staging", str(ctx.exception))
+        self.assertEqual(s.ran("tinker"), [])
+
+    def test_a_failed_or_unreadable_read_is_a_refusal_not_an_empty_list(self) -> None:
+        s = self.ripple()
+        s.when("psql", rc=2, out="psql: error: connection failed")
+        with self.assertRaises(sr.Refused):
+            sr.RippleRemote(s, "tester", "rel-1").read_schema(["crm_leads"])
+        s = self.sims()
+        s.when("tinker", "information_schema", out="PHP Fatal error")
+        with self.assertRaises(sr.Refused):
+            sr.SimsRemote(s, "tester", "rel-1").read_schema(["alert_templates"])
+
+    def test_schema_through_the_command_line(self) -> None:
+        out: list[str] = []
+        code = sr.main(["remote", "ripple", "schema", "crm_leads", "accounts_cx_requests"], self.ripple(), out.append)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out[0].startswith("SCHEMA ["))
+        code = sr.main(["remote", "ripple", "schema", "bad;name"], self.ripple(), out.append)
+        self.assertEqual(code, 2)
+
+
+# ---------------------------------------------------- staging lease (#371) ----
+
+LEASE = BASE + "/.staging-lease.json"
+
+
+class RippleLeaseTests(Quiet):
+    """The Ripple staging lease: who holds the shared box, until when. Negative controls: a deploy over someone else's
+    unexpired lease without an override, an override that is not recorded, and a lease line that could fake a status."""
+
+    def take(self, s: FakeSys, holder: str = "helmi", minutes: int = 60, branch: str = "release/1724-x",
+             purpose: str = "QA of the 1724 worklist") -> list[str]:
+        return sr.RippleRemote(s, "pc-cli", "manual", holder).take_lease(branch, purpose, minutes)
+
+    def check(self, s: FakeSys, holder: str = "hafiz", override: str = "") -> list[str]:
+        return sr.RippleRemote(s, "pc-cli", "manual", holder, override).check(REF, SHA_A, "normal", "")
+
+    def test_taking_the_lease_writes_holder_branch_purpose_and_expiry_in_myt(self) -> None:
+        s = ripple_box()
+        lines = self.take(s, minutes=90)
+        lease = json.loads(s.files[LEASE])
+        self.assertEqual((lease["holder"], lease["branch"], lease["purpose"]), ("helmi", "release/1724-x", "QA of the 1724 worklist"))
+        self.assertEqual(lease["expires_at"], "2026-10-09T15:00:00+0800")
+        self.assertEqual(lease["taken_at"], "2026-10-09T13:30:00+0800")
+        self.assertIn("LEASE taken: helmi for release/1724-x until 2026-10-09T15:00:00+0800, 90 min left", lines[0])
+        self.assertTrue(any("LEASE_TAKEN holder=helmi" in l and "ts_myt=" in l for l in s.logged))
+        self.assertNotIn(LEASE, [BASE + "/" + n for n in s.listing[BASE] if n.endswith(".lock")])
+
+    def test_the_same_holder_extends_and_keeps_the_start_time(self) -> None:
+        s = ripple_box()
+        self.take(s, minutes=30)
+        s.moment += dt.timedelta(minutes=20)
+        lines = self.take(s, minutes=60)
+        lease = json.loads(s.files[LEASE])
+        self.assertIn("LEASE extended", lines[0])
+        self.assertEqual(lease["taken_at"], "2026-10-09T13:30:00+0800")
+        self.assertEqual(lease["expires_at"], "2026-10-09T14:50:00+0800")
+
+    def test_someone_else_cannot_take_an_active_lease_but_can_take_an_expired_one(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="helmi", minutes=30)
+        with self.assertRaises(sr.Refused) as ctx:
+            self.take(s, holder="hafiz")
+        self.assertIn("already leased to helmi", str(ctx.exception))
+        self.assertEqual(json.loads(s.files[LEASE])["holder"], "helmi")
+        s.moment += dt.timedelta(minutes=31)
+        self.take(s, holder="hafiz")
+        self.assertEqual(json.loads(s.files[LEASE])["holder"], "hafiz")
+
+    def test_check_refuses_while_someone_else_holds_an_unexpired_lease_and_names_them(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="helmi")
+        with self.assertRaises(sr.Refused) as ctx:
+            self.check(s, holder="hafiz")
+        text = str(ctx.exception)
+        for word in ("leased to helmi", "release/1724-x", "QA of the 1724 worklist", "--override-lease"):
+            self.assertIn(word, text)
+        self.assertEqual(s.ran("ls-remote"), [], "nothing is fetched once the lease refuses")
+
+    def test_start_refuses_too_and_spawns_nothing(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="helmi")
+        with self.assertRaises(sr.Refused):
+            sr.RippleRemote(s, "pc-cli", "manual", "hafiz").start(REF, SHA_A, "normal", "")
+        self.assertEqual(s.spawned, [])
+
+    def test_the_holder_itself_and_anyone_after_expiry_may_deploy(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="hafiz")
+        self.assertIn("lease held by hafiz until 2026-10-09T14:30:00+0800", self.check(s, holder="hafiz")[0])
+        s.moment += dt.timedelta(minutes=61)
+        self.assertIn("lease free", self.check(s, holder="helmi")[0])
+        self.assertIn("lease free", self.check(ripple_box(), holder="helmi")[0])
+
+    def test_the_holder_defaults_to_the_actor(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="pc-loop")
+        self.assertIn("CHECK OK", sr.RippleRemote(s, "pc-loop", "rel-1").check(REF, SHA_A, "normal", "")[0])
+
+    def test_an_override_deploys_and_is_recorded_in_the_log_the_answer_and_the_run_state(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="helmi")
+        reason = "Helmi agreed in chat 13/10 14:05, his QA is done"
+        line = self.check(s, holder="hafiz", override=reason)[0]
+        self.assertIn("CHECK OK", line)
+        self.assertIn(f"LEASE OVERRIDE of helmi's lease by hafiz: {reason}", line)
+        self.assertTrue(any("LEASE_OVERRIDE holder=hafiz lease_holder=helmi" in l and reason in l for l in s.logged))
+        lines = sr.RippleRemote(s, "pc-cli", "manual", "hafiz", reason).start(REF, SHA_A, "normal", "")
+        self.assertTrue(lines[0].startswith("STARTED run="))
+        self.assertIn(reason, lines[1])
+        runid = lines[0].split("run=")[1].split()[0]
+        box = sr.RippleRemote(s)
+        state = json.loads(s.files[box.run_dir(runid) + "/state.json"])
+        self.assertIn(reason, state["lease_override"])
+        self.assertEqual(state["holder"], "hafiz")
+        self.assertIn(reason, "\n".join(box.status_lines(runid)))
+
+    def test_a_run_without_an_override_records_none(self) -> None:
+        s = ripple_box()
+        lines = sr.RippleRemote(s, "pc-cli", "manual", "hafiz").start(REF, SHA_A, "normal", "")
+        self.assertEqual(len(lines), 1)
+        state = json.loads(s.files[next(p for p in s.files if p.endswith("state.json"))])
+        self.assertEqual(state["lease_override"], "")
+
+    def test_status_shows_the_lease_after_the_run_line(self) -> None:
+        s = ripple_box()
+        box = sr.RippleRemote(s)
+        self.assertEqual(box.status_lines(None), ["state=none (no PC staging deploy has run on this box)",
+                                                  "LEASE none: Ripple staging is free"])
+        self.take(s, holder="helmi")
+        self.assertIn("LEASE held by helmi for release/1724-x", box.status_lines(None)[1])
+        s.moment += dt.timedelta(hours=2)
+        self.assertIn("LEASE expired (was held by helmi", box.status_lines(None)[1])
+        runid = "20261009T053000Z-aaaaaaaa"
+        s.listing[sr.STATE_DIR + "/runs"] = [f"ripple-{runid}"]
+        box.write_state(runid, run=runid, state="finished", step="verify")
+        lines = box.status_lines(None)
+        self.assertTrue(lines[0].startswith(f"run={runid} state=finished"))
+        self.assertTrue(lines[1].startswith("LEASE "))
+
+    def test_lease_values_are_checked_and_cannot_fake_a_status_field(self) -> None:
+        s = ripple_box()
+        for kw in ({"purpose": "x state=none"}, {"purpose": "run=1 state=finished"}, {"purpose": 'say "hi"'},
+                   {"purpose": "ab"}, {"purpose": "p" * 161}, {"purpose": "line\nbreak"}, {"minutes": 0},
+                   {"minutes": 721}, {"holder": "a b"}, {"holder": "-x"}, {"branch": "x;id"}, {"branch": "a b"}):
+            with self.assertRaises(sr.Refused, msg=str(kw)):
+                self.take(s, **kw)
+        self.assertNotIn(LEASE, s.files)
+        with self.assertRaises(sr.Refused):
+            self.check(s, override="reason=with equals")
+        with self.assertRaises(sr.Refused):
+            self.check(s, holder="bad name")
+
+    def test_an_unreadable_lease_fails_closed_and_release_clears_it(self) -> None:
+        s = ripple_box()
+        s.files[LEASE] = "{not json"
+        with self.assertRaises(sr.Refused) as ctx:
+            self.check(s, holder="hafiz")
+        self.assertIn("unreadable", str(ctx.exception))
+        with self.assertRaises(sr.Refused):
+            self.check(s, holder="unknown")
+        with self.assertRaises(sr.Refused):
+            self.take(s, holder="hafiz")
+        self.assertIn("LEASE released", sr.RippleRemote(s, "pc-cli").release_lease()[0])
+        self.assertNotIn(LEASE, s.files)
+        self.assertIn("lease free", self.check(s)[0])
+
+    def test_release_removes_the_lease_and_logs_who_released_whose(self) -> None:
+        s = ripple_box()
+        self.take(s, holder="helmi")
+        lines = sr.RippleRemote(s, "pc-cli", "manual", "hafiz").release_lease()
+        self.assertIn("LEASE released (was held by helmi", lines[0])
+        self.assertNotIn(LEASE, s.files)
+        self.assertTrue(any("LEASE_RELEASED by=hafiz lease_holder=helmi" in l for l in s.logged))
+        self.assertEqual(sr.RippleRemote(s).release_lease(), ["LEASE none: nothing to release"])
+
+    def test_the_lease_needs_the_ripple_staging_box(self) -> None:
+        s = ripple_box()
+        s.host = "srv1701812"
+        with self.assertRaises(sr.Refused):
+            self.take(s)
+        sims = SimsBox()
+        with self.assertRaises(sr.Refused) as ctx:
+            sr.SimsRemote(sims, "pc-cli", "manual", "hafiz").take_lease("", "QA of something", 30)
+        self.assertIn("ripple only", str(ctx.exception))
+        self.assertEqual(sr.SimsRemote(sims).lease_lines(), [])
+
+    def test_lease_and_release_through_the_command_line(self) -> None:
+        s = ripple_box()
+        out: list[str] = []
+        code = sr.main(["remote", "ripple", "lease", "--holder", "helmi", "--purpose", "QA of 1724", "--minutes", "45",
+                        "--branch", "release/1724-x"], s, out.append)
+        self.assertEqual(code, 0, out)
+        self.assertIn("LEASE taken: helmi", out[0])
+        out.clear()
+        code = sr.main(["remote", "ripple", "check", REF, SHA_A, "--holder", "hafiz"], s, out.append)
+        self.assertEqual(code, 2)
+        self.assertIn("leased to helmi", out[0])
+        out.clear()
+        code = sr.main(["remote", "ripple", "check", REF, SHA_A, "--holder", "hafiz", "--override-lease", "agreed with Helmi"],
+                       s, out.append)
+        self.assertEqual(code, 0, out)
+        self.assertIn("LEASE OVERRIDE", out[0])
+        out.clear()
+        self.assertEqual(sr.main(["remote", "ripple", "release-lease", "--holder", "helmi"], s, out.append), 0)
+        self.assertIn("LEASE released", out[0])
+        self.assertEqual(sr.main(["remote", "ripple", "lease", "extra", "--holder", "a", "--purpose", "abc", "--minutes", "5"],
+                                 s, out.append), 2)
 
 
 if __name__ == "__main__":

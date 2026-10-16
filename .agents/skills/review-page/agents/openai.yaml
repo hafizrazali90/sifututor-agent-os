@@ -1,0 +1,7 @@
+interface:
+  display_name: "Review Page"
+  short_description: "Make the plan or ship review page for Hafiz"
+  default_prompt: "Use $review-page plan or ship with the project to make the review page Hafiz reads before coding or before deploy."
+
+policy:
+  allow_implicit_invocation: true

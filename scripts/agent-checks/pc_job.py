@@ -64,6 +64,11 @@ PROJECT_BUILDER_TOOLS = (
     # finch-inbox's backend specs run on Jest (F1b, 13 Oct 2026).
     "Bash(npx jest:*)",
     "Bash(npx eslint:*)", "Bash(npm run lint:*)",
+    "Bash(npm test:*)", "Bash(npm run validate:registry:*)",
+    "Bash(git mv:*)", "Bash(grep:*)", "Bash(sed:*)",
+    "Bash(python3 scripts/generate-ripple-registry.py:*)",
+    "Bash(python3 scripts/generate-extractor-registry.py:*)", "Bash(python3 scripts/generate-mcp-bundle-f.py:*)",
+    "Bash(python3 scripts/apply-staff-scopes.py:*)",
     f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
     # sifu-tutor: the PC has no PHP or MySQL; the repo's own script runs its
     # tests in Docker containers (issue #364).

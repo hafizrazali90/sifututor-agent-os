@@ -74,11 +74,13 @@ plugins/*
 !.claude/commands/
 .claude/commands/*
 !.claude/commands/monitor-production-logs.md
+!.claude/commands/review-page.md
 !.claude/commands/skills.md
 !.claude/hooks/
 .claude/hooks/*
 !.claude/hooks/*.py
 !.claude/hooks/*.sh
+!.claude/hooks/*.cjs
 !.claude/hooks/*.ps1
 .mcp.json
 .pytest_cache/
