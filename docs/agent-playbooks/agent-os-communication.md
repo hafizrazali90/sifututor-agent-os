@@ -503,9 +503,9 @@ version on the first draft rather than waiting for Hafiz to ask how to use it
 or what the requirements are.
 
 Example with supplied, verified conditions: "Close Won updates automatically
-when a tutor is assigned and either the commitment fee is paid or waived, or
-the first invoice is paid." A reply about cancellation should also name the
-appropriate screen/action before and after Request creation. This example
+when a tutor is assigned and at least one of these is true: the commitment fee
+is paid or waived; the first invoice is paid." A reply about cancellation should
+also name the appropriate screen/action before and after Request creation. This example
 illustrates wording; the product's current business-rule owner defines the
 actual conditions.
 
