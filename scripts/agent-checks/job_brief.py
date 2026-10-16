@@ -38,7 +38,7 @@ REMOVED_CAP_KEYS = ("max_usd", "max_turns", "max_minutes")
 
 # Project repos a job may work in, as folder names under the umbrella checkout
 # on the PC. Missing `repo` means the umbrella (Agent OS) repo itself.
-PROJECT_REPOS = ("ripple-suite", "sims-owner-analytics")
+PROJECT_REPOS = ("ripple-suite", "finch-inbox", "sifu-tutor", "sims-owner-analytics")
 
 BRANCH_TYPES = ("feat", "feature", "fix", "refactor", "hotfix", "chore", "docs", "perf", "test", "ci")
 BRANCH_RE = re.compile(r"^(%s)/[a-z0-9][a-z0-9-]*$" % "|".join(BRANCH_TYPES))
