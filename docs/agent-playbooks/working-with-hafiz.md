@@ -651,7 +651,8 @@ requests, follow the copy-ready outbound-message rule in
 belongs in one plain-text fenced block with bare URLs; explanations stay
 outside it. Proactively draft when an outside person needs the outcome or next
 action, including completed access changes; drafting is not permission to send.
-Skip the draft when no outside audience needs it.
+Skip the draft when no outside audience needs it. Staff replies also follow
+[Staff Replies With Steps And Explicit Conditions](agent-os-communication.md#staff-replies-with-steps-and-explicit-conditions).
 
 Keep short answers short. The guidance below scales with the task and does not
 require headings or a lengthy template for trivial questions. Unresolved

@@ -483,6 +483,32 @@ If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
 format, use that requested format instead. The default remains copy-safe plain
 text.
 
+### Staff Replies With Steps And Explicit Conditions
+
+For non-technical staff, organise the reply around the questions they actually
+asked. Use familiar words and the exact visible screen/button labels. For each
+reported situation, explain what staff can do now with short steps such as
+`Lead → Update step → Not Interested`, and say what happens automatically.
+
+Spell out the verified business conditions that determine an automatic outcome.
+Phrases such as "when the success requirements are met" leave the staff's
+question unanswered. Preserve AND/OR alternatives and exceptions in plain
+language. If the conditions are unknown, check the relevant source before
+writing the reply or name the uncertainty; never invent them.
+
+Keep the release state and timing accurate, then include only the relevant
+case-specific action. Remove engineering mechanics and unrelated release detail
+without removing the instructions or conditions staff need. Provide this useful
+version on the first draft rather than waiting for Hafiz to ask how to use it
+or what the requirements are.
+
+Example with supplied, verified conditions: "Close Won updates automatically
+when a tutor is assigned and either the commitment fee is paid or waived, or
+the first invoice is paid." A reply about cancellation should also name the
+appropriate screen/action before and after Request creation. This example
+illustrates wording; the product's current business-rule owner defines the
+actual conditions.
+
 ### Proactive Drafts When Someone Needs The Outcome
 
 At a meaningful close-out, consider whether someone outside this chat is
