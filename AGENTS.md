@@ -60,8 +60,8 @@ modify.
   non-secret status field. Never capture a complete credential in a screenshot,
   accessibility tree, DOM dump, transcript, log, or memory.
 - Never push, open a PR, merge, deploy, release, or perform a destructive
-  action unless Hafiz explicitly includes that boundary in the current session.
-  Never bypass hooks or checks with `--no-verify` or equivalent.
+  action unless Hafiz explicitly includes that boundary in the current session
+  (a staging deploy needs no named boundary). Never bypass hooks or checks with `--no-verify` or equivalent.
 - Do not add adjacent cleanup, refactors, dependencies, or features outside the
   requested scope. New tasks discovered during work must be included explicitly
   or tracked for a later session.
@@ -180,7 +180,7 @@ under `scripts/agent-access/` cover production health, read-only databases,
 DNS, monitoring, backups, Planner, and other approved lanes.
 
 - **Auto-read:** use proactively when relevant.
-- **Write/Admin:** requires current-session scoped approval.
+- **Write/Admin:** requires current-session scoped approval, except on staging.
 - **Critical:** per-operation approval.
 - **Destructive:** explicit approval for the exact action.
 

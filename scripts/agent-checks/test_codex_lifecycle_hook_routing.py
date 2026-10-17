@@ -42,8 +42,14 @@ class CodexRoutingTest(unittest.TestCase):
 
     def assert_no_stop(self, prompt: str) -> None:
         out = self.text(prompt).lower()
-        self.assertNotIn("wait for approval", out, prompt)
-        self.assertNotIn("phase a", out, prompt)
+        for needle in ("wait for hafiz", "touches production", "phase a"):
+            self.assertNotIn(needle, out, f"{prompt!r} should not stop or bypass")
+
+    def assert_stops(self, prompt: str) -> None:
+        out = self.text(prompt).lower()
+        self.assertIn("touches production", out, f"{prompt!r} should stop")
+        self.assertIn("wait for hafiz", out, f"{prompt!r} should stop")
+        self.assertNotIn("without waiting for approval", out, f"{prompt!r} must not be treated as already approved")
 
     def test_word_author_does_not_trigger_the_stop(self) -> None:
         self.assert_no_stop("Review the author's update to the invoice page")
@@ -55,9 +61,7 @@ class CodexRoutingTest(unittest.TestCase):
         self.assert_no_stop("fix the payment rounding bug in the staging checkout")
 
     def test_production_fix_still_stops_for_approval(self) -> None:
-        out = self.text("fix the invoice calculation on production").lower()
-        self.assertIn("production", out)
-        self.assertIn("wait for", out)
+        self.assert_stops("fix the invoice calculation on production")
 
     def test_proceed_to_production_is_respected(self) -> None:
         self.assert_no_stop("fix the invoice bug on production, proceed until prod deploy, deploy ok")
@@ -70,12 +74,50 @@ class CodexRoutingTest(unittest.TestCase):
         self.assertNotIn("For critical lanes", self.text("why is the tutor page broken"))
 
     def test_diagnose_route_stops_for_production_trouble(self) -> None:
-        out = self.text("why is production broken after the release").lower()
-        self.assertIn("production", out)
-        self.assertIn("wait for", out)
+        self.assert_stops("why is production broken after the release")
 
     def test_diagnose_route_respects_proceed_on_production(self) -> None:
         self.assert_no_stop("why is production broken, proceed and fix it, deploy ok")
+
+    def test_do_not_proceed_still_stops(self) -> None:
+        self.assert_stops("do not proceed without asking me, fix the production invoice calculation")
+
+    def test_never_proceed_still_stops(self) -> None:
+        self.assert_stops("never proceed to production alone, fix the invoice bug on production")
+
+    def test_skip_the_tests_is_not_skip_the_stop(self) -> None:
+        self.assert_stops("fix the prod bug, skip the tests")
+
+    def test_pasted_cannot_proceed_error_does_not_approve(self) -> None:
+        self.assert_stops("fix production, the log says: cannot proceed")
+
+    def test_go_ahead_alone_does_not_approve_a_production_change(self) -> None:
+        self.assert_stops("go ahead and drop the table on production")
+
+    def test_other_names_for_production_stop(self) -> None:
+        for prompt in (
+            "fix the invoice bug on the live site",
+            "change the settings on the live server",
+            "update the real server config",
+        ):
+            self.assert_stops(prompt)
+
+    def test_destructive_or_data_actions_stop(self) -> None:
+        for prompt in (
+            "drop table tutors",
+            "delete the production backups",
+            "run the migration on production",
+            "force push to main",
+        ):
+            self.assert_stops(prompt)
+
+    def test_explicit_proceed_to_production_phrases_are_respected(self) -> None:
+        for prompt in (
+            "fix the invoice bug on production, proceed to production",
+            "fix the invoice bug on production, proceed until prod deploy",
+            "fix the invoice bug on production, deploy ok",
+        ):
+            self.assert_no_stop(prompt)
 
     def test_commit_follows_the_finish_line(self) -> None:
         out = self.text("commit these changes")

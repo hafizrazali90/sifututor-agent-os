@@ -839,11 +839,23 @@ def commit_prompt(normalized: str) -> bool:
     return any(re.search(pattern, normalized) for pattern in commit_patterns)
 
 
-PRODUCTION_WORDS = re.compile(r"\b(?:production|prod|live database|live data)\b")
-PROCEED_WORDS = re.compile(r"\b(?:proceed|skip|go ahead|deploy ok)\b")
+PRODUCTION_WORDS = re.compile(
+    r"\b(?:production|prod|live site|live server|live system|live database|live data|real server|customer data)\b"
+)
+DESTRUCTIVE_WORDS = re.compile(r"\b(?:drop table|drop database|truncate table|wipe|force push|reset --hard|rm -rf)\b")
+ACTION_WORDS = re.compile(
+    r"\b(?:fix|change|changed|update|modify|patch|implement|delete|drop|remove|run|restore|truncate|wipe|migrate)\b"
+)
+# Only an explicit sentence from Hafiz counts as "proceed"; a bare "proceed", "skip" or "go ahead" does not.
+PROCEED_WORDS = re.compile(
+    r"\b(?:deploy ok|go to production|proceed (?:to|until|through|up to) (?:the )?(?:prod|production|prod deploy|production deploy|live)"
+    r"|skip the (?:diagnosis |approval )?(?:stop|wait))\b"
+)
+NOT_PROCEED = re.compile(r"\b(?:do not|don't|dont|never|cannot|can't|not|without)\b[^.,;:]{0,40}\b(?:proceed|deploy ok|go to production|skip)\b")
 PRODUCTION_STOP = (
-    "This touches production. Do the read-only diagnosis first, then wait for Hafiz's approval "
-    "before changing anything in production, unless he has already said to proceed."
+    "This touches production or a destructive action. Do the read-only diagnosis first, then wait for "
+    "Hafiz's approval before changing anything, unless he has explicitly said to proceed to production "
+    "(that never covers a destructive action)."
 )
 PRODUCTION_PROCEED = (
     "Hafiz already said to proceed, so go through diagnosis and fix without waiting for approval. "
@@ -852,10 +864,12 @@ PRODUCTION_PROCEED = (
 
 
 def production_gate(normalized: str) -> list[str]:
-    """Stop lines for production work only, on whole words, unless Hafiz said to proceed."""
-    if not PRODUCTION_WORDS.search(normalized):
+    """Stop lines for production or destructive work, on whole words, unless Hafiz explicitly said to proceed."""
+    destructive = bool(DESTRUCTIVE_WORDS.search(normalized))
+    if not (destructive or PRODUCTION_WORDS.search(normalized)):
         return []
-    return [PRODUCTION_PROCEED if PROCEED_WORDS.search(normalized) else PRODUCTION_STOP]
+    approved = bool(PROCEED_WORDS.search(normalized)) and not NOT_PROCEED.search(normalized) and not destructive
+    return [PRODUCTION_PROCEED if approved else PRODUCTION_STOP]
 
 
 def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
@@ -1211,21 +1225,11 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for product design, PRD/UX/build prompts, or major workflow redesign.",
         )
 
-    critical_action_patterns = (
-        "fix",
-        "change",
-        "update",
-        "modify",
-        "patch",
-        "implement",
-        "response changed",
-        "contract changed",
-    )
-    if PRODUCTION_WORDS.search(normalized) and any(action in normalized for action in critical_action_patterns):
+    if (PRODUCTION_WORDS.search(normalized) and ACTION_WORDS.search(normalized)) or DESTRUCTIVE_WORDS.search(normalized):
         return (
             "$diagnose",
             ["Use $diagnose before editing.", *production_gate(normalized)],
-            "Prompt changes something in production.",
+            "Prompt changes something in production or is destructive.",
         )
 
     if any(word in normalized for word in ("quick check", "quick-check", "health check", "workflow doctor", "doctor", "wired correctly")):

@@ -45,8 +45,10 @@ only when something new changes scope, risk, evidence, access, or approval.
 ## Current Scope
 
 This relaxed model applies to all work, including product development. The
-risk boundaries in this playbook (separate approvals, critical lanes, secrets,
-destructive actions) are unchanged.
+separate approvals, secrets and destructive-action boundaries in this playbook
+are unchanged. Critical lanes are production-only (see
+[agent-os-workflow-lanes.md](agent-os-workflow-lanes.md)), and staging needs no
+approval unless it can reach real people or real money.
 
 ## Approval Modes
 
