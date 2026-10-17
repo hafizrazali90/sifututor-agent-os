@@ -2050,6 +2050,13 @@ def _rule_language_secret_file_print(ctx: _Ctx) -> str | None:
 _SESSION: dict[str, str] = {"id": ""}
 
 
+def _rule_note_folder(ctx: _Ctx) -> str | None:
+    texts = [word.text for word in ctx.cmd.words]
+    texts += [word.text for _op, word in ctx.cmd.redirs]
+    texts += [str(code[1]) for code in ctx.codes]
+    return risky_command_rules.note_folder_reason(texts)
+
+
 def _rule_destructive(ctx: _Ctx) -> str | None:
     return risky_command_rules.destructive_reason(ctx.exe, ctx.args)
 
@@ -2059,6 +2066,7 @@ def _rule_production(ctx: _Ctx) -> str | None:
 
 
 _RULES: tuple[tuple[str, Any], ...] = (
+    ("note-folder", _rule_note_folder),
     ("destructive", _rule_destructive),
     ("production", _rule_production),
     ("live-write", _rule_live_write),
@@ -2488,6 +2496,9 @@ def evaluate_tool_request(
             False,
             "Visual capture is blocked while a complete credential may be visible. Hide or leave the credential page before capturing it.",
         )
+    folder_reason = risky_command_rules.note_folder_reason_for_tool(tool_name, tool_input)
+    if folder_reason:
+        return Decision(False, folder_reason)
     # Direct editor contents are inert data, not shell invocations. Native
     # path permissions and the separate secret-artifact scan remain responsible
     # for writes. Execution wrappers retain command inspection.

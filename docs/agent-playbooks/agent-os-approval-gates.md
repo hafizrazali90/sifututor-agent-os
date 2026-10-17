@@ -282,9 +282,12 @@ runs before every shell command in Claude and Codex, including in bypass mode.
   until Hafiz has typed `deploy ok` in this session. The phrase counts only as
   the whole message or its last words, never after "not", "never" or "without".
   A prompt hook (`deploy_ok_note.py`) writes a note for that session under
-  `~/.agent-os/approvals/deploy-ok/`, valid for 12 hours. The agent cannot write
-  it, because the agent never types Hafiz's prompt. "Already told you to go to
-  production" in the other playbooks means this typed phrase.
+  `~/.agent-os/approvals/deploy-ok/`, valid for 12 hours. The agent never types
+  Hafiz's prompt, and the guard also refuses any command or file tool that
+  touches that folder, so an agent cannot write its own note. This stops
+  mistakes and confused instructions. It is not a defence against someone who
+  controls the machine. "Already told you to go to production" in the other
+  playbooks means this typed phrase.
 - **Not touched:** staging, pushing a feature branch, commits, tests, reading.
 - When the guard refuses, say so plainly, ask Hafiz to type `deploy ok`, and run
   the command again once he has.

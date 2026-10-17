@@ -34,10 +34,30 @@ DESTRUCTIVE_REASON = (
     "dropping or wiping data, or deleting a home or system folder), so it is refused. "
     "If Hafiz really wants it, he runs it himself."
 )
+NOTE_FOLDER = re.compile(r"approvals/deploy-ok|AGENT_OS_APPROVAL_DIR")
+NOTE_FOLDER_REASON = (
+    "Only Hafiz can create a deploy ok note, by typing the phrase himself. "
+    "Commands and file tools may not touch that folder."
+)
+FILE_TOOLS = frozenset({"Write", "Edit", "MultiEdit", "NotebookEdit"})
 PRODUCTION_REASON = (
     "Production deploy and merge into main or a production branch need Hafiz's go for this session. "
     "Ask him to type deploy ok (alone, or as the last words of a message), then run it again."
 )
+
+
+def note_folder_reason(texts: list[str]) -> str | None:
+    """Refuse a command that mentions the note folder, so an agent cannot write its own approval."""
+    return NOTE_FOLDER_REASON if any(NOTE_FOLDER.search(text) for text in texts) else None
+
+
+def note_folder_reason_for_tool(tool_name: str, tool_input) -> str | None:
+    if tool_name in FILE_TOOLS and isinstance(tool_input, dict):
+        for key in ("file_path", "notebook_path", "path"):
+            value = tool_input.get(key)
+            if isinstance(value, str) and NOTE_FOLDER.search(value):
+                return NOTE_FOLDER_REASON
+    return None
 
 
 def _git(args: list[str]) -> tuple[str | None, list[str]]:

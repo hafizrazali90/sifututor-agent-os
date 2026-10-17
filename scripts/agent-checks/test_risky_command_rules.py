@@ -214,6 +214,44 @@ class RiskyCommandRulesTest(unittest.TestCase):
         self.assertFalse(decision.allowed)
 
 
+    # -- the note folder: only Hafiz's typed phrase may create a note ---------------------
+
+    NOTE_WRITES = (
+        "echo '{}' > ~/.agent-os/approvals/deploy-ok/s1.json",
+        "cp /tmp/x /Users/someone/.agent-os/approvals/deploy-ok/s1.json",
+        "tee /Users/someone/.agent-os/approvals/deploy-ok/s1.json",
+        "python3 -c \"open('/Users/someone/.agent-os/approvals/deploy-ok/s1.json','w').write('{}')\"",
+        "AGENT_OS_APPROVAL_DIR=/tmp/x python3 scripts/agent-checks/deploy_ok_note.py",
+        "bash -c 'touch ~/.agent-os/approvals/deploy-ok/s1.json'",
+    )
+
+    def test_an_agent_cannot_create_a_note_with_a_command(self) -> None:
+        for command in self.NOTE_WRITES:
+            with self.subTest(command=command):
+                self.blocked(command)
+
+    def test_an_agent_cannot_create_a_note_even_when_one_exists(self) -> None:
+        self.approve()
+        for command in self.NOTE_WRITES:
+            with self.subTest(command=command):
+                self.blocked(command)
+
+    def test_an_agent_cannot_create_a_note_with_the_file_tools(self) -> None:
+        for tool, key in (("Write", "file_path"), ("Edit", "file_path"), ("MultiEdit", "file_path"), ("NotebookEdit", "notebook_path")):
+            with self.subTest(tool=tool):
+                decision = self.guard.evaluate_tool_request(
+                    tool, {key: "/Users/someone/.agent-os/approvals/deploy-ok/s1.json", "content": "{}"}, {"session_id": "s1"}
+                )
+                self.assertFalse(decision.allowed)
+
+    def test_ordinary_files_and_the_other_agent_os_folders_stay_writable(self) -> None:
+        decision = self.guard.evaluate_tool_request("Write", {"file_path": "/Users/someone/Projects/x/notes.md", "content": "hi"}, {"session_id": "s1"})
+        self.assertTrue(decision.allowed)
+        self.allowed("ls ~/.agent-os/usage")
+        self.allowed("cat ~/.agent-os/jobs/jobs.jsonl")
+        self.allowed("python3 scripts/agent-checks/job_ledger.py json")
+
+
 class DeployOkNoteTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
