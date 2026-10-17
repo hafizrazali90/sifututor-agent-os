@@ -11,8 +11,10 @@ Agreed with Hafiz on 17/10/2026:
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -49,6 +51,9 @@ class RiskyCommandRulesTest(unittest.TestCase):
         patcher = mock.patch.dict(os.environ, {"AGENT_OS_APPROVAL_DIR": self.tmp.name})
         patcher.start()
         self.addCleanup(patcher.stop)
+        branch = mock.patch.object(self.rules, "current_branch", return_value="feature/x")
+        branch.start()
+        self.addCleanup(branch.stop)
 
     def decide(self, command: str, session: str = "s1"):
         return self.guard.evaluate_tool_request("Bash", {"command": command}, {"session_id": session})
@@ -208,6 +213,85 @@ class RiskyCommandRulesTest(unittest.TestCase):
         with mock.patch.object(self.rules, "pr_base_branch", return_value="main"):
             self.allowed("gh pr merge 384 --merge")
 
+    PRODUCTION_RUNNERS = (
+        "npx -y vercel --prod",
+        "npx --yes vercel deploy --prod",
+        "npm exec vercel -- --prod",
+        "npm exec -- vercel --prod",
+        "yarn vercel --prod",
+        "yarn dlx vercel --prod",
+        "pnpm exec vercel --prod",
+        "pnpm vercel --prod",
+        "pnpm dlx vercel promote https://x.vercel.app",
+        "bunx --bun vercel --prod",
+        "gh api -X PUT repos/o/r/pulls/12/merge",
+        "gh api repos/o/r/pulls/12/merge --method PUT",
+        "gh api --method=PUT repos/o/r/pulls/12/merge",
+    )
+
+    def test_vercel_and_merge_through_other_runners_need_a_note(self) -> None:
+        for command in self.PRODUCTION_RUNNERS:
+            with self.subTest(command=command):
+                self.blocked(command)
+
+    def test_runners_pass_with_a_note_and_harmless_ones_are_untouched(self) -> None:
+        self.approve()
+        for command in self.PRODUCTION_RUNNERS:
+            with self.subTest(command=command):
+                self.allowed(command)
+        for command in ("npx -y prettier --check .", "npm exec eslint .", "pnpm exec vitest", "yarn test", "gh api repos/o/r/pulls/12"):
+            with self.subTest(command=command):
+                self.allowed(command)
+
+    def test_deleting_a_branch_through_the_api_is_destructive(self) -> None:
+        self.approve()
+        for command in (
+            "gh api -X DELETE repos/o/r/git/refs/heads/feature/x",
+            "gh api --method DELETE repos/o/r/git/refs/heads/feature/x",
+            "gh api repos/o/r/git/refs/heads/x -X DELETE",
+        ):
+            with self.subTest(command=command):
+                self.blocked(command)
+
+    def test_push_without_a_branch_name_follows_the_current_branch(self) -> None:
+        for current, command, expect_block in (
+            ("main", "git push", True),
+            ("main", "git push origin", True),
+            ("main", "git push origin HEAD", True),
+            ("main", "git push -u origin HEAD", True),
+            ("main", "git push origin feature/x", False),
+            ("feature/x", "git push", False),
+            ("feature/x", "git push origin HEAD", False),
+            ("production", "git push", True),
+        ):
+            with self.subTest(current=current, command=command):
+                with mock.patch.object(self.rules, "current_branch", return_value=current):
+                    if expect_block:
+                        self.blocked(command)
+                    else:
+                        self.allowed(command)
+
+    def test_push_on_an_unknown_branch_is_allowed(self) -> None:
+        with mock.patch.object(self.rules, "current_branch", return_value=None):
+            self.allowed("git push")
+
+    def test_merge_target_ignores_the_repo_flag_value(self) -> None:
+        captured = []
+
+        def fake_run(command, **kwargs):
+            captured.append(command)
+            return mock.Mock(returncode=0, stdout="sifu-staging\n")
+
+        with mock.patch.object(self.rules.subprocess, "run", fake_run):
+            self.rules.pr_base_branch(["pr", "merge", "-R", "owner/repo", "12"])
+            self.rules.pr_base_branch(["pr", "merge", "--repo", "owner/repo", "12"])
+            self.rules.pr_base_branch(["pr", "merge", "--squash", "-R", "owner/repo", "--merge"])
+        self.assertEqual(captured[0][3], "12")
+        self.assertEqual(captured[1][3], "12")
+        self.assertEqual(captured[2][3], "-R")  # no PR number: view falls back to the current branch's PR
+        for command in captured:
+            self.assertEqual(command.count("owner/repo"), 1)
+
     def test_no_session_id_means_no_approval(self) -> None:
         self.approve("s1")
         decision = self.guard.evaluate_tool_request("Bash", {"command": "vercel --prod"}, {})
@@ -243,6 +327,53 @@ class RiskyCommandRulesTest(unittest.TestCase):
                     tool, {key: "/Users/someone/.agent-os/approvals/deploy-ok/s1.json", "content": "{}"}, {"session_id": "s1"}
                 )
                 self.assertFalse(decision.allowed)
+
+    NOTE_SCRIPT_RUNS = (
+        "echo '{\"session_id\":\"s1\",\"prompt\":\"deploy ok\"}' | python3 scripts/agent-checks/deploy_ok_note.py",
+        "python3 deploy_ok_note.py < /tmp/payload.json",
+        "python3 -m deploy_ok_note",
+        "python3 -c 'import deploy_ok_note; deploy_ok_note.write_note(\"s1\")'",
+        "cd scripts/agent-checks && python3 -c \"from deploy_ok_note import write_note; write_note('s1')\"",
+        "bash -c 'python3 scripts/agent-checks/deploy_ok_note.py < /tmp/p.json'",
+    )
+
+    def test_an_agent_cannot_run_the_note_writer_itself(self) -> None:
+        for command in self.NOTE_SCRIPT_RUNS:
+            with self.subTest(command=command):
+                self.blocked(command)
+
+    def test_reading_or_committing_the_note_writer_is_still_fine(self) -> None:
+        for command in (
+            "git add scripts/agent-checks/deploy_ok_note.py",
+            "cat scripts/agent-checks/deploy_ok_note.py",
+            "python3 -m unittest scripts/agent-checks/test_risky_command_rules.py",
+            "git commit -m 'fix deploy_ok_note phrase check'",
+        ):
+            with self.subTest(command=command):
+                self.allowed(command)
+
+    def patch_tool(self, header: str, tool: str = "apply_patch", wrap: str = "input"):
+        body = f"*** Begin Patch\n{header}\n+x\n*** End Patch"
+        return self.guard.evaluate_tool_request(tool, {wrap: body}, {"session_id": "s1"})
+
+    def test_apply_patch_cannot_touch_a_file_in_the_note_folder(self) -> None:
+        for header in (
+            "*** Add File: /Users/someone/.agent-os/approvals/deploy-ok/s1.json",
+            "*** Update File: /Users/someone/.agent-os/approvals/deploy-ok/s1.json",
+            "*** Delete File: /Users/someone/.agent-os/approvals/deploy-ok/s1.json",
+        ):
+            for tool, wrap in (("apply_patch", "input"), ("functions.apply_patch", "patch"), ("apply_patch", "command")):
+                with self.subTest(header=header, tool=tool):
+                    self.assertFalse(self.patch_tool(header, tool, wrap).allowed)
+
+    def test_apply_patch_that_only_mentions_the_folder_in_its_text_is_fine(self) -> None:
+        self.assertTrue(self.patch_tool("*** Add File: docs/agent-playbooks/notes.md").allowed)
+        decision = self.guard.evaluate_tool_request(
+            "apply_patch",
+            {"input": "*** Begin Patch\n*** Update File: docs/x.md\n@@\n+see ~/.agent-os/approvals/deploy-ok for the notes\n*** End Patch"},
+            {"session_id": "s1"},
+        )
+        self.assertTrue(decision.allowed)
 
     def test_ordinary_files_and_the_other_agent_os_folders_stay_writable(self) -> None:
         decision = self.guard.evaluate_tool_request("Write", {"file_path": "/Users/someone/Projects/x/notes.md", "content": "hi"}, {"session_id": "s1"})
@@ -284,6 +415,24 @@ class DeployOkNoteTest(unittest.TestCase):
         self.assertFalse(self.typed("please do not say deploy ok"))
         self.assertFalse(self.typed("never deploy ok"))
 
+    def test_the_phrase_after_a_dash_or_on_its_own_last_line_counts(self) -> None:
+        self.assertTrue(self.typed("Fix the invoice page - deploy ok"))
+        self.assertTrue(self.typed("Fix the invoice page.\n\ndeploy ok", session="s2"))
+        self.assertTrue(self.typed("Fix the invoice page; deploy ok", session="s3"))
+
+    def test_a_sentence_that_only_mentions_the_phrase_does_not_count(self) -> None:
+        for prompt in (
+            "Wait for my deploy ok",
+            "Please type deploy ok when you are ready",
+            "no deploy ok",
+            "can't deploy ok",
+            "I will say deploy ok later",
+            "Do not deploy until I say deploy ok",
+            "Not yet, deploy ok",
+        ):
+            with self.subTest(prompt=prompt):
+                self.assertFalse(self.typed(prompt))
+
     def test_other_words_do_not_count(self) -> None:
         for prompt in ("ok", "yes proceed", "go to production", "deploy"):
             with self.subTest(prompt=prompt):
@@ -297,6 +446,39 @@ class DeployOkNoteTest(unittest.TestCase):
     def test_missing_prompt_or_session_does_nothing(self) -> None:
         self.assertIsNone(self.note.handle({}))
         self.assertIsNone(self.note.handle({"prompt": "deploy ok"}))
+
+
+class ClaudePromptHookWritesNoteTest(unittest.TestCase):
+    """The Claude prompt hook already wired on every install carries the deploy ok note."""
+
+    INJECTOR = ROOT / ".claude" / "hooks" / "koda-context-injector.py"
+
+    def run_hook(self, payload: dict, folder: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(self.INJECTOR)],
+            input=json.dumps(payload),
+            text=True,
+            capture_output=True,
+            check=False,
+            env={
+                "HOME": str(Path.home()),
+                "PATH": str(Path(sys.executable).parent),
+                "AGENT_OS_APPROVAL_DIR": folder,
+                "SIFUTUTOR_SECRET_GUARD_STATE_DIR": folder,
+            },
+        )
+
+    def test_typing_deploy_ok_writes_the_note_even_though_the_prompt_is_short(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.run_hook({"session_id": "sess-1", "prompt": "deploy ok"}, folder)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((Path(folder) / "sess-1.json").is_file())
+
+    def test_an_ordinary_prompt_writes_no_note(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.run_hook({"session_id": "sess-1", "prompt": "Wait for my deploy ok before you ship"}, folder)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse((Path(folder) / "sess-1.json").exists())
 
 
 if __name__ == "__main__":

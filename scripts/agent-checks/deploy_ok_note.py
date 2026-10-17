@@ -2,8 +2,10 @@
 """Record Hafiz's typed "deploy ok" for the current session.
 
 This runs as a prompt hook, so it only ever sees what Hafiz typed. The phrase
-must be the whole message or its last words, and must not follow "not", "never"
-or "without". The agent cannot write this note, because the agent never types
+must be the whole message, its own last line, or the final clause after a
+comma, semicolon, colon or dash ("Fix the page, proceed until prod deploy, deploy
+ok"). A sentence that only mentions it ("wait for my deploy ok") does not count,
+and neither does a message with "not", "never" or "without" before it. The agent cannot write this note, because the agent never types
 Hafiz's prompt. The shared command guard (secret_output_guard.py) lets a
 production deploy or a merge into main pass only while this note exists for the
 same session.
@@ -21,9 +23,17 @@ import sys
 import time
 
 TTL_SECONDS = 12 * 3600
-PHRASE_AT_END = re.compile(r"(?:^|[\s,;:.])deploy\s+ok[\s.!]*$", re.I)
+CLAUSE_BREAK = re.compile(r"[,;:\u2014\u2013]|\s-\s")
 NEGATED = re.compile(r"\b(?:do not|don't|dont|never|not|without)\b[^.\n]{0,40}\bdeploy\s+ok\b", re.I)
 SESSION_ID = re.compile(r"[A-Za-z0-9_-]{1,100}")
+
+
+def _phrase_ends_message(text: str) -> bool:
+    lines = [line for line in text.splitlines() if line.strip()]
+    if not lines:
+        return False
+    final_clause = CLAUSE_BREAK.split(lines[-1])[-1]
+    return re.sub(r"\s+", " ", final_clause).strip(" \t.!").lower() == "deploy ok"
 
 
 def approval_dir() -> Path:
@@ -66,7 +76,7 @@ def handle(payload: dict) -> bool | None:
     if not session or not isinstance(prompt, str):
         return None
     text = prompt.strip()
-    if NEGATED.search(text) or not PHRASE_AT_END.search(text):
+    if NEGATED.search(text) or not _phrase_ends_message(text):
         return None
     return True if write_note(str(session)) else None
 

@@ -88,6 +88,20 @@ def claude_rows(accounts: list[str], now: float | None = None) -> list[dict]:
     return rows
 
 
+TAIL_BYTES = 256 * 1024
+
+
+def _tail_lines(file: Path) -> list[str]:
+    """The last lines of a log. Codex logs grow to many megabytes and the newest reading is at the end."""
+    with file.open("rb") as handle:
+        handle.seek(0, 2)
+        size = handle.tell()
+        handle.seek(max(0, size - TAIL_BYTES))
+        chunk = handle.read()
+    lines = chunk.decode("utf-8", errors="ignore").splitlines()
+    return lines[1:] if size > TAIL_BYTES else lines
+
+
 def codex_row(sessions: Path | None = None) -> dict:
     folder = sessions or (Path.home() / ".codex" / "sessions")
     best: tuple[str, dict] | None = None
@@ -97,7 +111,7 @@ def codex_row(sessions: Path | None = None) -> dict:
         files = []
     for file in files:
         try:
-            lines = file.read_text(encoding="utf-8", errors="ignore").splitlines()
+            lines = _tail_lines(file)
         except OSError:
             continue
         for line in lines:

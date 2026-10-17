@@ -26,6 +26,13 @@ def default_command() -> str:
     return f'python3 "{Path(__file__).resolve().parent / MARK}"'
 
 
+def worktree_problem(command: str) -> str | None:
+    """A status line pointing into a temporary worktree breaks the day that worktree is cleaned up."""
+    if "/worktrees/" in command:
+        return "This script is inside a worktree, which is deleted when its work ends. Run the installer from the main checkout."
+    return None
+
+
 def default_profiles() -> list[Path]:
     home = Path.home()
     found = [home / ".claude", *sorted(home.glob(".claude-*"))]
@@ -82,6 +89,10 @@ def install(profiles: list[Path], apply: bool = False, undo: bool = False, comma
 
 def main(argv: list[str]) -> int:
     apply, undo = "--apply" in argv, "--undo" in argv
+    problem = worktree_problem(default_command()) if apply else None
+    if problem:
+        print(problem)
+        return 2
     folders = [Path(arg).expanduser() for arg in argv if not arg.startswith("--")] or default_profiles()
     if not folders:
         print("No Claude profiles found.")

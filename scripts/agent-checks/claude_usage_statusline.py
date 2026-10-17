@@ -14,6 +14,7 @@ Agreed with Hafiz on 17/10/2026.
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -46,10 +47,12 @@ def _window(raw) -> dict | None:
     if not isinstance(raw, dict):
         return None
     used = raw.get("used_percentage")
-    if isinstance(used, bool) or not isinstance(used, (int, float)):
+    if isinstance(used, bool) or not isinstance(used, (int, float)) or not math.isfinite(used):
         return None
     resets = raw.get("resets_at")
-    return {"used": float(used), "resets_at": float(resets) if isinstance(resets, (int, float)) else None}
+    if isinstance(resets, bool) or not isinstance(resets, (int, float)) or not math.isfinite(resets):
+        resets = None
+    return {"used": min(100.0, max(0.0, float(used))), "resets_at": float(resets) if resets is not None else None}
 
 
 def handle(payload: dict, now: float | None = None) -> str:

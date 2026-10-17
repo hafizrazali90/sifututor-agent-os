@@ -70,6 +70,20 @@ def git(cwd: Path, *args: str) -> str:
     return subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True, text=True, check=True).stdout
 
 
+_JOBS_DIR = tempfile.mkdtemp()
+_JOBS_PATCH = mock.patch.dict(os.environ, {"AGENT_OS_JOBS_DIR": _JOBS_DIR})
+
+
+def setUpModule() -> None:
+    # submit() records the job in the ledger; keep every test out of the real ~/.agent-os/jobs.
+    _JOBS_PATCH.start()
+
+
+def tearDownModule() -> None:
+    _JOBS_PATCH.stop()
+    shutil.rmtree(_JOBS_DIR, True)
+
+
 class RunnerTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())

@@ -46,9 +46,41 @@ PRODUCTION_REASON = (
 )
 
 
+PATCH_TOOLS = frozenset({"apply_patch", "functions.apply_patch"})
+PATCH_FILE_HEADER = re.compile(r"^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$", re.M)
+NOTE_WRITER = "deploy_ok_note"
+PYTHON_EXE = re.compile(r"^python(?:\d+(?:\.\d+)*)?$")
+
+
 def note_folder_reason(texts: list[str]) -> str | None:
     """Refuse a command that mentions the note folder, so an agent cannot write its own approval."""
     return NOTE_FOLDER_REASON if any(NOTE_FOLDER.search(text) for text in texts) else None
+
+
+def note_writer_reason(exe: str, args: list[str], codes: list[str]) -> str | None:
+    """Refuse running the note writer itself: it would turn the agent's own words into Hafiz's approval.
+
+    Reading, committing or unit-testing the file is fine; only executing it is refused.
+    """
+    base = os.path.basename(exe)
+    if base == f"{NOTE_WRITER}.py":
+        return NOTE_FOLDER_REASON
+    if not PYTHON_EXE.match(base):
+        return None
+    for index, token in enumerate(args):
+        if os.path.basename(token) == f"{NOTE_WRITER}.py" and not (index and args[index - 1] in {"-m", "-c"}):
+            return NOTE_FOLDER_REASON
+        if token == "-m" and args[index + 1 : index + 2] == [NOTE_WRITER]:
+            return NOTE_FOLDER_REASON
+        if token == "-c" and NOTE_WRITER in "".join(args[index + 1 : index + 2]):
+            return NOTE_FOLDER_REASON
+    return NOTE_FOLDER_REASON if any(NOTE_WRITER in code for code in codes) else None
+
+
+def _patch_text(tool_input) -> str:
+    if isinstance(tool_input, dict):
+        return "\n".join(value for value in tool_input.values() if isinstance(value, str))
+    return tool_input if isinstance(tool_input, str) else ""
 
 
 def note_folder_reason_for_tool(tool_name: str, tool_input) -> str | None:
@@ -57,6 +89,10 @@ def note_folder_reason_for_tool(tool_name: str, tool_input) -> str | None:
             value = tool_input.get(key)
             if isinstance(value, str) and NOTE_FOLDER.search(value):
                 return NOTE_FOLDER_REASON
+    if tool_name in PATCH_TOOLS:
+        # Only the file headers count: a patch may legitimately mention the folder in its text.
+        if any(NOTE_FOLDER.search(path) for path in PATCH_FILE_HEADER.findall(_patch_text(tool_input))):
+            return NOTE_FOLDER_REASON
     return None
 
 
@@ -72,6 +108,26 @@ def _git(args: list[str]) -> tuple[str | None, list[str]]:
             continue
         return token, args[index + 1 :]
     return None, []
+
+
+def _git_dir(args: list[str]) -> str | None:
+    for index, token in enumerate(args):
+        if token == "-C" and index + 1 < len(args):
+            return args[index + 1]
+        if token in {"push", "pull", "fetch", "commit", "merge"}:
+            break
+    return None
+
+
+def current_branch(directory: str | None = None) -> str | None:
+    """The checked-out branch, or None when it cannot be read (detached head, no repository)."""
+    command = ["git"] + (["-C", directory] if directory else []) + ["rev-parse", "--abbrev-ref", "HEAD"]
+    try:
+        done = subprocess.run(command, capture_output=True, text=True, timeout=5, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    branch = done.stdout.strip()
+    return branch if done.returncode == 0 and branch and branch != "HEAD" else None
 
 
 def _short(args: list[str], letters: str) -> bool:
@@ -122,9 +178,41 @@ def _git_destructive(sub: str | None, rest: list[str]) -> bool:
     return False
 
 
+GH_API_DESTRUCTIVE_PATH = re.compile(r"(?:^|/)git/refs/|/protection(?:/|$)|^/?repos/[^/]+/[^/]+/?$")
+GH_API_MERGE_PATH = re.compile(r"/pulls/\d+/merge/?$")
+
+
+def _gh_api(args: list[str]) -> tuple[str, str] | None:
+    """The HTTP method and path of a `gh api` call, or None when it is not one."""
+    if args[:1] != ["api"]:
+        return None
+    method, path, index = "GET", "", 1
+    value_flags = {"-f", "-F", "--field", "--raw-field", "-H", "--header", "--jq", "-q", "-t", "--template", "--input", "--hostname", "--cache"}
+    while index < len(args):
+        token = args[index]
+        if token in {"-X", "--method"} and index + 1 < len(args):
+            method, index = args[index + 1].upper(), index + 2
+            continue
+        if token.startswith("--method="):
+            method = token.split("=", 1)[1].upper()
+        elif token.startswith("-X") and len(token) > 2:
+            method = token[2:].upper()
+        elif token in value_flags:
+            index += 2
+            continue
+        elif not token.startswith("-") and not path:
+            path = token
+        index += 1
+    return method, path
+
+
 def destructive_reason(exe: str, args: list[str]) -> str | None:
     if exe == "git" and _git_destructive(*_git(args)):
         return DESTRUCTIVE_REASON
+    if exe == "gh":
+        call = _gh_api(args)
+        if call and call[0] == "DELETE" and GH_API_DESTRUCTIVE_PATH.search(call[1]):
+            return DESTRUCTIVE_REASON
     if exe in SQL_CLIENTS and SQL_DESTRUCTIVE.search(" ".join(args)):
         return DESTRUCTIVE_REASON
     if exe in {"php", "artisan"} or exe.endswith("/artisan"):
@@ -143,10 +231,22 @@ def destructive_reason(exe: str, args: list[str]) -> str | None:
     return None
 
 
+PR_MERGE_VALUE_FLAGS = frozenset({"-R", "--repo", "-b", "--body", "-F", "--body-file", "-t", "--subject", "-A", "--author-email", "--match-head-commit"})
+
+
 def pr_base_branch(args: list[str]) -> str | None:
     """The branch a pull request merges into, or None when it cannot be read."""
     after = args[args.index("merge") + 1 :] if "merge" in args else []
-    target = next((token for token in after if not token.startswith("-")), None)
+    target, index = None, 0
+    while index < len(after):
+        token = after[index]
+        if token in PR_MERGE_VALUE_FLAGS:
+            index += 2
+            continue
+        if not token.startswith("-"):
+            target = token
+            break
+        index += 1
     command = ["gh", "pr", "view"]
     if target:
         command.append(target)
@@ -162,27 +262,49 @@ def pr_base_branch(args: list[str]) -> str | None:
     return base if done.returncode == 0 and base else None
 
 
-def _is_production(exe: str, args: list[str]) -> bool:
-    vercel_args: list[str] | None = None
-    if exe == "vercel":
-        vercel_args = args
-    elif exe in {"npx", "bunx"} and args[:1] == ["vercel"]:
-        vercel_args = args[1:]
-    elif exe == "pnpm" and args[:2] == ["dlx", "vercel"]:
-        vercel_args = args[2:]
-    if vercel_args is not None:
-        return "--prod" in vercel_args or "--production" in vercel_args or "promote" in vercel_args
-    if exe == "git":
-        sub, rest = _git(args)
-        if sub == "push":
-            for ref in _positionals(rest)[1:]:  # the first one is the remote
-                target = ref.lstrip("+").split(":")[-1]
-                if target.removeprefix("refs/heads/") in PRODUCTION_BRANCHES:
-                    return True
+def _unwrap_runner(exe: str, args: list[str]) -> tuple[str, list[str]]:
+    """See through npx, npm exec, yarn, pnpm and bunx to the program they start."""
+    if exe in {"npx", "bunx"}:
+        rest = args
+    elif exe == "npm" and args[:1] in (["exec"], ["x"]):
+        rest = args[1:]
+    elif exe in {"yarn", "pnpm"}:
+        rest = args[1:] if args[:1] in (["dlx"], ["exec"]) else args
+    else:
+        return exe, args
+    index = 0
+    while index < len(rest) and rest[index].startswith("-"):
+        index += 1
+    return (rest[index], rest[index + 1 :]) if index < len(rest) else (exe, args)
+
+
+def _push_targets_production(args: list[str]) -> bool:
+    sub, rest = _git(args)
+    if sub != "push":
         return False
+    refs = _positionals(rest)[1:]  # the first one is the remote
+    for ref in refs:
+        target = ref.lstrip("+").split(":")[-1].removeprefix("refs/heads/")
+        if target in PRODUCTION_BRANCHES:
+            return True
+    # No branch named, or HEAD: git pushes the checked-out branch.
+    if not refs or all(ref.lstrip("+").split(":")[-1] == "HEAD" for ref in refs):
+        return current_branch(_git_dir(args)) in PRODUCTION_BRANCHES
+    return False
+
+
+def _is_production(exe: str, args: list[str]) -> bool:
+    exe, args = _unwrap_runner(exe, args)
+    if exe == "vercel":
+        return "--prod" in args or "--production" in args or "promote" in args
+    if exe == "git":
+        return _push_targets_production(args)
     if exe == "gh" and args[:2] == ["pr", "merge"]:
         base = pr_base_branch(args)
         return base is None or base in PRODUCTION_BRANCHES
+    if exe == "gh":
+        call = _gh_api(args)
+        return bool(call and call[0] == "PUT" and GH_API_MERGE_PATH.search(call[1]))
     return False
 
 

@@ -2054,7 +2054,8 @@ def _rule_note_folder(ctx: _Ctx) -> str | None:
     texts = [word.text for word in ctx.cmd.words]
     texts += [word.text for _op, word in ctx.cmd.redirs]
     texts += [str(code[1]) for code in ctx.codes]
-    return risky_command_rules.note_folder_reason(texts)
+    codes = [str(code[1]) for code in ctx.codes]
+    return risky_command_rules.note_folder_reason(texts) or risky_command_rules.note_writer_reason(ctx.exe, ctx.args, codes)
 
 
 def _rule_destructive(ctx: _Ctx) -> str | None:

@@ -87,6 +87,19 @@ class StatusLineTest(unittest.TestCase):
         self.line.handle(PAYLOAD, now=NOW)
         self.assertTrue((self.dir / "claude-unknown.json").is_file())
 
+    def test_percentages_are_kept_between_zero_and_one_hundred(self) -> None:
+        payload = {"rate_limits": {"five_hour": {"used_percentage": 250, "resets_at": NOW}, "seven_day": {"used_percentage": -5, "resets_at": NOW}}}
+        self.assertEqual(self.line.handle(payload, now=NOW), "5h 100% · week 0%")
+
+    def test_nan_and_infinite_percentages_are_ignored(self) -> None:
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(bad=bad):
+                payload = {"rate_limits": {"five_hour": {"used_percentage": bad}, "seven_day": {"used_percentage": 40, "resets_at": float("nan")}}}
+                self.assertEqual(self.line.handle(payload, now=NOW), "week 40%")
+                saved = json.loads((self.dir / "claude-hafiz.razali.json").read_text(encoding="utf-8"))
+                self.assertIsNone(saved["five_hour"])
+                self.assertIsNone(saved["seven_day"]["resets_at"])
+
     def test_garbage_input_never_crashes(self) -> None:
         with mock.patch.object(sys, "stdin", io.StringIO("{{{")):
             self.assertEqual(self.line.main(), 0)
@@ -158,6 +171,26 @@ class UsageReadingsTest(unittest.TestCase):
         self.assertEqual(row["window"], "Weekly limit")
         self.assertEqual(row["read"], "17/10 16:07 MYT")
 
+    def test_codex_reading_is_found_at_the_end_of_a_very_large_log(self) -> None:
+        sessions = Path(self.tmp.name) / "sessions" / "2026" / "10" / "17"
+        sessions.mkdir(parents=True)
+        filler = json.dumps({"payload": {"type": "other", "text": "x" * 900}}) + "\n"
+        event = {
+            "timestamp": "2026-10-17T08:07:00.000Z",
+            "payload": {"type": "token_count", "rate_limits": {"plan_type": "pro", "primary": {"used_percent": 33.0, "window_minutes": 300, "resets_at": 1_792_650_000}}},
+        }
+        (sessions / "rollout-big.jsonl").write_text(filler * 6000 + json.dumps(event) + "\n", encoding="utf-8")
+        row = self.reader.codex_row(Path(self.tmp.name) / "sessions")
+        self.assertEqual(row["used"], 33.0)
+
+    def test_codex_log_is_read_from_the_end_only(self) -> None:
+        sessions = Path(self.tmp.name) / "sessions"
+        sessions.mkdir()
+        (sessions / "rollout-a.jsonl").write_text("x" * 5_000_000 + "\n", encoding="utf-8")
+        with mock.patch("pathlib.Path.read_text", side_effect=AssertionError("whole file read")):
+            row = self.reader.codex_row(sessions)
+        self.assertIsNone(row["used"])
+
     def test_codex_with_no_log_has_no_number(self) -> None:
         row = self.reader.codex_row(Path(self.tmp.name) / "missing")
         self.assertIsNone(row["used"])
@@ -196,6 +229,23 @@ class InstallerTest(unittest.TestCase):
 
     def read(self, folder: Path) -> dict:
         return json.loads((folder / "settings.json").read_text(encoding="utf-8"))
+
+    def test_a_command_from_a_worktree_is_refused(self) -> None:
+        for path in (
+            "/Users/someone/.local/state/sifututor-agent-os/worktrees/sifututor-383/scripts/agent-checks/claude_usage_statusline.py",
+            "/Users/someone/Projects/Sifututor/.claude/worktrees/x/scripts/agent-checks/claude_usage_statusline.py",
+        ):
+            with self.subTest(path=path):
+                self.assertIn("main checkout", self.inst.worktree_problem(f'python3 "{path}"'))
+        self.assertIsNone(self.inst.worktree_problem('python3 "/Users/someone/Projects/Sifututor/scripts/agent-checks/claude_usage_statusline.py"'))
+
+    def test_apply_from_a_worktree_changes_nothing(self) -> None:
+        folder = self.profile("p")
+        before = (folder / "settings.json").read_text(encoding="utf-8")
+        with mock.patch.object(self.inst, "default_command", return_value='python3 "/h/.local/state/sifututor-agent-os/worktrees/w/scripts/agent-checks/claude_usage_statusline.py"'):
+            code = self.inst.main(["--apply", str(folder)])
+        self.assertNotEqual(code, 0)
+        self.assertEqual((folder / "settings.json").read_text(encoding="utf-8"), before)
 
     def test_dry_run_changes_nothing(self) -> None:
         folder = self.profile("p1")
