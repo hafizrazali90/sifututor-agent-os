@@ -1,0 +1,14 @@
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ripple_outreach_readonly') THEN
+    CREATE ROLE ripple_outreach_readonly LOGIN PASSWORD '__PASSWORD__' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 4;
+  ELSE
+    ALTER ROLE ripple_outreach_readonly WITH LOGIN PASSWORD '__PASSWORD__';
+  END IF;
+END $$;
+ALTER ROLE ripple_outreach_readonly SET search_path = agent_read;
+ALTER ROLE ripple_outreach_readonly SET default_transaction_read_only = on;
+ALTER ROLE ripple_outreach_readonly SET statement_timeout = '30s';
+GRANT CONNECT ON DATABASE ripple_suite_prod TO ripple_outreach_readonly;
+GRANT USAGE ON SCHEMA agent_read TO ripple_outreach_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA agent_read TO ripple_outreach_readonly;
+REVOKE CREATE ON SCHEMA public FROM ripple_outreach_readonly;
