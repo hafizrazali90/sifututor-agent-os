@@ -159,7 +159,9 @@ button { margin-top: 10px; font: inherit; font-weight: 600; background: var(--in
      by: only when different from defaultBy; a text, or a list in order if the step changed machine or account
    parked: [{ n, d, you }]   decided: [{ t, why, undo }]   links: [{ t, u, d }]
    usage: [{ n, where, plan, used (a number or null), window, resets, read, note }]
+     get these rows from: python3 scripts/agent-checks/usage_readings.py
    jobs: [{ n, where, acct, ai, s }]   prompt: text for the next agent   words: [[term, meaning]]
+     get the jobs rows from: python3 scripts/agent-checks/job_ledger.py json --since-hours 24
    Rules: plain words, no em dashes, times in MYT. Never invent a number: use used:null and "No reading yet".
    Then run: python3 scripts/agent-checks/session_map_page_check.py <this file> */
 var SESSION = {

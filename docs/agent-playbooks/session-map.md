@@ -171,12 +171,22 @@ Rules for the data:
   "No reading yet".
 - Machine, account and AI: write the usual ones once in `defaultBy` and add `by`
   to a step only when it differs. A step that changed account lists them in
-  order. Read the account from the tool itself and write only the part of the
-  email before the `@`. Claude: the `emailAddress` field in `.claude.json`
-  (under `$CLAUDE_CONFIG_DIR` when that is set, otherwise the home folder);
-  read that one field and never print the file. Codex: the latest
-  `token_count` event in `~/.codex/sessions` has `used_percent`, `resets_at`
-  and the plan. Write times in MYT.
+  order. Use only the part of an email before the `@`. Write times in MYT.
+- Usage: run `python3 scripts/agent-checks/usage_readings.py` and paste the
+  rows it prints into `usage`. Codex comes from its own log. Claude comes from
+  the files the usage status line saves, so an account shows a number only after
+  its status line has run, and every reading carries the time it was taken. An
+  account with no reading says "No reading yet".
+- Claude usage status line: `python3 scripts/agent-checks/install-usage-statusline.py`
+  shows what it would change in each Claude profile; add `--apply` to do it. It
+  never overwrites a status line that is not ours, backs up settings.json first,
+  and `--undo` removes only ours. The script path it writes must be a checkout
+  that has the file, so run it from the main checkout once that is up to date.
+- Jobs: run `python3 scripts/agent-checks/job_ledger.py json --since-hours 24`
+  and paste the rows into `jobs`. The PC runner records its own jobs. For a job
+  launched on the Mac under another account, run `job_ledger.py record` with
+  `--name`, `--machine Mac`, `--account`, `--ai` and `--state running` before it
+  starts, and again with `--state done` (or `failed`) when it ends.
 
 The older Markdown map and `session-map-html.py` still work. When Hafiz needs
 the web page, use the template above, and do not keep two different versions of
