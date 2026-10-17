@@ -60,17 +60,18 @@ modify.
   non-secret status field. Never capture a complete credential in a screenshot,
   accessibility tree, DOM dump, transcript, log, or memory.
 - Never push, open a PR, merge, deploy, release, or perform a destructive
-  action unless Hafiz explicitly includes that boundary in the current session.
-  Never bypass hooks or checks with `--no-verify` or equivalent.
+  action unless Hafiz explicitly includes that boundary in the current session
+  (a staging deploy needs no named boundary). Never bypass hooks or checks with `--no-verify` or equivalent.
 - Do not add adjacent cleanup, refactors, dependencies, or features outside the
   requested scope. New tasks discovered during work must be included explicitly
   or tracked for a later session.
 - Read-only diagnosis and evidence gathering use the narrowest approved access
   automatically. Do not ask again for routine access inside an already-approved
   end-to-end boundary.
-- Payments, commission, auth, migrations, mobile API contracts, production
-  data writes, and destructive operations are critical lanes. Diagnose read
-  only first; implement only after the required boundary is explicit.
+- Production deploys, production data writes, and destructive operations are
+  critical lanes: diagnose read only first, and implement only after the
+  required boundary is explicit. Payments, commission, auth, migrations and
+  mobile API contracts are critical only when the change touches production.
 - After any staging or production deploy, smoke-test the actual changed
   workflow. Generic route availability is not enough when a safe functional
   check is possible.
@@ -85,6 +86,30 @@ inside that boundary without routine permission prompts. Pause only for new
 scope, changed material risk/evidence, unavailable rollback, a critical or
 destructive expansion, or genuine product judgment. Approval rules are owned
 by [agent-os-approval-gates.md](docs/agent-playbooks/agent-os-approval-gates.md).
+
+## Decision Policy
+
+A goal with a finish line is the go. When Hafiz states a goal, say in one line
+what done means and start. The finish line is the one he names; if he names
+none, it is committed locally. Keep going to that line. Do not stop to ask
+whether to continue, whether to stop, or for approval of a step the goal already
+covers. Anything past the line he named still needs his approval. Production
+deploy, merge, destructive actions, money, new logins or permissions, secrets,
+and messages sent to other people always need his approval, even inside a goal.
+
+Decide clear technical choices alone (tool, layout, naming, tests, order of
+steps, staging changes, pixel values): pick the simplest option that fits the
+existing code, and keep a "Decisions made" list (choice, reason, alternative,
+undo) for the close-out and the PR body. Ask Hafiz, with your recommendation and
+reason in the same message, only when the answer depends on business meaning,
+the code contradicts itself or the docs, you are unsure what something means, or
+a technical choice has no clear best option (ask in plain language). Never ask
+him to pick technical options he would accept your advice on, to relay messages
+between sessions, to confirm what staff already instructed, or for what the
+code, data or GitHub can answer. Staging needs no approval, unless it can reach
+real people or real money. If two instruction files disagree, his newest dated
+statement wins on style and this file wins on safety: pick one, note it in one
+line, and stop only if it touches the approval list.
 
 ## Start And Route Work
 
@@ -114,9 +139,10 @@ owner docs define the required fields and state language.
   checked, and what comes next. Add a non-technical mental model when the topic
   is twisted or technical.
 - Before any deploy, and at the end of every session with shippable work,
-  publish one review page Hafiz confirms first: business and technical
+  publish one review page and leave it open for Hafiz: business and technical
   explanation side by side, screenshots of every UI/UX change, decisions,
-  risks, evidence and required approvals. No deploy until he confirms it.
+  risks, evidence and required approvals. It blocks a deploy until he confirms,
+  unless he already told you to go to production.
 - A change staff will see on screen also gets an automatic plan page before
   coding; [review-page.md](docs/agent-playbooks/review-page.md) owns both modes.
 - For a staff report or PR, first explain who reported/requested it (or say the
@@ -156,7 +182,7 @@ under `scripts/agent-access/` cover production health, read-only databases,
 DNS, monitoring, backups, Planner, and other approved lanes.
 
 - **Auto-read:** use proactively when relevant.
-- **Write/Admin:** requires current-session scoped approval.
+- **Write/Admin:** requires current-session scoped approval, except on staging.
 - **Critical:** per-operation approval.
 - **Destructive:** explicit approval for the exact action.
 

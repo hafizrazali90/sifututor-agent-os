@@ -148,8 +148,9 @@ What do you want me to do next?
 | --- | --- | --- |
 | Light | Talk, think, explain, compare, decide | Agent OS discussion, retrospective, learning |
 | Medium | Scoped docs/tooling/small safe change with checks | Agent OS docs update, Koda CLI wrapper |
+| Small | A tiny, safe product fix: one file or under about 30 changed lines, restoring behavior that was meant to work | A wrong label or a typo on a staff screen |
 | Full | Product code or user-facing behavior with verification, QA, review, commit discipline | Staff UI bugfix, new feature |
-| Critical | Expensive mistake zone; read-only diagnosis first, implementation after approval | Auth, payment, invoice, commission, migration, deploy, mobile API contract |
+| Critical | Expensive mistake zone; read-only diagnosis first, implementation after approval | Production deploy, production data write, destructive action, and auth, payment, invoice, commission, migration or mobile API contract work only when it touches production |
 
 ## Lane Checklist
 
@@ -241,6 +242,31 @@ Approval boundary:
 - relaxed work-packet approval applies inside the safe packet
 - stage/commit/push still need exact approval
 
+## Small Lane
+
+Agreed with Hafiz on 17/10/2026. A one-line label fix used to run the whole Full
+lane, which cost several times the work of the fix itself.
+
+Use for a change that is all of these:
+
+- one file, or under about 30 changed lines
+- restoring behavior that was meant to work, such as a wrong label, a typo, or
+  broken text, and not a new feature
+- not touching money, auth, a permission, a database schema, or an API contract
+
+Agent behavior: say "Small lane" in one line, reproduce or read the problem, fix
+it, add one focused test or name the exception, run the pre-commit guard, and
+write what and why in the PR body.
+
+Skip: the Session Map and ledgers, separate verify, QA and review reports, the
+review page, and a permanent end-to-end test unless a staff workflow is newly
+broken.
+
+Escalate to the Full lane if the change grows past the limit, touches a second
+workflow, or turns out to affect money, auth, a permission, a schema, or an API
+contract. The size limit and the exclusions are mechanical, so the agent can
+check them. The pre-commit guard and the production gates are unchanged.
+
 ## Full Lane
 
 Use for:
@@ -305,7 +331,9 @@ Use for:
 
 Entry criteria:
 
-- the task touches a critical domain, even if the requested change looks small.
+- the task touches production, a destructive action, or money moving. Payment,
+  auth, migration and API-contract code outside production is not critical by
+  itself (agreed with Hafiz on 17/10/2026).
 
 Agent behavior:
 

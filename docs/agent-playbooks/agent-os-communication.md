@@ -201,7 +201,9 @@ not from chat or a repo file. This applies to every project and every agent.
 This is the `ship` mode of the review page. Since 13/10/2026 the page contents,
 order, privacy and publishing rules, and the `plan` mode made before coding any
 change staff will see on screen, are owned by [review-page.md](review-page.md).
-Never deploy before Hafiz confirms the page.
+Never deploy before Hafiz confirms the page, unless he already told you to go to
+production (agreed 17/10/2026); in that case still make the page and leave it
+open, but do not wait for his confirmation.
 
 ## Explanation Layers
 

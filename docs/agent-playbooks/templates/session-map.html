@@ -1,0 +1,397 @@
+<!-- Session Map page template. Copy to .agent-os/session-maps/<date>-<name>.html and edit only between the SESSION DATA markers. Owner: docs/agent-playbooks/session-map.md -->
+<title>Session Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column. Current work shows the whole session bar, this goal's bar, and only the step before, the step we are on and the next step. Needs you lists everything waiting on Hafiz, built from the data. Then the flow of states, the full tree, parked items, decisions, agents, evidence. Red is used only in Needs you. Every state has its own pie icon and a word. All text comes from the data block at the bottom, which is checked before drawing. */
+:root {
+  --bg: #f5f7f9; --surface: #ffffff; --ink: #15212b; --muted: #55636f; --line: #c9d3dc; --soft: #eef1f4;
+  --c-done: #008300; --c-prog: #2a78d6; --c-ask: #e34948; --ask-bg: #fdeceb;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171e; --surface: #17222b; --ink: #e6edf2; --muted: #a3b3bf; --line: #3a4f60; --soft: #1e2a34;
+    --c-done: #3fb53f; --c-prog: #4a93ea; --c-ask: #e66767; --ask-bg: #3a1f1f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171e; --surface: #17222b; --ink: #e6edf2; --muted: #a3b3bf; --line: #3a4f60; --soft: #1e2a34;
+  --c-done: #3fb53f; --c-prog: #4a93ea; --c-ask: #e66767; --ask-bg: #3a1f1f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px; overflow-x: hidden;
+}
+main { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 0.78rem; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+h3 { font-size: 1rem; margin: 0; }
+p { margin: 0; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+header { display: flex; flex-direction: column; gap: 4px; }
+section { min-width: 0; }
+
+/* icons and badges */
+.g { width: 16px; height: 16px; flex: 0 0 auto; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600; background: var(--soft); border-radius: 999px; padding: 3px 10px 3px 7px; white-space: nowrap; flex: 0 0 auto; }
+.here { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--ink); color: var(--bg); border-radius: 999px; padding: 3px 9px; margin-bottom: 2px; }
+.pct { font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2.8em; text-align: right; flex: 0 0 auto; }
+
+/* text bars, Nakngaji style */
+.tbar { font-family: var(--font-mono); font-size: 0.8rem; line-height: 1; letter-spacing: -0.04em; white-space: nowrap; flex: 0 0 auto; }
+.tbar .f { color: var(--c-prog); } .tbar .e { color: var(--line); }
+.tbar.full .f { color: var(--c-done); }
+.tbar.big { font-size: 1.05rem; }
+.dots { flex: 1 1 16px; border-bottom: 2px dotted var(--line); min-width: 14px; height: 0; align-self: center; }
+
+/* current work card */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.barline { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.barline .lbl { font-weight: 700; min-width: 7.2em; }
+.barline .big-pct { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.counts { font-size: 0.86rem; color: var(--muted); }
+.ladder { font-size: 0.8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.ladder span { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.summary-line { font-size: 0.86rem; color: var(--muted); padding: 4px 0; }
+
+/* the tree with real branch lines */
+.tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+.tree ul { margin-left: 9px; }
+.tree li { position: relative; padding: 5px 0 5px 24px; min-width: 0; }
+.tree li::before { content: ""; position: absolute; left: 0; top: 0; width: 17px; height: 19px; border-left: 2px solid var(--line); border-bottom: 2px solid var(--line); border-bottom-left-radius: 7px; }
+.tree li::after { content: ""; position: absolute; left: 0; top: 19px; bottom: 0; border-left: 2px solid var(--line); }
+.tree li:last-child::after { display: none; }
+.tree.rooted > li { padding-left: 0; }
+.tree.rooted > li::before, .tree.rooted > li::after { display: none; }
+.tree li.has-here::before { top: 24px; } .tree li.has-here::after { top: 43px; }
+.node { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lead { display: flex; align-items: center; gap: 6px 10px; min-width: 0; flex-wrap: wrap; }
+.lead .name { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.status { display: flex; align-items: center; gap: 8px; flex: 0 1 auto; flex-wrap: wrap; min-width: 0; }
+.root > .node .name { font-weight: 700; font-size: 1.08rem; }
+.grp > .node .name { font-weight: 700; }
+.leaf > .node .name { font-weight: 500; font-size: 0.95rem; }
+.leaf.is-here > .node .name { font-weight: 700; }
+.desc { color: var(--muted); font-size: 0.88rem; max-width: 62ch; }
+.line { font-size: 0.86rem; color: var(--ink); display: flex; gap: 6px; align-items: flex-start; }
+.line .g { margin-top: 3px; }
+.line b { font-weight: 700; }
+.small { color: var(--muted); font-size: 0.82rem; }
+.by { color: var(--muted); font-size: 0.8rem; }
+.by:empty { display: none; }
+.usage-pct { font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* needs you: the only red */
+.ask { background: var(--ask-bg); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ask-head { display: inline-flex; gap: 8px; align-items: center; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.08em; font-weight: 700; }
+.ask ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.ask li { display: flex; flex-direction: column; gap: 2px; }
+.ask li b { font-weight: 700; }
+.ask li span { font-size: 0.88rem; color: var(--muted); }
+#problems:empty { display: none; }
+.problems { border: 1px dashed var(--c-ask); border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; }
+
+/* flow of states */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.stage { flex: 1 1 96px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stage .top { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 600; }
+.stage b { font-size: 1.45rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stage .cap { font-size: 0.78rem; color: var(--muted); }
+.flow-note { margin-top: 10px; font-size: 0.9rem; color: var(--muted); }
+
+/* lists */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.list li { padding: 11px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.list li:first-child { border-top: 0; padding-top: 0; }
+.agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 22px; }
+.agents div { min-width: 0; }
+.agents b { display: block; font-size: 0.92rem; }
+.agents span { color: var(--muted); font-size: 0.88rem; }
+a { color: var(--c-prog); overflow-wrap: anywhere; }
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; padding: 6px 0; }
+summary:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--c-prog); outline-offset: 2px; }
+.prompt { margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+button { margin-top: 10px; font: inherit; font-weight: 600; background: var(--ink); color: var(--bg); border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+.words { margin: 10px 0 0; display: grid; gap: 6px; font-size: 0.9rem; }
+.words dt { display: inline; font-weight: 600; } .words dd { display: inline; margin: 0; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <p class="meta" id="meta"></p>
+    <p class="meta" id="by0"></p>
+  </header>
+  <div id="problems"></div>
+  <section aria-label="Current work"><h2>Current work</h2><div class="card" id="cur"></div></section>
+  <section id="askWrap" aria-label="Needs you"></section>
+  <section aria-label="How items move"><h2>How the work moves</h2><div class="flow" id="flow"></div><p class="flow-note" id="flowNote"></p></section>
+  <section aria-label="Full map"><h2>Full map of this session</h2><ul class="tree rooted" id="map"></ul></section>
+  <section aria-label="Parked"><h2>Parked: not settled in this session</h2><ul class="tree rooted" id="parked"></ul></section>
+  <section aria-label="Decisions"><h2>Decisions I made for you, please review</h2><ul class="list" id="decided"></ul></section>
+  <section aria-label="AI usage"><h2>AI usage: every account and tool</h2><ul class="tree rooted" id="usage"></ul><p class="meta" id="agentsNote" style="margin-top:10px"></p></section>
+  <section aria-label="Jobs"><h2>Jobs in this session: machine, account, AI</h2><ul class="tree rooted" id="jobs"></ul></section>
+  <section aria-label="Evidence"><h2>Evidence and links</h2><ul class="list" id="links"></ul></section>
+  <details><summary>For the next agent</summary><div class="prompt" id="prompt"></div><button type="button" id="copy">Copy prompt</button></details>
+  <details><summary>Words used on this page</summary><dl class="words" id="words"></dl></details>
+  <noscript><p class="meta">This page needs JavaScript to draw the tree.</p></noscript>
+</main>
+
+<script>
+/* SESSION DATA START */
+/* Fill ONLY this block. The page draws everything else from it.
+   Top level: title, issue (optional), asOf ("DD/MM HH:MM MYT"), defaultBy ("machine · account · AI"),
+     question { ask, why } (optional: the one question waiting for Hafiz).
+   groups: [{ name, steps: [ step ] }]. A step has:
+     n  name in plain words           s  one of: todo, discussing, agreed, written, checked, done
+     d  one or two plain sentences    here:true on the ONE step we are on
+     finish:"agreed" when a decision is the whole job
+     blocked, next: one short sentence (a sentence repeated in a group is shown once)
+     you: "mac" | "save" | a short text (puts the step in Needs you)
+     by: only when different from defaultBy; a text, or a list in order if the step changed machine or account
+   parked: [{ n, d, you }]   decided: [{ t, why, undo }]   links: [{ t, u, d }]
+   usage: [{ n, where, plan, used (a number or null), window, resets, read, note }]
+   jobs: [{ n, where, acct, ai, s }]   prompt: text for the next agent   words: [[term, meaning]]
+   Rules: plain words, no em dashes, times in MYT. Never invent a number: use used:null and "No reading yet".
+   Then run: python3 scripts/agent-checks/session_map_page_check.py <this file> */
+var SESSION = {
+  title: "REPLACE: the session goal in plain words",
+  issue: "",
+  asOf: "REPLACE: DD/MM HH:MM MYT",
+  defaultBy: "REPLACE: machine · account · AI",
+  question: { ask: "REPLACE: the one question waiting for Hafiz, or delete this line", why: "REPLACE: why it matters" },
+  groups: [
+    { name: "REPLACE: first goal", steps: [
+      { n: "REPLACE: the step we are on", s: "discussing", here: true, d: "REPLACE: one or two plain sentences." },
+      { n: "REPLACE: the next step", s: "todo", d: "REPLACE: one or two plain sentences." }
+    ]}
+  ],
+  parked: [],
+  decided: [],
+  usage: [
+    { n: "REPLACE: account or tool", where: "REPLACE", plan: "REPLACE", used: null, note: "No reading yet." }
+  ],
+  jobs: [
+    { n: "REPLACE: this chat", where: "REPLACE", acct: "REPLACE", ai: "REPLACE", s: "discussing" }
+  ],
+  links: [],
+  prompt: "REPLACE: what the next agent needs to know",
+  words: []
+};
+/* SESSION DATA END */
+
+(function () {
+  var S = SESSION, $ = function (id) { return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+  var LADDER = [
+    ["todo", "Not started", 0, "waiting to be discussed"],
+    ["discussing", "Discussing", 20, "being talked through"],
+    ["agreed", "Agreed", 40, "you said yes"],
+    ["written", "Written", 60, "in the files"],
+    ["checked", "Checked", 80, "tests or checks pass"],
+    ["done", "Done", 100, "reached the finish line"]
+  ];
+  var L = {}; LADDER.forEach(function (r, i) { L[r[0]] = { word: r[1], pct: r[2], cap: r[3], rank: i }; });
+  var ALIAS = { now: "discussing", "not started": "todo", notstarted: "todo" };
+  var problems = [];
+  function str(v) { return v == null ? "" : String(v); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null && text !== "") e.textContent = text; return e; }
+  function svgEl(tag, attrs) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  /* check the data before drawing, so one typo never blanks the page */
+  function norm(x, where) {
+    var raw = str(x.s).trim().toLowerCase(), k = ALIAS[raw] || raw;
+    if (!L[k]) { problems.push(where + ": unknown state \"" + str(x.s) + "\" on \"" + str(x.n) + "\"."); k = "unknown"; }
+    x.s = k; x.n = str(x.n) || "Untitled step"; x.d = str(x.d);
+    var fin = str(x.finish).toLowerCase(); x.finishRank = L[fin] ? L[fin].rank : L.done.rank;
+    return x;
+  }
+  /* only a row that differs from the session default shows who did it */
+  function byText(x) {
+    if (!x.by || (Array.isArray(x.by) && !x.by.length)) return "";
+    return "Done by: " + (Array.isArray(x.by) ? x.by.map(str).join(", then ") : str(x.by));
+  }
+  function pctOf(x) {
+    if (x.s === "unknown") return 0;
+    if (L[x.s].rank >= x.finishRank) return 100;
+    return Math.round(L[x.s].rank / x.finishRank * 100);
+  }
+  var groups = (S.groups || []).filter(function (g) { if (!g || !g.steps || !g.steps.length) { if (g) problems.push("Group \"" + str(g.name) + "\" has no steps and is hidden."); return false; } return true; });
+  groups.forEach(function (g) { g.name = str(g.name) || "Untitled group"; g.steps.forEach(function (x) { norm(x, g.name); }); });
+  var leaves = []; groups.forEach(function (g) { g.steps.forEach(function (x) { leaves.push(x); }); });
+  var hereSteps = leaves.filter(function (x) { return x.here; });
+  if (hereSteps.length > 1) problems.push("More than one step is marked as here; only the first one is shown.");
+  var hereStep = hereSteps[0] || leaves.filter(function (x) { return x.s === "discussing"; })[0] || leaves.filter(function (x) { return pctOf(x) < 100; })[0] || null;
+  var curGroup = null; groups.forEach(function (g) { if (!curGroup && hereStep && g.steps.indexOf(hereStep) >= 0) curGroup = g; });
+
+  /* icons */
+  function pie(pct, kind) {
+    var s = svgEl("svg", { "class": "g", viewBox: "0 0 16 16", "aria-hidden": "true" });
+    if (kind === "ask") { s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 7, fill: "var(--c-ask)" })); s.appendChild(svgEl("path", { d: "M8 4.2v4.4", stroke: "#fff", "stroke-width": 1.9, "stroke-linecap": "round" })); s.appendChild(svgEl("circle", { cx: 8, cy: 11.6, r: 1.1, fill: "#fff" })); return s; }
+    if (kind === "block") { s.appendChild(svgEl("rect", { x: 3.5, y: 7, width: 9, height: 7, rx: 1.5, fill: "none", stroke: "var(--ink)", "stroke-width": 1.5 })); s.appendChild(svgEl("path", { d: "M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7", fill: "none", stroke: "var(--ink)", "stroke-width": 1.5 })); return s; }
+    if (kind === "next") { s.appendChild(svgEl("path", { d: "M3 8h9M8.5 4.5L12 8l-3.5 3.5", fill: "none", stroke: "var(--ink)", "stroke-width": 1.6, "stroke-linecap": "round", "stroke-linejoin": "round" })); return s; }
+    if (kind === "park") { s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 6.6, fill: "none", stroke: "var(--muted)", "stroke-width": 1.6 })); s.appendChild(svgEl("path", { d: "M6.2 5.2v5.6M9.8 5.2v5.6", stroke: "var(--muted)", "stroke-width": 1.6, "stroke-linecap": "round" })); return s; }
+    if (kind === "unknown") { s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 6.6, fill: "none", stroke: "var(--c-ask)", "stroke-width": 1.6 })); s.appendChild(svgEl("path", { d: "M6.3 6.2a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4", fill: "none", stroke: "var(--c-ask)", "stroke-width": 1.5, "stroke-linecap": "round" })); s.appendChild(svgEl("circle", { cx: 8, cy: 11.6, r: 0.9, fill: "var(--c-ask)" })); return s; }
+    if (pct >= 100) { s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 7, fill: "var(--c-done)" })); s.appendChild(svgEl("path", { d: "M4.6 8.2l2.3 2.3 4.5-4.8", fill: "none", stroke: "#fff", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" })); return s; }
+    if (pct <= 0) { s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 6.6, fill: "none", stroke: "var(--muted)", "stroke-width": 1.6, "stroke-dasharray": "2.4 2.4" })); return s; }
+    s.appendChild(svgEl("circle", { cx: 8, cy: 8, r: 6.6, fill: "none", stroke: "var(--c-prog)", "stroke-width": 1.6 }));
+    var a = pct / 100 * 2 * Math.PI, x = 8 + 6.6 * Math.sin(a), y = 8 - 6.6 * Math.cos(a);
+    s.appendChild(svgEl("path", { d: "M8 8 L8 1.4 A6.6 6.6 0 " + (pct > 50 ? 1 : 0) + " 1 " + x.toFixed(2) + " " + y.toFixed(2) + " Z", fill: "var(--c-prog)" }));
+    return s;
+  }
+  function meter(pct, big) {
+    var n = big ? 20 : 10, f = Math.round(pct / 100 * n);
+    var m = el("span", "tbar" + (big ? " big" : "") + (pct >= 100 ? " full" : "")); m.setAttribute("role", "img"); m.setAttribute("aria-label", pct + "% complete");
+    m.appendChild(el("span", "f", new Array(f + 1).join("█"))); m.appendChild(el("span", "e", new Array(n - f + 1).join("░"))); return m;
+  }
+  function tag(x) {
+    var t = el("span", "tag");
+    if (x.s === "unknown") { t.appendChild(pie(0, "unknown")); t.appendChild(document.createTextNode("Unknown state")); return t; }
+    var p = pctOf(x); t.appendChild(pie(p)); t.appendChild(document.createTextNode(p >= 100 && x.s !== "done" ? L[x.s].word + ", finished" : L[x.s].word)); return t;
+  }
+  function avg(steps) { if (!steps.length) return 0; var t = 0; steps.forEach(function (x) { t += pctOf(x); }); return Math.round(t / steps.length); }
+  function statusBox(pct, extra) { var b = el("span", "status"); b.appendChild(meter(pct)); b.appendChild(el("span", "pct", pct + "%")); if (extra) b.appendChild(extra); return b; }
+  function infoLine(kind, label, text) { var p = el("p", "line"); p.appendChild(pie(0, kind)); var sp = el("span"); sp.appendChild(el("b", null, label + " ")); sp.appendChild(document.createTextNode(text)); p.appendChild(sp); return p; }
+
+  /* a sentence that repeats on 2 or more steps of a group is shown once, at the group */
+  function common(g, key) { var v = {}, best = null; g.steps.forEach(function (x) { if (x[key]) v[x[key]] = (v[x[key]] || 0) + 1; }); for (var k in v) { if (v[k] >= 2 && (!best || v[k] > v[best])) best = k; } return best; }
+  function leafLi(x, showHere, hide) {
+    hide = hide || {};
+    var isHere = showHere && x === hereStep, li = el("li", "leaf" + (isHere ? " is-here has-here" : "")), node = el("div", "node");
+    if (isHere) { var h = el("span", "here", "You are here"); var hw = el("div"); hw.appendChild(h); node.appendChild(hw); }
+    var lead = el("div", "lead"); lead.appendChild(el("span", "name", x.n)); lead.appendChild(el("span", "dots"));
+    lead.appendChild(statusBox(pctOf(x), tag(x))); node.appendChild(lead);
+    if (x.d) node.appendChild(el("p", "desc", x.d));
+    node.appendChild(el("p", "by", byText(x)));
+    if (x.blocked && x.blocked !== hide.blocked) node.appendChild(infoLine("block", "Blocked:", str(x.blocked)));
+    if (x.next && x.next !== hide.next) node.appendChild(infoLine("next", "Next:", str(x.next)));
+    li.appendChild(node); return li;
+  }
+  function groupLi(g, opts) {
+    var pct = avg(g.steps), li = el("li", "grp"), node = el("div", "node"), lead = el("div", "lead");
+    lead.appendChild(el("span", "name", g.name)); lead.appendChild(el("span", "dots")); lead.appendChild(statusBox(pct)); node.appendChild(lead);
+    var bl = g.steps.filter(function (x) { return x.blocked; }).length, fin = g.steps.filter(function (x) { return pctOf(x) >= 100; }).length;
+    var sub = fin + " of " + g.steps.length + " steps finished" + (bl ? ", " + bl + " blocked" : "") + ".";
+    if (opts.inMap && g === curGroup) sub += " This is the current work, also shown at the top.";
+    node.appendChild(el("p", "small", sub));
+    var hide = {};
+    if (opts.inMap) {
+      var cb = common(g, "blocked"), cn = common(g, "next");
+      if (cb) { hide.blocked = cb; node.appendChild(infoLine("block", "Blocked, " + g.steps.filter(function (x) { return x.blocked === cb; }).length + " steps:", cb)); }
+      if (cn) { hide.next = cn; node.appendChild(infoLine("next", "Next, " + g.steps.filter(function (x) { return x.next === cn; }).length + " steps:", cn)); }
+    }
+    li.appendChild(node);
+    var ul = el("ul"); g.steps.forEach(function (x) { ul.appendChild(leafLi(x, opts.showHere, hide)); }); li.appendChild(ul); return li;
+  }
+
+  /* header and problems */
+  $("title").textContent = str(S.title) + (S.issue ? " " + S.issue : "");
+  $("meta").textContent = S.asOf ? "As of " + S.asOf : "Time of last update not given.";
+  var withBy = leaves.filter(function (x) { return x.by && (!Array.isArray(x.by) || x.by.length); }).length;
+  $("by0").textContent = withBy * 2 > leaves.length ? "Done by: see each row, the work is spread across machines or accounts." : "Done by, unless a row says otherwise: " + str(S.defaultBy);
+  if (problems.length) { var pb = el("div", "problems"); pb.appendChild(el("b", null, "Data problems on this page")); var pu = el("ul"); problems.forEach(function (t) { pu.appendChild(el("li", null, t)); }); pb.appendChild(pu); $("problems").appendChild(pb); }
+
+  /* current work */
+  var cur = $("cur"), overall = avg(leaves);
+  var c = {}; LADDER.forEach(function (r) { c[r[0]] = 0; }); leaves.forEach(function (x) { if (c[x.s] != null) c[x.s]++; });
+  var finished = leaves.filter(function (x) { return pctOf(x) >= 100; }).length, blockedAll = leaves.filter(function (x) { return x.blocked; }).length;
+  var b1 = el("div", "barline"); b1.appendChild(el("span", "lbl", "Whole session")); b1.appendChild(meter(overall, true)); b1.appendChild(el("span", "big-pct", overall + "%")); cur.appendChild(b1);
+  var parts = LADDER.filter(function (r) { return c[r[0]] > 0; }).map(function (r) { return c[r[0]] + " " + r[1].toLowerCase(); });
+  cur.appendChild(el("p", "counts", leaves.length + " steps: " + parts.join(", ") + ". " + finished + " finished" + (blockedAll ? ", " + blockedAll + " blocked" : "") + "."));
+  if (curGroup) {
+    var b2 = el("div", "barline"); b2.appendChild(el("span", "lbl", "This goal")); b2.appendChild(meter(avg(curGroup.steps), true)); b2.appendChild(el("span", "big-pct", avg(curGroup.steps) + "%")); cur.appendChild(b2);
+    var i = curGroup.steps.indexOf(hereStep), from = Math.max(0, i - 1), to = Math.min(curGroup.steps.length - 1, i + 1);
+    var tree = el("ul", "tree rooted"), root = el("li", "grp"), rn = el("div", "node"); rn.appendChild(el("h3", null, curGroup.name)); root.appendChild(rn);
+    var ul = el("ul");
+    if (from > 0) { var e1 = el("li"); e1.appendChild(el("p", "summary-line", from + " earlier step" + (from > 1 ? "s" : "") + " finished or agreed. See the full map.")); ul.appendChild(e1); }
+    for (var k = from; k <= to; k++) ul.appendChild(leafLi(curGroup.steps[k], true));
+    var after = curGroup.steps.length - 1 - to; if (after > 0) { var e2 = el("li"); e2.appendChild(el("p", "summary-line", after + " later step" + (after > 1 ? "s" : "") + " after this. See the full map.")); ul.appendChild(e2); }
+    root.appendChild(ul); tree.appendChild(root); cur.appendChild(tree);
+  } else { cur.appendChild(el("p", "meta", "No step is in progress right now.")); }
+  var lad = el("details"); lad.appendChild(el("summary", null, "How the percentage works")); var lp = el("p", "ladder");
+  LADDER.forEach(function (r) { var sp = el("span"); sp.appendChild(pie(r[2])); sp.appendChild(document.createTextNode(r[1] + " " + r[2] + "%")); lp.appendChild(sp); });
+  lad.appendChild(lp); lad.appendChild(el("p", "small", "A step that is only a decision counts as finished once it is agreed. A group and the whole session are the average of their steps.")); cur.appendChild(lad);
+
+  /* needs you: built from the data */
+  var aw = $("askWrap"), items = [];
+  if (S.question && S.question.ask) items.push({ t: "Your answer: " + S.question.ask, s: str(S.question.why) });
+  var mac = leaves.filter(function (x) { return x.you === "mac"; }); if (mac.length) items.push({ t: "At your Mac: " + mac.length + " edit" + (mac.length > 1 ? "s" : "") + " the safety checker will not let me make.", s: mac.map(function (x) { return x.n; }).join("; ") + "." });
+  var save = leaves.filter(function (x) { return x.you === "save"; }); if (save.length) items.push({ t: "Your go: save " + save.length + " written change" + (save.length > 1 ? "s" : "") + " to git.", s: save.map(function (x) { return x.n; }).join("; ") + "." });
+  (S.parked || []).forEach(function (x) { if (x.you) items.push({ t: "Your call on a parked item: " + str(x.n) + ".", s: str(x.you) }); });
+  var box = el("div", "ask"), hd = el("div", "ask-head"); hd.appendChild(pie(0, "ask")); hd.appendChild(document.createTextNode(items.length ? "Needs you (" + items.length + ")" : "Nothing needs you right now")); box.appendChild(hd);
+  if (items.length) { var al = el("ul"); items.forEach(function (x) { var li = el("li"); li.appendChild(el("b", null, x.t)); if (x.s) li.appendChild(el("span", null, x.s)); al.appendChild(li); }); box.appendChild(al); }
+  aw.appendChild(box);
+
+  /* flow of states */
+  var fl = $("flow");
+  LADDER.forEach(function (r) { var st = el("div", "stage"), top = el("div", "top"); top.appendChild(pie(r[2])); top.appendChild(document.createTextNode(r[1])); st.appendChild(top); st.appendChild(el("b", null, String(c[r[0]]))); st.appendChild(el("span", "cap", r[3])); fl.appendChild(st); });
+  var most = LADDER.slice().sort(function (a, b) { return c[b[0]] - c[a[0]]; })[0];
+  $("flowNote").textContent = "Read left to right: a step moves from Not started to Done. Most steps are at " + most[1] + " (" + c[most[0]] + " of " + leaves.length + ")." + (blockedAll ? " " + blockedAll + " are blocked; see Needs you." : "");
+
+  /* full map */
+  var mroot = el("li", "root"), mn = el("div", "node"), ml = el("div", "lead");
+  ml.appendChild(el("span", "name", str(S.title))); ml.appendChild(el("span", "dots")); ml.appendChild(statusBox(overall)); mn.appendChild(ml);
+  mn.appendChild(el("p", "small", groups.length + " goals, " + leaves.length + " steps, " + blockedAll + " blocked.")); mroot.appendChild(mn);
+  var gl = el("ul"); groups.forEach(function (g) { gl.appendChild(groupLi(g, { inMap: true, showHere: false })); }); mroot.appendChild(gl); $("map").appendChild(mroot);
+
+  /* parked */
+  var parked = S.parked || [], proot = el("li", "root"), pn = el("div", "node"), pl = el("div", "lead");
+  pl.appendChild(el("span", "name", "Parked")); pn.appendChild(pl); pn.appendChild(el("p", "small", parked.length ? parked.length + " items kept for later. They do not count toward the percentage." : "Nothing is parked.")); proot.appendChild(pn);
+  if (parked.length) { var pul = el("ul"); parked.forEach(function (x) { var li = el("li", "leaf"), node = el("div", "node"), lead = el("div", "lead"); lead.appendChild(el("span", "name", str(x.n))); lead.appendChild(el("span", "dots")); var t = el("span", "tag"); t.appendChild(pie(0, "park")); t.appendChild(document.createTextNode("Parked")); lead.appendChild(t); node.appendChild(lead); if (x.d) node.appendChild(el("p", "desc", str(x.d))); if (x.you) node.appendChild(infoLine("next", "Needs you:", str(x.you))); li.appendChild(node); pul.appendChild(li); }); proot.appendChild(pul); }
+  $("parked").appendChild(proot);
+
+  /* decided */
+  var dc = $("decided"), dec = S.decided || [];
+  dec.forEach(function (x) { var li = el("li"); li.appendChild(el("b", null, str(x.t))); if (x.why) li.appendChild(el("p", "desc", "Why: " + str(x.why))); if (x.undo) li.appendChild(el("p", "small", "To undo: " + str(x.undo))); dc.appendChild(li); });
+  if (!dec.length) dc.appendChild(el("li", null, "None yet."));
+
+  /* agents */
+  var urows = S.usage || [], uroot = el("li", "root"), un = el("div", "node"), ul0 = el("div", "lead");
+  ul0.appendChild(el("span", "name", "AI usage")); un.appendChild(ul0); un.appendChild(el("p", "small", urows.length + " accounts and tools. Last reading shown on each line.")); uroot.appendChild(un);
+  var uul = el("ul");
+  urows.forEach(function (u) {
+    var li = el("li", "leaf"), node = el("div", "node"), lead = el("div", "lead");
+    lead.appendChild(el("span", "name", str(u.n))); lead.appendChild(el("span", "dots"));
+    var st = el("span", "status");
+    if (typeof u.used === "number") { st.appendChild(meter(u.used)); st.appendChild(el("span", "usage-pct", u.used + "% used")); }
+    else { var t = el("span", "tag"); t.appendChild(pie(0)); t.appendChild(document.createTextNode("No reading yet")); st.appendChild(t); }
+    lead.appendChild(st); node.appendChild(lead);
+    node.appendChild(el("p", "by", str(u.where) + " · " + str(u.plan)));
+    if (typeof u.used === "number") node.appendChild(el("p", "desc", str(u.window) + ", resets " + str(u.resets) + ". Read " + str(u.read) + "."));
+    if (u.note) node.appendChild(el("p", "desc", str(u.note)));
+    li.appendChild(node); uul.appendChild(li);
+  });
+  uroot.appendChild(uul); $("usage").appendChild(uroot);
+  if (S.agentsNote) $("agentsNote").textContent = S.agentsNote;
+
+  var jrows = S.jobs || [], jroot = el("li", "root"), jn = el("div", "node"), jl = el("div", "lead");
+  jl.appendChild(el("span", "name", "Jobs")); jn.appendChild(jl); jn.appendChild(el("p", "small", jrows.length + " entries. Each shows the machine, the account and the AI.")); jroot.appendChild(jn);
+  var jul = el("ul");
+  jrows.forEach(function (j) {
+    norm(j, "Jobs"); var li = el("li", "leaf"), node = el("div", "node"), lead = el("div", "lead");
+    lead.appendChild(el("span", "name", str(j.n))); lead.appendChild(el("span", "dots")); lead.appendChild(tag(j)); node.appendChild(lead);
+    node.appendChild(el("p", "by", [str(j.where), str(j.acct), str(j.ai)].join(" · ")));
+    li.appendChild(node); jul.appendChild(li);
+  });
+  jroot.appendChild(jul); $("jobs").appendChild(jroot);
+
+  /* links */
+  var lk = $("links"); (S.links || []).forEach(function (x) { var li = el("li"); if (x.u) { var a2 = el("a", null, str(x.t)); a2.href = x.u; a2.target = "_blank"; a2.rel = "noopener"; li.appendChild(a2); } else { li.appendChild(el("b", null, str(x.t))); } if (x.d) li.appendChild(el("p", "small", str(x.d))); lk.appendChild(li); });
+
+  $("prompt").textContent = str(S.prompt);
+  var wd = $("words"); (S.words || []).forEach(function (x) { var d = el("div"); d.appendChild(el("dt", null, str(x[0]) + ": ")); d.appendChild(el("dd", null, str(x[1]))); wd.appendChild(d); });
+  var bt = $("copy"), pr = $("prompt");
+  bt.addEventListener("click", function () {
+    function sel() { var r = document.createRange(); r.selectNodeContents(pr); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); bt.textContent = "Selected, press copy"; }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(str(S.prompt)).then(function () { bt.textContent = "Copied"; }, sel); } else { sel(); }
+  });
+})();
+</script>

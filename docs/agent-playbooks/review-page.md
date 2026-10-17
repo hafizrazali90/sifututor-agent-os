@@ -62,7 +62,9 @@ Once Hafiz gave the go, never stop for small approvals. Ask only for:
 - a business rule that is not settled.
 
 The ship page is still a gate: no deploy until Hafiz confirms it (`AGENTS.md`,
-"Communication With Hafiz"). The one exception is a staging deploy Hafiz
+"Communication With Hafiz"). The exceptions are a production deploy Hafiz
+already told you to go to (agreed 17/10/2026: still make the page and leave it
+open, but do not wait for his confirmation), and a staging deploy Hafiz
 already approved for this release, such as a PC release run with
 `--staging-deploy` ([unattended-jobs.md](unattended-jobs.md)); its staging
 screenshots then go on the ship page. Other work, such as fixes and tests,
@@ -194,7 +196,8 @@ Ship mode:
 - [ ] Release state and exact approvals still needed.
 - [ ] Private, masked, MYT times, glossary words, no em dashes.
 - [ ] Published and opened; no deploy until Hafiz confirms, apart from a
-      staging deploy he already approved for this release.
+      staging deploy he already approved for this release, or a production
+      deploy he already told you to go to.
 
 ## Skill
 
