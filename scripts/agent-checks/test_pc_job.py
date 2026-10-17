@@ -442,6 +442,61 @@ class RunnerTest(unittest.TestCase):
         self.assertNotIn("Edit", argv[argv.index("--allowedTools") + 1].split(","))
 
 
+class LockfileFoldersTest(unittest.TestCase):
+    """Issue #364: install dependencies for each lockfile at the root or one folder down."""
+
+    def test_root_and_direct_children_with_lockfiles_are_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel in ("package-lock.json", "frontend/package-lock.json", "backend/package-lock.json",
+                        "deep/nested/package-lock.json", ".hidden/package-lock.json"):
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text("{}")
+            (root / "docs").mkdir()
+            found = [p.relative_to(root).as_posix() or "." for p in pc_job.lockfile_folders(root)]
+            self.assertEqual(found, [".", "backend", "frontend"])
+
+    def test_no_lockfile_means_nothing_to_install(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(pc_job.lockfile_folders(Path(tmp)), [])
+
+    def test_npm_ci_retries_with_legacy_peer_deps_only_on_eresolve(self) -> None:
+        calls = []
+
+        def fake_sh(cmd, cwd=None, timeout=None):
+            calls.append(cmd)
+            if "--legacy-peer-deps" in cmd:
+                return subprocess.CompletedProcess(cmd, 0, "", "")
+            return subprocess.CompletedProcess(cmd, 1, "", "npm error code ERESOLVE")
+
+        with mock.patch.object(pc_job, "sh", side_effect=fake_sh):
+            self.assertEqual(pc_job.npm_ci(Path("."), "finch-inbox").returncode, 0)
+        self.assertEqual(len(calls), 2)
+        self.assertIn("--legacy-peer-deps", calls[1])
+
+        calls.clear()
+        with mock.patch.object(pc_job, "sh", return_value=subprocess.CompletedProcess([], 1, "", "network down")) as fake:
+            self.assertEqual(pc_job.npm_ci(Path("."), "finch-inbox").returncode, 1)
+            self.assertEqual(fake.call_count, 1)
+
+    def test_npm_ci_never_relaxes_peer_deps_outside_finch(self) -> None:
+        # Codex review of #365: the exception is Finch's documented dependency
+        # tree (KI-2026-030); other repos fail closed on a peer conflict.
+        eresolve = subprocess.CompletedProcess([], 1, "", "npm error code ERESOLVE")
+        for repo in ("ripple-suite", "sifu-tutor", None):
+            with mock.patch.object(pc_job, "sh", return_value=eresolve) as fake:
+                self.assertEqual(pc_job.npm_ci(Path("."), repo).returncode, 1)
+                self.assertEqual(fake.call_count, 1)
+                self.assertNotIn("--legacy-peer-deps", fake.call_args[0][0])
+
+    def test_sims_docker_test_script_is_an_allowed_builder_tool(self) -> None:
+        self.assertIn("Bash(bash scripts/docker-test.sh:*)", pc_job.PROJECT_BUILDER_TOOLS)
+
+    def test_finch_backend_jest_is_an_allowed_builder_tool(self) -> None:
+        # F1b (13 Oct 2026) could not run Finch's backend specs: Jest was not allowed.
+        self.assertIn("Bash(npx jest:*)", pc_job.PROJECT_BUILDER_TOOLS)
+
+
 class MacSideTest(unittest.TestCase):
     def brief_file(self, text: str) -> Path:
         tmp = Path(tempfile.mkdtemp())

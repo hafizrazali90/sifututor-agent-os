@@ -143,6 +143,8 @@ owner docs define the required fields and state language.
   explanation side by side, screenshots of every UI/UX change, decisions,
   risks, evidence and required approvals. It blocks a deploy until he confirms,
   unless he already told you to go to production.
+- A change staff will see on screen also gets an automatic plan page before
+  coding; [review-page.md](docs/agent-playbooks/review-page.md) owns both modes.
 - For a staff report or PR, first explain who reported/requested it (or say the
   source is unnamed), what they observed, expected behavior, who uses it, why it
   matters, the proposed/final solution, author, evidence, and release state.

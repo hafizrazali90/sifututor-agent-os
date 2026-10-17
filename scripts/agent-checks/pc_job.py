@@ -61,6 +61,8 @@ BUILDER_TOOLS = (
 # Extra checks a builder may run inside a Node project repo (issue #347).
 PROJECT_BUILDER_TOOLS = (
     "Bash(npx vitest:*)", "Bash(npm run test:unit:*)", "Bash(npx tsc:*)",
+    # finch-inbox's backend specs run on Jest (F1b, 13 Oct 2026).
+    "Bash(npx jest:*)",
     "Bash(npx eslint:*)", "Bash(npm run lint:*)",
     "Bash(npm test:*)", "Bash(npm run validate:registry:*)",
     "Bash(git mv:*)", "Bash(grep:*)", "Bash(sed:*)",
@@ -68,6 +70,9 @@ PROJECT_BUILDER_TOOLS = (
     "Bash(python3 scripts/generate-extractor-registry.py:*)", "Bash(python3 scripts/generate-mcp-bundle-f.py:*)",
     "Bash(python3 scripts/apply-staff-scopes.py:*)",
     f"Bash(bash {PC_REPO}/scripts/agent-checks/pre-commit-guard.sh:*)",
+    # sifu-tutor: the PC has no PHP or MySQL; the repo's own script runs its
+    # tests in Docker containers (issue #364).
+    "Bash(bash scripts/docker-test.sh:*)",
 )
 NPM_CI_TIMEOUT = 1200
 REVIEWER_TOOLS = (
@@ -264,13 +269,39 @@ def prepare_worktree(repo: Path, worktrees: Path, job_id: str, normal: dict) -> 
         proc = sh(["git", "worktree", "add", "-q", "--detach", str(path), ref], cwd=repo)
     if proc.returncode != 0:
         raise RuntimeError(f"could not create the worktree: {proc.stderr.strip()[:200]}")
-    if normal.get("repo") and normal["role"] == job_brief.BUILDER and (path / "package-lock.json").is_file():
-        # A fresh worktree has no node_modules; install from the lockfile so the
-        # builder can run the project's tests. Never link another checkout's copy.
-        install = sh(["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"], cwd=path, timeout=NPM_CI_TIMEOUT)
-        if install.returncode != 0:
-            raise RuntimeError(f"npm ci failed in the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
+    if normal.get("repo") and normal["role"] == job_brief.BUILDER:
+        # A fresh worktree has no node_modules; install from each lockfile at the
+        # root or one folder down (finch-inbox keeps frontend/ and backend/) so
+        # the builder can run the project's tests. Never link another checkout's copy.
+        for folder in lockfile_folders(path):
+            install = npm_ci(folder, normal["repo"])
+            if install.returncode != 0:
+                where = folder.relative_to(path).as_posix() or "."
+                raise RuntimeError(f"npm ci failed in {where} of the job worktree: {(install.stderr or install.stdout).strip()[-200:]}")
     return path
+
+
+LEGACY_PEER_DEPS_REPOS = ("finch-inbox",)
+
+
+def npm_ci(folder: Path, repo: str | None) -> subprocess.CompletedProcess:
+    """npm ci from the lockfile. Only for finch-inbox, whose frontend documents a
+    peer-range conflict (KI-2026-030), an ERESOLVE failure is retried once with
+    --legacy-peer-deps; every other repo fails closed."""
+    base = ["npm", "ci", "--no-audit", "--no-fund", "--prefer-offline"]
+    install = sh(base, cwd=folder, timeout=NPM_CI_TIMEOUT)
+    if (repo in LEGACY_PEER_DEPS_REPOS and install.returncode != 0
+            and "ERESOLVE" in (install.stderr + install.stdout)):
+        install = sh(base + ["--legacy-peer-deps"], cwd=folder, timeout=NPM_CI_TIMEOUT)
+    return install
+
+
+def lockfile_folders(path: Path) -> list[Path]:
+    """Folders holding a package-lock.json: the worktree root and its direct children."""
+    found = [path] if (path / "package-lock.json").is_file() else []
+    found += sorted(child for child in path.iterdir()
+                    if child.is_dir() and not child.name.startswith(".") and (child / "package-lock.json").is_file())
+    return found
 
 
 def count_hooks(settings: dict) -> int:

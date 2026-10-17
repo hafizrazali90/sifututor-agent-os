@@ -66,7 +66,7 @@ These preferences were stated by Hafiz on 2026-06-04.
 | Recommended path | Hafiz should not need to remember the workflow steps. | Suggest the stop point and path, such as diagnose -> fix -> test -> QA/review -> commit -> PR -> staging -> production monitoring, adjusted to the task risk. |
 | Task-scoped access | When Hafiz asks the agent to finish a task end-to-end, the agent should use required scoped access without another permission prompt. | Use the narrowest relevant local access file/tool, never print secrets, and continue through required verify, QA, deploy, smoke, or monitoring unless the next action is destructive or outside the task. |
 | New credentials and provider dashboards | Hafiz should not need to rotate a key because an agent inspected the page or logged a command. | Keep provider reveal pages outside screenshots/accessibility snapshots/DOM captures. Ask Hafiz for one hidden owner-entry step, then continue autonomously using non-secret status or boolean-match evidence. Never ask him to paste a credential into chat or a visible command argument. |
-| Pre-deploy review page (2026-10-01) | Before any deploy, and at the end of every session with shippable work, Hafiz confirms the change from one published review page. | Publish the page after the adversarial review is fixed: business and technical explanation for every section, screenshots of every UI/UX change from the real styled app, decisions made for him, risks, evidence and required approvals. Always leave the page open for him. It blocks a deploy until he confirms, unless he already told you to go to production (17/10/2026). Owner: `agent-os-communication.md` "Pre-Deploy Review Artifact". |
+| Pre-deploy review page (2026-10-01) | Before any deploy, and at the end of every session with shippable work, Hafiz confirms the change from one published review page. | Publish the page after the adversarial review is fixed: business and technical explanation for every section, screenshots of every UI/UX change from the real styled app, decisions made for him, risks, evidence and required approvals. Always leave the page open for him. It blocks a deploy until he confirms, unless he already told you to go to production (17/10/2026). Since 2026-10-13 this is the `ship` mode; a `plan` page also comes automatically before coding any on-screen change. Owner: `review-page.md`. |
 | Copy-ready messages | WhatsApp replies and similar send-ready drafts should copy cleanly without Markdown noise. | Put the complete message in one fenced plain-text block, use bare URLs and channel-native formatting, and keep explanations outside the block. |
 
 ## How To Interpret Short Commands
@@ -651,7 +651,8 @@ requests, follow the copy-ready outbound-message rule in
 belongs in one plain-text fenced block with bare URLs; explanations stay
 outside it. Proactively draft when an outside person needs the outcome or next
 action, including completed access changes; drafting is not permission to send.
-Skip the draft when no outside audience needs it.
+Skip the draft when no outside audience needs it. Staff replies also follow
+[Staff Replies With Steps And Explicit Conditions](agent-os-communication.md#staff-replies-with-steps-and-explicit-conditions).
 
 Keep short answers short. The guidance below scales with the task and does not
 require headings or a lengthy template for trivial questions. Unresolved

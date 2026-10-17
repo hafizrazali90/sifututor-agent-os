@@ -43,6 +43,7 @@ Agent OS playbooks.
 | Routing and context loading | What workflow applies, which docs to read, and how entry points load. | `task-router.md`, `agent-os-routing-model.md`, `doc-routing-and-context-loading.md`, `agent-os-workflow-lanes.md`, `agent-os-runtime-reliability.md` |
 | Skill and doc quality | Whether to create, update, merge, park, or delete Agent OS artifacts. | `skill-quality-and-pruning.md`, `agent-os-skill-registry.md`, this index |
 | Communication with Hafiz | How to explain work, status, risk, and next steps. | `working-with-hafiz.md`, `agent-os-communication.md` |
+| Review page | When the plan page (before coding an on-screen change) and the ship page (before deploy) are due, what they contain, privacy, and when to wait or keep working. | `review-page.md` |
 | State and continuation | What is drafted, local, committed, pushed, PR-open, merged, deployed, live, parked, or handed off. | `agent-os-state-model.md`, `session-map.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `session-release-ledger.md` |
 | Memory | What belongs in Koda, docs, Session Map, Mission Ledger, or nowhere. | `agent-os-memory.md`, `agent-os-memory-architecture.md`, `context-authority.md` |
 | Evidence and testing | How the agent proves work. | `agent-os-evidence-model.md`, `verify.md`, `qa.md`, `test-coverage.md`, `review.md`, `no-mistakes-lite.md` |
@@ -70,6 +71,7 @@ Agent OS playbooks.
 | "Build a feature" | `task-router.md` | planning artifacts, product design, implementation readiness, verify, QA |
 | "Verify or QA this" | `verify.md` or `qa.md` | evidence model, TESTING.md, project docs |
 | "Review this" | `review.md` | no-mistakes-lite, evidence/state docs |
+| "Make the review page" / "show me the plan" | `review-page.md` | communication, evidence model, release monitoring |
 | "Commit this" | `commit.md` | review/no-mistakes-lite, current git diff/status |
 | "Push/open PR/merge/deploy" | `review.md` | push-pr-ci automation or release monitoring, approval gates |
 | "Does this need a staff guide / changelog / What's New?" | `release-documentation.md` | commit, review, release monitoring |
@@ -87,7 +89,7 @@ If a new idea fits one of these rows, update that owner first.
 | Overview and architecture | `agent-os.md`, `agent-os-architecture-map.md`, `agent-os-infrastructure.md`, `agent-os-internal-build-plan.md`, `agent-os-quick-start.md` |
 | Routing and workflow weight | `task-router.md`, `agent-os-routing-model.md`, `agent-os-workflow-lanes.md`, `doc-routing-and-context-loading.md`, `doc-owner-route-index.md`, `agent-os-runtime-reliability.md` |
 | Skill and adapter system | `agent-os-skill-registry.md`, `skill-quality-and-pruning.md`, `agent-os-parity-contract.md`, `agent-os-adapter-readiness.md`, `multi-agent-adapter-workflow.md`, `switching-claude-codex.md`, `agent-os-hook-dispatcher.md`, `codex-hook-trust.md` |
-| Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
+| Hafiz working model and communication | `working-with-hafiz.md`, `agent-os-communication.md`, `review-page.md`, `agent-os-roles.md`, `agent-os-general-guidelines.md` |
 | Planning and implementation readiness | `planning-artifacts.md`, `product-design.md`, `ai-implementation-readiness.md`, `agent-os-workflows.md`, `deck-craft.md` |
 | Diagnosis, implementation proof, and QA | `diagnose.md`, `verify.md`, `qa.md`, `review.md`, `no-mistakes-lite.md`, `related-impact-audit.md`, `test-coverage.md`, `agent-os-evidence-model.md`, `sims-ui-audit.md` |
 | State, continuation, and session control | `agent-os-state-model.md`, `context-authority.md`, `session-map.md`, `session-release-ledger.md`, `save-session.md`, `handoff.md`, `snapshot.md`, `active-tasks.md`, `autonomous-work-packets.md`, `parallel-work-and-worktrees.md`, `home-pc-worker.md`, `staging-deploy-from-pc.md` (PC deploys Ripple and SIMS staging with `staging_deploy.py`, `staging_remote.py`), `unattended-jobs.md` (job runner `scripts/agent-checks/pc_job.py`; release readiness loop `release_loop.py`, `release_readiness.py`, `pc_release.py` and the checklist template `templates/release-readiness.json`) |

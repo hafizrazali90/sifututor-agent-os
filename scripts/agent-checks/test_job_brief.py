@@ -144,12 +144,13 @@ class RepoFieldTest(unittest.TestCase):
         self.assertEqual(normal["repo"], "")
 
     def test_listed_project_repo_is_accepted(self) -> None:
-        errors, normal = self.check(brief(repo="ripple-suite"))
-        self.assertEqual(errors, [])
-        self.assertEqual(normal["repo"], "ripple-suite")
+        for value in ("ripple-suite", "finch-inbox", "sifu-tutor"):
+            errors, normal = self.check(brief(repo=value))
+            self.assertEqual(errors, [], value)
+            self.assertEqual(normal["repo"], value)
 
     def test_unlisted_or_path_like_repo_is_refused(self) -> None:
-        for value in ("sifu-tutor", "../ripple-suite", "/home/hafiz/x"):
+        for value in ("kelas", "../ripple-suite", "/home/hafiz/x"):
             errors, _ = self.check(brief(repo=value))
             self.assertTrue(any("repo must be one of" in e for e in errors), (value, errors))
 

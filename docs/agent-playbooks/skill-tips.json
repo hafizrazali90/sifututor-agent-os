@@ -321,6 +321,15 @@
       "where": ["commands", "agents"]
     },
     {
+      "name": "review-page",
+      "group": "ops",
+      "tip": "Makes the review page Hafiz confirms: plan before coding (real screen beside the proposed one), ship before deploy (staging screenshots, tests, release state).",
+      "reason": "it builds the review page Hafiz confirms before coding or before deploy.",
+      "triggers": ["review page", "review page first", "plan page", "ship page", "show me the screens before building"],
+      "agents": ["claude", "codex"],
+      "where": ["commands", "agents"]
+    },
+    {
       "name": "koda-audit",
       "group": "ops",
       "tip": "Checks the health of the shared memory (Koda), finds stale, duplicate or misplaced entries and proposes a cleanup.",

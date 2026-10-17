@@ -198,28 +198,12 @@ Hafiz, 01/10/2026: before any deploy, and at the end of every session that
 produced shippable work, he confirms the change from one published review page,
 not from chat or a repo file. This applies to every project and every agent.
 
-The page must contain:
-
-- **Two layers for every section.** A plain business explanation (what changes
-  for staff, parents, tutors or money, and why it matters) and the technical
-  explanation in natural language (what the code and database do, how it was
-  proven). Neither layer may be skipped.
-- **Screenshots of every UI/UX change.** Each new or changed screen and state,
-  desktop and phone where relevant, captured from the real styled app (mock data
-  or staging). An unstyled test harness is not acceptable evidence.
-- Decisions the agent made on his behalf, so he can overrule them.
-- Risks, limits and what is not yet proven (for example staging-only proof).
-- Evidence with real numbers (tests, reviews, negative controls) and the
-  baseline failures that are not this change.
-- The release plan and exactly which approvals are still needed.
-
-Order: finish the adversarial review and fix its findings first, then build and
-publish the page, open it for Hafiz, then ask for confirmation. Do not deploy
-before Hafiz confirms the page, unless he already told you to go to production
-(agreed 17/10/2026); in that case still make the page and leave it open, but do
-not wait for his confirmation. Publish it as an Artifact (Claude) or the
-equivalent shareable page (other agents); still give the local path of any
-source file.
+This is the `ship` mode of the review page. Since 13/10/2026 the page contents,
+order, privacy and publishing rules, and the `plan` mode made before coding any
+change staff will see on screen, are owned by [review-page.md](review-page.md).
+Never deploy before Hafiz confirms the page, unless he already told you to go to
+production (agreed 17/10/2026); in that case still make the page and leave it
+open, but do not wait for his confirmation.
 
 ## Explanation Layers
 
@@ -500,6 +484,32 @@ draft something I can send to staff
 If Hafiz explicitly asks for rich email HTML, Markdown, or another destination
 format, use that requested format instead. The default remains copy-safe plain
 text.
+
+### Staff Replies With Steps And Explicit Conditions
+
+For non-technical staff, organise the reply around the questions they actually
+asked. Use familiar words and the exact visible screen/button labels. For each
+reported situation, explain what staff can do now with short steps such as
+`Lead → Update step → Not Interested`, and say what happens automatically.
+
+Spell out the verified business conditions that determine an automatic outcome.
+Phrases such as "when the success requirements are met" leave the staff's
+question unanswered. Preserve AND/OR alternatives and exceptions in plain
+language. If the conditions are unknown, check the relevant source before
+writing the reply or name the uncertainty; never invent them.
+
+Keep the release state and timing accurate, then include only the relevant
+case-specific action. Remove engineering mechanics and unrelated release detail
+without removing the instructions or conditions staff need. Provide this useful
+version on the first draft rather than waiting for Hafiz to ask how to use it
+or what the requirements are.
+
+Example with supplied, verified conditions: "Close Won updates automatically
+when a tutor is assigned and at least one of these is true: the commitment fee
+is paid or waived; the first invoice is paid." A reply about cancellation should
+also name the appropriate screen/action before and after Request creation. This example
+illustrates wording; the product's current business-rule owner defines the
+actual conditions.
 
 ### Proactive Drafts When Someone Needs The Outcome
 

@@ -19,7 +19,7 @@ way to name production.
 check and start also take --holder NAME (default: the actor) and --override-lease REASON.
 
 ripple: runs the sealed controller `deploy-ripple-suite staging --release-ref REF
-        --commit SHA` as the `deploy` user. Refuses anything that adds or changes
+        --commit SHA --lease-holder NAME [--override-lease REASON]` as the `deploy` user. Refuses anything that adds or changes
         a migration, a deploy script, a dependency file or a build config.
 sims:   runs the staging runbook steps as `www-data`: ownership check, fetch and
         checkout, install and build, backup, migrations (scanned first, rolled
@@ -634,6 +634,8 @@ class Base:
         self.log(f"START run={runid} ref={ref} sha={sha} mode={mode} previous={info.get('served', '')} holder={self.holder}")
         argv = [sys.executable, self.s.self_path(), "remote", self.target, "_run", runid, ref, sha, mode,
                 "--base", base or "-", "--actor", self.actor, "--release", self.release, "--lock-fd", str(fd)]
+        if self.lease_path:  # the runner hands the checked holder (and any override) on to the Ripple controller
+            argv += ["--holder", self.holder] + (["--override-lease", self.override] if self.override else [])
         self.s.spawn_detached(argv, self.run_dir(runid) + "/run.log", fd)
         lines = [f"STARTED run={runid} target={self.target} ref={ref} sha={sha} mode={mode} (poll with: status)"]
         if self.lease_word() == "override":
@@ -824,6 +826,9 @@ class RippleRemote(Base):
         # The word "staging" is written here and nowhere else. sudo's env_reset drops every inherited variable,
         # including any confirm phrase.
         argv = ["sudo", "-n", "-u", "deploy", self.controller, "staging", "--release-ref", ref, "--commit", sha]
+        # The controller enforces the lease too (issue #371): it gets the holder start checked, and the override reason
+        # when one was given. Both were validated by check_identity (NAME_RE, LEASE_TEXT_RE) before this runs.
+        argv += ["--lease-holder", self.holder] + (["--override-lease", self.override] if self.override else [])
         code, timed_out = self.s.run_bounded(argv, self.max_seconds)
         status = "ok" if code == 0 else ("timeout" if timed_out else "failed")
         if status == "ok":

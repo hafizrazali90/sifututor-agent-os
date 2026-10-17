@@ -283,6 +283,7 @@ scripts/agent-checks/claude_hook_dispatch.py   <- all behavior
 .claude/hooks/quality-gate.py                  <- wrapper
 .claude/hooks/workflow-gate.py                 <- wrapper
 .claude/hooks/claude-hook.cjs                  <- Node wrapper used by Finch
+.claude/hooks/run-python-hook.cjs              <- Node wrapper used by sifu-tutor
 ```
 
 The wrappers only name their hook and hand over. Change behavior in the shared
