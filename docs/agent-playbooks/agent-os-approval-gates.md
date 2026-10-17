@@ -265,6 +265,42 @@ These actions must not be hidden inside a larger bundle:
 | Modify `live/` | `live/` is read-only reference. |
 | Use or change Plane | Plane is not part of the default Agent OS path; use it only if Hafiz explicitly asks in the current session. |
 
+## Command Guard And Deploy Ok
+
+Agreed with Hafiz on 17/10/2026. The shared command guard
+(`scripts/agent-checks/secret_output_guard.py`, with `risky_command_rules.py`)
+runs before every shell command in Claude and Codex, including in bypass mode.
+
+- **Always refused, and nothing can waive it:** force push and remote branch
+  deletion, `git reset --hard`, `git clean -f`, `git branch -D`, dropping or
+  truncating data, `migrate:fresh` and its relatives, and `rm -r` on a root,
+  home or system folder or anything that escapes the repo. If Hafiz wants one,
+  he runs it himself.
+- **Needs "deploy ok":** a production deploy such as `vercel --prod`, a push to
+  main or a production branch, and a merge of a pull request into main or a
+  production branch (a merge into a staging branch is free). The guard refuses
+  until Hafiz has typed `deploy ok` in this session. The phrase counts only as
+  the whole message, its own last line, or the final clause after a comma,
+  semicolon, colon or dash ("Fix the page, proceed until prod deploy, deploy
+  ok"). A sentence that only mentions it ("wait for my deploy ok") does not
+  count, and neither does one with "not", "never" or "without" before it.
+  A prompt hook writes a note for that session under
+  `~/.agent-os/approvals/deploy-ok/`, valid for 12 hours: Claude's
+  `koda-context-injector.py` and Codex's `codex-lifecycle-hook.py` both call
+  `deploy_ok_note.py`. The agent never types Hafiz's prompt, and the guard also
+  refuses any command, patch or file tool that touches that folder, and any
+  command that runs `deploy_ok_note.py`, so an agent cannot write its own note.
+  Production also covers `vercel` started through `npx`, `npm exec`, `yarn`,
+  `pnpm` or `bunx`, a `git push` with no branch named while on main, and a merge
+  through `gh api`; deleting a branch or protection through `gh api` is refused
+  as destructive. This stops
+  mistakes and confused instructions. It is not a defence against someone who
+  controls the machine. "Already told you to go to production" in the other
+  playbooks means this typed phrase.
+- **Not touched:** staging, pushing a feature branch, commits, tests, reading.
+- When the guard refuses, say so plainly, ask Hafiz to type `deploy ok`, and run
+  the command again once he has.
+
 ## Short Command Semantics
 
 | Hafiz says | Meaning |

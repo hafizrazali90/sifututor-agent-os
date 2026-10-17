@@ -29,6 +29,11 @@ except (ImportError, OSError):
     def observe_jev_shadow(*_args, **_kwargs):
         return ""
 
+try:
+    import deploy_ok_note
+except (ImportError, OSError):
+    deploy_ok_note = None
+
 from koda_endpoint import KODA_MCP_URL as KODA_URL  # single source, issue #163
 TIMEOUT = 2  # seconds — hard cap, Koda must respond quickly or we skip
 MIN_PROMPT_LEN = 10
@@ -150,6 +155,14 @@ def main():
         data = json.loads(raw)
     except Exception:
         sys.exit(0)
+
+    # Hafiz's typed "deploy ok" (issue #383). Runs before the short-prompt exit below,
+    # because the phrase itself is only nine characters. Never blocks the prompt.
+    if deploy_ok_note is not None and isinstance(data, dict):
+        try:
+            deploy_ok_note.handle(data)
+        except Exception:
+            pass
 
     user_prompt = data.get("user_prompt", "")
     sync_secret_visual_boundary(data, user_prompt)

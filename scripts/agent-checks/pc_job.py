@@ -192,6 +192,12 @@ def submit(brief_path: Path, *, account: str, dry_run: bool = False, runner=subp
         return 0
     run_ssh(install_script(job_id, files), runner=runner)
     run_ssh(None, command=schtasks_create(job_id), runner=runner)
+    try:  # Mac side only: note the machine and account for the Session Map page; never block a job
+        import job_ledger
+
+        job_ledger.record(normal["title"], "PC", account, "Claude", "running")
+    except Exception:
+        pass
     out(f"Started {job_id} on the PC. Check with: pc_job.py status {job_id}")
     return 0
 

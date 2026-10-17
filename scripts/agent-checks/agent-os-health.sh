@@ -169,6 +169,13 @@ check_file "Agent OS Koda retrieval" "$ROOT/scripts/agent-checks/agent-os-koda-r
 check_file "Agent OS adapter readiness" "$ROOT/scripts/agent-checks/agent-os-adapter-readiness.py"
 check_file "Kilo adapter check" "$ROOT/scripts/agent-checks/kilo-agent-os-adapter-check.py"
 check_file "secret output guard" "$ROOT/scripts/agent-checks/secret_output_guard.py"
+check_file "risky command rules" "$ROOT/scripts/agent-checks/risky_command_rules.py"
+check_file "deploy ok note" "$ROOT/scripts/agent-checks/deploy_ok_note.py"
+check_file "usage status line" "$ROOT/scripts/agent-checks/claude_usage_statusline.py"
+check_file "usage readings" "$ROOT/scripts/agent-checks/usage_readings.py"
+check_file "job ledger" "$ROOT/scripts/agent-checks/job_ledger.py"
+check_file "session map page template" "$ROOT/docs/agent-playbooks/templates/session-map.html"
+check_file "session map page check" "$ROOT/scripts/agent-checks/session_map_page_check.py"
 check_file "question size guard" "$ROOT/scripts/agent-checks/ask-question-size-guard.py"
 check_file "secret artifact scan" "$ROOT/scripts/agent-checks/secret_artifact_scan.py"
 check_file "capability example" "$ROOT/docs/agent-playbooks/capabilities.example.json"
@@ -360,8 +367,8 @@ else
   sed -n '1,12p' $TMP_DIR/agent-os-today-snapshot.err 2>/dev/null || true
 fi
 
-if python3 -m unittest scripts/agent-checks/test_secret_output_guard.py scripts/agent-checks/test_secret_guard_operations.py scripts/agent-checks/test_proc_list_masked.py scripts/agent-checks/test_secret_artifact_scan.py >$TMP_DIR/agent-os-secret-guards.out 2>$TMP_DIR/agent-os-secret-guards.err; then
-  pass "secret output guards" "command, visual-capture, and artifact regressions passed"
+if python3 -m unittest scripts/agent-checks/test_secret_output_guard.py scripts/agent-checks/test_secret_guard_operations.py scripts/agent-checks/test_proc_list_masked.py scripts/agent-checks/test_secret_artifact_scan.py scripts/agent-checks/test_risky_command_rules.py scripts/agent-checks/test_codex_lifecycle_hook_routing.py scripts/agent-checks/test_session_map_page_check.py scripts/agent-checks/test_usage_readings.py scripts/agent-checks/test_job_ledger.py >$TMP_DIR/agent-os-secret-guards.out 2>$TMP_DIR/agent-os-secret-guards.err; then
+  pass "secret output guards" "command, destructive and production rule, Codex routing, session map page, usage readings, job ledger, visual-capture, and artifact regressions passed"
 else
   fail "secret output guards" "regression tests failed"
   sed -n '1,12p' $TMP_DIR/agent-os-secret-guards.out 2>/dev/null || true

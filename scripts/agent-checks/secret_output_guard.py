@@ -19,6 +19,12 @@ import sys
 import time
 from typing import Any
 
+try:
+    import risky_command_rules
+except ImportError:  # loaded by path, so the folder is not on sys.path yet
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import risky_command_rules
+
 
 @dataclass(frozen=True)
 class Decision:
@@ -2040,7 +2046,30 @@ def _rule_language_secret_file_print(ctx: _Ctx) -> str | None:
     return None
 
 
+# The session whose tool call is being judged; set by evaluate_tool_request.
+_SESSION: dict[str, str] = {"id": ""}
+
+
+def _rule_note_folder(ctx: _Ctx) -> str | None:
+    texts = [word.text for word in ctx.cmd.words]
+    texts += [word.text for _op, word in ctx.cmd.redirs]
+    texts += [str(code[1]) for code in ctx.codes]
+    codes = [str(code[1]) for code in ctx.codes]
+    return risky_command_rules.note_folder_reason(texts) or risky_command_rules.note_writer_reason(ctx.exe, ctx.args, codes)
+
+
+def _rule_destructive(ctx: _Ctx) -> str | None:
+    return risky_command_rules.destructive_reason(ctx.exe, ctx.args)
+
+
+def _rule_production(ctx: _Ctx) -> str | None:
+    return risky_command_rules.production_reason(ctx.exe, ctx.args, _SESSION["id"])
+
+
 _RULES: tuple[tuple[str, Any], ...] = (
+    ("note-folder", _rule_note_folder),
+    ("destructive", _rule_destructive),
+    ("production", _rule_production),
     ("live-write", _rule_live_write),
     ("live-recursive-search", _rule_live_recursive_search),
     ("pm2", _rule_pm2),
@@ -2468,6 +2497,9 @@ def evaluate_tool_request(
             False,
             "Visual capture is blocked while a complete credential may be visible. Hide or leave the credential page before capturing it.",
         )
+    folder_reason = risky_command_rules.note_folder_reason_for_tool(tool_name, tool_input)
+    if folder_reason:
+        return Decision(False, folder_reason)
     # Direct editor contents are inert data, not shell invocations. Native
     # path permissions and the separate secret-artifact scan remain responsible
     # for writes. Execution wrappers retain command inspection.
@@ -2476,10 +2508,14 @@ def evaluate_tool_request(
     # A malformed, mixed or unrecognised apply_patch payload cannot be told apart
     # from a command, so it keeps the conservative word rules.
     legacy_text_rules = "apply_patch" in tool_name.lower()
-    for command in _command_texts_for_tool(tool_name, tool_input):
-        decision = evaluate_command(command, word_rules=legacy_text_rules)
-        if not decision.allowed:
-            return decision
+    _SESSION["id"] = str(payload.get("session_id") or payload.get("sessionId") or "")
+    try:
+        for command in _command_texts_for_tool(tool_name, tool_input):
+            decision = evaluate_command(command, word_rules=legacy_text_rules)
+            if not decision.allowed:
+                return decision
+    finally:
+        _SESSION["id"] = ""
     return Decision(True)
 
 

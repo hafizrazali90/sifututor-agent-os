@@ -37,7 +37,8 @@ separate worktree or a scratch database copy), never in the working tree, and
 compare against a pristine copy to prove the edit really landed before you trust
 the red result. Editing still needs the same approval as any implementation.
 
-For critical lanes (payments, commission, auth, migrations, production data),
+For critical lanes (production data, production deploys, destructive actions, and
+payments, commission, auth or migrations when they touch production),
 build the loop read-only first: against a copy, a replay of captured input, a
 test, or the approved read-only access wrappers in `agent-access-map.md`. Never
 run a loop that changes production data. Phase A stays read-only.

@@ -38,9 +38,12 @@ NODE_READER = (
 
 
 def read_data(text: str) -> tuple[dict | None, str]:
-    match = BLOCK.search(text)
-    if not match:
+    matches = BLOCK.findall(text)
+    if not matches:
         return None, "No data block found between the SESSION DATA START and END markers."
+    if len(matches) > 1:
+        return None, "Found more than one data block. The browser reads the last one and this check the first, so keep only one."
+    match = BLOCK.search(text)
     try:
         done = subprocess.run(
             ["node", *NODE_FLAGS, "-e", NODE_READER], input=match.group(1), capture_output=True, text=True, timeout=10, check=False
@@ -74,6 +77,8 @@ def blank(value) -> bool:
 
 
 def check_data(data: dict) -> list[str]:
+    if not isinstance(data, dict):
+        return ["The data block is not an object. It must be var SESSION = { ... };"]
     problems: list[str] = []
     for key in ("title", "asOf", "defaultBy"):
         if blank(data.get(key)):
@@ -88,14 +93,20 @@ def check_data(data: dict) -> list[str]:
     here_steps = 0
     open_work = False
     for group in groups:
-        name = group.get("name") if isinstance(group, dict) else None
-        steps = group.get("steps") if isinstance(group, dict) else None
+        if not isinstance(group, dict):
+            problems.append("A group is not an object, so it is skipped.")
+            continue
+        name = group.get("name")
+        steps = group.get("steps")
         if blank(name):
             problems.append("A group has no name.")
         if not isinstance(steps, list) or not steps:
             problems.append(f"Group '{name}' has no steps.")
             continue
         for step in steps:
+            if not isinstance(step, dict):
+                problems.append(f"A step in group '{name}' is not an object, so it is skipped.")
+                continue
             label = step.get("n") if blank(step.get("n")) is False else "(unnamed step)"
             if blank(step.get("n")):
                 problems.append(f"A step in group '{name}' has no name.")
@@ -116,7 +127,14 @@ def check_data(data: dict) -> list[str]:
     if here_steps == 0 and open_work:
         problems.append("No step is marked here. Add here: true to the step we are on.")
 
-    for row in data.get("usage") or []:
+    usage_rows = data.get("usage") or []
+    if not isinstance(usage_rows, list):
+        problems.append("usage must be a list.")
+        usage_rows = []
+    for number, row in enumerate(usage_rows, 1):
+        if not isinstance(row, dict):
+            problems.append(f"Usage row {number} is not an object.")
+            continue
         label = row.get("n") or "(unnamed)"
         for key in ("n", "where", "plan"):
             if blank(row.get(key)):
@@ -127,7 +145,14 @@ def check_data(data: dict) -> list[str]:
                 problems.append(f"Usage '{label}' shows a number but has no reading time (read) and reset time (resets) in MYT.")
         elif used is not None:
             problems.append(f"Usage '{label}' must be a number or null, never text.")
-    for row in data.get("jobs") or []:
+    job_rows = data.get("jobs") or []
+    if not isinstance(job_rows, list):
+        problems.append("jobs must be a list.")
+        job_rows = []
+    for number, row in enumerate(job_rows, 1):
+        if not isinstance(row, dict):
+            problems.append(f"Job row {number} is not an object.")
+            continue
         label = row.get("n") or "(unnamed)"
         for key in ("n", "where", "acct", "ai"):
             if blank(row.get(key)):
