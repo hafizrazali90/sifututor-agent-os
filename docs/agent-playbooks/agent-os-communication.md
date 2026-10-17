@@ -214,9 +214,12 @@ The page must contain:
 - The release plan and exactly which approvals are still needed.
 
 Order: finish the adversarial review and fix its findings first, then build and
-publish the page, then ask for confirmation. Never deploy before Hafiz confirms
-the page. Publish it as an Artifact (Claude) or the equivalent shareable page
-(other agents); still give the local path of any source file.
+publish the page, open it for Hafiz, then ask for confirmation. Do not deploy
+before Hafiz confirms the page, unless he already told you to go to production
+(agreed 17/10/2026); in that case still make the page and leave it open, but do
+not wait for his confirmation. Publish it as an Artifact (Claude) or the
+equivalent shareable page (other agents); still give the local path of any
+source file.
 
 ## Explanation Layers
 

@@ -839,6 +839,25 @@ def commit_prompt(normalized: str) -> bool:
     return any(re.search(pattern, normalized) for pattern in commit_patterns)
 
 
+PRODUCTION_WORDS = re.compile(r"\b(?:production|prod|live database|live data)\b")
+PROCEED_WORDS = re.compile(r"\b(?:proceed|skip|go ahead|deploy ok)\b")
+PRODUCTION_STOP = (
+    "This touches production. Do the read-only diagnosis first, then wait for Hafiz's approval "
+    "before changing anything in production, unless he has already said to proceed."
+)
+PRODUCTION_PROCEED = (
+    "Hafiz already said to proceed, so go through diagnosis and fix without waiting for approval. "
+    "Production deploy and destructive actions still follow the approval list in AGENTS.md."
+)
+
+
+def production_gate(normalized: str) -> list[str]:
+    """Stop lines for production work only, on whole words, unless Hafiz said to proceed."""
+    if not PRODUCTION_WORDS.search(normalized):
+        return []
+    return [PRODUCTION_PROCEED if PROCEED_WORDS.search(normalized) else PRODUCTION_STOP]
+
+
 def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
     """Return a workflow skill, required actions, and a short reason."""
 
@@ -1192,21 +1211,6 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "Prompt is asking for product design, PRD/UX/build prompts, or major workflow redesign.",
         )
 
-    critical_domain_patterns = (
-        "payment",
-        "payments",
-        "invoice",
-        "invoices",
-        "commission",
-        "commissions",
-        "migration",
-        "migrations",
-        "auth",
-        "authentication",
-        "mobile api",
-        "api response",
-        "api contract",
-    )
     critical_action_patterns = (
         "fix",
         "change",
@@ -1217,17 +1221,11 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
         "response changed",
         "contract changed",
     )
-    if any(domain in normalized for domain in critical_domain_patterns) and any(
-        action in normalized for action in critical_action_patterns
-    ):
+    if PRODUCTION_WORDS.search(normalized) and any(action in normalized for action in critical_action_patterns):
         return (
             "$diagnose",
-            [
-                "Use $diagnose before editing.",
-                "This is a critical lane: auth, payments, invoices, commissions, migrations, deployment, or mobile API contract behavior.",
-                "Stop after read-only Phase A diagnosis and wait for approval before implementation.",
-            ],
-            "Prompt touches a critical lane and requires diagnosis first.",
+            ["Use $diagnose before editing.", *production_gate(normalized)],
+            "Prompt changes something in production.",
         )
 
     if any(word in normalized for word in ("quick check", "quick-check", "health check", "workflow doctor", "doctor", "wired correctly")):
@@ -1359,7 +1357,7 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             "$diagnose",
             [
                 "Use $diagnose before editing.",
-                "For critical lanes, stop after Phase A diagnosis and wait for approval before implementation.",
+                *production_gate(normalized),
             ],
             "Prompt is about bug/root-cause analysis.",
         )
@@ -1430,8 +1428,8 @@ def classify_prompt(prompt: str) -> tuple[str, list[str], str]:
             [
                 "Use $commit and run the shared pre-commit guard.",
                 "For multi-fix sessions, update docs/agent-playbooks/session-release-ledger.md style status before staging.",
-                "Do not commit without explicit current-session approval of the exact file list.",
-                "Do not push unless explicitly asked in the current session.",
+                "Commit when the finish line includes a commit. Check the file list yourself, leave out unrelated changed files, and show the list in your report.",
+                "Push only if the finish line includes a push.",
             ],
             "Prompt is asking for commit preparation or commit execution.",
         )

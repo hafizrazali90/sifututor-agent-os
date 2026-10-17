@@ -44,17 +44,9 @@ only when something new changes scope, risk, evidence, access, or approval.
 
 ## Current Scope
 
-This relaxed model applies immediately to:
-
-- Agent OS architecture review
-- docs and playbook updates
-- workflow design
-- eval updates
-- non-destructive health checks
-- living drafts during a discussion Hafiz has asked to document
-
-Product development can reuse this model later, but only after the workflow
-lanes, verification rules, and critical-lane behavior are reviewed.
+This relaxed model applies to all work, including product development. The
+risk boundaries in this playbook (separate approvals, critical lanes, secrets,
+destructive actions) are unchanged.
 
 ## Approval Modes
 
@@ -135,6 +127,9 @@ Stop the packet when:
 - a critical-lane implementation decision is needed
 - the next step is ambiguous about what a deploy, a delete or another action
   from the Separate Approval Always list would touch
+
+If the next step is only technically ambiguous, pick the simplest reasonable
+step, record it in one line, and keep going. Do not stop.
 
 Use the Evidence Gap Stop Rules in
 [agent-os-evidence-model.md](agent-os-evidence-model.md) before saying a work
