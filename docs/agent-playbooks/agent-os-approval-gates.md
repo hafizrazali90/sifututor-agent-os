@@ -127,13 +127,14 @@ Allowed work-packet actions:
 
 Stop the packet when:
 
-- the next step is ambiguous
 - the scope changes materially
 - a separate-approval boundary appears
 - required evidence is missing for the state being claimed
 - commit, push, merge, PR, deploy, destructive, secret, or production action is
   needed
 - a critical-lane implementation decision is needed
+- the next step is ambiguous about what a deploy, a delete or another action
+  from the Separate Approval Always list would touch
 
 Use the Evidence Gap Stop Rules in
 [agent-os-evidence-model.md](agent-os-evidence-model.md) before saying a work
@@ -258,7 +259,7 @@ These actions must not be hidden inside a larger bundle:
 | --- | --- |
 | Deploy or production release | Can affect real users and revenue. |
 | Merge to protected branch | Changes shared source of truth. |
-| Open PR | Creates external review/state; ask unless explicitly requested. |
+| Open PR | Creates external review/state; no separate ask when the finish line Hafiz named includes the PR, otherwise ask. |
 | Production log access or production data action outside the active task | May expose sensitive operational data; use standing task access only when the current task already requires the scoped check. |
 | Auth/payment/invoice/commission/migration/mobile API implementation | Critical-lane changes need diagnosis first and approval before implementation. |
 | Destructive cleanup | File/data loss risk. |

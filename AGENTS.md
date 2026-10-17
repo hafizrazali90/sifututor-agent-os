@@ -86,6 +86,16 @@ scope, changed material risk/evidence, unavailable rollback, a critical or
 destructive expansion, or genuine product judgment. Approval rules are owned
 by [agent-os-approval-gates.md](docs/agent-playbooks/agent-os-approval-gates.md).
 
+## Decision Policy
+
+A goal with a finish line is the go. When Hafiz states a goal, say in one line
+what done means and start. The finish line is the one he names; if he names
+none, it is committed locally. Keep going to that line. Do not stop to ask
+whether to continue, whether to stop, or for approval of a step the goal already
+covers. Anything past the line he named still needs his approval. Production
+deploy, merge, destructive actions, money, new logins or permissions, secrets,
+and messages sent to other people always need his approval, even inside a goal.
+
 ## Start And Route Work
 
 For non-trivial work:

@@ -24,7 +24,10 @@ format inside this skill.
 
 1. Identify whether a Session Map already exists for the current session.
 2. If no map exists and the session is non-trivial, create one from
-   `docs/agent-playbooks/templates/session-map.md`.
+   `docs/agent-playbooks/templates/session-map.md`. When Hafiz reads it as a
+   web page, use `docs/agent-playbooks/templates/session-map.html` and follow
+   "Standard Web Page Template" in the playbook, then run
+   `scripts/agent-checks/session_map_page_check.py` on the page.
 3. Use one map for one meaningful session. Reuse the same map for the same
    main goal; create a new map only for a different mission, project, branch,
    release path, owner, or confusing unrelated scope.

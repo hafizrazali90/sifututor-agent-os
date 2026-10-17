@@ -14,9 +14,21 @@ Claude may use `/save-session`. Codex should use the repo-local `$save-session`
 skill when available. Both entry points must follow this playbook before ending
 meaningful work.
 
+## When It Runs
+
+Agreed with Hafiz on 17/10/2026. Run save-session only when:
+
+- Hafiz asks for it (`/save-session`, `$save-session`, "save session", "wrap up").
+- The work is handed to another agent or person.
+- The chat is about to be compacted and details could be lost.
+
+For an ordinary finished task, report the result in chat and in the PR, and
+store a correction in Koda when it happens. Do not run the full checklist
+unprompted.
+
 ## The Simple Rule
 
-Do not end a meaningful session with only "done." End it with:
+When save-session runs, do not end with only "done." End it with:
 
 1. what changed
 2. what was learned

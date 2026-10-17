@@ -121,8 +121,9 @@ python3 scripts/agent-checks/session-map-html.py .agent-os/session-maps/<file>.m
 ```
 
 Plain meaning: the agent edits the Markdown, then generates the nice browser
-view from that same source. Do not manually edit the generated HTML as the
-truth.
+view from that same source. Do not manually edit a page made by that generator
+as the truth. A page made from the Standard Web Page Template below is
+different: its own data block is the source.
 
 When the generated HTML is meant for Hafiz to review, open it automatically:
 
@@ -131,6 +132,55 @@ open .agent-os/session-maps/<file>.html
 ```
 
 Still report the path in chat so Hafiz can reopen it later.
+
+## Standard Web Page Template
+
+Agreed with Hafiz on 17/10/2026. Hafiz reads the Session Map as a web page, and
+Claude and Codex fill the same page every time so it always looks the same.
+
+```text
+docs/agent-playbooks/templates/session-map.html
+```
+
+How to use it:
+
+1. Copy the template to `.agent-os/session-maps/<date>-<name>.html`.
+2. Edit only the data block between `SESSION DATA START` and `SESSION DATA END`.
+   The comment at the top of the block lists every field. The page draws the
+   tree, the bars, the counts and Needs you from it, so nothing is typed twice.
+3. Run `python3 scripts/agent-checks/session_map_page_check.py <file>`. It fails
+   on a blank field, a misspelled state, an unfilled `REPLACE` placeholder, an
+   em dash, a time without MYT, or a usage number with no reading time.
+4. Open the page for Hafiz, and report the path in chat.
+
+What the page must show, in this order: Current work, Needs you, how the work
+moves, the full map, Parked, decisions made for Hafiz, AI usage, jobs, evidence
+and links, then the folded next-agent prompt and word list.
+
+Rules for the data:
+
+- One step is marked `here: true`, exactly once. The step state is one of
+  `todo`, `discussing`, `agreed`, `written`, `checked`, `done`. The percentage
+  comes from the state (0, 20, 40, 60, 80, 100), never from a typed number.
+- A side topic joins the full map only when Hafiz says to settle it in this
+  session. Everything else goes under Parked.
+- Labels are plain words. Each step has one or two plain sentences. A technical
+  term is explained once in the word list.
+- Never invent a number. A usage figure comes from the tool's own records and
+  carries the time it was read. With no reading, write `used: null` and
+  "No reading yet".
+- Machine, account and AI: write the usual ones once in `defaultBy` and add `by`
+  to a step only when it differs. A step that changed account lists them in
+  order. Read the account from the tool itself and write only the part of the
+  email before the `@`. Claude: the `emailAddress` field in `.claude.json`
+  (under `$CLAUDE_CONFIG_DIR` when that is set, otherwise the home folder);
+  read that one field and never print the file. Codex: the latest
+  `token_count` event in `~/.codex/sessions` has `used_percent`, `resets_at`
+  and the plan. Write times in MYT.
+
+The older Markdown map and `session-map-html.py` still work. When Hafiz needs
+the web page, use the template above, and do not keep two different versions of
+the same session.
 
 ## When To Create Or Update One
 

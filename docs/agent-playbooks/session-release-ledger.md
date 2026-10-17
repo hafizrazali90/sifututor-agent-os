@@ -15,15 +15,18 @@ or PR gets stranded.
 
 ## Trigger
 
-Start a Session Release Ledger as soon as any of these is true:
+Agreed with Hafiz on 17/10/2026. A fix means one change that ships on its own,
+with its own commit or PR. It is not necessarily one task: one task can produce
+several fixes.
 
-- A second staff-reported issue enters the same chat.
-- The session switches from one bug to another before the first bug is live.
-- More than one branch, PR, or commit is created or discussed.
-- Hafiz asks to commit, merge, push, deploy, or check whether everything is live.
-- A fix is rebuilt on a cleaner branch after being created on another branch.
+Start a Session Release Ledger as soon as either of these is true:
 
-For a single tiny documentation change, this is not needed.
+- A second fix or issue enters the same session, so one can be stranded while
+  the other moves on.
+- A fix is rebuilt on another branch after being created on a first branch.
+
+Asking to commit, merge, push, deploy, or check whether something is live does
+not start a ledger by itself. A single fix does not need one.
 
 ## Ledger Template
 

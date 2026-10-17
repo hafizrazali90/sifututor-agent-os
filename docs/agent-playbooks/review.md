@@ -49,6 +49,25 @@ and target to the trusted task, inspect evidence and reviewer provenance, and
 reject unjustified `not_applicable` entries. No helper can infer these facts from
 strings alone. A builder's own adversarial review must be labelled self-review.
 
+## Review Loop Limit
+
+Agreed with Hafiz on 17/10/2026, after research on how others limit AI review
+loops. A build that trades reviews between agents without a stop rule wastes
+usage: one CRM build ran 30 or more rounds.
+
+1. Run the automatic checks first (tests, type check, lint).
+2. Then one review by a fresh reviewer. Fix P0 and P1 findings only. P2 and P3
+   go to a follow-up list on the review page, not into another round.
+3. Re-run the same automatic checks. Do not run a second full AI review, unless
+   the fix changed real logic.
+4. Stop when two rounds in a row find nothing new and serious, or make no
+   progress. Later rounds look only at the changed lines.
+5. One whole-branch review at the end. Review a big branch in chunks.
+6. If reviewers disagree, a failing test or a file and line settles it, not the
+   orchestrator's opinion. A disagreement about money or auth goes to Hafiz.
+7. Work that touches production gets a second review from Hafiz or from a
+   different model in a fresh context.
+
 ## Fresh-Context Review
 
 Use fresh-context review when the next state matters enough that the builder's
