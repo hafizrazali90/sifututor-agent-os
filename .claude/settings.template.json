@@ -32,6 +32,12 @@
             "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/scripts/agent-checks/skill-tips-hook.py --suggest",
             "timeout": 3,
             "_why": "Skill suggestion for Hafiz (#331): one quiet line when a skill could help. Fail-open, no network, at most 3 per session."
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}\"/scripts/agent-checks/deploy_ok_note.py",
+            "timeout": 3,
+            "_why": "Records Hafiz's typed deploy ok for this session so a production deploy or a merge into main can pass the command guard (#383). Reads only the prompt, no network."
           }
         ]
       }

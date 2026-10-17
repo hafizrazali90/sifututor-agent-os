@@ -243,6 +243,10 @@ HARMLESS = [
 ]
 
 DANGEROUS = [
+    # destructive and production commands (agreed with Hafiz on 17/10/2026)
+    "git push --force origin main",
+    "mysql -e 'DROP DATABASE sims'",
+    "vercel --prod",
     # recursive search of live/ stays blocked even when the pattern is also given with -e or contains live/
     "grep -rn live/ live/sifu-tutor",
     "grep -rn -e token -e live/ live/sifu-tutor",

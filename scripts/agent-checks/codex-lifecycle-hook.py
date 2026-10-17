@@ -14,6 +14,7 @@ from typing import Any
 import urllib.request
 
 from koda_contract import capability_report
+import deploy_ok_note
 from secret_output_guard import (
     clear_secret_visual_boundary,
     prompt_requests_secret_reveal,
@@ -1570,6 +1571,7 @@ def main() -> int:
 
     if event == "UserPromptSubmit":
         prompt = str(payload.get("prompt") or "")
+        deploy_ok_note.handle(payload)  # only Hafiz's typed "deploy ok" can unlock production commands
         sync_secret_visual_boundary(payload, prompt)
         jev_context = observe_jev_shadow(
             prompt,

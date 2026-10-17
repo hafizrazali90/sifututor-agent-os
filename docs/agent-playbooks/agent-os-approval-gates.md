@@ -265,6 +265,30 @@ These actions must not be hidden inside a larger bundle:
 | Modify `live/` | `live/` is read-only reference. |
 | Use or change Plane | Plane is not part of the default Agent OS path; use it only if Hafiz explicitly asks in the current session. |
 
+## Command Guard And Deploy Ok
+
+Agreed with Hafiz on 17/10/2026. The shared command guard
+(`scripts/agent-checks/secret_output_guard.py`, with `risky_command_rules.py`)
+runs before every shell command in Claude and Codex, including in bypass mode.
+
+- **Always refused, and nothing can waive it:** force push and remote branch
+  deletion, `git reset --hard`, `git clean -f`, `git branch -D`, dropping or
+  truncating data, `migrate:fresh` and its relatives, and `rm -r` on a root,
+  home or system folder or anything that escapes the repo. If Hafiz wants one,
+  he runs it himself.
+- **Needs "deploy ok":** a production deploy such as `vercel --prod`, a push to
+  main or a production branch, and a merge of a pull request into main or a
+  production branch (a merge into a staging branch is free). The guard refuses
+  until Hafiz has typed `deploy ok` in this session. The phrase counts only as
+  the whole message or its last words, never after "not", "never" or "without".
+  A prompt hook (`deploy_ok_note.py`) writes a note for that session under
+  `~/.agent-os/approvals/deploy-ok/`, valid for 12 hours. The agent cannot write
+  it, because the agent never types Hafiz's prompt. "Already told you to go to
+  production" in the other playbooks means this typed phrase.
+- **Not touched:** staging, pushing a feature branch, commits, tests, reading.
+- When the guard refuses, say so plainly, ask Hafiz to type `deploy ok`, and run
+  the command again once he has.
+
 ## Short Command Semantics
 
 | Hafiz says | Meaning |

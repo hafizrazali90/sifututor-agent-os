@@ -243,13 +243,14 @@ Owner playbooks hold the detailed procedure; this contract keeps the outcomes:
 - Verify the real acceptance rule, not a weaker proxy. User-facing behavior
   needs human-journey evidence and a permanent E2E test, or a named valid
   exception (`missing credential`, `no safe representative data`, `destructive
-  workflow`, `tooling unavailable`, or `not user-facing`).
+  workflow`, `tooling unavailable`, or `not user-facing`). A Small-lane fix is exempt.
 - When a project has `TESTING.md`, read and update the affected coverage row.
 - Staff-facing changes ship their relevant guide/release note/help in the same
   release, record a concrete `not relevant` reason, or use an urgent deferral
   with a named human owner and real follow-up issue. Record the decision in the
   project's `RELEASE-DOCS.md` when that convention exists.
-- Before push/merge/deploy, perform adversarial review and accurately state
+- Before push/merge/deploy, perform adversarial review (a labelled self-review
+  for a Small-lane fix) and accurately state
   whether work is local, committed, pushed, PR-open, merged, deployed,
   live-checked, or monitored.
 

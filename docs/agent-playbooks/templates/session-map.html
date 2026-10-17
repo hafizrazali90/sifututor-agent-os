@@ -224,7 +224,13 @@ var SESSION = {
     if (L[x.s].rank >= x.finishRank) return 100;
     return Math.round(L[x.s].rank / x.finishRank * 100);
   }
-  var groups = (S.groups || []).filter(function (g) { if (!g || !g.steps || !g.steps.length) { if (g) problems.push("Group \"" + str(g.name) + "\" has no steps and is hidden."); return false; } return true; });
+  var groups = (S.groups || []).filter(function (g) {
+    if (!g || typeof g !== "object") { problems.push("A group is not an object and is hidden."); return false; }
+    var steps = Array.isArray(g.steps) ? g.steps : [];
+    g.steps = steps.filter(function (x) { if (x && typeof x === "object") return true; problems.push("A step in group \"" + str(g.name) + "\" is not an object and is hidden."); return false; });
+    if (!g.steps.length) { problems.push("Group \"" + str(g.name) + "\" has no steps and is hidden."); return false; }
+    return true;
+  });
   groups.forEach(function (g) { g.name = str(g.name) || "Untitled group"; g.steps.forEach(function (x) { norm(x, g.name); }); });
   var leaves = []; groups.forEach(function (g) { g.steps.forEach(function (x) { leaves.push(x); }); });
   var hereSteps = leaves.filter(function (x) { return x.here; });

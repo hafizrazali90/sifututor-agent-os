@@ -4,14 +4,13 @@ Use this when the user asks to commit, prepare a commit, or check readiness.
 
 ## Hard Rules
 
-- Never commit outside the user's approved scope. For a commit-only request,
-  obtain approval of the exact file list; a short reply such as `proceed`,
-  `continue`, `yes`, or `ok` counts only when the previous message named the
-  exact bundle, checks, and stop-before-push boundary. When an already-approved
-  end-to-end boundary includes commit, inspect, guard, and report the exact file
-  list without pausing for another approval, provided every file remains inside
-  the agreed scope. Stop when the list reveals material new scope, risk,
-  destructive work, critical-lane expansion, or a boundary conflict.
+- Never commit outside the user's approved scope. When the finish line Hafiz
+  named includes a commit (a commit-only request counts), inspect, guard, and
+  report the exact file list yourself without pausing for a file-list approval,
+  provided every file remains inside the agreed scope, and leave out unrelated
+  changed files. A request only to prepare a commit stops before committing.
+  Stop when the list reveals material new scope, risk, destructive work, a
+  production change, or a boundary conflict (agreed with Hafiz on 17/10/2026).
 - Never push, merge, deploy, or open a PR unless the user explicitly asks in
   the current session.
 - Never use `--no-verify`.

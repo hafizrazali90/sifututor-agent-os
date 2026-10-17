@@ -135,6 +135,38 @@ class SessionMapPageCheckTest(unittest.TestCase):
             self.assertFalse(marker.exists(), "the data block wrote a file")
             self.assertTrue(problems)
 
+    def test_a_null_step_is_reported_not_a_crash(self) -> None:
+        data = self.mutated(lambda d: d["groups"][0]["steps"].append(None))
+        self.assertTrue(any("not an object" in p for p in self.problems(data)))
+
+    def test_a_group_that_is_not_an_object_is_reported(self) -> None:
+        data = self.mutated(lambda d: d["groups"].append("oops"))
+        self.assertTrue(any("not an object" in p for p in self.problems(data)))
+
+    def test_steps_that_are_not_a_list_are_reported(self) -> None:
+        data = self.mutated(lambda d: d["groups"][0].update(steps="none"))
+        self.assertTrue(any("no steps" in p for p in self.problems(data)))
+
+    def test_usage_and_job_rows_that_are_not_objects_are_reported(self) -> None:
+        data = self.mutated(lambda d: d.update(usage=["x"], jobs=[None]))
+        out = self.problems(data)
+        self.assertTrue(any("Usage" in p and "not an object" in p for p in out))
+        self.assertTrue(any("Job" in p and "not an object" in p for p in out))
+
+    def test_a_top_level_that_is_not_an_object_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "page.html"
+            path.write_text("/* SESSION DATA START */\nvar SESSION = [1, 2];\n/* SESSION DATA END */", encoding="utf-8")
+            self.assertTrue(any("not an object" in p for p in self.check.check_page(path)))
+
+    def test_two_data_blocks_are_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "page.html"
+            page = page_with(GOOD, self.base)
+            block = re.search(r"/\* SESSION DATA START \*/.*?/\* SESSION DATA END \*/", page, flags=re.S).group(0)
+            path.write_text(page + "\n<script>" + block + "</script>", encoding="utf-8")
+            self.assertTrue(any("more than one data block" in p for p in self.check.check_page(path)))
+
     def test_page_without_data_block_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "page.html"
